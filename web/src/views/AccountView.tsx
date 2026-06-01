@@ -327,7 +327,7 @@ const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
 
 // ─── Activity Log Card ────────────────────────────────────────────────────────
 
-const ActivityLogCard: React.FC<{ userId: string }> = ({ userId }) => {
+const ActivityLogCard: React.FC = () => {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -662,7 +662,7 @@ export const AccountView: React.FC = () => {
 
       {/* Activity Log */}
       {me && (
-        <ActivityLogCard userId={me.id} />
+        <ActivityLogCard />
       )}
 
       {/* Admin: User Management */}
