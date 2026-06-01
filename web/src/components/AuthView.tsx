@@ -19,8 +19,6 @@ import {
   Edit3,
   Zap,
   Cpu,
-  ShieldAlert,
-  KeyRound,
   ArrowLeft
 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
