@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import {
   Button,
   Card,
@@ -274,7 +274,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({
       <Dialog
         isOpen={selectedList !== null}
         onClose={() => setSelectedList(null)}
-        title={t("filtering.listDetails", "订阅详情")}
+        title={t("filtering.listDetails", "List Details")}
         icon="info-sign"
       >
         <div className="p-6 space-y-4">
