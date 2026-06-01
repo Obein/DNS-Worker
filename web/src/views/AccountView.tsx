@@ -20,7 +20,7 @@ import {
 import {
   User, ShieldCheck, Trash2, UserPlus, Key, Edit2, Check, X, Settings,
   Shield, Activity, LogIn, LogOut, AlertTriangle, RefreshCw, Copy,
-  Smartphone, ShieldOff, ChevronDown,
+  Smartphone, ShieldOff, ChevronDown, ShieldAlert
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -449,6 +449,8 @@ export const AccountView: React.FC = () => {
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [useTotpForPw, setUseTotpForPw] = useState(false);
+  const [totpToken, setTotpToken] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMessage, setPwMessage] = useState<{ text: string; intent: Intent } | null>(null);
 
@@ -519,7 +521,11 @@ export const AccountView: React.FC = () => {
       const res = await fetch("/api/account/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ oldPassword, newPassword }),
+        body: JSON.stringify({ 
+          oldPassword: useTotpForPw ? undefined : oldPassword, 
+          totpToken: useTotpForPw ? totpToken : undefined, 
+          newPassword 
+        }),
       });
       if (res.ok) {
         setPwMessage({ text: t("account.passwordSuccess"), intent: Intent.SUCCESS });
@@ -638,15 +644,37 @@ export const AccountView: React.FC = () => {
         </Card>
 
         <Card elevation={Elevation.ONE}>
-          <div className="flex items-center gap-2 mb-4">
-            <Key size={20} className="text-orange-500" />
-            <H4 style={{ margin: 0 }}>{t("account.changePassword")}</H4>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Key size={20} className="text-orange-500" />
+              <H4 style={{ margin: 0 }}>{t("account.changePassword")}</H4>
+            </div>
+            {me?.totp_enabled && (
+              <Button 
+                minimal 
+                small 
+                icon={<ShieldCheck size={14} className={useTotpForPw ? "text-blue-500" : "text-gray-400"} />}
+                text={useTotpForPw ? t("account.totp.usePasswordInstead", "Use Password Instead") : t("account.totp.useTotpInstead", "Use 2FA Instead")}
+                onClick={() => {
+                  setUseTotpForPw(!useTotpForPw);
+                  setPwMessage(null);
+                  setOldPassword("");
+                  setTotpToken("");
+                }}
+              />
+            )}
           </div>
           {pwMessage && <Callout intent={pwMessage.intent} className="mb-4">{pwMessage.text}</Callout>}
           <form onSubmit={handleChangePassword} className="space-y-4">
-            <FormGroup label={t("account.currentPassword")}>
-              <InputGroup leftIcon="lock" type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} required />
-            </FormGroup>
+            {useTotpForPw ? (
+              <FormGroup label={t("account.totpCode", "Authenticator Code")}>
+                <InputGroup leftIcon={<ShieldAlert size={16} />} placeholder="000000" value={totpToken} onChange={e => setTotpToken(e.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} inputMode="numeric" required />
+              </FormGroup>
+            ) : (
+              <FormGroup label={t("account.currentPassword")}>
+                <InputGroup leftIcon="lock" type="password" value={oldPassword} onChange={e => setOldPassword(e.target.value)} required />
+              </FormGroup>
+            )}
             <FormGroup label={t("account.newPassword")}>
               <InputGroup leftIcon="lock" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
             </FormGroup>

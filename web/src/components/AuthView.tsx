@@ -384,7 +384,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                     <FormGroup label={t("account.totp.recoveryKeysTitle", "Recovery Key")}>
                       <InputGroup
                         id="recovery-key"
-                        leftIcon={<KeyRound size={16} />}
+                        leftIcon="key"
                         placeholder="XXXXXXXXXX"
                         size="large"
                         className="rounded-xl font-mono tracking-widest"
@@ -398,7 +398,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                     <FormGroup label={t("account.totp.title", "Two-Factor Verification (TOTP)")}>
                       <InputGroup
                         id="totp-code"
-                        leftIcon={<ShieldAlert size={16} />}
+                        leftIcon="shield"
                         placeholder="000000"
                         size="large"
                         className="rounded-xl font-mono tracking-widest text-center"

@@ -50,18 +50,38 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
 
     // POST /api/account/password (password change)
     if (pathParts[2] === 'password' && request.method === 'POST') {
-      const { oldPassword, newPassword } = await request.json() as any;
+      const { oldPassword, totpToken, newPassword } = await request.json() as any;
       if (!newPassword || newPassword.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
         return new Response("Password format error", { status: 400 });
       }
       const dbUser = await userModel.getById(user.id);
-      if (!dbUser || !(await verifyPassword(oldPassword, dbUser.hashed_password))) {
-        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'wrong_current_password' });
-        return new Response("Current password is incorrect", { status: 400 });
+      if (!dbUser) return new Response("User not found", { status: 404 });
+
+      let authenticated = false;
+
+      // 如果提供了 TOTP Token，并且用户启用了 TOTP，则使用 TOTP 校验
+      if (totpToken && dbUser.totp_enabled && dbUser.totp_secret) {
+        authenticated = await verifyTOTP(dbUser.totp_secret, totpToken);
+        if (!authenticated) {
+          await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'invalid_totp' });
+          return new Response("Invalid TOTP code", { status: 400 });
+        }
+      } 
+      // 否则使用旧密码校验
+      else if (oldPassword) {
+        authenticated = await verifyPassword(oldPassword, dbUser.hashed_password);
+        if (!authenticated) {
+          await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'wrong_current_password' });
+          return new Response("Current password is incorrect", { status: 400 });
+        }
+      } 
+      else {
+        return new Response("Authentication required (Old Password or TOTP)", { status: 400 });
       }
+
       const hashedPassword = await hashPassword(newPassword);
       await userModel.updatePassword(user.id, hashedPassword);
-      await activityLog.record(user.id, 'password_change_success', clientIp, userAgent);
+      await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: totpToken ? 'totp' : 'password' });
       return new Response(JSON.stringify({ success: true }));
     }
 
