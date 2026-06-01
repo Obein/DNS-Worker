@@ -55,6 +55,7 @@
     "passwordPlaceholder": "Your password",
     "loginBtn": "Login",
     "signupBtn": "Sign Up",
+    "totpVerification": "TOTP Verification",
     "noAccount": "Don't have an account? Sign up now",
     "haveAccount": "Already have an account? Back to login",
     "formatErrorUsername": "Username error: 5-15 alphanumeric characters only",

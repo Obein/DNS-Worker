@@ -367,8 +367,8 @@ export const SetupView: React.FC<SetupViewProps> = ({
         className={clsx(
           "bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm setup-tabs-container",
           isMobile && [
-            "[&_.bp6-tab-list]:!overflow-x-auto",
-            "[&_.bp6-tab-list]:!flex-nowrap",
+            "[&_.bp6-tab-list]:overflow-x-auto!",
+            "[&_.bp6-tab-list]:flex-nowrap!",
             "[&_.bp6-tab-list]:pb-1",
             "[&_.bp6-tab-list]:[scrollbar-width:none]",
             "[&_.bp6-tab-list]:[-ms-overflow-style:none]",

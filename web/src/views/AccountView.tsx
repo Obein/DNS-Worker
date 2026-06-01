@@ -78,7 +78,7 @@ const QRCodeCanvas: React.FC<{ uri: string }> = ({ uri }) => {
 
   if (error) {
     return (
-      <div className="w-[200px] h-[200px] border border-gray-200 rounded-lg flex flex-col items-center justify-center text-center p-4 text-xs text-gray-500">
+      <div className="w-50 h-50 border border-gray-200 rounded-lg flex flex-col items-center justify-center text-center p-4 text-xs text-gray-500">
         <p className="break-all">{uri}</p>
       </div>
     );

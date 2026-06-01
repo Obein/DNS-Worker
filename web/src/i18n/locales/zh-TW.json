@@ -55,6 +55,7 @@
     "passwordPlaceholder": "您的密碼",
     "loginBtn": "登入",
     "signupBtn": "註冊",
+    "totpVerification": "TOTP 驗證",
     "noAccount": "沒有帳戶？立即註冊",
     "haveAccount": "已有帳戶？返回登入",
     "formatErrorUsername": "用戶名格式錯誤：僅限英文字母或數字，5 到 15 位",

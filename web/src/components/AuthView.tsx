@@ -358,7 +358,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
               )}
 
               {isTurnstileEnabled && authConfig?.turnstile_site_key && (
-                <div className="py-2 flex justify-center min-h-[65px]"><div ref={turnstileRef} /></div>
+                <div className="py-2 flex justify-center min-h-16.25"><div ref={turnstileRef} /></div>
               )}
 
               <Button fill size="large" intent={Intent.PRIMARY} type="submit" loading={loading || turnstileStatus === 'verifying'} disabled={isTurnstileEnabled && !!authConfig?.turnstile_site_key && turnstileStatus !== 'success'} className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20">
@@ -393,7 +393,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
                       />
                     </FormGroup>
                   ) : (
-                    <FormGroup label={t("account.totp.title", "Two-Factor Verification (TOTP)")}>
+                    <FormGroup label={requiresPassword ? t("account.totp.title", "Two-Factor Verification (TOTP)") : t("auth.totpVerification", "TOTP Verification")}>
                       <InputGroup
                         id="totp-code"
                         leftIcon="shield"
