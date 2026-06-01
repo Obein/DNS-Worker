@@ -79,8 +79,7 @@ export default {
         }
 
         const isAuthRoute = [
-          '/api/auth/login', '/api/auth/signup',
-          '/api/auth/totp/verify', '/api/auth/totp/recover'
+          '/api/auth/login', '/api/auth/signup', '/api/auth/prelogin'
         ].includes(url.pathname);
         const isMobileConfigRoute = url.pathname.endsWith('/mobileconfig');
 
