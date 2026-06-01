@@ -53,7 +53,7 @@ export class UserModel {
    */
   async updateTOTP(id: string, secret: string, recoveryKeysHashed: string[]): Promise<boolean> {
     const result = await this.db
-      .prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1, totp_recovery_keys = ? WHERE id = ?')
+      .prepare('UPDATE users SET totp_secret = ?, totp_enabled = 1, totp_skip_password = 1, totp_recovery_keys = ? WHERE id = ?')
       .bind(secret, JSON.stringify(recoveryKeysHashed), id)
       .run();
     return result.success;

@@ -7,8 +7,7 @@ import {
   InputGroup,
   H3,
   Intent,
-  Callout,
-  Divider,
+  Callout
 } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,6 +21,7 @@ import {
   Cpu,
   ShieldAlert,
   KeyRound,
+  ArrowLeft
 } from "lucide-react";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
@@ -119,155 +119,27 @@ const ScrollingIntro = () => {
   );
 };
 
-// ─── TOTP Verification Panel ───────────────────────────────────────────────────
-
-interface TOTPVerifyPanelProps {
-  onSuccess: () => void;
-  onBack: () => void;
-}
-
-const TOTPVerifyPanel: React.FC<TOTPVerifyPanelProps> = ({ onSuccess, onBack }) => {
-  const { t } = useTranslation();
-  const [token, setToken] = useState("");
-  const [recoveryKey, setRecoveryKey] = useState("");
-  const [useRecovery, setUseRecovery] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const endpoint = useRecovery ? "/api/auth/totp/recover" : "/api/auth/totp/verify";
-      const body = useRecovery
-        ? { recoveryKey: recoveryKey.toUpperCase().trim() }
-        : { token: token.replace(/\s/g, "") };
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (res.ok) {
-        onSuccess();
-      } else {
-        const msg = await res.text();
-        if (msg.includes("expired")) {
-          setError(t("auth.totpSessionExpired", "Session expired, please log in again."));
-        } else {
-          setError(msg || t("auth.totpInvalid", "Invalid code, please try again."));
-        }
-      }
-    } catch {
-      setError(t("auth.networkError"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center text-center">
-        <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-          <ShieldAlert size={32} className="text-blue-500" />
-        </div>
-        <H3 className="font-bold tracking-tight text-2xl" style={{ marginBottom: 4 }}>
-          {useRecovery
-            ? t("auth.totpRecoveryTitle", "Use Recovery Key")
-            : t("auth.totpTitle", "Two-Factor Verification")}
-        </H3>
-        <p className="text-gray-500 text-sm leading-relaxed">
-          {useRecovery
-            ? t("auth.totpRecoveryDesc", "Enter one of your 8 backup recovery keys to access your account.")
-            : t("auth.totpDesc", "Enter the 6-digit code from your authenticator app.")}
-        </p>
-      </div>
-
-      {error && <Callout intent={Intent.DANGER} className="rounded-xl">{error}</Callout>}
-
-      <form onSubmit={handleVerify} className="space-y-4">
-        {useRecovery ? (
-          <FormGroup label={t("auth.totpRecoveryKey", "Recovery Key")}>
-            <InputGroup
-              id="recovery-key"
-              leftIcon={<KeyRound size={16} />}
-              placeholder="XXXXXXXXXX"
-              size="large"
-              className="rounded-xl font-mono tracking-widest"
-              value={recoveryKey}
-              onChange={(e) => setRecoveryKey(e.target.value)}
-              autoFocus
-              required
-            />
-          </FormGroup>
-        ) : (
-          <FormGroup label={t("auth.totpCode", "Authenticator Code")}>
-            <InputGroup
-              id="totp-code"
-              leftIcon={<ShieldAlert size={16} />}
-              placeholder="000000"
-              size="large"
-              className="rounded-xl font-mono tracking-widest text-center"
-              value={token}
-              onChange={(e) => setToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              maxLength={6}
-              inputMode="numeric"
-              autoFocus
-              required
-            />
-          </FormGroup>
-        )}
-
-        <Button
-          fill
-          size="large"
-          intent={Intent.PRIMARY}
-          type="submit"
-          loading={loading}
-          className="mt-2 font-bold rounded-xl shadow-lg shadow-blue-500/20"
-        >
-          {t("auth.totpVerify", "Verify")}
-        </Button>
-      </form>
-
-      <Divider />
-
-      <div className="flex flex-col gap-2 text-center">
-        <button
-          type="button"
-          onClick={() => { setUseRecovery(!useRecovery); setError(""); setToken(""); setRecoveryKey(""); }}
-          className="text-blue-600 dark:text-blue-400 text-sm font-semibold hover:underline bg-transparent border-none cursor-pointer"
-        >
-          {useRecovery
-            ? t("auth.totpUseApp", "Use authenticator app instead")
-            : t("auth.totpUseRecovery", "Lost access to authenticator? Use a recovery key")}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-gray-500 text-sm hover:underline bg-transparent border-none cursor-pointer"
-        >
-          {t("auth.totpBack", "Back to login")}
-        </button>
-      </div>
-    </div>
-  );
-};
-
 // ─── Main Auth View ────────────────────────────────────────────────────────────
 
 export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [loginStep, setLoginStep] = useState<1 | 2>(1);
+  
+  // Input fields
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [totpToken, setTotpToken] = useState("");
+  const [recoveryKey, setRecoveryKey] = useState("");
+  
+  // Step 2 requirements
+  const [requiresPassword, setRequiresPassword] = useState(true);
+  const [requiresTotp, setRequiresTotp] = useState(false);
+  const [useRecovery, setUseRecovery] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isPanelVisible, setIsPanelVisible] = useState(true);
-  // TOTP state: null = no TOTP, 'totp' = show totp form
-  const [totpStep, setTotpStep] = useState<null | 'totp'>(null);
+  
   const { t } = useTranslation();
 
   // 动态配置状态
@@ -310,7 +182,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   }, [isTurnstileEnabled, authConfig]);
 
   useEffect(() => {
-    if (isTurnstileEnabled && authConfig?.turnstile_site_key && (turnstileReady || window.turnstile) && turnstileRef.current) {
+    // Only render turnstile in Step 1 or Signup
+    if ((loginStep === 1 || !isLogin) && isTurnstileEnabled && authConfig?.turnstile_site_key && (turnstileReady || window.turnstile) && turnstileRef.current) {
       try {
         if (widgetIdRef.current && window.turnstile) {
           window.turnstile.remove(widgetIdRef.current);
@@ -341,32 +214,28 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
         widgetIdRef.current = null;
       }
     };
-  }, [isTurnstileEnabled, authConfig, isLogin, turnstileReady, t]);
+  }, [isTurnstileEnabled, authConfig, isLogin, loginStep, turnstileReady, t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLogin && !/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatErrorUsername")); return; }
-    if (!isLogin && (password.length < 8 || password.length > 100 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password))) { setError(t("auth.formatErrorPassword")); return; }
+    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatErrorUsername")); return; }
     if (isTurnstileEnabled && authConfig?.turnstile_site_key && !turnstileToken) { setError(t("auth.turnstileRequired")); return; }
 
     setLoading(true);
     setError("");
-    const endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup";
+    
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/auth/prelogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, turnstileToken }),
+        body: JSON.stringify({ username, turnstileToken }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        // Check if TOTP step is required
-        if (data.requires_totp) {
-          setTotpStep('totp');
-        } else {
-          onSuccess();
-        }
+        setRequiresPassword(data.requires_password);
+        setRequiresTotp(data.requires_totp);
+        setLoginStep(2);
       } else {
         const msg = await res.text();
         setError(msg || t("auth.authFailed"));
@@ -376,11 +245,68 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
     } catch (err) { setError(t("auth.networkError")); } finally { setLoading(false); }
   };
 
-  const handleBackFromTOTP = () => {
-    setTotpStep(null);
-    setUsername("");
-    setPassword("");
+  const handleStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     setError("");
+
+    try {
+      const body: any = {};
+      if (requiresPassword) body.password = password;
+      if (requiresTotp) {
+        if (useRecovery) body.recoveryKey = recoveryKey;
+        else body.totpToken = totpToken;
+      }
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        onSuccess();
+      } else {
+        const msg = await res.text();
+        setError(msg || t("auth.authFailed"));
+      }
+    } catch (err) { setError(t("auth.networkError")); } finally { setLoading(false); }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatErrorUsername")); return; }
+    if (password.length < 8 || password.length > 100 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) { setError(t("auth.formatErrorPassword")); return; }
+    if (isTurnstileEnabled && authConfig?.turnstile_site_key && !turnstileToken) { setError(t("auth.turnstileRequired")); return; }
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, turnstileToken }),
+      });
+
+      if (res.ok) {
+        onSuccess();
+      } else {
+        const msg = await res.text();
+        setError(msg || t("auth.authFailed"));
+        if (window.turnstile) window.turnstile.reset();
+        setTurnstileToken(null);
+      }
+    } catch (err) { setError(t("auth.networkError")); } finally { setLoading(false); }
+  };
+
+  const resetToStep1 = () => {
+    setLoginStep(1);
+    setPassword("");
+    setTotpToken("");
+    setRecoveryKey("");
+    setError("");
+    setTurnstileToken(null);
+    setUseRecovery(false);
   };
 
   return (
@@ -399,39 +325,119 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
         <div className="absolute top-4 right-4 z-50"><LanguageSwitcher /></div>
         <Card elevation={Elevation.FOUR} className="w-full max-w-md p-8 rounded-2xl shadow-none! z-10 dark:bg-gray-900 border border-gray-100 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
 
-          {/* TOTP Verification Step */}
-          {totpStep === 'totp' ? (
-            <TOTPVerifyPanel onSuccess={onSuccess} onBack={handleBackFromTOTP} />
-          ) : (
-            /* Normal Login / Signup */
-            <>
-              <div className="flex flex-col items-center mb-8">
-                <img src={LogoIcon} alt="Obex DNS Logo" className="w-20 h-20 object-contain" />
-                <H3 className="font-bold tracking-tight text-2xl mt-4">{isLogin ? t("auth.login") : t("auth.signup")}</H3>
-                <p className="text-gray-500 mt-2 text-center text-sm leading-relaxed">{isLogin ? t("auth.welcomeBack") : t("auth.protectInternet")}</p>
-              </div>
-              {error && <Callout intent={Intent.DANGER} className="mb-6 rounded-xl" title={t("auth.error")}>{error}</Callout>}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <FormGroup label={t("auth.username")} labelFor="username">
-                  <InputGroup id="username" leftIcon="user" placeholder={t("auth.usernamePlaceholder")} size="large" className="rounded-xl" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                </FormGroup>
+          <div className="flex flex-col items-center mb-8 relative">
+            {loginStep === 2 && isLogin && (
+              <button 
+                onClick={resetToStep1} 
+                className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none cursor-pointer"
+                title="Back to username"
+              >
+                <ArrowLeft size={24} />
+              </button>
+            )}
+            <img src={LogoIcon} alt="Obex DNS Logo" className="w-20 h-20 object-contain" />
+            <H3 className="font-bold tracking-tight text-2xl mt-4">
+              {isLogin ? (loginStep === 2 ? t("auth.authRequired", "Authentication Required") : t("auth.login")) : t("auth.signup")}
+            </H3>
+            <p className="text-gray-500 mt-2 text-center text-sm leading-relaxed">
+              {isLogin ? (loginStep === 2 ? username : t("auth.welcomeBack")) : t("auth.protectInternet")}
+            </p>
+          </div>
+
+          {error && <Callout intent={Intent.DANGER} className="mb-6 rounded-xl" title={t("auth.error")}>{error}</Callout>}
+
+          {/* Login Step 1 OR Signup */}
+          {(loginStep === 1 || !isLogin) && (
+            <form onSubmit={isLogin ? handleStep1Submit : handleSignupSubmit} className="space-y-4">
+              <FormGroup label={t("auth.username")} labelFor="username">
+                <InputGroup id="username" leftIcon="user" placeholder={t("auth.usernamePlaceholder")} size="large" className="rounded-xl" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              </FormGroup>
+
+              {!isLogin && (
                 <FormGroup label={t("auth.password")} labelFor="password">
-                  <InputGroup id="password" leftIcon="lock" placeholder={t("auth.passwordPlaceholder")} type="password" size="large" className="rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} required={!isLogin} />
+                  <InputGroup id="password" leftIcon="lock" placeholder={t("auth.passwordPlaceholder")} type="password" size="large" className="rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </FormGroup>
-                {isTurnstileEnabled && authConfig?.turnstile_site_key && (
-                  <div className="py-2 flex justify-center min-h-[65px]"><div ref={turnstileRef} /></div>
-                )}
-                <Button fill size="large" intent={Intent.PRIMARY} type="submit" loading={loading || turnstileStatus === 'verifying'} disabled={isTurnstileEnabled && !!authConfig?.turnstile_site_key && turnstileStatus !== 'success'} className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20">
-                  {turnstileStatus === 'verifying' ? t("auth.verifying") : (isLogin ? t("auth.loginBtn") : t("auth.signupBtn"))}
-                </Button>
-              </form>
-              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
-                <button onClick={() => { setIsLogin(!isLogin); setError(""); setTurnstileToken(null); }} className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer text-sm">
-                  {isLogin ? t("auth.noAccount") : t("auth.haveAccount")}
-                </button>
-              </div>
-            </>
+              )}
+
+              {isTurnstileEnabled && authConfig?.turnstile_site_key && (
+                <div className="py-2 flex justify-center min-h-[65px]"><div ref={turnstileRef} /></div>
+              )}
+
+              <Button fill size="large" intent={Intent.PRIMARY} type="submit" loading={loading || turnstileStatus === 'verifying'} disabled={isTurnstileEnabled && !!authConfig?.turnstile_site_key && turnstileStatus !== 'success'} className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20">
+                {turnstileStatus === 'verifying' ? t("auth.verifying") : (isLogin ? t("auth.next", "Next") : t("auth.signupBtn"))}
+              </Button>
+            </form>
           )}
+
+          {/* Login Step 2 */}
+          {loginStep === 2 && isLogin && (
+            <form onSubmit={handleStep2Submit} className="space-y-4">
+              {requiresPassword && (
+                <FormGroup label={t("auth.password")} labelFor="password">
+                  <InputGroup id="password" leftIcon="lock" placeholder={t("auth.passwordPlaceholder")} type="password" size="large" className="rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus required />
+                </FormGroup>
+              )}
+
+              {requiresTotp && (
+                <>
+                  {useRecovery ? (
+                    <FormGroup label={t("account.totp.recoveryKeysTitle", "Recovery Key")}>
+                      <InputGroup
+                        id="recovery-key"
+                        leftIcon={<KeyRound size={16} />}
+                        placeholder="XXXXXXXXXX"
+                        size="large"
+                        className="rounded-xl font-mono tracking-widest"
+                        value={recoveryKey}
+                        onChange={(e) => setRecoveryKey(e.target.value)}
+                        required
+                        autoFocus={!requiresPassword}
+                      />
+                    </FormGroup>
+                  ) : (
+                    <FormGroup label={t("account.totp.title", "Two-Factor Verification (TOTP)")}>
+                      <InputGroup
+                        id="totp-code"
+                        leftIcon={<ShieldAlert size={16} />}
+                        placeholder="000000"
+                        size="large"
+                        className="rounded-xl font-mono tracking-widest text-center"
+                        value={totpToken}
+                        onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        maxLength={6}
+                        inputMode="numeric"
+                        required
+                        autoFocus={!requiresPassword}
+                      />
+                    </FormGroup>
+                  )}
+
+                  <div className="text-right mt-1">
+                    <button
+                      type="button"
+                      onClick={() => { setUseRecovery(!useRecovery); setError(""); }}
+                      className="text-blue-600 dark:text-blue-400 text-xs hover:underline bg-transparent border-none cursor-pointer p-0"
+                    >
+                      {useRecovery ? t("auth.totpUseApp", "Use Authenticator App") : t("auth.totpUseRecovery", "Use Recovery Key")}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <Button fill size="large" intent={Intent.PRIMARY} type="submit" loading={loading} className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20">
+                {t("auth.loginBtn")}
+              </Button>
+            </form>
+          )}
+
+          {loginStep === 1 && (
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+              <button onClick={() => { setIsLogin(!isLogin); setError(""); setTurnstileToken(null); }} className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer text-sm">
+                {isLogin ? t("auth.noAccount") : t("auth.haveAccount")}
+              </button>
+            </div>
+          )}
+
         </Card>
       </div>
     </div>

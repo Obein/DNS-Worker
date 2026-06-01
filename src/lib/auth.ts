@@ -122,19 +122,18 @@ export function readSessionCookie(cookieHeader: string | null): string | null {
   return match ? match[1] : null;
 }
 
-// ─── Pending TOTP Session (short-lived, bridges password → TOTP verification) ───
+// ─── Pre-auth Session (short-lived, bridges username step → password/TOTP step) ───
 
-const PENDING_TOTP_COOKIE_NAME = 'totp_pending';
-const PENDING_TOTP_TTL_SECONDS = 5 * 60; // 5 minutes
+const PREAUTH_COOKIE_NAME = 'preauth_session';
+const PREAUTH_TTL_SECONDS = 5 * 60; // 5 minutes
 
 /**
- * Creates a short-lived pending session while waiting for TOTP verification.
- * Called after a successful password check when the user has TOTP enabled.
- * @returns The pending session token string
+ * Creates a short-lived pre-auth session after Step 1 (username + Turnstile).
+ * @returns The pre-auth session token string
  */
-export async function createPendingTOTPSession(db: D1Database, userId: string): Promise<string> {
+export async function createPreauthSession(db: D1Database, userId: string): Promise<string> {
   const token = generateId(40);
-  const expiresAt = Math.floor(Date.now() / 1000) + PENDING_TOTP_TTL_SECONDS;
+  const expiresAt = Math.floor(Date.now() / 1000) + PREAUTH_TTL_SECONDS;
   await db.prepare('INSERT INTO pending_totp_sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
     .bind(token, userId, expiresAt)
     .run();
@@ -142,10 +141,10 @@ export async function createPendingTOTPSession(db: D1Database, userId: string): 
 }
 
 /**
- * Validates a pending TOTP token and returns the associated userId, or null if invalid/expired.
- * Does NOT delete the session — call invalidatePendingTOTPSession after successful verification.
+ * Validates a pre-auth token and returns the associated userId, or null if invalid/expired.
+ * Does NOT delete the session — call invalidatePreauthSession after successful verification.
  */
-export async function validatePendingTOTPSession(db: D1Database, token: string): Promise<string | null> {
+export async function validatePreauthSession(db: D1Database, token: string): Promise<string | null> {
   const row = await db.prepare(
     'SELECT user_id, expires_at FROM pending_totp_sessions WHERE id = ?'
   ).bind(token).first<{ user_id: string; expires_at: number }>();
@@ -159,25 +158,25 @@ export async function validatePendingTOTPSession(db: D1Database, token: string):
 }
 
 /**
- * Deletes a pending TOTP session after it has been used (successfully or failed terminally).
+ * Deletes a pre-auth session after it has been used (successfully or failed terminally).
  */
-export async function invalidatePendingTOTPSession(db: D1Database, token: string): Promise<void> {
+export async function invalidatePreauthSession(db: D1Database, token: string): Promise<void> {
   await db.prepare('DELETE FROM pending_totp_sessions WHERE id = ?').bind(token).run();
 }
 
-/** Returns a Set-Cookie string for the pending TOTP token. */
-export function createPendingTOTPCookie(token: string): string {
-  return `${PENDING_TOTP_COOKIE_NAME}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${PENDING_TOTP_TTL_SECONDS}; Secure`;
+/** Returns a Set-Cookie string for the pre-auth token. */
+export function createPreauthCookie(token: string): string {
+  return `${PREAUTH_COOKIE_NAME}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${PREAUTH_TTL_SECONDS}; Secure`;
 }
 
-/** Returns a Set-Cookie string to clear the pending TOTP cookie. */
-export function clearPendingTOTPCookie(): string {
-  return `${PENDING_TOTP_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Secure`;
+/** Returns a Set-Cookie string to clear the pre-auth cookie. */
+export function clearPreauthCookie(): string {
+  return `${PREAUTH_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0; Secure`;
 }
 
-/** Reads the pending TOTP token from the Cookie header. */
-export function readPendingTOTPCookie(cookieHeader: string | null): string | null {
+/** Reads the pre-auth token from the Cookie header. */
+export function readPreauthCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${PENDING_TOTP_COOKIE_NAME}=([^;]*)`));
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${PREAUTH_COOKIE_NAME}=([^;]*)`));
   return match ? match[1] : null;
 }
