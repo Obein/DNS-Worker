@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: "*/30 0 * * *" 
+    - cron: "42 */6 * * *" 
   workflow_dispatch:
 
 jobs:
@@ -17,12 +17,12 @@ jobs:
     steps:
       # Step 1: run a standard checkout action
       - name: Checkout target repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       # Step 2: run the sync action
       - name: Sync upstream changes
         id: sync
-        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.3
         with:
           upstream_sync_repo: ObexDNS/ObexDNS
           upstream_sync_branch: main

@@ -33,7 +33,11 @@ function base32Encode(bytes: Uint8Array): string {
  * Decodes a Base32 string to a Uint8Array.
  */
 function base32Decode(input: string): Uint8Array {
-  const normalized = input.toUpperCase().replace(/=+$/, '');
+  let end = input.length;
+  while (end > 0 && input[end - 1] === '=') {
+    end--;
+  }
+  const normalized = input.slice(0, end).toUpperCase();
   const bytes: number[] = [];
   let buffer = 0;
   let bitsLeft = 0;
