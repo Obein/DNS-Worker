@@ -97,11 +97,15 @@ export default {
         return new Response("API Not Found", { status: 404 });
       }
 
-      // DoH 解析路由: /<6位ID>
-      const profileIdMatch = url.pathname.match(/^\/([a-zA-Z0-9]{6})$/);
-      if (profileIdMatch) {
+      // DoH 解析路由: /<6到12位字符串>
+      const profileKeyMatch = url.pathname.match(/^\/([a-zA-Z0-9]{6,12})$/);
+      if (profileKeyMatch) {
         try {
-          const profileId = profileIdMatch[1];
+          const profileKey = profileKeyMatch[1];
+          const profileModel = new ProfileModel(env.DB);
+          const profile = await profileModel.findByKey(profileKey);
+          if (!profile) return new Response('Invalid Profile Key', { status: 404 });
+          const profileId = profile.id;
           const query = await parseDNSQuery(request);
           if (!query) return new Response('Invalid DNS Query', { status: 400 });
           const context: Context = { profileId, startTime: Date.now(), env, ctx };
@@ -148,7 +152,7 @@ export default {
       try {
         let response = await (env as any).ASSETS.fetch(request);
         if (response.status === 404) {
-          return await (env as any).ASSETS.fetch(new Request(url.origin + '/index.html', request));
+          return await (env as any).ASSETS.fetch(new Request(url.origin + '/', request));
         }
         return response;
       } catch (e) {

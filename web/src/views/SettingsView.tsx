@@ -51,6 +51,7 @@ interface ProfileSettings {
 
 interface Profile {
   id: string; // 6-char ID
+  profile_key?: string;
   owner_id: string;
   name: string;
   settings: string; // JSON string of ProfileSettings
@@ -97,6 +98,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
+  const [rotatingKey, setRotatingKey] = useState(false);
 
   const PRESET_UPSTREAMS = useMemo(
     () => [
@@ -243,6 +245,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const rotateProfileKey = async () => {
+    if (!window.confirm(t("settings.rotateKeyWarning", "This will generate a new connection URL. Existing devices using the old URL will immediately lose connection. Are you sure you want to continue?"))) {
+      return;
+    }
+    setRotatingKey(true);
+    try {
+      const res = await fetch(`/api/profiles/${profileId}/rotate_key`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile((prev) => (prev ? { ...prev, profile_key: data.profile_key } : null));
+        toasterRef?.current?.show({
+          message: t("settings.rotateKeySuccess", "Profile connection URL rotated successfully."),
+          intent: Intent.SUCCESS,
+          icon: "tick",
+        });
+      } else {
+        throw new Error("Failed to rotate key");
+      }
+    } catch (e) {
+      toasterRef?.current?.show({
+        message: t("settings.rotateKeyError", "Failed to rotate connection URL."),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    } finally {
+      setRotatingKey(false);
     }
   };
 
@@ -634,6 +665,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </Card>
       </div>
+
+      <Card
+        elevation={Elevation.ONE}
+        className="dark:bg-gray-900 dark:border-gray-800"
+      >
+        <H5 className="flex items-center gap-2 mb-4 font-bold text-red-500">
+          <Shield size={18} />{" "}
+          {t("settings.securityTitle", "Security & Access")}
+        </H5>
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          <div>
+            <div className="font-bold">{t("settings.rotateKeyTitle", "Rotate Connection URL")}</div>
+            <p className="text-xs opacity-60 max-w-xl">
+              {t("settings.rotateKeyDesc", "Generate a new connection URL for this profile. Any devices currently using the old URL will immediately lose their connection to Obex DNS and will need to be reconfigured with the new URL.")}
+            </p>
+          </div>
+          <Button
+            intent={Intent.DANGER}
+            icon="refresh"
+            text={t("settings.rotateKeyBtn", "Rotate URL")}
+            onClick={rotateProfileKey}
+            loading={rotatingKey}
+          />
+        </div>
+      </Card>
 
       {/* DNS 实时测试模块 */}
       <Card

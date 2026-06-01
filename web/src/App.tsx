@@ -913,7 +913,7 @@ const ProfileRoutes = ({
       <Routes>
         <Route
           path="setup"
-          element={<SetupView profileId={id} toasterRef={toasterRef} />}
+          element={<SetupView profileId={id} profileKey={selectedProfile?.profile_key || id} toasterRef={toasterRef} />}
         />
         <Route
           path="filter"

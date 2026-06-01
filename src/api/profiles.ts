@@ -76,6 +76,14 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
       });
     }
 
+    // POST /api/profiles/:id/rotate_key
+    if (pathParts[3] === 'rotate_key' && request.method === 'POST') {
+      const newKey = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8); // 12 chars
+      await profileModel.rotateKey(profileId, newKey);
+      ctx.waitUntil(pipeline.clearCache(profileId));
+      return new Response(JSON.stringify({ profile_key: newKey }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     // PATCH /api/profiles/:id/settings
     if (pathParts[3] === 'settings' && request.method === 'PATCH') {
       const newSettings = await request.json() as ProfileSettings;

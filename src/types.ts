@@ -44,6 +44,7 @@ export interface ProfileSettings {
 
 export interface Profile {
   id: string;
+  profile_key?: string;
   owner_id: string;
   name: string;
   settings: string;

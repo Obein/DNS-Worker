@@ -15,6 +15,12 @@ export class ProfileModel {
       .first<ProfileWithBloom>();
   }
 
+  async findByKey(profileKey: string): Promise<ProfileWithBloom | null> {
+    return await this.db.prepare("SELECT * FROM profiles WHERE profile_key = ? OR id = ?")
+      .bind(profileKey, profileKey)
+      .first<ProfileWithBloom>();
+  }
+
   async getRules(profileId: string): Promise<Rule[]> {
     const { results } = await this.db.prepare("SELECT * FROM rules WHERE profile_id = ? ORDER BY id DESC")
       .bind(profileId)
@@ -39,12 +45,14 @@ export class ProfileModel {
       .bind(ownerId, name).first<Profile | null>();
   }
 
-  async create(profile: { id: string, owner_id: string, name: string, settings: ProfileSettings }): Promise<boolean> {
+  async create(profile: { id: string, profile_key?: string, owner_id: string, name: string, settings: ProfileSettings }): Promise<boolean> {
     const now = Math.floor(Date.now() / 1000);
+    // Use provided profile_key or generate a 12-char random alphanumeric string
+    const profileKey = profile.profile_key || Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8);
     const result = await this.db.prepare(
-      "INSERT INTO profiles (id, owner_id, name, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      "INSERT INTO profiles (id, profile_key, owner_id, name, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
     )
-      .bind(profile.id, profile.owner_id, profile.name, JSON.stringify(profile.settings), now, now)
+      .bind(profile.id, profileKey, profile.owner_id, profile.name, JSON.stringify(profile.settings), now, now)
       .run();
     return result.success;
   }
@@ -73,6 +81,13 @@ export class ProfileModel {
     )
       .bind(JSON.stringify(settings), now, id)
       .run();
+    return result.success;
+  }
+
+  async rotateKey(id: string, newKey: string): Promise<boolean> {
+    const now = Math.floor(Date.now() / 1000);
+    const result = await this.db.prepare("UPDATE profiles SET profile_key = ?, updated_at = ? WHERE id = ?")
+      .bind(newKey, now, id).run();
     return result.success;
   }
 
