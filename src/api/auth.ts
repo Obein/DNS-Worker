@@ -1,6 +1,5 @@
 import { Env } from "../types";
-import { initializeLucia } from "../lib/auth";
-import { generateId } from "lucia";
+import { generateId, createSession, createSessionCookie, readSessionCookie, invalidateSession, createBlankSessionCookie } from "../lib/auth";
 import { hashPassword, verifyPassword } from "../utils/crypto";
 import { UserModel } from "../models/user";
 import { cacheUtils } from "../utils/cache";
@@ -25,7 +24,7 @@ async function getSystemSetting(db: any, key: string): Promise<string> {
 
 export async function handleAuthRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const lucia = initializeLucia(env.DB);
+
   const userModel = new UserModel(env.DB);
   const cache = (caches as any).default;
   const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
@@ -69,9 +68,9 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     try {
       const role = (await userModel.isEmpty()) ? 'admin' : 'user';
       await userModel.create({ id: userId, username, passwordHash: hashedPassword, role });
-      const session = await lucia.createSession(userId, {});
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": sessionCookie.serialize(), "Content-Type": "application/json" } });
+      const session = await createSession(env.DB, userId);
+      const sessionCookie = createSessionCookie(session.id);
+      return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": sessionCookie, "Content-Type": "application/json" } });
     } catch (e: any) { return new Response(e.message, { status: 400 }); }
   }
 
@@ -100,16 +99,16 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     }
 
     await cacheUtils.delete(cache, `ratelimit:login_fail:${clientIp}`);
-    const session = await lucia.createSession(user.id, {});
-    const sessionCookie = lucia.createSessionCookie(session.id);
-    return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": sessionCookie.serialize(), "Content-Type": "application/json" } });
+    const session = await createSession(env.DB, user.id);
+    const sessionCookie = createSessionCookie(session.id);
+    return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": sessionCookie, "Content-Type": "application/json" } });
   }
 
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
-    const sessionId = lucia.readSessionCookie(request.headers.get("Cookie") || "");
-    if (sessionId) await lucia.invalidateSession(sessionId);
-    const blankCookie = lucia.createBlankSessionCookie();
-    return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": blankCookie.serialize(), "Content-Type": "application/json" } });
+    const sessionId = readSessionCookie(request.headers.get("Cookie"));
+    if (sessionId) await invalidateSession(env.DB, sessionId);
+    const blankCookie = createBlankSessionCookie();
+    return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": blankCookie, "Content-Type": "application/json" } });
   }
 
   return new Response("Not Found", { status: 404 });

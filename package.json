@@ -30,9 +30,5 @@
     "concurrently": "^8.2.2",
     "typescript": "^5.3.3",
     "wrangler": "^4.63.0"
-  },
-  "dependencies": {
-    "@lucia-auth/adapter-sqlite": "^3.0.2",
-    "lucia": "^3.2.2"
   }
 }

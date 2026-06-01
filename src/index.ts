@@ -1,7 +1,7 @@
 import { Context, Env, User, ExecutionContext } from './types';
 import { parseDNSQuery } from './utils/dns';
 import { pipeline } from './pipeline';
-import { initializeLucia } from './lib/auth';
+import { readSessionCookie, validateSession } from './lib/auth';
 import { handleAuthRequest } from './api/auth';
 import { handleProfilesRequest } from './api/profiles';
 import { handleAccountRequest } from './api/account';
@@ -32,7 +32,7 @@ export default {
 
     const handleRequest = async (): Promise<Response> => {
       const url = new URL(request.url);
-      const lucia = initializeLucia(env.DB);
+
       const cache = (caches as any).default;
 
       // Auth API 路由 (无需鉴权)
@@ -72,9 +72,9 @@ export default {
       let currentUser: User | null = null;
       if (url.pathname.startsWith('/api/')) {
         const cookieHeader = request.headers.get("Cookie") || "";
-        const sessionId = lucia.readSessionCookie(cookieHeader);
+        const sessionId = readSessionCookie(cookieHeader);
         if (sessionId) {
-          const { user } = await lucia.validateSession(sessionId);
+          const { user } = await validateSession(env.DB, sessionId);
           if (user) currentUser = user as any;
         }
 
@@ -168,6 +168,13 @@ export default {
         await env.DB.prepare("DELETE FROM users WHERE role = 'user' AND last_active_at < ?").bind(inactivityThreshold).run();
       } catch (e) {
         console.error("[Cron] Inactive users cleanup failed:", e);
+      }
+
+      // 清理过期 Session
+      try {
+        await env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now).run();
+      } catch (e) {
+        console.error("[Cron] Expired sessions cleanup failed:", e);
       }
 
       // 全局日志清理 (高效 SQL)

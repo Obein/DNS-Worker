@@ -1,7 +1,6 @@
 import { Env, User, ExecutionContext } from "../types";
 import { RBAC } from "../lib/rbac";
-import { initializeLucia } from "../lib/auth";
-import { generateId } from "lucia";
+import { generateId, createBlankSessionCookie } from "../lib/auth";
 import { hashPassword, verifyPassword } from "../utils/crypto";
 import { UserModel } from "../models/user";
 import { ProfileModel } from "../models/profile";
@@ -57,9 +56,8 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
       if (RBAC.isAdmin(user)) return new Response("Administrator accounts cannot be deleted directly", { status: 400 });
       await profileModel.deleteByOwner(user.id);
       await userModel.delete(user.id);
-      const lucia = initializeLucia(env.DB);
-      const blankCookie = lucia.createBlankSessionCookie();
-      return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": blankCookie.serialize() } });
+      const blankCookie = createBlankSessionCookie();
+      return new Response(JSON.stringify({ success: true }), { headers: { "Set-Cookie": blankCookie } });
     }
   }
 
