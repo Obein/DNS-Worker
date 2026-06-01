@@ -148,7 +148,7 @@ export default {
       try {
         let response = await (env as any).ASSETS.fetch(request);
         if (response.status === 404) {
-          return await (env as any).ASSETS.fetch(new Request(url.origin + '/index.html', request));
+          return await (env as any).ASSETS.fetch(new Request(url.origin + '/', request));
         }
         return response;
       } catch (e) {
