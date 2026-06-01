@@ -20,7 +20,7 @@ import {
 import {
   User, ShieldCheck, Trash2, UserPlus, Key, Edit2, Check, X, Settings,
   Shield, Activity, LogIn, LogOut, AlertTriangle, RefreshCw, Copy,
-  Smartphone, ShieldOff, ChevronDown, ShieldAlert
+  Smartphone, ShieldOff, ChevronDown,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -668,7 +668,7 @@ export const AccountView: React.FC = () => {
           <form onSubmit={handleChangePassword} className="space-y-4">
             {useTotpForPw ? (
               <FormGroup label={t("account.totpCode", "Authenticator Code")}>
-                <InputGroup leftIcon={<ShieldAlert size={16} />} placeholder="000000" value={totpToken} onChange={e => setTotpToken(e.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} inputMode="numeric" required />
+                <InputGroup leftIcon="shield" placeholder="000000" value={totpToken} onChange={e => setTotpToken(e.target.value.replace(/\D/g, "").slice(0, 6))} maxLength={6} inputMode="numeric" required />
               </FormGroup>
             ) : (
               <FormGroup label={t("account.currentPassword")}>
