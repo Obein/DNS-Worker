@@ -36,7 +36,6 @@ import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
 import { getPresetRegions, type RegionConfigItem } from "../config/regions";
 import { generateMobileConfig } from "../utils/mobileconfig";
-import { generateLinuxScript } from "../utils/unixScript";
 
 interface SetupViewProps {
   profileId: string;
@@ -52,6 +51,7 @@ interface DebugInfo {
   asOrganization: string;
   connectedProfileId?: string;
   regions?: Record<string, RegionConfigItem>;
+  substituteDomain?: string;
 }
 
 // 移动端适配 Hook
@@ -108,16 +108,16 @@ export const SetupView: React.FC<SetupViewProps> = ({
     });
   };
 
-  const resolvePagesDev = async () => {
+  const resolveSubstituteDomain = async (domain: string) => {
     try {
       const res = await fetch(
-        "https://cloudflare-dns.com/dns-query?name=pages.dev&type=A",
+        `https://cloudflare-dns.com/dns-query?name=${domain}&type=A`,
         {
           headers: { Accept: "application/dns-json" },
         },
       );
       const res6 = await fetch(
-        "https://cloudflare-dns.com/dns-query?name=pages.dev&type=AAAA",
+        `https://cloudflare-dns.com/dns-query?name=${domain}&type=AAAA`,
         {
           headers: { Accept: "application/dns-json" },
         },
@@ -131,7 +131,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
         setPagesDevIpv6(data6.Answer[0].data);
       }
     } catch (e) {
-      console.error("Failed to resolve pages.dev", e);
+      console.error(`Failed to resolve ${domain}`, e);
     }
   };
 
@@ -142,6 +142,9 @@ export const SetupView: React.FC<SetupViewProps> = ({
       const debugRes = await fetch("/api/debug");
       const debugData = await debugRes.json();
       setDebugInfo(debugData);
+
+      const domainToResolve = debugData.substituteDomain || "pages.dev";
+      resolveSubstituteDomain(domainToResolve);
 
       if (debugData.regions) {
         const enriched: Record<string, RegionConfigItem> = {};
@@ -178,7 +181,6 @@ export const SetupView: React.FC<SetupViewProps> = ({
 
   useEffect(() => {
     handleVerify();
-    resolvePagesDev();
   }, []);
 
   const currentIps = useMemo(() => {
@@ -514,13 +516,15 @@ export const SetupView: React.FC<SetupViewProps> = ({
                 <p className="text-sm font-bold mb-2">{t("setup.linuxStep1")}</p>
                 <div className="relative group">
                   <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-xs font-mono border border-gray-200 dark:border-gray-700">
-                    <code>{generateLinuxScript(dohUrl)}</code>
+                    <code>{`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}" | sudo bash`}</code>
                   </pre>
                   <Button
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     icon="duplicate"
+                    minimal
+                    small
                     onClick={() => {
-                      copyToClipboard(generateLinuxScript(dohUrl));
+                      copyToClipboard(`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}" | sudo bash`);
                     }}
                   />
                 </div>

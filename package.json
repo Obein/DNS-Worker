@@ -1,6 +1,6 @@
 {
-  "name": "obex",
-  "version": "1.0.1",
+  "name": "obexdns",
+  "version": "1.0.3",
   "private": true,
   "description": "Protective DoH Resolver based on Cloudflare Workers",
   "scripts": {

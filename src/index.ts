@@ -10,6 +10,7 @@ import { ProfileModel } from './models/profile';
 import { syncProfileLists } from './utils/sync';
 import { ScheduledEvent } from '@cloudflare/workers-types';
 import { cacheUtils } from './utils/cache';
+import { generateLinuxSetupScript } from './utils/linuxSetup';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -21,7 +22,7 @@ export default {
       newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
       // Allow Turnstile API and basic SPA needs
       if (!newHeaders.has('Content-Security-Policy')) {
-        newHeaders.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://icons.duckduckgo.com; connect-src 'self' https://challenges.cloudflare.com;");
+        newHeaders.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://icons.duckduckgo.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflare-dns.com;");
       }
       return new Response(response.body, {
         status: response.status,
@@ -64,6 +65,7 @@ export default {
           asn: cf?.asn || 0,
           asOrganization: cf?.asOrganization || "UNKNOWN",
           connectedProfileId: connectedProfileId || null,
+          substituteDomain: env.SUBSTITUTE_DOMAIN || "pages.dev",
           regions
         }), { headers: { 'Content-Type': 'application/json' } });
       }
@@ -150,6 +152,21 @@ export default {
           console.error(`[DoH Pipeline] Internal Error:`, e);
           return new Response(`Internal Server Error: ${e.message}`, { status: 500 });
         }
+      }
+
+      // Linux /setup.sh 路由
+      if (url.pathname === '/setup.sh') {
+        const key = url.searchParams.get('key');
+        if (!key || !/^[a-zA-Z0-9]{6,12}$/.test(key)) {
+          return new Response('Missing or invalid key parameter', { status: 400 });
+        }
+        const script = generateLinuxSetupScript(url.origin, key);
+        return new Response(script, {
+          headers: {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'no-cache'
+          }
+        });
       }
 
       // 静态资源托管与 SPA 回退
