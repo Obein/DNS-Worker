@@ -76,8 +76,8 @@ export const SetupView: React.FC<SetupViewProps> = ({
   const dohUrl = `${window.location.origin}/${profileKey}`;
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [pagesDevIp, setPagesDevIp] = useState<string | null>(null);
-  const [pagesDevIpv6, setPagesDevIpv6] = useState<string | null>(null);
+  const [substituteDomainIp, setSubstituteDomainIp] = useState<string | null>(null);
+  const [substituteDomainIpv6, setSubstituteDomainIpv6] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>("APAC");
   const [showIp, setShowIp] = useState(false);
   const [serverRegions, setServerRegions] = useState<
@@ -125,10 +125,12 @@ export const SetupView: React.FC<SetupViewProps> = ({
       const data = await res.json();
       const data6 = await res6.json();
       if (data.Answer && data.Answer.length > 0) {
-        setPagesDevIp(data.Answer[0].data);
+        const aRecord = data.Answer.find((a: any) => a.type === 1);
+        if (aRecord) setSubstituteDomainIp(aRecord.data);
       }
       if (data6.Answer && data6.Answer.length > 0) {
-        setPagesDevIpv6(data6.Answer[0].data);
+        const aaaaRecord = data6.Answer.find((a: any) => a.type === 28);
+        if (aaaaRecord) setSubstituteDomainIpv6(aaaaRecord.data);
       }
     } catch (e) {
       console.error(`Failed to resolve ${domain}`, e);
@@ -186,17 +188,21 @@ export const SetupView: React.FC<SetupViewProps> = ({
   const currentIps = useMemo(() => {
     const region = allRegions[selectedRegion] || OTHER_REGION;
     const baseIps = [...region.ips];
-    if (pagesDevIpv6) {
+    const domain = debugInfo?.substituteDomain || "pages.dev";
+    if (substituteDomainIpv6) {
       baseIps.unshift({
-        ip: pagesDevIpv6,
-        area: t("setup.dynamicFromPagesDevV6"),
+        ip: substituteDomainIpv6,
+        area: t("setup.dynamicFromDomainV6", { domain }),
       });
     }
-    if (pagesDevIp) {
-      baseIps.unshift({ ip: pagesDevIp, area: t("setup.dynamicFromPagesDev") });
+    if (substituteDomainIp) {
+      baseIps.unshift({
+        ip: substituteDomainIp,
+        area: t("setup.dynamicFromDomain", { domain }),
+      });
     }
     return baseIps;
-  }, [selectedRegion, allRegions, pagesDevIp, i18n.language]);
+  }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, debugInfo, i18n.language]);
 
   return (
     <div
