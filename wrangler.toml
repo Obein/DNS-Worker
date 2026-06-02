@@ -40,7 +40,7 @@ enabled = true
 head_sampling_rate = 0.05
 
 [vars]
-SUBSTITUTE_DOMAIN="pages.dev" # (Used to resolve DoH domains)
+SUBSTITUTE_DOMAIN="store.ubi.com" # (Used to resolve DoH domains)
 IP_REGION_APAC='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area":"SG"},{"ip":"104.18.47.174","area":"HK"},{"ip":"104.19.50.3","area":"HK"}]'
 IP_REGION_NAE='[]'
 IP_REGION_NAW='[]'
