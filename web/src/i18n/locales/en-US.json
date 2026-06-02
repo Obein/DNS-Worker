@@ -111,7 +111,12 @@
     "androidDesc": "Recommended to use apps like Intra, fill in DoH URL manually.",
     "androidWarning": "Note: System 'Private DNS' uses DoT protocol, Obex currently supports DoH only.",
     "dynamicFromPagesDev": "Dynamic (from pages.dev)",
-    "dynamicFromPagesDevV6": "Dynamic IPv6 (from pages.dev)"
+    "dynamicFromPagesDevV6": "Dynamic IPv6 (from pages.dev)",
+    "linux": "Linux",
+    "linuxTitle": "Linux (Cloudflared DoH Proxy)",
+    "linuxDesc": "Run a local DNS proxy to forward queries to Obex via DoH.",
+    "linuxStep1": "Run this script to install cloudflared and setup systemd service (listening on 127.0.0.1:53).",
+    "linuxStep2": "Change your system DNS to 127.0.0.1."
   },
   "rules": {
     "title": "Custom Rules",

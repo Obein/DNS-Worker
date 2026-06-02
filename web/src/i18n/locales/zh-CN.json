@@ -111,7 +111,12 @@
     "androidDesc": "建议使用 Intra 等 App，手动填入 DoH URL。",
     "androidWarning": "注：系统原生的“私有 DNS”使用 DoT 协议，本项目暂仅支持 DoH。",
     "dynamicFromPagesDev": "动态 (来自 \"pages.dev\")",
-    "dynamicFromPagesDevV6": "动态 IPv6 (来自 \"pages.dev\")"
+    "dynamicFromPagesDevV6": "动态 IPv6 (来自 \"pages.dev\")",
+    "linux": "Linux",
+    "linuxTitle": "Linux (Cloudflared DoH 代理)",
+    "linuxDesc": "在本地运行轻量级 DNS 代理，通过 DoH 将解析请求加密转发至 Obex。",
+    "linuxStep1": "运行以下脚本安装 cloudflared 并创建 systemd 服务（监听 127.0.0.1:53）。",
+    "linuxStep2": "将系统 DNS 修改为 127.0.0.1。"
   },
   "rules": {
     "title": "自定义规则",
