@@ -157,10 +157,11 @@ export default {
       // Linux /setup.sh 路由
       if (url.pathname === '/setup.sh') {
         const key = url.searchParams.get('key');
+        const originParam = url.searchParams.get('origin') || url.origin;
         if (!key || !/^[a-zA-Z0-9]{6,12}$/.test(key)) {
           return new Response('Missing or invalid key parameter', { status: 400 });
         }
-        const script = generateLinuxSetupScript(url.origin, key);
+        const script = generateLinuxSetupScript(originParam, key);
         return new Response(script, {
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',

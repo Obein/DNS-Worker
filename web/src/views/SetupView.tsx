@@ -516,7 +516,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
                 <p className="text-sm font-bold mb-2">{t("setup.linuxStep1")}</p>
                 <div className="relative group">
                   <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-xs font-mono border border-gray-200 dark:border-gray-700">
-                    <code>{`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}" | sudo bash`}</code>
+                    <code>{`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}&origin=${window.location.origin}" | sudo bash`}</code>
                   </pre>
                   <Button
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -524,7 +524,7 @@ export const SetupView: React.FC<SetupViewProps> = ({
                     minimal
                     small
                     onClick={() => {
-                      copyToClipboard(`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}" | sudo bash`);
+                      copyToClipboard(`curl -sL "${window.location.origin}/setup.sh?key=${profileKey}&origin=${window.location.origin}" | sudo bash`);
                     }}
                   />
                 </div>
