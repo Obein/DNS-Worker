@@ -5,7 +5,6 @@ import { pipeline } from "../pipeline";
 import { syncProfileLists } from "../utils/sync";
 import { LogModel } from "../models/log";
 import { ProfileModel } from "../models/profile";
-import { generateMobileConfig } from "../utils/mobileconfig";
 
 export async function handleProfilesRequest(request: Request, env: Env, user: User | null, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
@@ -161,12 +160,6 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
 
       const results = await logModel.getLogs(profileId, { since, until, status: status || undefined, search: search || undefined, before: before ? parseInt(before) : undefined, limit: parseInt(urlParams.get('limit') || '50') });
       return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
-    }
-
-    // 子资源路由: /api/profiles/:id/mobileconfig
-    if (pathParts[3] === 'mobileconfig' && request.method === 'GET') {
-      const config = generateMobileConfig(profile.profile_key || '', profile.name, url.origin);
-      return new Response(config, { headers: { 'Content-Type': 'application/x-apple-aspen-config', 'Content-Disposition': `attachment; filename="obex-${profile.profile_key}.mobileconfig"` } });
     }
 
     // 子资源路由: /api/profiles/:id/analytics

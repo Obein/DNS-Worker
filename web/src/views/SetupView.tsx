@@ -34,6 +34,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
 import { getPresetRegions, type RegionConfigItem } from "../config/regions";
+import { generateMobileConfig } from "../utils/mobileconfig";
 
 interface SetupViewProps {
   profileId: string;
@@ -423,9 +424,16 @@ export const SetupView: React.FC<SetupViewProps> = ({
                   intent={Intent.PRIMARY}
                   text={t("setup.downloadConfig")}
                   icon="download"
-                  onClick={() =>
-                    (window.location.href = `/api/profiles/${profileId}/mobileconfig`)
-                  }
+                  onClick={() => {
+                    const xml = generateMobileConfig(profileKey, "Obex", window.location.origin);
+                    const blob = new Blob([xml], { type: "application/x-apple-aspen-config" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `obex-${profileKey}.mobileconfig`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
                 />
               </div>
               <p className="text-[10px] opacity-50 mt-4! text-center">
