@@ -128,4 +128,43 @@ export class ProfileModel {
     const result = await this.db.prepare("DELETE FROM rules WHERE id = ? AND profile_id = ?").bind(id, profileId).run();
     return result.success;
   }
+
+  async updateLastActive(id: string, now: number): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE profiles SET last_active_at = ? WHERE id = ?").bind(now, id).run();
+    return result.success;
+  }
+
+  async getSyncTargets(threshold: number, limit: number): Promise<{id: string}[]> {
+    const { results } = await this.db.prepare(
+      "SELECT id FROM profiles WHERE list_updated_at IS NULL OR list_updated_at < ? ORDER BY list_updated_at ASC LIMIT ?"
+    ).bind(threshold, limit).all<{ id: string }>();
+    return results;
+  }
+
+  async clearProfileBlooms(profileId: string): Promise<boolean> {
+    const result = await this.db.prepare("DELETE FROM profile_blooms WHERE profile_id = ?").bind(profileId).run();
+    return result.success;
+  }
+
+  async updateListUpdatedAt(profileId: string, now: number): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE profiles SET list_updated_at = ? WHERE id = ?").bind(now, profileId).run();
+    return result.success;
+  }
+
+  async updateListSyncStatus(id: number, now: number | null, enabled: number): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE lists SET last_synced_at = ?, enabled = ? WHERE id = ?").bind(now, enabled, id).run();
+    return result.success;
+  }
+
+  async upsertProfileBloom(profileId: string, bloomFilter: ArrayBuffer, now: number): Promise<boolean> {
+    const result = await this.db.prepare(
+      "INSERT INTO profile_blooms (profile_id, bloom_filter, updated_at) VALUES (?, ?, ?) ON CONFLICT(profile_id) DO UPDATE SET bloom_filter = excluded.bloom_filter, updated_at = excluded.updated_at"
+    ).bind(profileId, bloomFilter, now).run();
+    return result.success;
+  }
+
+  async getProfileBloom(profileId: string): Promise<ArrayBuffer | null> {
+    const row = await this.db.prepare("SELECT bloom_filter FROM profile_blooms WHERE profile_id = ?").bind(profileId).first<{ bloom_filter: ArrayBuffer }>();
+    return row ? row.bloom_filter : null;
+  }
 }

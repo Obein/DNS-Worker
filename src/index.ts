@@ -7,6 +7,8 @@ import { handleProfilesRequest } from './api/profiles';
 import { handleAccountRequest } from './api/account';
 import { LogModel } from './models/log';
 import { ProfileModel } from './models/profile';
+import { UserModel } from './models/user';
+import { SessionModel } from './models/session';
 import { syncProfileLists } from './utils/sync';
 import { ScheduledEvent } from '@cloudflare/workers-types';
 import { cacheUtils } from './utils/cache';
@@ -131,9 +133,10 @@ export default {
 
               if (!lastActiveThrottled || nowSec - lastActiveThrottled > 3600) {
                 // 更新 Profile 活跃时间
-                await env.DB.prepare("UPDATE profiles SET last_active_at = ? WHERE id = ?").bind(nowSec, profileId).run();
+                await profileModel.updateLastActive(profileId, nowSec);
                 // 级联更新 Owner 活跃时间
-                await env.DB.prepare("UPDATE users SET last_active_at = ? WHERE id = (SELECT owner_id FROM profiles WHERE id = ?)").bind(nowSec, profileId).run();
+                const userModel = new UserModel(env.DB);
+                await userModel.updateLastActiveByProfile(profileId, nowSec);
                 // 写入节流标记
                 await cacheUtils.set(cache, lastActiveKey, nowSec, 3600);
               }
@@ -193,23 +196,18 @@ export default {
 
       // 清理 180 天无活动的普通用户 (级联删除)
       try {
-        await env.DB.prepare("DELETE FROM users WHERE role = 'user' AND last_active_at < ?").bind(inactivityThreshold).run();
+        const userModel = new UserModel(env.DB);
+        await userModel.cleanupInactiveUsers(inactivityThreshold);
       } catch (e) {
         console.error("[Cron] Inactive users cleanup failed:", e);
       }
 
-      // 清理过期 Session
+      // 清理过期 Session 及 TOTP 临时会话
       try {
-        await env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?").bind(now).run();
+        const sessionModel = new SessionModel(env.DB);
+        await sessionModel.cleanupExpired(now);
       } catch (e) {
         console.error("[Cron] Expired sessions cleanup failed:", e);
-      }
-
-      // 清理过期的 TOTP 临时会话
-      try {
-        await env.DB.prepare("DELETE FROM pending_totp_sessions WHERE expires_at < ?").bind(now).run();
-      } catch (e) {
-        console.error("[Cron] Expired pending TOTP sessions cleanup failed:", e);
       }
 
       // 全局日志清理 (高效 SQL)
@@ -222,9 +220,8 @@ export default {
       // 限制同步频率：每次同步最久没更新且更新时间超过 24 小时的 10 个 Profile
       try {
         const oneDayAgo = now - 86400;
-        const { results: syncTargets } = await env.DB.prepare(
-          "SELECT id FROM profiles WHERE list_updated_at IS NULL OR list_updated_at < ? ORDER BY list_updated_at ASC LIMIT 10"
-        ).bind(oneDayAgo).all<{ id: string }>();
+        const profileModel = new ProfileModel(env.DB);
+        const syncTargets = await profileModel.getSyncTargets(oneDayAgo, 10);
 
         for (const target of syncTargets) {
           // 使用 waitUntil 确保即便同步较慢也不会阻塞 Cron 主进程

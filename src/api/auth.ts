@@ -11,6 +11,8 @@ import { hashPassword, verifyPassword } from "../utils/crypto";
 import { verifyTOTP, findMatchingRecoveryKey } from "../lib/totp";
 import { UserModel } from "../models/user";
 import { ActivityLogModel } from "../models/activityLog";
+import { SystemSettingsModel } from "../models/systemSettings";
+import { SessionModel } from "../models/session";
 import { cacheUtils } from "../utils/cache";
 
 async function verifyTurnstile(token: string, secret: string, ip: string): Promise<boolean> {
@@ -26,10 +28,7 @@ async function verifyTurnstile(token: string, secret: string, ip: string): Promi
   } catch (e) { return false; }
 }
 
-async function getSystemSetting(db: any, key: string): Promise<string> {
-  const res = await db.prepare("SELECT value FROM system_settings WHERE key = ?").bind(key).first();
-  return res ? res.value : "";
-}
+// getSystemSetting has been replaced by SystemSettingsModel
 
 export async function handleAuthRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -41,10 +40,11 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
 
   // 公开配置接口
   if (url.pathname === '/api/auth/config' && request.method === 'GET') {
+    const settingsModel = new SystemSettingsModel(env.DB);
     const [siteKey, signupEnabled, loginEnabled] = await Promise.all([
-      getSystemSetting(env.DB, 'turnstile_site_key'),
-      getSystemSetting(env.DB, 'turnstile_enabled_signup'),
-      getSystemSetting(env.DB, 'turnstile_enabled_login')
+      settingsModel.get('turnstile_site_key'),
+      settingsModel.get('turnstile_enabled_signup'),
+      settingsModel.get('turnstile_enabled_login')
     ]);
     return new Response(JSON.stringify({
       turnstile_site_key: siteKey,
@@ -59,9 +59,10 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       return new Response("Too many attempts", { status: 429 });
     }
     const { username, password, turnstileToken } = await request.json() as any;
+    const settingsModel = new SystemSettingsModel(env.DB);
     const [secretKey, enabled] = await Promise.all([
-      getSystemSetting(env.DB, 'turnstile_secret_key'),
-      getSystemSetting(env.DB, 'turnstile_enabled_signup')
+      settingsModel.get('turnstile_secret_key'),
+      settingsModel.get('turnstile_enabled_signup')
     ]);
     if (enabled === 'true' && secretKey) {
       if (!await verifyTurnstile(turnstileToken, secretKey, clientIp)) {
@@ -89,9 +90,10 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     }
     const { username, turnstileToken } = await request.json() as any;
 
+    const settingsModel = new SystemSettingsModel(env.DB);
     const [secretKey, enabled] = await Promise.all([
-      getSystemSetting(env.DB, 'turnstile_secret_key'),
-      getSystemSetting(env.DB, 'turnstile_enabled_login')
+      settingsModel.get('turnstile_secret_key'),
+      settingsModel.get('turnstile_enabled_login')
     ]);
     if (enabled === 'true' && secretKey) {
       if (!await verifyTurnstile(turnstileToken, secretKey, clientIp)) {
@@ -184,14 +186,14 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     return new Response(JSON.stringify({ success: true }), { headers });
   }
 
-  // 登出接口
   if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
     const sessionId = readSessionCookie(request.headers.get("Cookie"));
     if (sessionId) {
-      const session = await env.DB.prepare("SELECT user_id FROM sessions WHERE id = ?").bind(sessionId).first<{ user_id: string }>();
+      const sessionModel = new SessionModel(env.DB);
+      const userId = await sessionModel.getSessionUserId(sessionId);
       await invalidateSession(env.DB, sessionId);
-      if (session?.user_id) {
-        await activityLog.record(session.user_id, 'logout', clientIp, userAgent);
+      if (userId) {
+        await activityLog.record(userId, 'logout', clientIp, userAgent);
       }
     }
     return new Response(JSON.stringify({ success: true }), {

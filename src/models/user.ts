@@ -98,4 +98,15 @@ export class UserModel {
       .run();
     return result.success;
   }
+
+  async updateLastActiveByProfile(profileId: string, now: number): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE users SET last_active_at = ? WHERE id = (SELECT owner_id FROM profiles WHERE id = ?)")
+      .bind(now, profileId).run();
+    return result.success;
+  }
+
+  async cleanupInactiveUsers(threshold: number): Promise<boolean> {
+    const result = await this.db.prepare("DELETE FROM users WHERE role = 'user' AND last_active_at < ?").bind(threshold).run();
+    return result.success;
+  }
 }

@@ -52,13 +52,10 @@ export const pipelineConfig = {
     
     // 从 D1 直接加载布隆过滤器
     try {
-      const bloomRow = await env.DB.prepare("SELECT bloom_filter FROM profile_blooms WHERE profile_id = ?")
-        .bind(profileId)
-        .first<{ bloom_filter: ArrayBuffer }>();
+      const buffer = await profileModel.getProfileBloom(profileId);
         
-      if (bloomRow && bloomRow.bloom_filter) {
+      if (buffer) {
         track('load_bloom_l3_d1');
-        const buffer = bloomRow.bloom_filter;
         const uint8 = new Uint8Array(buffer);
         bloom = BloomFilter.fromUint8Array(uint8);
 

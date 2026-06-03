@@ -1,5 +1,6 @@
 import { D1Database } from "@cloudflare/workers-types";
 import { User } from "../types";
+import { SessionModel } from "../models/session";
 
 export interface Session {
   id: string;
@@ -37,9 +38,8 @@ export async function createSession(db: D1Database, userId: string): Promise<Ses
     expires_at: expiresAt
   };
 
-  await db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
-    .bind(session.id, session.user_id, session.expires_at)
-    .run();
+  const sessionModel = new SessionModel(db);
+  await sessionModel.createSession(session.id, session.user_id, session.expires_at);
 
   return session;
 }
@@ -48,13 +48,8 @@ export async function createSession(db: D1Database, userId: string): Promise<Ses
  * Validates a session from the database. Deletes it if expired.
  */
 export async function validateSession(db: D1Database, sessionId: string): Promise<SessionValidationResult> {
-  const result = await db.prepare(`
-    SELECT sessions.id as session_id, sessions.user_id, sessions.expires_at,
-           users.id as u_id, users.username, users.role
-    FROM sessions
-    INNER JOIN users ON sessions.user_id = users.id
-    WHERE sessions.id = ?
-  `).bind(sessionId).first<any>();
+  const sessionModel = new SessionModel(db);
+  const result = await sessionModel.getSessionWithUser(sessionId);
 
   if (!result) {
     return { session: null, user: null };
@@ -83,9 +78,7 @@ export async function validateSession(db: D1Database, sessionId: string): Promis
   const fifteenDaysInSeconds = 15 * 24 * 60 * 60;
   if (timeRemaining < fifteenDaysInSeconds) {
     session.expires_at = Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_DAYS * 24 * 60 * 60;
-    await db.prepare("UPDATE sessions SET expires_at = ? WHERE id = ?")
-      .bind(session.expires_at, session.id)
-      .run();
+    await sessionModel.extendSession(session.id, session.expires_at);
   }
 
   return { session, user };
@@ -95,7 +88,8 @@ export async function validateSession(db: D1Database, sessionId: string): Promis
  * Deletes a session from the database.
  */
 export async function invalidateSession(db: D1Database, sessionId: string): Promise<void> {
-  await db.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+  const sessionModel = new SessionModel(db);
+  await sessionModel.deleteSession(sessionId);
 }
 
 /**
@@ -134,9 +128,8 @@ const PREAUTH_TTL_SECONDS = 5 * 60; // 5 minutes
 export async function createPreauthSession(db: D1Database, userId: string): Promise<string> {
   const token = generateId(40);
   const expiresAt = Math.floor(Date.now() / 1000) + PREAUTH_TTL_SECONDS;
-  await db.prepare('INSERT INTO pending_totp_sessions (id, user_id, expires_at) VALUES (?, ?, ?)')
-    .bind(token, userId, expiresAt)
-    .run();
+  const sessionModel = new SessionModel(db);
+  await sessionModel.createPendingTotpSession(token, userId, expiresAt);
   return token;
 }
 
@@ -145,13 +138,12 @@ export async function createPreauthSession(db: D1Database, userId: string): Prom
  * Does NOT delete the session — call invalidatePreauthSession after successful verification.
  */
 export async function validatePreauthSession(db: D1Database, token: string): Promise<string | null> {
-  const row = await db.prepare(
-    'SELECT user_id, expires_at FROM pending_totp_sessions WHERE id = ?'
-  ).bind(token).first<{ user_id: string; expires_at: number }>();
+  const sessionModel = new SessionModel(db);
+  const row = await sessionModel.getPendingTotpSession(token);
 
   if (!row) return null;
   if (Math.floor(Date.now() / 1000) >= row.expires_at) {
-    await db.prepare('DELETE FROM pending_totp_sessions WHERE id = ?').bind(token).run();
+    await sessionModel.deletePendingTotpSession(token);
     return null;
   }
   return row.user_id;
@@ -161,7 +153,8 @@ export async function validatePreauthSession(db: D1Database, token: string): Pro
  * Deletes a pre-auth session after it has been used (successfully or failed terminally).
  */
 export async function invalidatePreauthSession(db: D1Database, token: string): Promise<void> {
-  await db.prepare('DELETE FROM pending_totp_sessions WHERE id = ?').bind(token).run();
+  const sessionModel = new SessionModel(db);
+  await sessionModel.deletePendingTotpSession(token);
 }
 
 /** Returns a Set-Cookie string for the pre-auth token. */

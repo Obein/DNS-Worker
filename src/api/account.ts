@@ -7,6 +7,7 @@ import { UserModel } from "../models/user";
 import { ProfileModel } from "../models/profile";
 import { LogModel } from "../models/log";
 import { ActivityLogModel } from "../models/activityLog";
+import { SystemSettingsModel } from "../models/systemSettings";
 
 export async function handleAccountRequest(request: Request, env: Env, user: User, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
@@ -203,18 +204,14 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
 
     // 系统设置接口: /api/admin/settings
     if (pathParts[2] === 'settings') {
+      const systemSettings = new SystemSettingsModel(env.DB);
       if (request.method === 'GET') {
-        const { results } = await env.DB.prepare("SELECT key, value FROM system_settings").all();
-        const settings = results.reduce((acc: any, cur: any) => ({ ...acc, [cur.key]: cur.value }), {});
+        const settings = await systemSettings.getAll();
         return new Response(JSON.stringify(settings), { headers: { 'Content-Type': 'application/json' } });
       }
       if (request.method === 'PATCH') {
         const body = await request.json() as Record<string, string>;
-        const now = Math.floor(Date.now() / 1000);
-        const stmts = Object.entries(body).map(([key, value]) =>
-          env.DB.prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(key, String(value), now)
-        );
-        await env.DB.batch(stmts);
+        await systemSettings.setMany(body);
         return new Response(JSON.stringify({ success: true }));
       }
     }
