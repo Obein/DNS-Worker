@@ -9,13 +9,15 @@ import { pipelineCache } from "../pipeline/cache";
 export async function syncProfileLists(profileId: string, env: Env, ctx: ExecutionContext): Promise<void> {
   const { results: lists } = await env.DB.prepare("SELECT id, url FROM lists WHERE profile_id = ?").bind(profileId).all<List>();
   
+  const now = Math.floor(Date.now() / 1000);
+
   if (lists.length === 0) {
     // 如果没有订阅列表，清理旧数据
     await env.DB.prepare("DELETE FROM profile_blooms WHERE profile_id = ?").bind(profileId).run();
+    // 更新配置的 list_updated_at，避免 cron 任务一直选中它
+    await env.DB.prepare("UPDATE profiles SET list_updated_at = ? WHERE id = ?").bind(now, profileId).run();
     return;
   }
-
-  const now = Math.floor(Date.now() / 1000);
   const allDomains = new Set<string>();
 
   for (const list of lists) {
@@ -58,4 +60,7 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
 
     console.log(`[Sync] Profile ${profileId}: ${domainArray.length} domains synced to D1.`);
   }
+
+  // 记录配置级同步时间，作为定时任务的索引
+  await env.DB.prepare("UPDATE profiles SET list_updated_at = ? WHERE id = ?").bind(now, profileId).run();
 }
