@@ -91,6 +91,14 @@ export const FilteringView: React.FC<FilteringViewProps> = ({
           icon: "tick",
         });
         setNewUrl("");
+        
+        // Show sync started message and wait briefly for the backend sync to complete
+        toasterRef?.current?.show({
+          message: t("filtering.syncTaskStarted"),
+          intent: Intent.PRIMARY,
+          icon: "cloud-download",
+        });
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         await fetchData();
       }
     } catch (e) {
