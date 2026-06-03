@@ -57,7 +57,8 @@ export class BloomFilter {
 
     for (let i = 0; i < this.hashes; i++) {
       // Double Hashing: (h1 + i * h2) % m
-      const pos = (h1 + Math.imul(i, h2)) % this.size >>> 0;
+      // Fix: Avoid Math.imul which can return negative numbers and cause out-of-bounds indices
+      const pos = (h1 + i * h2) % this.size;
       // 位运算优化: index / 8 => index >> 3, index % 8 => index & 7
       this.bitArray[pos >> 3] |= (1 << (pos & 7));
     }
@@ -73,7 +74,7 @@ export class BloomFilter {
     const h2 = this.fnv1a(data, BloomFilter.FNV_SEED_1);
 
     for (let i = 0; i < this.hashes; i++) {
-      const pos = (h1 + Math.imul(i, h2)) % this.size >>> 0;
+      const pos = (h1 + i * h2) % this.size;
       if ((this.bitArray[pos >> 3] & (1 << (pos & 7))) === 0) {
         return false;
       }
