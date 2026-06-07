@@ -1,17 +1,16 @@
 import React from "react";
 import { HTMLTable, Tag, Button, Intent } from "@blueprintjs/core";
-import { Trash2, ShieldX, CheckCircle, ArrowRightLeft } from "lucide-react";
+import { ShieldX, CheckCircle, ArrowRightLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  Rule  } from "../types";
 
 export interface RulesTableProps {
   rules: Rule[];
   startEdit: (rule: Rule) => void;
-  deleteRule: (id: number) => void;
   getBlockDetail: () => string;
 }
 
-export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, deleteRule, getBlockDetail }) => {
+export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlockDetail }) => {
   const { t } = useTranslation();
 
   return (
@@ -22,12 +21,11 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, delete
             <th className="w-32">{t("rules.tableAction")}</th>
             <th className="w-1/4">{t("rules.tablePattern")}</th>
             <th>{t("rules.tableDetails")}</th>
-            <th className="text-right w-20">{t("rules.tableOps")}</th>
           </tr>
         </thead>
         <tbody>
           {rules.map((rule) => (
-            <tr key={rule.id}>
+            <tr key={rule.id} onClick={() => startEdit(rule)} className="cursor-pointer">
               <td>
                 {rule.type === "BLOCK" && (
                   <Tag intent={Intent.DANGER} minimal icon={<ShieldX size={12} className="mr-1" />}>
@@ -80,10 +78,6 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, delete
                 ) : (
                   <span className="text-gray-400 text-xs italic">{t("rules.detailAllow")}</span>
                 )}
-              </td>
-              <td className="text-right">
-                <Button icon="edit" minimal className="mr-1" onClick={() => startEdit(rule)} />
-                <Button icon={<Trash2 size={14} />} minimal intent={Intent.DANGER} onClick={() => deleteRule(rule.id)} />
               </td>
             </tr>
           ))}

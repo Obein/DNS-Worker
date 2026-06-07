@@ -1,6 +1,6 @@
 import React from "react";
 import { Dialog, DialogBody, DialogFooter, FormGroup, HTMLSelect, InputGroup, Button, Intent } from "@blueprintjs/core";
-import { Globe } from "lucide-react";
+import { Globe, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  Rule  } from "../types";
 
@@ -9,9 +9,10 @@ export interface EditRuleDialogProps {
   setEditRule: (rule: Rule | null) => void;
   saveEditRule: () => void;
   cancelEdit: () => void;
+  deleteRule: (id: number) => void;
 }
 
-export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEditRule, saveEditRule, cancelEdit }) => {
+export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEditRule, saveEditRule, cancelEdit, deleteRule }) => {
   const { t } = useTranslation();
 
   return (
@@ -84,11 +85,21 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEdi
       </DialogBody>
       <DialogFooter
         actions={
-          <div className="flex gap-2 justify-end">
-            <Button onClick={cancelEdit}>{t("rules.cancel", "Cancel")}</Button>
-            <Button intent={Intent.PRIMARY} onClick={saveEditRule}>
-              {t("rules.saveChanges", "Save Changes")}
-            </Button>
+          <div className="flex w-full justify-between">
+            <Button
+              icon={<Trash2 size={14} />}
+              intent={Intent.DANGER}
+              text={t("rules.delete", "Delete")}
+              onClick={() => {
+                if (editRule) deleteRule(editRule.id);
+              }}
+            />
+            <div className="flex gap-2">
+              <Button onClick={cancelEdit}>{t("rules.cancel", "Cancel")}</Button>
+              <Button intent={Intent.PRIMARY} onClick={saveEditRule}>
+                {t("rules.saveChanges", "Save Changes")}
+              </Button>
+            </div>
           </div>
         }
       />

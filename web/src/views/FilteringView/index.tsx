@@ -86,6 +86,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
           intent: Intent.PRIMARY,
           icon: "trash",
         });
+        setSelectedList(null);
         await fetchData();
       }
     } catch (e) {
@@ -149,9 +150,9 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         lists={lists}
       />
 
-      <ListsTable lists={lists} onSelect={setSelectedList} onDelete={deleteList} />
+      <ListsTable lists={lists} onSelect={setSelectedList} />
 
-      <ListDetailsDialog selectedList={selectedList} onClose={() => setSelectedList(null)} onCopy={copyToClipboard} />
+      <ListDetailsDialog selectedList={selectedList} onClose={() => setSelectedList(null)} onCopy={copyToClipboard} onDelete={deleteList} />
     </div>
   );
 };
