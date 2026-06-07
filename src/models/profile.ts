@@ -191,12 +191,16 @@ export class ProfileModel {
     if (!results || results.length === 0) return null;
 
     // Calculate total length
-    const totalLength = results.reduce((acc, row) => acc + row.bloom_filter_chunk.byteLength, 0);
+    const totalLength = results.reduce((acc, row) => {
+      const len = row.bloom_filter_chunk.byteLength ?? (row.bloom_filter_chunk as any).length;
+      return acc + len;
+    }, 0);
     const combined = new Uint8Array(totalLength);
 
     // Reconstruct the array buffer
     let offset = 0;
     for (const row of results) {
+      // new Uint8Array accepts both ArrayBuffer and Array<number>
       const chunk = new Uint8Array(row.bloom_filter_chunk);
       combined.set(chunk, offset);
       offset += chunk.length;
