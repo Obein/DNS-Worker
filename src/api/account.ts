@@ -125,7 +125,7 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
       }
       
       const { invalidateSession, readSessionCookie, createBlankSessionCookie } = await import("../lib/auth");
-      await invalidateSession(env.DB, targetSessionId);
+      await invalidateSession(env, targetSessionId);
       await activityLog.record(user.id, 'session_revoked', clientIp, userAgent);
       
       // If revoking current session, clear cookie

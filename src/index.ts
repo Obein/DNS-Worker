@@ -78,7 +78,7 @@ export default {
         const cookieHeader = request.headers.get("Cookie") || "";
         const sessionId = readSessionCookie(cookieHeader);
         if (sessionId) {
-          const { user } = await validateSession(env.DB, sessionId);
+          const { user } = await validateSession(env, sessionId);
           if (user) currentUser = user as any;
         }
 
@@ -124,21 +124,23 @@ export default {
             try {
               const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
               // 记录活跃连接（用于 Debug 页面）
-              await cacheUtils.set(cache, `active_dns:${clientIp}`, profileId, 60);
+              const activeDnsTtl = Number(env.ACTIVE_DNS_CACHE_TTL) || 60;
+              await cacheUtils.set(cache, `active_dns:${clientIp}`, profileId, activeDnsTtl);
 
               // 记录账号/配置活跃时间 (每小时节流一次)
               const nowSec = Math.floor(Date.now() / 1000);
               const lastActiveKey = `active_throttle:${profileId}`;
               const lastActiveThrottled = await cacheUtils.get<number>(cache, lastActiveKey);
 
-              if (!lastActiveThrottled || nowSec - lastActiveThrottled > 3600) {
+              const throttleSec = Number(env.THROTTLE_ACTIVE_SEC) || 3600;
+              if (!lastActiveThrottled || nowSec - lastActiveThrottled > throttleSec) {
                 // 更新 Profile 活跃时间
                 await profileModel.updateLastActive(profileId, nowSec);
                 // 级联更新 Owner 活跃时间
                 const userModel = new UserModel(env.DB);
                 await userModel.updateLastActiveByProfile(profileId, nowSec);
                 // 写入节流标记
-                await cacheUtils.set(cache, lastActiveKey, nowSec, 3600);
+                await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
               }
             } catch (e) {
               console.error(`[Background Task] Error for ${profileId}:`, e);
@@ -192,7 +194,8 @@ export default {
     try {
       const logModel = new LogModel(env.DB);
       const now = Math.floor(Date.now() / 1000);
-      const inactivityThreshold = now - (180 * 24 * 3600); // 180 天
+      const inactivityDays = Number(env.INACTIVITY_THRESHOLD_DAYS) || 180;
+      const inactivityThreshold = now - (inactivityDays * 24 * 3600);
 
       // 清理 180 天无活动的普通用户 (级联删除)
       try {
@@ -219,9 +222,10 @@ export default {
 
       // 限制同步频率：每次同步最久没更新且更新时间超过 24 小时的 10 个 Profile
       try {
-        const oneDayAgo = now - 86400;
+        const syncIntervalSec = Number(env.SYNC_PROFILE_INTERVAL_SEC) || 86400;
+        const cutoffTime = now - syncIntervalSec;
         const profileModel = new ProfileModel(env.DB);
-        const syncTargets = await profileModel.getSyncTargets(oneDayAgo, 10);
+        const syncTargets = await profileModel.getSyncTargets(cutoffTime, 10);
 
         for (const target of syncTargets) {
           // 使用 waitUntil 确保即便同步较慢也不会阻塞 Cron 主进程

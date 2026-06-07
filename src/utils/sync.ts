@@ -16,59 +16,69 @@ import { ProfileModel } from "../models/profile";
  */
 export async function syncProfileLists(profileId: string, env: Env, ctx: ExecutionContext): Promise<void> {
   const profileModel = new ProfileModel(env.DB);
-  const lists = await profileModel.getLists(profileId);
-  
   const now = Math.floor(Date.now() / 1000);
 
-  if (lists.length === 0) {
-    // 如果当前 Profile 没有配置任何订阅列表，则清理旧的布隆过滤器数据
-    await profileModel.clearProfileBlooms(profileId);
-    // 更新配置的同步时间，防止被 Cron 定时任务重复选中
-    await profileModel.updateListUpdatedAt(profileId, now);
-    return;
-  }
-  const allDomains = new Set<string>();
+  try {
+    const lists = await profileModel.getLists(profileId);
+    
+    if (lists.length === 0) {
+      // 如果当前 Profile 没有配置任何订阅列表，则清理旧的布隆过滤器数据
+      await profileModel.clearProfileBlooms(profileId);
+      return;
+    }
+    const allDomains = new Set<string>();
 
-  // 逐个拉取所有列表的最新的规则文件
-  for (const list of lists) {
-    let success = false;
-    try {
-      const response = await fetch(list.url, { signal: AbortSignal.timeout(30000) });
-      if (response.ok) {
-        const domains = parseList(await response.text());
-        if (domains.length > 0) {
-          domains.forEach(d => allDomains.add(d));
-          success = true;
+    // 逐个拉取所有列表的最新的规则文件
+    for (const list of lists) {
+      let success = false;
+      try {
+        const syncTimeoutMs = Number(env.SYNC_TIMEOUT_MS) || 30000;
+        const response = await fetch(list.url, { signal: AbortSignal.timeout(syncTimeoutMs) });
+        if (response.ok) {
+          const domains = parseList(await response.text());
+          if (domains.length > 0) {
+            domains.forEach(d => allDomains.add(d));
+            success = true;
+          }
         }
+      } catch (e) {
+        console.error(`[Sync] Failed to fetch ${list.url}:`, e);
       }
-    } catch (e) {
-      console.error(`[Sync] Failed to fetch ${list.url}:`, e);
+
+      // 单个列表拉取完毕后更新其同步时间和可用状态
+      await profileModel.updateListSyncStatus(list.id, now, success ? 1 : 0);
     }
 
-    // 单个列表拉取完毕后更新其同步时间和可用状态
-    await profileModel.updateListSyncStatus(list.id, now, success ? 1 : 0);
-  }
+    let domainArray = Array.from(allDomains);
 
-  const domainArray = Array.from(allDomains);
+    if (domainArray.length > 0) {
+      // 限制最大容量：D1 行大小限制为 1MB，超过约 580000 个域名会导致布隆过滤器超出 1MB 从而写入失败
+      if (domainArray.length > 500000) {
+        console.warn(`[Sync] Profile ${profileId} has too many domains (${domainArray.length}). Capping at 500,000 to fit D1 1MB limit.`);
+        domainArray = domainArray.slice(0, 500000);
+      }
 
-  if (domainArray.length > 0) {
-    // 根据提取到的所有拦截域名，构建假阳性率为 0.1% 的高精度布隆过滤器
-    const falsePositiveRate = 0.001;
-    const bloom = BloomFilter.create(domainArray.length, falsePositiveRate);
-    domainArray.forEach(d => bloom.add(d));
-    const binary = bloom.toUint8Array();
+      // 根据提取到的所有拦截域名，构建假阳性率为 0.1% 的高精度布隆过滤器
+      const falsePositiveRate = 0.001;
+      const bloom = BloomFilter.create(domainArray.length, falsePositiveRate);
+      domainArray.forEach(d => bloom.add(d));
+      const binary = bloom.toUint8Array();
 
-    // 将序列化后的布隆过滤器二进制数据存储到 D1 数据库中
-    await profileModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
+      // 将序列化后的布隆过滤器二进制数据存储到 D1 数据库中
+      await profileModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
 
-    // 通知缓存层异步清除此 Profile 的相关解析缓存，以使新规则立刻生效
-    if (ctx && typeof ctx.waitUntil === 'function') {
-      ctx.waitUntil(pipelineCache.clear(profileId));
+      // 通知缓存层异步清除此 Profile 的相关解析缓存，以使新规则立刻生效
+      if (ctx && typeof ctx.waitUntil === 'function') {
+        ctx.waitUntil(pipelineCache.clear(profileId));
+      }
+
+      console.log(`[Sync] Profile ${profileId}: ${domainArray.length} domains synced to D1.`);
     }
-
-    console.log(`[Sync] Profile ${profileId}: ${domainArray.length} domains synced to D1.`);
+  } catch (e) {
+    console.error(`[Sync] Critical failure for Profile ${profileId}:`, e);
+  } finally {
+    // 更新整个 Profile 级别的最后同步时间，作为 Cron 定时同步任务的判断依据
+    // 放入 finally 确保无论成功失败都会更新时间，防止单个配置错误导致队列永久阻塞
+    await profileModel.updateListUpdatedAt(profileId, now);
   }
-
-  // 更新整个 Profile 级别的最后同步时间，作为 Cron 定时同步任务的判断依据
-  await profileModel.updateListUpdatedAt(profileId, now);
 }

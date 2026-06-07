@@ -13,6 +13,10 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
   const [sysSettings, setSysSettings] = useState<Record<string, string>>(initialSettings);
   const [sysLoading, setSysLoading] = useState(false);
 
+  React.useEffect(() => {
+    setSysSettings(initialSettings);
+  }, [initialSettings]);
+
   const handleSaveSysSettings = async () => {
     setSysLoading(true);
     try {
