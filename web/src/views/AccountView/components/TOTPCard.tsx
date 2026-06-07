@@ -67,12 +67,21 @@ export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
     setSetupLoading(true);
     setSetupError("");
     try {
+      const rawToken = setupToken.replace(/\s/g, "");
+      const salt = crypto.randomUUID();
+      const msgBuffer = new TextEncoder().encode(rawToken + salt);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
       const res = await fetch("/api/account/totp/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           secret: setupData.secret,
-          token: setupToken.replace(/\s/g, ""),
+          token: hashHex,
+          salt: salt,
         }),
       });
       if (res.ok) {

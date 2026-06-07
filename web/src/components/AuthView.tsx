@@ -253,7 +253,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       if (requiresPassword) body.password = password;
       if (requiresTotp) {
         if (useRecovery) body.recoveryKey = recoveryKey;
-        else body.totpToken = totpToken;
+        else {
+          const salt = crypto.randomUUID();
+          const msgBuffer = new TextEncoder().encode(totpToken + salt);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashHex = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+          body.totpToken = hashHex;
+          body.totpSalt = salt;
+        }
       }
 
       const res = await fetch("/api/auth/login", {

@@ -51,7 +51,7 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
 
     // POST /api/account/password (password change)
     if (pathParts[2] === 'password' && request.method === 'POST') {
-      const { oldPassword, totpToken, newPassword } = await request.json() as any;
+      const { oldPassword, totpToken, totpSalt, newPassword } = await request.json() as any;
       if (!newPassword || newPassword.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
         return new Response("Password format error", { status: 400 });
       }
@@ -62,7 +62,7 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
 
       // 如果提供了 TOTP Token，并且用户启用了 TOTP，则使用 TOTP 校验
       if (totpToken && dbUser.totp_enabled && dbUser.totp_secret) {
-        authenticated = await verifyTOTP(dbUser.totp_secret, totpToken);
+        authenticated = await verifyTOTP(dbUser.totp_secret, totpToken, totpSalt);
         if (!authenticated) {
           await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'invalid_totp' });
           return new Response("Invalid TOTP code", { status: 400 });
@@ -156,10 +156,10 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
 
     // POST /api/account/totp/confirm — verify TOTP code and activate
     if (pathParts[2] === 'totp' && pathParts[3] === 'confirm' && request.method === 'POST') {
-      const { secret, token } = await request.json() as { secret: string; token: string };
+      const { secret, token, salt } = await request.json() as { secret: string; token: string; salt?: string };
       if (!secret || !token) return new Response("Missing secret or token", { status: 400 });
 
-      const isValid = await verifyTOTP(secret, token);
+      const isValid = await verifyTOTP(secret, token, salt);
       if (!isValid) return new Response("Invalid TOTP code", { status: 400 });
 
       // Generate 8 recovery keys, hash them for storage, return plaintext once

@@ -108,15 +108,25 @@ async function computeHOTP(secret: string, counter: number): Promise<string> {
  * @param token - 6-digit OTP string from the user
  * @returns true if the token is valid within the time window
  */
-export async function verifyTOTP(secret: string, token: string): Promise<boolean> {
-  if (!/^\d{6}$/.test(token)) return false;
+export async function verifyTOTP(secret: string, token: string, salt?: string): Promise<boolean> {
+  if (!salt && !/^\d{6}$/.test(token)) return false;
 
   const timeStep = Math.floor(Date.now() / 1000 / 30);
 
   // Check current step and ±1 adjacent steps to tolerate clock skew
   for (const delta of [-1, 0, 1]) {
     const expected = await computeHOTP(secret, timeStep + delta);
-    if (expected === token) return true;
+    
+    if (salt) {
+      const data = new TextEncoder().encode(expected + salt);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashHex = Array.from(new Uint8Array(hashBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      if (hashHex === token) return true;
+    } else {
+      if (expected === token) return true;
+    }
   }
 
   return false;

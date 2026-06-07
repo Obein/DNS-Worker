@@ -117,12 +117,25 @@ export const AccountView: React.FC = () => {
     setPwLoading(true);
     setPwMessage(null);
     try {
+      let tokenPayload = useTotpForPw ? totpToken : undefined;
+      let saltPayload: string | undefined = undefined;
+
+      if (useTotpForPw && totpToken) {
+        saltPayload = crypto.randomUUID();
+        const msgBuffer = new TextEncoder().encode(totpToken + saltPayload);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        tokenPayload = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      }
+
       const res = await fetch("/api/account/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oldPassword: useTotpForPw ? undefined : oldPassword,
-          totpToken: useTotpForPw ? totpToken : undefined,
+          totpToken: tokenPayload,
+          totpSalt: saltPayload,
           newPassword,
         }),
       });

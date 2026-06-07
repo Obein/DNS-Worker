@@ -137,7 +137,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     const user = await userModel.getById(userId);
     if (!user) return new Response("User not found", { status: 404 });
 
-    const { password, totpToken, recoveryKey } = await request.json() as any;
+    const { password, totpToken, totpSalt, recoveryKey } = await request.json() as any;
 
     // 1. 验证密码
     if (!user.totp_skip_password) {
@@ -162,7 +162,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
         await userModel.consumeRecoveryKey(userId, matchIndex, storedHashes);
         await activityLog.record(userId, 'recovery_key_used', clientIp, userAgent, { remaining: storedHashes.length - 1 });
       } else if (totpToken) {
-        const isValid = await verifyTOTP(user.totp_secret || '', totpToken);
+        const isValid = await verifyTOTP(user.totp_secret || '', totpToken, totpSalt);
         if (!isValid) {
           await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent);
           return new Response("Invalid TOTP code", { status: 400 });
