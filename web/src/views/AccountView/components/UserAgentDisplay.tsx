@@ -1,5 +1,8 @@
 import React from "react";
-import { Icon, IconName } from "@blueprintjs/core";
+import {
+  Icon, 
+  type IconName,
+} from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 
 export const getDeviceIcon = (userAgent: string | null): IconName => {
