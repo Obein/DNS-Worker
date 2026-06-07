@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { ACTION_META } from "../constants";
 import type {  ActivityEntry  } from "../types";
+import { UserAgentDisplay } from "./UserAgentDisplay";
 
 export const ActivityLogCard: React.FC = () => {
   const { t } = useTranslation();
@@ -113,19 +114,19 @@ export const ActivityLogCard: React.FC = () => {
                     const meta = getActionMeta(entry.action);
                     return (
                       <tr key={entry.id}>
-                        <td>
+                        <td className="align-middle">
                           <Tag minimal intent={meta.intent} icon={meta.icon as any}>
                             {t(meta.label, entry.action)}
                           </Tag>
                         </td>
-                        <td className="text-xs text-gray-500 whitespace-nowrap">
+                        <td className="text-xs text-gray-500 whitespace-nowrap align-middle">
                           {formatDateTime(new Date(entry.timestamp * 1000))}
                         </td>
-                        <td className="font-mono text-xs text-gray-500">
+                        <td className="font-mono text-xs text-gray-500 align-middle">
                           {entry.ip_address || "—"}
                         </td>
-                        <td className="text-xs text-gray-500 max-w-[200px] truncate" title={entry.user_agent || ""}>
-                          {entry.user_agent || "—"}
+                        <td className="align-middle">
+                          <UserAgentDisplay userAgent={entry.user_agent || null} />
                         </td>
                       </tr>
                     );

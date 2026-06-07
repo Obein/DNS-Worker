@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, Elevation, H4, Tag, Button, Intent, HTMLTable, Spinner, Icon } from "@blueprintjs/core";
+import { Card, Elevation, H4, Tag, Button, Intent, HTMLTable, Spinner } from "@blueprintjs/core";
 import { Monitor, RefreshCw, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import type { SessionInfo } from "../types";
+import { UserAgentDisplay } from "./UserAgentDisplay";
 
 export const ActiveSessionsCard: React.FC = () => {
   const { t } = useTranslation();
@@ -52,25 +53,6 @@ export const ActiveSessionsCard: React.FC = () => {
     }
   };
 
-  const getDeviceIcon = (userAgent: string | null) => {
-    if (!userAgent) return "desktop";
-    const ua = userAgent.toLowerCase();
-    if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) return "mobile-phone";
-    if (ua.includes("tablet") || ua.includes("ipad")) return "mobile-phone";
-    return "desktop";
-  };
-
-  const getBrowserName = (userAgent: string | null) => {
-    if (!userAgent) return t("account.sessions.unknownDevice", "Unknown Device");
-    // Very simple naive parser for display purposes
-    const ua = userAgent;
-    if (ua.includes("Edg/")) return "Edge";
-    if (ua.includes("Chrome/") && !ua.includes("Edg/")) return "Chrome";
-    if (ua.includes("Firefox/")) return "Firefox";
-    if (ua.includes("Safari/") && !ua.includes("Chrome/")) return "Safari";
-    return t("account.sessions.unknownDevice", "Unknown Device");
-  };
-
   return (
     <Card elevation={Elevation.ONE}>
       <div className="flex items-center justify-between mb-4">
@@ -108,20 +90,14 @@ export const ActiveSessionsCard: React.FC = () => {
               {sessions.map((session) => (
                 <tr key={session.id}>
                   <td>
-                    <div className="flex items-center gap-2">
-                      <Icon icon={getDeviceIcon(session.user_agent)} className="text-gray-400" />
-                      <span>{getBrowserName(session.user_agent)}</span>
+                    <div className="flex items-start gap-2">
+                      <UserAgentDisplay userAgent={session.user_agent} />
                       {session.is_current && (
-                        <Tag minimal intent={Intent.SUCCESS} className="ml-2">
+                        <Tag minimal intent={Intent.SUCCESS} className="mt-0.5">
                           {t("account.sessions.current", "Current")}
                         </Tag>
                       )}
                     </div>
-                    {session.user_agent && (
-                      <div className="text-xs text-gray-400 mt-1 max-w-xs truncate" title={session.user_agent}>
-                        {session.user_agent}
-                      </div>
-                    )}
                   </td>
                   <td className="font-mono text-xs text-gray-500 align-middle">
                     {session.ip_address || "—"}
