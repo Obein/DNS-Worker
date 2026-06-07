@@ -1,5 +1,5 @@
 import { D1Database } from "@cloudflare/workers-types";
-import { User } from "../types";
+import { Env, User } from "../types";
 import { SessionModel } from "../models/session";
 
 export interface Session {
@@ -17,7 +17,6 @@ export interface SessionValidationResult {
 }
 
 const SESSION_COOKIE_NAME = "auth_session";
-const SESSION_EXPIRATION_DAYS = 30;
 
 /**
  * Generates a secure random ID of the specified length.
@@ -31,10 +30,11 @@ export function generateId(length: number): string {
 /**
  * Creates a new session in the database and returns it.
  */
-export async function createSession(db: D1Database, userId: string, ipAddress: string | null = null, userAgent: string | null = null): Promise<Session> {
+export async function createSession(env: Env, userId: string, ipAddress: string | null = null, userAgent: string | null = null): Promise<Session> {
   const sessionId = generateId(40);
   const now = Math.floor(Date.now() / 1000);
-  const expiresAt = now + SESSION_EXPIRATION_DAYS * 24 * 60 * 60;
+  const expirationDays = Number(env.SESSION_EXPIRATION_DAYS) || 30;
+  const expiresAt = now + expirationDays * 24 * 60 * 60;
   
   const session: Session = {
     id: sessionId,
@@ -45,7 +45,7 @@ export async function createSession(db: D1Database, userId: string, ipAddress: s
     user_agent: userAgent
   };
 
-  const sessionModel = new SessionModel(db);
+  const sessionModel = new SessionModel(env.DB);
   await sessionModel.createSession(session.id, session.user_id, session.created_at, session.expires_at, session.ip_address, session.user_agent);
 
   return session;
@@ -54,8 +54,8 @@ export async function createSession(db: D1Database, userId: string, ipAddress: s
 /**
  * Validates a session from the database. Deletes it if expired.
  */
-export async function validateSession(db: D1Database, sessionId: string): Promise<SessionValidationResult> {
-  const sessionModel = new SessionModel(db);
+export async function validateSession(env: Env, sessionId: string): Promise<SessionValidationResult> {
+  const sessionModel = new SessionModel(env.DB);
   const result = await sessionModel.getSessionWithUser(sessionId);
 
   if (!result) {
@@ -79,7 +79,7 @@ export async function validateSession(db: D1Database, sessionId: string): Promis
   
   // Check expiration
   if (Math.floor(Date.now() / 1000) >= session.expires_at) {
-    await invalidateSession(db, session.id);
+    await invalidateSession(env, session.id);
     return { session: null, user: null };
   }
 
@@ -87,7 +87,8 @@ export async function validateSession(db: D1Database, sessionId: string): Promis
   const timeRemaining = session.expires_at - Math.floor(Date.now() / 1000);
   const fifteenDaysInSeconds = 15 * 24 * 60 * 60;
   if (timeRemaining < fifteenDaysInSeconds) {
-    session.expires_at = Math.floor(Date.now() / 1000) + SESSION_EXPIRATION_DAYS * 24 * 60 * 60;
+    const expirationDays = Number(env.SESSION_EXPIRATION_DAYS) || 30;
+    session.expires_at = Math.floor(Date.now() / 1000) + expirationDays * 24 * 60 * 60;
     await sessionModel.extendSession(session.id, session.expires_at);
   }
 
@@ -97,16 +98,17 @@ export async function validateSession(db: D1Database, sessionId: string): Promis
 /**
  * Deletes a session from the database.
  */
-export async function invalidateSession(db: D1Database, sessionId: string): Promise<void> {
-  const sessionModel = new SessionModel(db);
+export async function invalidateSession(env: Env, sessionId: string): Promise<void> {
+  const sessionModel = new SessionModel(env.DB);
   await sessionModel.deleteSession(sessionId);
 }
 
 /**
  * Returns a serialized Set-Cookie header string for a new session.
  */
-export function createSessionCookie(sessionId: string): string {
-  const maxAge = SESSION_EXPIRATION_DAYS * 24 * 60 * 60;
+export function createSessionCookie(sessionId: string, env: Env): string {
+  const expirationDays = Number(env.SESSION_EXPIRATION_DAYS) || 30;
+  const maxAge = expirationDays * 24 * 60 * 60;
   return `${SESSION_COOKIE_NAME}=${sessionId}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}; Secure`;
 }
 
@@ -129,16 +131,16 @@ export function readSessionCookie(cookieHeader: string | null): string | null {
 // ─── Pre-auth Session (short-lived, bridges username step → password/TOTP step) ───
 
 const PREAUTH_COOKIE_NAME = 'preauth_session';
-const PREAUTH_TTL_SECONDS = 5 * 60; // 5 minutes
 
 /**
  * Creates a short-lived pre-auth session after Step 1 (username + Turnstile).
  * @returns The pre-auth session token string
  */
-export async function createPreauthSession(db: D1Database, userId: string): Promise<string> {
+export async function createPreauthSession(env: Env, userId: string): Promise<string> {
   const token = generateId(40);
-  const expiresAt = Math.floor(Date.now() / 1000) + PREAUTH_TTL_SECONDS;
-  const sessionModel = new SessionModel(db);
+  const preauthTtl = Number(env.PREAUTH_TTL_SECONDS) || 300;
+  const expiresAt = Math.floor(Date.now() / 1000) + preauthTtl;
+  const sessionModel = new SessionModel(env.DB);
   await sessionModel.createPendingTotpSession(token, userId, expiresAt);
   return token;
 }
@@ -147,8 +149,8 @@ export async function createPreauthSession(db: D1Database, userId: string): Prom
  * Validates a pre-auth token and returns the associated userId, or null if invalid/expired.
  * Does NOT delete the session — call invalidatePreauthSession after successful verification.
  */
-export async function validatePreauthSession(db: D1Database, token: string): Promise<string | null> {
-  const sessionModel = new SessionModel(db);
+export async function validatePreauthSession(env: Env, token: string): Promise<string | null> {
+  const sessionModel = new SessionModel(env.DB);
   const row = await sessionModel.getPendingTotpSession(token);
 
   if (!row) return null;
@@ -162,14 +164,15 @@ export async function validatePreauthSession(db: D1Database, token: string): Pro
 /**
  * Deletes a pre-auth session after it has been used (successfully or failed terminally).
  */
-export async function invalidatePreauthSession(db: D1Database, token: string): Promise<void> {
-  const sessionModel = new SessionModel(db);
+export async function invalidatePreauthSession(env: Env, token: string): Promise<void> {
+  const sessionModel = new SessionModel(env.DB);
   await sessionModel.deletePendingTotpSession(token);
 }
 
 /** Returns a Set-Cookie string for the pre-auth token. */
-export function createPreauthCookie(token: string): string {
-  return `${PREAUTH_COOKIE_NAME}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${PREAUTH_TTL_SECONDS}; Secure`;
+export function createPreauthCookie(token: string, env: Env): string {
+  const preauthTtl = Number(env.PREAUTH_TTL_SECONDS) || 300;
+  return `${PREAUTH_COOKIE_NAME}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${preauthTtl}; Secure`;
 }
 
 /** Returns a Set-Cookie string to clear the pre-auth cookie. */

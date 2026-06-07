@@ -33,7 +33,8 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
   for (const list of lists) {
     let success = false;
     try {
-      const response = await fetch(list.url, { signal: AbortSignal.timeout(30000) });
+      const syncTimeoutMs = Number(env.SYNC_TIMEOUT_MS) || 30000;
+      const response = await fetch(list.url, { signal: AbortSignal.timeout(syncTimeoutMs) });
       if (response.ok) {
         const domains = parseList(await response.text());
         if (domains.length > 0) {

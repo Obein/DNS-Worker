@@ -3,6 +3,13 @@ import { D1Database, ExecutionContext as CFExecutionContext } from "@cloudflare/
 export interface Env {
   DB: D1Database;
   ASSETS: any;
+  SESSION_EXPIRATION_DAYS?: string | number;
+  PREAUTH_TTL_SECONDS?: string | number;
+  BLOOM_MEM_TTL?: string | number;
+  SYNC_TIMEOUT_MS?: string | number;
+  INACTIVITY_THRESHOLD_DAYS?: string | number;
+  THROTTLE_ACTIVE_SEC?: string | number;
+  SYNC_PROFILE_INTERVAL_SEC?: string | number;
   TURNSTILE_SECRET_KEY?: string;
   [key: string]: any;
 }
