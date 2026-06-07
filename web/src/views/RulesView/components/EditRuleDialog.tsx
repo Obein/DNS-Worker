@@ -85,24 +85,23 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEdi
       </DialogBody>
       <DialogFooter
         actions={
-          <div className="flex w-full justify-between">
-            <Button
-              icon={<Trash2 size={14} />}
-              intent={Intent.DANGER}
-              text={t("rules.delete", "Delete")}
-              onClick={() => {
-                if (editRule) deleteRule(editRule.id);
-              }}
-            />
-            <div className="flex gap-2">
-              <Button onClick={cancelEdit}>{t("rules.cancel", "Cancel")}</Button>
-              <Button intent={Intent.PRIMARY} onClick={saveEditRule}>
-                {t("rules.saveChanges", "Save Changes")}
-              </Button>
-            </div>
+          <div className="flex gap-2">
+            <Button onClick={cancelEdit}>{t("rules.cancel", "Cancel")}</Button>
+            <Button intent={Intent.PRIMARY} onClick={saveEditRule}>
+              {t("rules.saveChanges", "Save Changes")}
+            </Button>
           </div>
         }
-      />
+      >
+        <Button
+          icon={<Trash2 size={14} />}
+          intent={Intent.DANGER}
+          text={t("rules.delete", "Delete")}
+          onClick={() => {
+            if (editRule) deleteRule(editRule.id);
+          }}
+        />
+      </DialogFooter>
     </Dialog>
   );
 };
