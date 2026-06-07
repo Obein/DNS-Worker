@@ -45,8 +45,12 @@ export const pipelineResolver = {
         await writer.write(tcpQuery);
         writer.releaseLock();
 
-        // 读取响应长度
-        const result = await reader.read();
+        // 读取响应长度，添加 5 秒超时
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error("TCP Upstream Timeout")), 5000)
+        );
+        const result = await Promise.race([reader.read(), timeoutPromise]);
+
         if (!result.value) throw new Error("Socket closed");
         
         let responseBuffer = result.value;
@@ -59,13 +63,23 @@ export const pipelineResolver = {
         upstreamLatency = Date.now() - startFetch;
       } else {
         // DoH 处理
-        const targetUrl = new URL(upstreamUrl);
-        targetUrl.searchParams.set('dns', btoa(String.fromCharCode(...query.raw)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, ''));
-        if (ecs) targetUrl.searchParams.set('edns_client_subnet', ecs);
+        let finalUrl = upstreamUrl;
+        if (ecs) {
+          const targetUrl = new URL(upstreamUrl);
+          targetUrl.searchParams.set('edns_client_subnet', ecs);
+          finalUrl = targetUrl.toString();
+        }
 
-        const response = await fetch(targetUrl.toString(), {
-          method: "GET",
-          headers: { "Accept": "application/dns-message", "User-Agent": "Obex-DNS/1.0" }
+        const response = await fetch(finalUrl, {
+          method: "POST",
+          headers: { 
+            "Accept": "application/dns-message",
+            "Content-Type": "application/dns-message", 
+            "User-Agent": "Obex-DNS/1.0",
+            "Connection": "keep-alive"
+          },
+          body: query.raw,
+          signal: AbortSignal.timeout(5000)
         });
 
         if (!response.ok) throw new Error(`Upstream HTTP ${response.status}`);

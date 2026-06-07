@@ -95,6 +95,52 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
       return new Response(JSON.stringify(entries), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // GET /api/account/sessions (active sessions)
+    if (pathParts[2] === 'sessions' && !pathParts[3] && request.method === 'GET') {
+      const { SessionModel } = await import("../models/session");
+      const sessionModel = new SessionModel(env.DB);
+      const sessions = await sessionModel.getSessionsByUser(user.id);
+      
+      const { readSessionCookie } = await import("../lib/auth");
+      const currentSessionId = readSessionCookie(request.headers.get("Cookie"));
+      
+      const sessionData = sessions.map(s => ({
+        ...s,
+        is_current: s.id === currentSessionId
+      }));
+      
+      return new Response(JSON.stringify(sessionData), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // DELETE /api/account/sessions/:id (revoke session)
+    if (pathParts[2] === 'sessions' && pathParts[3] && request.method === 'DELETE') {
+      const targetSessionId = pathParts[3];
+      const { SessionModel } = await import("../models/session");
+      const sessionModel = new SessionModel(env.DB);
+      
+      // Ensure the session belongs to the user
+      const sessionUserId = await sessionModel.getSessionUserId(targetSessionId);
+      if (sessionUserId !== user.id) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      
+      const { invalidateSession, readSessionCookie, createBlankSessionCookie } = await import("../lib/auth");
+      await invalidateSession(env, targetSessionId);
+      await activityLog.record(user.id, 'session_revoked', clientIp, userAgent);
+      
+      // If revoking current session, clear cookie
+      const currentSessionId = readSessionCookie(request.headers.get("Cookie"));
+      if (targetSessionId === currentSessionId) {
+        return new Response(JSON.stringify({ success: true, is_current: true }), {
+          headers: { "Set-Cookie": createBlankSessionCookie(), "Content-Type": "application/json" }
+        });
+      }
+      
+      return new Response(JSON.stringify({ success: true, is_current: false }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // ─── TOTP 管理接口 (/api/account/totp/...) ───
 
     // GET /api/account/totp/setup — generate new TOTP secret (not yet saved)

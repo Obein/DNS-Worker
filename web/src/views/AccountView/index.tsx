@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import type {  UserInfo  } from "./types";
 import { TOTPCard } from "./components/TOTPCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
+import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
 import { UserManagementCard } from "./components/UserManagementCard";
 import { SystemSettingsCard } from "./components/SystemSettingsCard";
 import { DangerZoneCard } from "./components/DangerZoneCard";
@@ -283,6 +284,9 @@ export const AccountView: React.FC = () => {
 
       {/* TOTP 2FA */}
       {me && <TOTPCard user={me} onRefresh={fetchMe} />}
+
+      {/* Active Sessions */}
+      {me && <ActiveSessionsCard />}
 
       {/* Activity Log */}
       {me && <ActivityLogCard />}

@@ -17,3 +17,12 @@ export interface ActivityEntry {
   timestamp: number;
   extra: string | null;
 }
+
+export interface SessionInfo {
+  id: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: number;
+  expires_at: number;
+  is_current: boolean;
+}

@@ -1,6 +1,6 @@
 import React from "react";
-import { Dialog, Button } from "@blueprintjs/core";
-import { Copy, ExternalLink } from "lucide-react";
+import { Dialog, Button, Intent } from "@blueprintjs/core";
+import { Copy, ExternalLink, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import type {  FilterList  } from "../types";
@@ -9,9 +9,10 @@ export interface ListDetailsDialogProps {
   selectedList: FilterList | null;
   onClose: () => void;
   onCopy: (url: string) => void;
+  onDelete: (id: number) => void;
 }
 
-export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({ selectedList, onClose, onCopy }) => {
+export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({ selectedList, onClose, onCopy, onDelete }) => {
   const { t } = useTranslation();
 
   return (
@@ -49,6 +50,17 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({ selectedLi
             />
           </div>
         </div>
+      </div>
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between">
+        <Button
+          icon={<Trash2 size={14} />}
+          intent={Intent.DANGER}
+          text={t("rules.delete", "Delete")}
+          onClick={() => {
+            if (selectedList) onDelete(selectedList.id);
+          }}
+        />
+        <Button onClick={onClose} text={t("rules.close", "Close")} />
       </div>
     </Dialog>
   );

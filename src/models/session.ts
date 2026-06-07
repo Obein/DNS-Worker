@@ -10,7 +10,7 @@ export class SessionModel {
 
   async getSessionWithUser(sessionId: string): Promise<any> {
     return await this.db.prepare(`
-      SELECT sessions.id as session_id, sessions.user_id, sessions.expires_at,
+      SELECT sessions.id as session_id, sessions.user_id, sessions.created_at, sessions.expires_at, sessions.ip_address, sessions.user_agent,
              users.id as u_id, users.username, users.role
       FROM sessions
       INNER JOIN users ON sessions.user_id = users.id
@@ -18,10 +18,20 @@ export class SessionModel {
     `).bind(sessionId).first<any>();
   }
 
-  async createSession(id: string, userId: string, expiresAt: number): Promise<boolean> {
-    const result = await this.db.prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
-      .bind(id, userId, expiresAt).run();
+  async createSession(id: string, userId: string, createdAt: number, expiresAt: number, ipAddress: string | null = null, userAgent: string | null = null): Promise<boolean> {
+    const result = await this.db.prepare("INSERT INTO sessions (id, user_id, created_at, expires_at, ip_address, user_agent) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(id, userId, createdAt, expiresAt, ipAddress, userAgent).run();
     return result.success;
+  }
+
+  async getSessionsByUser(userId: string): Promise<any[]> {
+    const { results } = await this.db.prepare(`
+      SELECT id, ip_address, user_agent, created_at, expires_at
+      FROM sessions
+      WHERE user_id = ?
+      ORDER BY expires_at DESC
+    `).bind(userId).all();
+    return results;
   }
 
   async extendSession(id: string, expiresAt: number): Promise<boolean> {

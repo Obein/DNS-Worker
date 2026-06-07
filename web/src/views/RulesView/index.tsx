@@ -122,6 +122,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    setEditRule(null);
     fetchRules();
   };
 
@@ -141,7 +142,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       {rules.length === 0 ? (
         <Callout title={t("rules.noRulesTitle")}>{t("rules.noRulesDesc")}</Callout>
       ) : (
-        <RulesTable rules={rules} startEdit={startEdit} deleteRule={deleteRule} getBlockDetail={getBlockDetail} />
+        <RulesTable rules={rules} startEdit={startEdit} getBlockDetail={getBlockDetail} />
       )}
 
       <EditRuleDialog
@@ -149,6 +150,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
         setEditRule={setEditRule}
         saveEditRule={saveEditRule}
         cancelEdit={cancelEdit}
+        deleteRule={deleteRule}
       />
     </div>
   );

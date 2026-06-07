@@ -75,8 +75,8 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     try {
       const role = (await userModel.isEmpty()) ? 'admin' : 'user';
       await userModel.create({ id: userId, username, passwordHash: hashedPassword, role });
-      const session = await createSession(env.DB, userId);
-      const sessionCookie = createSessionCookie(session.id);
+      const session = await createSession(env, userId, clientIp, userAgent);
+      const sessionCookie = createSessionCookie(session.id, env);
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Set-Cookie": sessionCookie, "Content-Type": "application/json" }
       });
@@ -108,8 +108,8 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     }
 
     // 签发 preauth session
-    const preauthToken = await createPreauthSession(env.DB, user.id);
-    const preauthCookie = createPreauthCookie(preauthToken);
+    const preauthToken = await createPreauthSession(env, user.id);
+    const preauthCookie = createPreauthCookie(preauthToken, env);
 
     const requires_password = !user.totp_skip_password;
     const requires_totp = !!user.totp_enabled;
@@ -131,7 +131,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     const preauthToken = readPreauthCookie(request.headers.get("Cookie"));
     if (!preauthToken) return new Response("Pre-auth session missing or expired", { status: 401 });
 
-    const userId = await validatePreauthSession(env.DB, preauthToken);
+    const userId = await validatePreauthSession(env, preauthToken);
     if (!userId) return new Response("Session expired, please start over", { status: 401 });
 
     const user = await userModel.getById(userId);
@@ -174,13 +174,13 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     }
 
     // 所有验证通过，颁发正式 Session
-    await invalidatePreauthSession(env.DB, preauthToken);
+    await invalidatePreauthSession(env, preauthToken);
     await cacheUtils.delete(cache, `ratelimit:login_fail:${clientIp}`);
     await activityLog.record(userId, 'login_success', clientIp, userAgent);
 
-    const session = await createSession(env.DB, userId);
+    const session = await createSession(env, userId, clientIp, userAgent);
     const headers = new Headers({ "Content-Type": "application/json" });
-    headers.append("Set-Cookie", createSessionCookie(session.id));
+    headers.append("Set-Cookie", createSessionCookie(session.id, env));
     headers.append("Set-Cookie", clearPreauthCookie());
     
     return new Response(JSON.stringify({ success: true }), { headers });
@@ -191,7 +191,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     if (sessionId) {
       const sessionModel = new SessionModel(env.DB);
       const userId = await sessionModel.getSessionUserId(sessionId);
-      await invalidateSession(env.DB, sessionId);
+      await invalidateSession(env, sessionId);
       if (userId) {
         await activityLog.record(userId, 'logout', clientIp, userAgent);
       }

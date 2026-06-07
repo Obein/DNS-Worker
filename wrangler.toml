@@ -40,8 +40,24 @@ enabled = true
 head_sampling_rate = 0.05
 
 [vars]
-SUBSTITUTE_DOMAIN="time.is" # (Used to resolve DoH domains)
+# Used to resolve DoH domains
+SUBSTITUTE_DOMAIN="www.okx.com"
 IP_REGION_APAC='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area":"SG"},{"ip":"104.18.47.174","area":"HK"},{"ip":"104.19.50.3","area":"HK"}]'
 IP_REGION_NAE='[]'
 IP_REGION_NAW='[]'
 IP_REGION_EU='[]'
+# Time constants
+# Session duration for authenticated users (in days)
+SESSION_EXPIRATION_DAYS=30
+# TTL for temporary pre-auth session during login (in seconds)
+PREAUTH_TTL_SECONDS=300
+# In-memory retention time for profile bloom filters (in milliseconds)
+BLOOM_MEM_TTL=600000
+# Timeout threshold when downloading upstream blocklists (in milliseconds)
+SYNC_TIMEOUT_MS=30000
+# Number of days of inactivity before an account is cleared by cron jobs
+INACTIVITY_THRESHOLD_DAYS=180
+# Throttle interval for updating profile "last active" status (in seconds)
+THROTTLE_ACTIVE_SEC=3600
+# Minimum interval between automated blocklist profile syncs (in seconds)
+SYNC_PROFILE_INTERVAL_SEC=86400

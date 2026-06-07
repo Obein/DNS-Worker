@@ -4,7 +4,7 @@ import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
 import { configCache, bloomMemoryMap } from "./cache";
 
-const BLOOM_MEM_TTL = 600000; // 内存保留 10 分钟
+
 
 export const pipelineConfig = {
   async load(context: Context, track: (name: string) => void): Promise<{ settings: ProfileSettings; rules: Rule[]; bloom?: BloomFilter } | null> {
@@ -14,7 +14,8 @@ export const pipelineConfig = {
     const inMem = bloomMemoryMap.get(profileId);
     const cachedConfig = configCache.get(profileId);
     
-    if (cachedConfig && inMem && (Date.now() - inMem.ts < BLOOM_MEM_TTL)) {
+    const bloomMemTtl = Number(env.BLOOM_MEM_TTL) || 600000;
+    if (cachedConfig && inMem && (Date.now() - inMem.ts < bloomMemTtl)) {
       track('load_config_l1_mem');
       return { ...cachedConfig, bloom: inMem.bloom };
     }
