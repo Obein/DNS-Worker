@@ -18,7 +18,9 @@ export const pipelineResolver = {
     let ecs: string | undefined = "";
     if (settings.ecs?.enabled) {
       const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
-      ecs = settings.ecs.use_client_ip ? `${clientIp}/${clientIp.includes(':') ? 48 : 24}` : (settings.ecs.ipv4_cidr || settings.ecs.ipv6_cidr);
+      ecs = settings.ecs.use_client_ip 
+        ? `${clientIp}/${clientIp.includes(':') ? 48 : 24}` 
+        : (query.type === 'AAAA' ? (settings.ecs.ipv6_cidr || settings.ecs.ipv4_cidr) : (settings.ecs.ipv4_cidr || settings.ecs.ipv6_cidr));
     }
 
     try {
