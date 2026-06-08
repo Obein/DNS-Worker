@@ -7,7 +7,9 @@ import {
   InputGroup,
   H3,
   Intent,
-  Callout
+  Callout,
+  Tooltip,
+  Position
 } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import {
@@ -138,6 +140,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [error, setError] = useState("");
   const [isPanelVisible, setIsPanelVisible] = useState(true);
   
+  const [usernameFocused, setUsernameFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  
   const { t } = useTranslation();
 
   // 动态配置状态
@@ -216,7 +221,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatErrorUsername")); return; }
+    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatTipUsername")); return; }
     if (isTurnstileEnabled && authConfig?.turnstile_site_key && !turnstileToken) { setError(t("auth.turnstileRequired")); return; }
 
     setLoading(true);
@@ -253,7 +258,16 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       if (requiresPassword) body.password = password;
       if (requiresTotp) {
         if (useRecovery) body.recoveryKey = recoveryKey;
-        else body.totpToken = totpToken;
+        else {
+          const salt = crypto.randomUUID();
+          const msgBuffer = new TextEncoder().encode(totpToken + salt);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashHex = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+          body.totpTokenHash = hashHex;
+          body.totpSalt = salt;
+        }
       }
 
       const res = await fetch("/api/auth/login", {
@@ -273,8 +287,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
 
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatErrorUsername")); return; }
-    if (password.length < 8 || password.length > 100 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) { setError(t("auth.formatErrorPassword")); return; }
+    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) { setError(t("auth.formatTipUsername")); return; }
+    if (password.length < 8 || password.length > 100 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) { setError(t("auth.formatTipPassword")); return; }
     if (isTurnstileEnabled && authConfig?.turnstile_site_key && !turnstileToken) { setError(t("auth.turnstileRequired")); return; }
 
     setLoading(true);
@@ -348,12 +362,33 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           {(loginStep === 1 || !isLogin) && (
             <form onSubmit={isLogin ? handleStep1Submit : handleSignupSubmit} className="space-y-4">
               <FormGroup label={t("auth.username")} labelFor="username">
-                <InputGroup id="username" leftIcon="user" placeholder={t("auth.usernamePlaceholder")} size="large" className="rounded-xl" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                <Tooltip
+                  content={t("auth.formatTipUsername")}
+                  isOpen={usernameFocused && !isLogin}
+                  disabled={isLogin}
+                  position={Position.TOP}
+                  intent={Intent.PRIMARY}
+                  className="w-full"
+                >
+                  <div className="w-full block">
+                    <InputGroup id="username" leftIcon="user" placeholder={t("auth.usernamePlaceholder")} size="large" className="rounded-xl w-full" value={username} onChange={(e) => setUsername(e.target.value)} onFocus={() => setUsernameFocused(true)} onBlur={() => setUsernameFocused(false)} required />
+                  </div>
+                </Tooltip>
               </FormGroup>
 
               {!isLogin && (
                 <FormGroup label={t("auth.password")} labelFor="password">
-                  <InputGroup id="password" leftIcon="lock" placeholder={t("auth.passwordPlaceholder")} type="password" size="large" className="rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <Tooltip
+                    content={t("auth.formatTipPassword")}
+                    isOpen={passwordFocused}
+                    position={Position.TOP}
+                    intent={Intent.PRIMARY}
+                    className="w-full"
+                  >
+                    <div className="w-full block">
+                      <InputGroup id="password" leftIcon="lock" placeholder={t("auth.passwordPlaceholder")} type="password" size="large" className="rounded-xl w-full" value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} required />
+                    </div>
+                  </Tooltip>
                 </FormGroup>
               )}
 

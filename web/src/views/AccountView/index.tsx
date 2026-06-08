@@ -11,6 +11,8 @@ import {
   Callout,
   ButtonGroup,
   Divider,
+  Tooltip,
+  Position,
 } from "@blueprintjs/core";
 import { User, ShieldCheck, Key, Edit2, Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -32,9 +34,11 @@ export const AccountView: React.FC = () => {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editUsername, setEditUsername] = useState("");
   const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameFocused, setUsernameFocused] = useState(false);
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newPasswordFocused, setNewPasswordFocused] = useState(false);
   const [useTotpForPw, setUseTotpForPw] = useState(false);
   const [totpToken, setTotpToken] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
@@ -85,7 +89,7 @@ export const AccountView: React.FC = () => {
       return;
     }
     if (!/^[a-zA-Z0-9]{5,15}$/.test(editUsername)) {
-      alert(t("account.formatErrorUsername"));
+      alert(t("account.formatTipUsername"));
       return;
     }
     setUsernameLoading(true);
@@ -111,18 +115,31 @@ export const AccountView: React.FC = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
-      setPwMessage({ text: t("account.formatErrorPassword"), intent: Intent.DANGER });
+      setPwMessage({ text: t("account.formatTipPassword"), intent: Intent.DANGER });
       return;
     }
     setPwLoading(true);
     setPwMessage(null);
     try {
+      let tokenPayload = useTotpForPw ? totpToken : undefined;
+      let saltPayload: string | undefined = undefined;
+
+      if (useTotpForPw && totpToken) {
+        saltPayload = crypto.randomUUID();
+        const msgBuffer = new TextEncoder().encode(totpToken + saltPayload);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        tokenPayload = Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+      }
+
       const res = await fetch("/api/account/password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           oldPassword: useTotpForPw ? undefined : oldPassword,
-          totpToken: useTotpForPw ? totpToken : undefined,
+          totpTokenHash: tokenPayload,
+          totpSalt: saltPayload,
           newPassword,
         }),
       });
@@ -178,12 +195,24 @@ export const AccountView: React.FC = () => {
               <div className="flex gap-2">
                 {isEditingUsername ? (
                   <>
-                    <InputGroup
-                      fill
-                      value={editUsername}
-                      onChange={(e) => setEditUsername(e.target.value)}
-                      autoFocus
-                    />
+                    <Tooltip
+                      content={t("account.formatTipUsername")}
+                      isOpen={usernameFocused}
+                      position={Position.TOP}
+                      intent={Intent.PRIMARY}
+                      className="w-full"
+                    >
+                      <div className="w-full block">
+                        <InputGroup
+                          fill
+                          value={editUsername}
+                          onChange={(e) => setEditUsername(e.target.value)}
+                          onFocus={() => setUsernameFocused(true)}
+                          onBlur={() => setUsernameFocused(false)}
+                          autoFocus
+                        />
+                      </div>
+                    </Tooltip>
                     <ButtonGroup>
                       <Button
                         icon={<Check size={16} />}
@@ -269,13 +298,25 @@ export const AccountView: React.FC = () => {
               </FormGroup>
             )}
             <FormGroup label={t("account.newPassword")}>
-              <InputGroup
-                leftIcon="lock"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
+              <Tooltip
+                content={t("account.formatTipPassword")}
+                isOpen={newPasswordFocused}
+                position={Position.TOP}
+                intent={Intent.PRIMARY}
+                className="w-full"
+              >
+                <div className="w-full block">
+                  <InputGroup
+                    leftIcon="lock"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    onFocus={() => setNewPasswordFocused(true)}
+                    onBlur={() => setNewPasswordFocused(false)}
+                    required
+                  />
+                </div>
+              </Tooltip>
             </FormGroup>
             <Button fill intent={Intent.WARNING} type="submit" loading={pwLoading} text={t("account.updatePassword")} />
           </form>
