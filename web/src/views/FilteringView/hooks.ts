@@ -7,7 +7,7 @@ export const usePresetLists = () => {
     const config = (window as any).OBEX_CONFIG?.filters;
     if (config && Array.isArray(config)) {
       return config.map((item: any) => ({
-        label: item.i18nKey ? t(item.i18nKey) : item.label,
+        label: t(item.label),
         url: item.url
       }));
     }

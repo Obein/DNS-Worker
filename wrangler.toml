@@ -82,35 +82,35 @@ SYNC_PROFILE_INTERVAL_SEC=86400
 PRESET_UPSTREAMS = """
 [
   {
-    "i18nKey": "settings.presetCloudflareSecurity",
+    "label": "settings.presetCloudflareSecurity",
     "url": "https://security.cloudflare-dns.com/dns-query"
   },
   {
-    "i18nKey": "settings.presetCloudflareFamilies",
+    "label": "settings.presetCloudflareFamilies",
     "url": "https://family.cloudflare-dns.com/dns-query"
   },
   {
-    "i18nKey": "settings.presetQuad9",
+    "label": "settings.presetQuad9",
     "url": "https://dns.quad9.net/dns-query"
   },
   {
-    "i18nKey": "settings.presetQuad9Ecs",
+    "label": "settings.presetQuad9Ecs",
     "url": "https://dns11.quad9.net/dns-query"
   },
   {
-    "i18nKey": "settings.presetControlDFree",
+    "label": "settings.presetControlDFree",
     "url": "https://freedns.controld.com/no-ads-malware-typo"
   },
   {
-    "i18nKey": "settings.presetControlDUncensored",
+    "label": "settings.presetControlDUncensored",
     "url": "https://freedns.controld.com/uncensored"
   },
   {
-    "i18nKey": "settings.presetAdGuard",
+    "label": "settings.presetAdGuard",
     "url": "https://dns.adguard-dns.com/dns-query"
   },
   {
-    "i18nKey": "settings.presetAdGuardFamily",
+    "label": "settings.presetAdGuardFamily",
     "url": "https://family.adguard-dns.com/dns-query"
   },
   {
@@ -136,19 +136,19 @@ PRESET_UPSTREAMS = """
 PRESET_EXTERNAL_FILTERS = """
 [
   {
-    "i18nKey": "filtering.presetOisdBig",
+    "label": "filtering.presetOisdBig",
     "url": "https://big.oisd.nl"
   },
   {
-    "i18nKey": "filtering.presetOisdNsfw",
+    "label": "filtering.presetOisdNsfw",
     "url": "https://nsfw.oisd.nl"
   },
   {
-    "i18nKey": "filtering.presetAdGuard",
+    "label": "filtering.presetAdGuard",
     "url": "https://adguardteam.github.io/AdguardFilters/BaseFilter/sections/adservers.txt"
   },
   {
-    "i18nKey": "filtering.presetStevenBlack",
+    "label": "filtering.presetStevenBlack",
     "url": "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
   }
 ]
