@@ -65,11 +65,17 @@ export const pipelineFilter = {
     }
     track('local_rules');
 
-    // 外部列表过滤 (精确匹配)
+    // 外部列表过滤 (精确匹配 + 子域名匹配)
     if (bloom) {
-      if (bloom.test(domainLower)) {
-        track('bloom_check');
-        return pipelineResolver.block(request, query, context, settings, "BLOCK", `External List: ${domainLower}`);
+      let currentDomain = domainLower;
+      while (currentDomain) {
+        if (bloom.test(currentDomain)) {
+          track('bloom_check');
+          return pipelineResolver.block(request, query, context, settings, "BLOCK", `External List: ${currentDomain}`);
+        }
+        const firstDot = currentDomain.indexOf('.');
+        if (firstDot === -1) break;
+        currentDomain = currentDomain.substring(firstDot + 1);
       }
       track('bloom_check');
     }
