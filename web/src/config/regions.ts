@@ -12,29 +12,16 @@ export interface RegionConfigItem {
  * 需在 vite.config.ts 中配置 envPrefix 包含 'IP_REGION_'
  * 
  * .env 文件格式示例:
- * IP_REGION_APAC='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area":"SG"}]'
- * IP_REGION_NAE='[{"ip":"1.2.3.4","area":"US"}]'
+ * IP_REGION_CN='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area":"SG"}]'
  */
 export const getPresetRegions = (t: TFunction): Record<string, RegionConfigItem> => {
   const regions: Record<string, RegionConfigItem> = {};
 
   // 定义已知地区的元数据 (Label 和关联国家)
   const regionMeta: Record<string, { label: string; countries: string[] }> = {
-    APAC: {
-      label: t("common.apac", "Asia Pacific") + " (" + t("common.HongKong") + "/" + t("common.Singapore") + "/" + t("common.Tokyo") + ")",
-      countries: ["HK", "SG", "JP", "CN", "TW", "KR", "MY", "TH"],
-    },
-    NAE: {
-      label: t("common.nae", "North America East"),
-      countries: ["US", "CA"],
-    },
-    NAW: {
-      label: t("common.naw", "North America West"),
-      countries: ["US", "CA"],
-    },
-    EU: {
-      label: t("common.eu", "Europe"),
-      countries: ["GB", "FR", "DE", "NL", "IT", "ES"],
+    CN: {
+      label: t("common.mainlandChina", "Mainland China"),
+      countries: ["CN"],
     }
   };
 
@@ -55,10 +42,7 @@ export const getPresetRegions = (t: TFunction): Record<string, RegionConfigItem>
   // 显式获取地区环境变量
   // 注意：此处不再硬编码默认 IP，完全由 env 驱动
   const envConfigs: Record<string, string | undefined> = {
-    APAC: import.meta.env.IP_REGION_APAC,
-    NAE: import.meta.env.IP_REGION_NAE,
-    NAW: import.meta.env.IP_REGION_NAW,
-    EU: import.meta.env.IP_REGION_EU,
+    CN: import.meta.env.IP_REGION_CN,
   };
 
   Object.entries(envConfigs).forEach(([key, envVal]) => {

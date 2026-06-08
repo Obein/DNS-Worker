@@ -172,7 +172,7 @@ export const pipelineResolver = {
             
             for (const a of parsedTargetAnswers) {
               if (a.type === query.type || a.type === 'CNAME') {
-                records.push({ name: customAnswer, type: a.type, value: a.data, ttl: a.ttl });
+                records.push({ name: a.name, type: a.type, value: a.data, ttl: a.ttl });
               }
             }
             answer = buildResponseMulti(query.raw, records, 0);

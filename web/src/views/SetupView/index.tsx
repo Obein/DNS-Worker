@@ -19,7 +19,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const [isVerifying, setIsVerifying] = useState(false);
   const [substituteDomainIp, setSubstituteDomainIp] = useState<string | null>(null);
   const [substituteDomainIpv6, setSubstituteDomainIpv6] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string>("APAC");
+  const [selectedRegion, setSelectedRegion] = useState<string>("CN");
   const [showIp, setShowIp] = useState(false);
   const [serverRegions, setServerRegions] = useState<Record<string, RegionConfigItem>>({});
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; profileMatch: boolean } | null>(null);
@@ -89,11 +89,16 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
       }
 
       if (debugData.country) {
+        let matched = false;
         for (const [key, config] of Object.entries(presetRegions)) {
           if (config.countries.includes(debugData.country)) {
             setSelectedRegion(key);
+            matched = true;
             break;
           }
+        }
+        if (!matched) {
+          setSelectedRegion("Other");
         }
       }
 

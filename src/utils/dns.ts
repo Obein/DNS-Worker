@@ -179,12 +179,12 @@ export function buildDNSQuery(name: string, type: string): Uint8Array {
   return raw;
 }
 
-export function parseDNSAnswer(raw: Uint8Array): { type: string; data: string; ttl: number }[] {
+export function parseDNSAnswer(raw: Uint8Array): { name: string; type: string; data: string; ttl: number }[] {
   if (raw.length < 12) return [];
   const ansCount = (raw[6] << 8) | raw[7];
   if (ansCount === 0) return [];
 
-  const results: { type: string; data: string; ttl: number }[] = [];
+  const results: { name: string; type: string; data: string; ttl: number }[] = [];
   let offset = 12;
 
   const qCount = (raw[4] << 8) | raw[5];
@@ -194,7 +194,7 @@ export function parseDNSAnswer(raw: Uint8Array): { type: string; data: string; t
   }
 
   for (let i = 0; i < ansCount; i++) {
-    const { read: nameRead } = decodeName(raw, offset);
+    const { name, read: nameRead } = decodeName(raw, offset);
     offset += nameRead;
 
     const typeCode = (raw[offset] << 8) | raw[offset + 1];
@@ -215,9 +215,9 @@ export function parseDNSAnswer(raw: Uint8Array): { type: string; data: string; t
         // 寻找最长的连续 '0' 序列进行压缩
         let bestStart = -1, bestLen = 0;
         let currentStart = -1, currentLen = 0;
-        for (let i = 0; i < parts.length; i++) {
-            if (parts[i] === '0') {
-                if (currentStart === -1) currentStart = i;
+        for (let j = 0; j < parts.length; j++) {
+            if (parts[j] === '0') {
+                if (currentStart === -1) currentStart = j;
                 currentLen++;
             } else {
                 if (currentLen > bestLen) {
@@ -261,7 +261,7 @@ export function parseDNSAnswer(raw: Uint8Array): { type: string; data: string; t
       data = `[Raw: ${rdLength} bytes]`;
     }
 
-    results.push({ type, data, ttl });
+    results.push({ name, type, data, ttl });
     offset += rdLength;
   }
 
