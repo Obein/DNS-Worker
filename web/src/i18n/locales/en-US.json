@@ -223,6 +223,7 @@
   "filtering": {
     "title": "External Filters",
     "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard).",
+    "formatDisclaimer": "This system only supports a limited set of AdGuard format lists and plain domain lists. Only basic blocking rules (e.g., ||example.com^) are supported, and \"@@\" whitelist rules will be bypassed. \"$\" rewrite rules and \"*\" wildcard/omit rules are temporarily not supported. The system will automatically match all subdomains of the domains.",
     "syncAll": "Sync All Lists",
     "urlPlaceholder": "Enter list URL...",
     "addSubscription": "Add List",

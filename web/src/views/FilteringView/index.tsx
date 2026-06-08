@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Intent } from "@blueprintjs/core";
+import { Button, Intent, Callout } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 
@@ -140,6 +140,15 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
           disabled={syncing || loading || lists.length === 0}
         />
       </div>
+
+      <Callout intent={Intent.WARNING} icon="info-sign" className="mb-6">
+        <p>
+          {t(
+            "filtering.formatDisclaimer",
+            "本系统只支持有限的 AdGuard 格式列表和纯域名列表。仅支持基础的拦截规则（如 ||example.com^），会绕过 \"@@\" 白名单，暂不支持 \"$\" 重写规则以及 \"*\" 省略规则。系统会自动匹配域名的所有子域名。"
+          )}
+        </p>
+      </Callout>
 
       <AddListCard
         newUrl={newUrl}

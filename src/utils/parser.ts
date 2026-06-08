@@ -4,7 +4,7 @@ export function parseList(content: string): string[] {
 
   for (let line of lines) {
     line = line.trim();
-    if (!line || line.startsWith('!') || line.startsWith('#')) continue;
+    if (!line || line.startsWith('!') || line.startsWith('#') || line.startsWith('@@')) continue;
 
     // AdGuard 格式 (如: ||example.com^$all)
     if (line.startsWith('||')) {

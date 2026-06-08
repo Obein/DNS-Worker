@@ -223,6 +223,7 @@
   "filtering": {
     "title": "外部拦截列表",
     "subtitle": "订阅第三方维护的域名屏蔽清单 (如 AdGuard 等)。",
+    "formatDisclaimer": "本系统只支持有限的 AdGuard 格式列表和纯域名列表。仅支持基础的拦截规则（如 ||example.com^），会绕过 \"@@\" 白名单，暂不支持 \"$\" 重写规则以及 \"*\" 省略规则。系统会自动匹配域名的所有子域名。",
     "syncAll": "同步所有列表",
     "urlPlaceholder": "输入拦截列表 URL...",
     "addSubscription": "添加订阅",
