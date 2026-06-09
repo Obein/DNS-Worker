@@ -29,8 +29,13 @@ export const getPresetRegions = (t: TFunction): Record<string, RegionConfigItem>
   const parseEnvIps = (val: string | undefined) => {
     if (!val) return null;
     try {
-      // 移除可能存在的包裹单引号
-      const cleanVal = val.trim().replace(/^'|'$/g, "");
+      // 移除首尾可能存在的包裹引号 (如 ' 或 " 或 """ 等)
+      let cleanVal = val.trim();
+      cleanVal = cleanVal
+        .replace(/^"""|"""$/g, "")
+        .replace(/^"|"$/g, "")
+        .replace(/^'|'$/g, "")
+        .trim();
       const parsed = JSON.parse(cleanVal);
       return Array.isArray(parsed) ? parsed : null;
     } catch (e) {

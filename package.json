@@ -1,6 +1,6 @@
 {
   "name": "obexdns",
-  "version": "1.0.3",
+  "version": "1.0",
   "private": true,
   "description": "Protective DoH Resolver based on Cloudflare Workers",
   "scripts": {
@@ -8,6 +8,7 @@
     "start": "npm run build && wrangler dev",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "build": "npm run ui:build",
+    "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:*",
     "postinstall": "npm run ui:install",
     "db:setup": "wrangler d1 create obex_db",
     "db:migrate:dev": "wrangler d1 migrations apply obex_db --local",
