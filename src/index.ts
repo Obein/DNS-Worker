@@ -78,7 +78,13 @@ export default {
             if (key.startsWith('IP_REGION_') && typeof value === 'string') {
               try {
                 const regionKey = key.replace('IP_REGION_', '');
-                regions[regionKey] = JSON.parse(value.trim().replace(/^'|'$/g, ""));
+                let cleanVal = value.trim();
+                cleanVal = cleanVal
+                  .replace(/^"""|"""$/g, "")
+                  .replace(/^"|"$/g, "")
+                  .replace(/^'|'$/g, "")
+                  .trim();
+                regions[regionKey] = JSON.parse(cleanVal);
               } catch (e) { }
             }
           }
