@@ -26,8 +26,27 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Clean up any pending requests when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const fetchLogs = async (currentRange: TimeRange, isInitial: boolean = true) => {
+    // Abort the previous request if it's still running
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create a new AbortController for this request
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
 
@@ -44,7 +63,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         url += `&before=${logs[logs.length - 1].timestamp}`;
       }
 
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
       const data = await res.json();
       if (isInitial) {
         setLogs(data);
@@ -63,11 +82,16 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
           });
         }
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      if (e.name !== "AbortError") {
+        console.error(e);
+      }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      // Only disable loading state if this is still the active/latest request
+      if (abortControllerRef.current === controller) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   };
 
