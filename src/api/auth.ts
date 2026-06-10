@@ -53,12 +53,24 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
+  // 检查用户名是否存在接口
+  if (url.pathname === '/api/auth/check-username' && request.method === 'GET') {
+    const username = url.searchParams.get('username') || '';
+    if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) {
+      return new Response(JSON.stringify({ error: "Invalid username" }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    const exists = await userModel.getByUsername(username);
+    return new Response(JSON.stringify({ exists: !!exists }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   // 注册接口
   if (url.pathname === '/api/auth/signup' && request.method === 'POST') {
     if (request.headers.get("X-Password-Leaked") === "true" || request.headers.get("Exposed-Credential-Check") === "true") {
       return new Response("password_leaked", { status: 400 });
     }
-    if (await cacheUtils.isRateLimited(cache, `signup:${clientIp}`, 5, 600)) {
+    if (await cacheUtils.isRateLimited(cache, `signup:${clientIp}`, 10, 60)) {
       return new Response("Too many attempts", { status: 429 });
     }
     const { username, password, turnstileToken } = await request.json() as any;
@@ -73,6 +85,9 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       }
     }
     if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) return new Response("Invalid username", { status: 400 });
+    if (await userModel.getByUsername(username)) {
+      return new Response("username_exists", { status: 400 });
+    }
     const hashedPassword = await hashPassword(password);
     const userId = generateId(15);
     try {

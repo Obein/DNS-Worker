@@ -114,7 +114,7 @@ export const AccountView: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
+    if (!/^[a-zA-Z0-9]{12,}$/.test(newPassword)) {
       setPwMessage({ text: t("account.formatTipPassword"), intent: Intent.DANGER });
       return;
     }

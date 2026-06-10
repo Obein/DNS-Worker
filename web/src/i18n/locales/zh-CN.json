@@ -60,13 +60,15 @@
     "noAccount": "没有账户？立即注册",
     "haveAccount": "已有账户？返回登录",
     "formatTipUsername": "用户名格式提示：仅限英文字母或数字，5 到 15 位",
-    "formatTipPassword": "密码格式提示：长度至少 8 位，且必须包含字母和数字",
+    "formatTipPassword": "密码格式提示：长度至少 12 位，且只能包含字母和数字",
     "authFailed": "认证失败，请检查用户名或密码",
     "networkError": "网络错误，请稍后再试",
     "turnstileRequired": "请完成人机身份验证",
     "turnstileError": "验证服务加载失败，请检查 Site Key 或域名配置",
     "verifying": "正在进行安全验证...",
-    "passwordLeaked": "您的密码已被泄露，为了您的账户安全，请使用随机密码/强密码。"
+    "passwordLeaked": "您的密码已被泄露，为了您的账户安全，请使用随机密码/强密码。",
+    "usernameExists": "该用户名已被注册，请尝试其他用户名。",
+    "skip": "跳过"
   },
   "setup": {
     "title": "安装指南",
@@ -354,7 +356,7 @@
     "cancel": "取消",
     "createNow": "立即创建",
     "formatTipUsername": "用户名格式提示：仅限 5 至 15 位英文字母或数字",
-    "formatTipPassword": "新密码格式提示：长度至少 8 位，且必须包含字母和数字",
+    "formatTipPassword": "新密码格式提示：长度至少 12 位，且只能包含字母和数字",
     "passwordSuccess": "密码修改成功",
     "updateFailed": "修改失败",
     "confirmDeleteUser": "确定要删除此用户吗？其拥有的所有配置也将被移除。",
