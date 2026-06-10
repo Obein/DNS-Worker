@@ -65,7 +65,8 @@
     "networkError": "Network error, please try again later",
     "turnstileRequired": "Please complete the human verification",
     "turnstileError": "Verification service failed to load, please reload the page and try again",
-    "verifying": "Verifying security check..."
+    "verifying": "Verifying security check...",
+    "passwordLeaked": "Your password was found in a public data breach. For your security, please use a strong random password."
   },
   "setup": {
     "title": "Setup Guide",

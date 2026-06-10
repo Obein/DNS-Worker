@@ -55,6 +55,9 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
 
   // 注册接口
   if (url.pathname === '/api/auth/signup' && request.method === 'POST') {
+    if (request.headers.get("X-Password-Leaked") === "true" || request.headers.get("Exposed-Credential-Check") === "true") {
+      return new Response("password_leaked", { status: 400 });
+    }
     if (await cacheUtils.isRateLimited(cache, `signup:${clientIp}`, 5, 3600)) {
       return new Response("Too many attempts", { status: 429 });
     }
@@ -124,6 +127,9 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
 
   // 第二步：正式登录 (提交密码和/或 TOTP)
   if (url.pathname === '/api/auth/login' && request.method === 'POST') {
+    if (request.headers.get("X-Password-Leaked") === "true" || request.headers.get("Exposed-Credential-Check") === "true") {
+      return new Response("password_leaked", { status: 400 });
+    }
     if (await cacheUtils.isRateLimited(cache, `login_fail:${clientIp}`, 10, 900)) {
       return new Response("Too many login attempts", { status: 429 });
     }
