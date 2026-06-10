@@ -1,54 +1,58 @@
 import { useEffect } from "react";
-import {
-  Button,
-  Navbar,
-  Alignment,
-  Intent,
-  Tag,
-  Menu,
-  MenuItem,
-  Popover,
-  OverlayToaster,
-  Icon,
-} from "@blueprintjs/core";
+import { OverlayToaster } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import {
-  ListFilter,
   Edit3,
-  Settings,
   BarChart3,
   Clock,
-  User as UserIcon,
-  LogOut,
-  Moon,
-  Sun,
-  Monitor,
-  Menu as MenuIcon,
   Download,
 } from "lucide-react";
-import { clsx } from "clsx";
 import { useParams } from "react-router-dom";
-import { LanguageSwitcher } from "../components/LanguageSwitcher";
-import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { useIsMobile } from "../hooks/useIsMobile";
 import type { Profile, UserInfo } from "../types/auth";
+import { DesktopSidebar } from "./DesktopSidebar";
+import { HeaderNavbar } from "./HeaderNavbar";
+import { MobileBottomNav } from "./MobileBottomNav";
 
+/**
+ * Properties for the MainLayout component.
+ */
 interface MainLayoutProps {
+  /** The child route views to render. */
   children: React.ReactNode;
+  /** True if desktop sidebar is expanded. */
   isSidebarOpen: boolean;
+  /** Callback to set desktop sidebar expand/collapse state. */
   setIsSidebarOpen: (open: boolean) => void;
+  /** Current active UI theme. */
   theme: "light" | "dark" | "system";
+  /** Callback to set UI theme. */
   setTheme: (theme: "light" | "dark" | "system") => void;
+  /** Selected Profile object. */
   selectedProfile: Profile | null;
+  /** Available profiles list. */
   profiles: Profile[];
+  /** Callback to set selected Profile. */
   setSelectedProfile: (p: Profile) => void;
+  /** Router location object. */
   location: any;
+  /** Router navigation function. */
   navigate: (path: string) => void;
+  /** Callback to handle logouts. */
   handleLogout: () => void;
+  /** Ref hook to the BlueprintJS OverlayToaster container. */
   toasterRef: React.MutableRefObject<OverlayToaster | null>;
+  /** Current logged in user info. */
   currentUser: UserInfo | null;
 }
 
+/**
+ * MainLayout component establishes the page template framing for all authenticated views.
+ * It dynamically alternates between Sidebar layout (for desktops) and Bottom Tab layout (for mobile devices).
+ *
+ * @param props - Component props containing shared state hooks and layout controllers.
+ * @returns React elements representing the page layout template.
+ */
 export const MainLayout = ({
   children,
   isSidebarOpen,
@@ -113,149 +117,31 @@ export const MainLayout = ({
       <OverlayToaster position="bottom" ref={toasterRef} />
 
       {!isMobile && (
-        <aside
-          className={clsx(
-            "flex flex-col border-r border-gray-200 dark:border-gray-800 transition-all duration-300 bg-white dark:bg-gray-900",
-            isSidebarOpen ? "w-64" : "w-16",
-          )}
-        >
-          <div className="h-14 flex items-center px-4 shrink-0">
-            <img
-              src={LogoIcon}
-              alt="Obex DNS"
-              className="w-8 h-8 object-contain shrink-0"
-            />
-            {isSidebarOpen && (
-              <span className="ml-3 font-bold text-lg dark:text-white">
-                Obex DNS
-              </span>
-            )}
-          </div>
-          <div className="flex-1 py-4 px-2 overflow-y-auto overflow-x-hidden">
-            <Menu className="bg-transparent p-0">
-              {navItems.map((item) => (
-                <MenuItem
-                  key={item.id}
-                  icon={item.icon as any}
-                  text={isSidebarOpen ? item.label : ""}
-                  disabled={!isProfileActive}
-                  active={location.pathname.endsWith(
-                    item.id === "stats" ? "/stats" : `/${item.id}`,
-                  )}
-                  onClick={() => navigate(item.path)}
-                />
-              ))}
-              <MenuItem
-                icon={<ListFilter size={18} />}
-                text={isSidebarOpen ? t("nav.filter") : ""}
-                disabled={!isProfileActive}
-                active={location.pathname.endsWith("/filter")}
-                onClick={() => navigate(`/dash/${activeId}/filter`)}
-              />
-              <MenuItem
-                icon={<Settings size={18} />}
-                text={isSidebarOpen ? t("nav.settings") : ""}
-                disabled={!isProfileActive}
-                active={location.pathname.endsWith("/settings")}
-                onClick={() => navigate(`/dash/${activeId}/settings`)}
-              />
-              <li className="my-4 border-t border-gray-100 dark:border-gray-800" />
-              <MenuItem
-                icon={<UserIcon size={18} />}
-                text={isSidebarOpen ? t("common.account") : ""}
-                active={location.pathname === "/account"}
-                onClick={() => navigate("/account")}
-              />
-              <Popover
-                className="w-full"
-                position="right-bottom"
-                content={
-                  <div className="p-4 space-y-3">
-                    <div className="font-bold text-sm">
-                      {t("common.confirmLogout")}
-                    </div>
-                    <Button
-                      fill
-                      intent={Intent.DANGER}
-                      text={t("common.logout")}
-                      onClick={handleLogout}
-                    />
-                  </div>
-                }
-              >
-                <MenuItem
-                  icon={<LogOut size={18} />}
-                  text={isSidebarOpen ? t("common.logout") : ""}
-                  intent={Intent.DANGER}
-                  shouldDismissPopover={false}
-                />
-              </Popover>
-            </Menu>
-          </div>
-          <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <Button
-              variant="minimal"
-              icon={<MenuIcon size={18} />}
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            />
-            {isSidebarOpen && (
-              <Tag minimal round>
-                {currentUser?.username.toUpperCase() || "USER"}
-              </Tag>
-            )}
-          </div>
-        </aside>
+        <DesktopSidebar
+          isSidebarOpen={isSidebarOpen}
+          setIsSidebarOpen={setIsSidebarOpen}
+          isProfileActive={isProfileActive}
+          activeId={activeId}
+          location={location}
+          navigate={navigate}
+          handleLogout={handleLogout}
+          currentUser={currentUser}
+          navItems={navItems}
+        />
       )}
 
       <main className="flex-1 min-w-0 h-full relative bg-gray-50/20 dark:bg-gray-950/20 flex flex-col overflow-hidden">
-        {/* 顶部导航栏 */}
-        <Navbar className="absolute! top-0 left-0 right-0 z-30 border-b! border-gray-200/50 dark:border-gray-800/50 shadow-none! bg-white/70! dark:bg-gray-900/70! backdrop-blur-lg! h-14 items-center px-4 shrink-0">
-          <Navbar.Group align={Alignment.LEFT}>
-            <button
-              onClick={() => navigate("/dash")}
-              className="font-bold text-blue-600 dark:text-blue-400 bg-transparent border-none p-0 cursor-pointer flex items-center gap-1"
-            >
-              <Icon icon="caret-left" />
-              <span className="truncate max-w-30 md:max-w-none">
-                {location.pathname === "/account"
-                  ? t("common.account")
-                  : isProfileActive
-                  ? selectedProfile?.name || t("common.loading")
-                  : t("common.selectProfile")}
-              </span>
-            </button>
-          </Navbar.Group>
-          <Navbar.Group align={Alignment.RIGHT}>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-lg">
-                <Button
-                  variant="minimal"
-                  icon={<Sun size={14} />}
-                  size="small"
-                  active={theme === "light"}
-                  onClick={() => setTheme("light")}
-                />
-                <Button
-                  variant="minimal"
-                  icon={<Moon size={14} />}
-                  size="small"
-                  active={theme === "dark"}
-                  onClick={() => setTheme("dark")}
-                />
-                <Button
-                  variant="minimal"
-                  icon={<Monitor size={14} />}
-                  size="small"
-                  active={theme === "system"}
-                  onClick={() => setTheme("system")}
-                />
-              </div>
-            </div>
-          </Navbar.Group>
-        </Navbar>
+        {/* Top Header Navbar */}
+        <HeaderNavbar
+          theme={theme}
+          setTheme={setTheme}
+          selectedProfile={selectedProfile}
+          isProfileActive={isProfileActive}
+          location={location}
+          navigate={navigate}
+        />
 
-        {/* 页面内容 - 分情况处理滚动 */}
+        {/* Page Content */}
         <div className="flex-1 min-h-0 flex flex-col relative">
           {location.pathname.endsWith("/logs") ? (
             <div className="flex-1 overflow-y-auto">{children}</div>
@@ -266,42 +152,14 @@ export const MainLayout = ({
           )}
         </div>
 
-        {/* 移动端底部导航 */}
-        {isMobile && isProfileActive && (
-          <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 flex items-center justify-around px-2 z-50 pb-safe">
-            {navItems.map((item) => {
-              const isActive = location.pathname.includes(
-                item.id === "stats" ? "/stats" : `/${item.id}`,
-              );
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => navigate(item.path)}
-                  className={clsx(
-                    "flex flex-col items-center justify-center gap-1 w-16 h-full transition-colors",
-                    isActive ? "text-blue-500" : "text-gray-400",
-                  )}
-                >
-                  {item.icon}
-                  <span className="text-[10px] font-medium">{item.label}</span>
-                </button>
-              );
-            })}
-            <button
-              onClick={() => navigate("/account")}
-              className={clsx(
-                "flex flex-col items-center justify-center gap-1 w-16 h-full transition-colors",
-                location.pathname === "/account"
-                  ? "text-blue-500"
-                  : "text-gray-400",
-              )}
-            >
-               <UserIcon size={20} />
-              <span className="text-[10px] font-medium">
-                {t("common.account")}
-              </span>
-            </button>
-          </div>
+        {/* Mobile Bottom Navigation Bar */}
+        {isMobile && (
+          <MobileBottomNav
+            isProfileActive={isProfileActive}
+            navItems={navItems}
+            location={location}
+            navigate={navigate}
+          />
         )}
       </main>
     </div>
