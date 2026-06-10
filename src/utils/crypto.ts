@@ -23,7 +23,7 @@ export async function hashPassword(password: string): Promise<string> {
     {
       name: "PBKDF2",
       salt: salt,
-      iterations: 600000,
+      iterations: 100000,
       hash: "SHA-256"
     },
     baseKey,
@@ -60,29 +60,7 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     ["deriveBits", "deriveKey"]
   );
   
-  let testHash = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 600000,
-      hash: "SHA-256"
-    },
-    baseKey,
-    256
-  );
-  
-  let testHashArray = new Uint8Array(testHash);
-  if (testHashArray.length !== originalHash.length) return false;
-  
-  // Constant-time comparison
-  let result = 0;
-  for (let i = 0; i < testHashArray.length; i++) {
-    result |= testHashArray[i] ^ originalHash[i];
-  }
-  if (result === 0) return true;
-
-  // Fallback to 100,000 iterations for backward compatibility with older accounts
-  testHash = await crypto.subtle.deriveBits(
+  const testHash = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       salt: salt,
@@ -93,8 +71,11 @@ export async function verifyPassword(password: string, storedHash: string): Prom
     256
   );
   
-  testHashArray = new Uint8Array(testHash);
-  result = 0;
+  const testHashArray = new Uint8Array(testHash);
+  if (testHashArray.length !== originalHash.length) return false;
+  
+  // Constant-time comparison
+  let result = 0;
   for (let i = 0; i < testHashArray.length; i++) {
     result |= testHashArray[i] ^ originalHash[i];
   }
