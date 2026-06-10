@@ -27,6 +27,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isFetchingRef = useRef<boolean>(false);
 
   // Clean up any pending requests when the component unmounts
   useEffect(() => {
@@ -46,6 +47,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
     // Create a new AbortController for this request
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    isFetchingRef.current = true;
 
     if (isInitial) setLoading(true);
     else setLoadingMore(true);
@@ -91,6 +93,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
       if (abortControllerRef.current === controller) {
         setLoading(false);
         setLoadingMore(false);
+        isFetchingRef.current = false;
       }
     }
   };
@@ -126,7 +129,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         realtimeRefresh &&
         scrollContainerRef.current &&
         scrollContainerRef.current.scrollTop < 50 &&
-        !loadingMore &&
+        !isFetchingRef.current && // Skip if there is an active request in progress
         !searchQuery &&
         range !== "custom"
       ) {
