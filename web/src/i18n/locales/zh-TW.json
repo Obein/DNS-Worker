@@ -65,7 +65,8 @@
     "networkError": "網路錯誤，請稍後再試",
     "turnstileRequired": "請完成人機身份驗證",
     "turnstileError": "驗證服務加載失敗，請檢查 Site Key 或域名配置",
-    "verifying": "正在進行安全驗證..."
+    "verifying": "正在進行安全驗證...",
+    "passwordLeaked": "您的密碼已被洩露，為了您的帳戶安全，請使用隨機密碼/強密碼。"
   },
   "setup": {
     "title": "安裝指南",

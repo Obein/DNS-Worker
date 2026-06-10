@@ -280,7 +280,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
         onSuccess();
       } else {
         const msg = await res.text();
-        setError(msg || t("auth.authFailed"));
+        if (msg === "password_leaked" || (res.status === 403 && (msg.toLowerCase().includes("ray id") || msg.includes("blocked") || msg.includes("security service")))) {
+          setError(t("auth.passwordLeaked"));
+        } else {
+          setError(msg || t("auth.authFailed"));
+        }
       }
     } catch (err) { setError(t("auth.networkError")); } finally { setLoading(false); }
   };
@@ -304,7 +308,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
         onSuccess();
       } else {
         const msg = await res.text();
-        setError(msg || t("auth.authFailed"));
+        if (msg === "password_leaked" || (res.status === 403 && (msg.toLowerCase().includes("ray id") || msg.includes("blocked") || msg.includes("security service")))) {
+          setError(t("auth.passwordLeaked"));
+        } else {
+          setError(msg || t("auth.authFailed"));
+        }
         if (window.turnstile) window.turnstile.reset();
         setTurnstileToken(null);
       }
