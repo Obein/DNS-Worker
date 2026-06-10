@@ -32,6 +32,7 @@ export interface LogsHeaderProps {
   setStatusFilter: (val: string | null) => void;
   searchQuery: string;
   setSearchQuery: (val: string) => void;
+  stats: { total: number; pass: number; block: number; redirect: number } | null;
 }
 
 export const LogsHeader: React.FC<LogsHeaderProps> = ({
@@ -48,6 +49,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
   setStatusFilter,
   searchQuery,
   setSearchQuery,
+  stats,
 }) => {
   const { t } = useTranslation();
 
@@ -99,11 +101,27 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
     <div className="p-4 space-y-4 shrink-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="bp6-heading flex items-center gap-2 text-xl md:text-2xl">
+          <h2 className="bp6-heading flex flex-wrap items-center gap-2 text-xl md:text-2xl">
             {t("logs.title")}{" "}
             <Tag minimal round>
               {range === "custom" ? t("analytics.custom") : range.toUpperCase()}
             </Tag>
+            {stats && (
+              <>
+                <Tag minimal round>
+                  {t("analytics.totalQueries")}: {stats.total.toLocaleString()}
+                </Tag>
+                <Tag minimal round intent={Intent.SUCCESS}>
+                  {t("logs.statusPass")}: {stats.pass.toLocaleString()}
+                </Tag>
+                <Tag minimal round intent={Intent.DANGER}>
+                  {t("logs.statusBlock")}: {stats.block.toLocaleString()}
+                </Tag>
+                <Tag minimal round intent={Intent.WARNING}>
+                  {t("logs.statusRedirect")}: {stats.redirect.toLocaleString()}
+                </Tag>
+              </>
+            )}
           </h2>
           {!isMobile && <p className="bp6-text-muted">{t("logs.subtitle")}</p>}
         </div>

@@ -23,6 +23,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
   const [searchQuery, setSearchQuery] = useState("");
   const [hasMore, setHasMore] = useState(true);
   const [realtimeRefresh, setRealtimeRefresh] = useState(false);
+  const [stats, setStats] = useState<{ total: number; pass: number; block: number; redirect: number } | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -65,18 +66,43 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         url += `&before=${logs[logs.length - 1].timestamp}`;
       }
 
-      const res = await fetch(url, { signal: controller.signal });
-      const data = await res.json();
+      const fetchLogsPromise = fetch(url, { signal: controller.signal }).then((r) => r.json());
+      let fetchStatsPromise: Promise<any> = Promise.resolve(null);
+      
       if (isInitial) {
-        setLogs(data);
-        setHasMore(data.length >= 50);
-      } else {
-        setLogs((prev) => [...prev, ...data]);
-        setHasMore(data.length >= 50);
+        let statsUrl = `/api/profiles/${profileId}/analytics/summary?range=${currentRange}`;
+        if (currentRange === "custom" && customRange.start && customRange.end) {
+          const startTs = Math.floor(new Date(customRange.start).getTime() / 1000);
+          const endTs = Math.floor(new Date(customRange.end).getTime() / 1000);
+          statsUrl += `&start=${startTs}&end=${endTs}`;
+        }
+        if (searchQuery) statsUrl += `&search=${encodeURIComponent(searchQuery)}`;
+        fetchStatsPromise = fetch(statsUrl, { signal: controller.signal }).then((r) => r.json());
       }
 
-      if (data && data.length > 0) {
-        const domains = Array.from(new Set(data.map((log: LogEntry) => log.domain)));
+      const [logsData, statsData] = await Promise.all([fetchLogsPromise, fetchStatsPromise]);
+
+      if (isInitial) {
+        setLogs(logsData);
+        setHasMore(logsData.length >= 50);
+        if (statsData) {
+          const summary = { total: 0, pass: 0, block: 0, redirect: 0 };
+          statsData.forEach((item: { action: string; count: number }) => {
+            const count = item.count;
+            summary.total += count;
+            if (item.action === "PASS") summary.pass = count;
+            else if (item.action === "BLOCK") summary.block = count;
+            else if (item.action === "REDIRECT") summary.redirect = count;
+          });
+          setStats(summary);
+        }
+      } else {
+        setLogs((prev) => [...prev, ...logsData]);
+        setHasMore(logsData.length >= 50);
+      }
+
+      if (logsData && logsData.length > 0) {
+        const domains = Array.from(new Set(logsData.map((log: LogEntry) => log.domain)));
         if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
             type: "PREFETCH_ICONS",
@@ -164,6 +190,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         setStatusFilter={setStatusFilter}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        stats={stats}
       />
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 relative">

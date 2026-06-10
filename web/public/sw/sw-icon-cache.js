@@ -11,6 +11,7 @@ const DUCKDUCKGO_ICON_PREFIX = "https://icons.duckduckgo.com/ip3/";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
 
 // An elegant, lightweight SVG placeholder showing a generic globe icon
 const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;

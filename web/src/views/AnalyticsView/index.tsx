@@ -33,15 +33,31 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
   const fetchData = async (selectedRange: TimeRange, customStart?: string, customEnd?: string) => {
     setLoading(true);
     try {
-      let url = `/api/profiles/${profileId}/analytics?range=${selectedRange}`;
+      let queryParams = `?range=${selectedRange}`;
       if (selectedRange === "custom" && customStart && customEnd) {
         const startTs = Math.floor(new Date(customStart).getTime() / 1000);
         const endTs = Math.floor(new Date(customEnd).getTime() / 1000);
-        url += `&start=${startTs}&end=${endTs}`;
+        queryParams += `&start=${startTs}&end=${endTs}`;
       }
-      const res = await fetch(url);
-      const json = await res.json();
-      setData(json);
+      
+      const baseStatsUrl = `/api/profiles/${profileId}/analytics`;
+      const [summary, trend, topAllowed, topBlocked, clients, destinations] = await Promise.all([
+        fetch(`${baseStatsUrl}/summary${queryParams}`).then((r) => r.json()),
+        fetch(`${baseStatsUrl}/trend${queryParams}`).then((r) => r.json()),
+        fetch(`${baseStatsUrl}/top_allowed${queryParams}`).then((r) => r.json()),
+        fetch(`${baseStatsUrl}/top_blocked${queryParams}`).then((r) => r.json()),
+        fetch(`${baseStatsUrl}/clients${queryParams}`).then((r) => r.json()),
+        fetch(`${baseStatsUrl}/destinations${queryParams}`).then((r) => r.json()),
+      ]);
+
+      setData({
+        summary,
+        trend,
+        top_allowed: topAllowed,
+        top_blocked: topBlocked,
+        clients,
+        destinations,
+      });
     } catch (e) {
       console.error("Failed to fetch analytics", e);
     } finally {

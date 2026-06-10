@@ -73,15 +73,62 @@ export class LogModel {
     }
   }
 
+  async getSummary(profileId: string, since: number, until: number, search?: string) {
+    let queryStr = "SELECT action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?";
+    let params: any[] = [profileId, since, until];
+    if (search) {
+      queryStr += " AND domain LIKE ?";
+      params.push(`%${search}%`);
+    }
+    queryStr += " GROUP BY action";
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ action: string, count: number }>();
+    return results;
+  }
+
+  async getTrend(profileId: string, since: number, until: number, interval: string) {
+    const { results } = await this.db.prepare(
+      `SELECT ${interval} as timestamp, action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? GROUP BY ${interval}, action ORDER BY timestamp ASC`
+    ).bind(profileId, since, until).all<{ timestamp: number, action: string, count: number }>();
+    return results;
+  }
+
+  async getTopAllowed(profileId: string, since: number, until: number) {
+    const { results } = await this.db.prepare(
+      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS' GROUP BY domain ORDER BY count DESC LIMIT 10"
+    ).bind(profileId, since, until).all<{ domain: string, count: number }>();
+    return results;
+  }
+
+  async getTopBlocked(profileId: string, since: number, until: number) {
+    const { results } = await this.db.prepare(
+      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'BLOCK' GROUP BY domain ORDER BY count DESC LIMIT 10"
+    ).bind(profileId, since, until).all<{ domain: string, count: number }>();
+    return results;
+  }
+
+  async getClients(profileId: string, since: number, until: number) {
+    const { results } = await this.db.prepare(
+      "SELECT client_ip, geo_country, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? GROUP BY client_ip, geo_country ORDER BY count DESC LIMIT 10"
+    ).bind(profileId, since, until).all<{ client_ip: string, geo_country: string | null, count: number }>();
+    return results;
+  }
+
+  async getDestinations(profileId: string, since: number, until: number) {
+    const { results } = await this.db.prepare(
+      "SELECT dest_geoip, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND dest_geoip IS NOT NULL GROUP BY dest_geoip ORDER BY count DESC LIMIT 10"
+    ).bind(profileId, since, until).all<{ dest_geoip: string, count: number }>();
+    return results;
+  }
+
   async getAnalytics(profileId: string, since: number, until: number, interval: string) {
     const [summary, trend, topAllowed, topBlocked, clients, destinations] = await Promise.all([
-      this.db.prepare("SELECT action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? GROUP BY action").bind(profileId, since, until).all(),
-      this.db.prepare(`SELECT ${interval} as timestamp, action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? GROUP BY ${interval}, action ORDER BY timestamp ASC`).bind(profileId, since, until).all(),
-      this.db.prepare("SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS' GROUP BY domain ORDER BY count DESC LIMIT 10").bind(profileId, since, until).all(),
-      this.db.prepare("SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'BLOCK' GROUP BY domain ORDER BY count DESC LIMIT 10").bind(profileId, since, until).all(),
-      this.db.prepare("SELECT client_ip, geo_country, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? GROUP BY client_ip, geo_country ORDER BY count DESC LIMIT 10").bind(profileId, since, until).all(),
-      this.db.prepare("SELECT dest_geoip, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND dest_geoip IS NOT NULL GROUP BY dest_geoip ORDER BY count DESC LIMIT 10").bind(profileId, since, until).all()
+      this.getSummary(profileId, since, until),
+      this.getTrend(profileId, since, until, interval),
+      this.getTopAllowed(profileId, since, until),
+      this.getTopBlocked(profileId, since, until),
+      this.getClients(profileId, since, until),
+      this.getDestinations(profileId, since, until)
     ]);
-    return { summary: summary.results, trend: trend.results, top_allowed: topAllowed.results, top_blocked: topBlocked.results, clients: clients.results, destinations: destinations.results };
+    return { summary, trend, top_allowed: topAllowed, top_blocked: topBlocked, clients, destinations };
   }
 }

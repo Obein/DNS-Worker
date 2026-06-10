@@ -186,6 +186,36 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
           default: since = until - 86400; interval = "(timestamp/3600)*3600"; break;
         }
       }
+
+      const subResource = pathParts[4];
+      if (subResource) {
+        if (subResource === 'summary') {
+          const search = urlParams.get('search') || undefined;
+          const summary = await logModel.getSummary(profileId, since, until, search);
+          return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json' } });
+        }
+        if (subResource === 'trend') {
+          const trend = await logModel.getTrend(profileId, since, until, interval);
+          return new Response(JSON.stringify(trend), { headers: { 'Content-Type': 'application/json' } });
+        }
+        if (subResource === 'top_allowed') {
+          const topAllowed = await logModel.getTopAllowed(profileId, since, until);
+          return new Response(JSON.stringify(topAllowed), { headers: { 'Content-Type': 'application/json' } });
+        }
+        if (subResource === 'top_blocked') {
+          const topBlocked = await logModel.getTopBlocked(profileId, since, until);
+          return new Response(JSON.stringify(topBlocked), { headers: { 'Content-Type': 'application/json' } });
+        }
+        if (subResource === 'clients') {
+          const clients = await logModel.getClients(profileId, since, until);
+          return new Response(JSON.stringify(clients), { headers: { 'Content-Type': 'application/json' } });
+        }
+        if (subResource === 'destinations') {
+          const destinations = await logModel.getDestinations(profileId, since, until);
+          return new Response(JSON.stringify(destinations), { headers: { 'Content-Type': 'application/json' } });
+        }
+        return new Response("Not Found", { status: 404 });
+      }
       
       const analytics = await logModel.getAnalytics(profileId, since, until, interval);
       return new Response(JSON.stringify(analytics), { headers: { 'Content-Type': 'application/json' } });
