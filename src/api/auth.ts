@@ -161,7 +161,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
 
     const { password, totpTokenHash, totpSalt, recoveryKey } = await request.json() as any;
 
-    // 1. 验证密码
+    // 验证密码
     if (!user.totp_skip_password) {
       const passwordValid = await verifyPassword(password, user.hashed_password);
       if (!passwordValid) {
@@ -171,7 +171,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       }
     }
 
-    // 2. 验证 TOTP 或 恢复密钥
+    // 验证 TOTP 或 恢复密钥
     if (user.totp_enabled) {
       if (recoveryKey) {
         let storedHashes: string[] = [];

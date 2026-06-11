@@ -90,12 +90,12 @@ export async function handleIconFetch(event: FetchEvent): Promise<Response> {
   if (cachedResponse) {
     const age = await getCacheAge(cache, event.request);
 
-    // 1. Fresh cache (< 7 days): return immediately, no network request.
+    // Fresh cache (< 7 days): return immediately, no network request.
     if (age < SEVEN_DAYS) {
       return cachedResponse;
     }
 
-    // 2. Stale cache (7-30 days): return immediately, fetch/update in background.
+    // Stale cache (7-30 days): return immediately, fetch/update in background.
     if (age < THIRTY_DAYS) {
       fetchIcon(event.request.url)
         .then((networkResponse) => {
@@ -112,7 +112,7 @@ export async function handleIconFetch(event: FetchEvent): Promise<Response> {
     }
   }
 
-  // 3. Expired or not cached: fetch from network.
+  // Expired or not cached: fetch from network.
   try {
     const networkResponse = await fetchIcon(event.request.url);
     if (networkResponse.ok || networkResponse.status === 0) {
