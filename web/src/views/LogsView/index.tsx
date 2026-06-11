@@ -8,6 +8,7 @@ import { LogsHeader } from "./components/LogsHeader";
 import { LogsTable } from "./components/LogsTable";
 import { LogsList } from "./components/LogsList";
 import { LogDetailsDrawer } from "./components/LogDetailsDrawer";
+const PAGE_SIZE = 50;
 
 export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) => {
   const isMobile = useIsMobile();
@@ -54,7 +55,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
     else setLoadingMore(true);
 
     try {
-      let url = `/api/profiles/${profileId}/logs?range=${currentRange}`;
+      let url = `/api/profiles/${profileId}/logs?range=${currentRange}&limit=${PAGE_SIZE}`;
       if (currentRange === "custom" && customRange.start && customRange.end) {
         const startTs = Math.floor(new Date(customRange.start).getTime() / 1000);
         const endTs = Math.floor(new Date(customRange.end).getTime() / 1000);
@@ -85,7 +86,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
 
       if (isInitial) {
         setLogs(logsData);
-        setHasMore(logsData.length >= 50);
+        setHasMore(logsData.length >= PAGE_SIZE);
         if (statsData) {
           const summary = { total: 0, pass: 0, block: 0, redirect: 0 };
           statsData.forEach((item: { action: string; count: number }) => {
@@ -99,7 +100,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         }
       } else {
         setLogs((prev) => [...prev, ...logsData]);
-        setHasMore(logsData.length >= 50);
+        setHasMore(logsData.length >= PAGE_SIZE);
       }
 
       if (logsData && logsData.length > 0) {

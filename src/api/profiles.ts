@@ -163,7 +163,7 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
         since = Math.max(since, retentionThreshold);
       }
 
-      const results = await logModel.getLogs(profileId, { since, until, status: status || undefined, search: search || undefined, before: before ? parseInt(before) : undefined, limit: parseInt(urlParams.get('limit') || '20') });
+      const results = await logModel.getLogs(profileId, { since, until, status: status || undefined, search: search || undefined, before: before ? parseInt(before) : undefined, limit: parseInt(urlParams.get('limit') || '50') });
       return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
     }
 
