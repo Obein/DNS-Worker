@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,6 +9,23 @@ export default defineConfig({
   envPrefix: ['VITE_', 'IP_REGION_'],
   plugins: [
     react(),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src/worker',
+      filename: 'sw.ts',
+      injectRegister: 'auto',
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'ObexDNS',
+        short_name: 'ObexDNS',
+        theme_color: '#1a1b26',
+        icons: []
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module'
+      }
+    }),
     visualizer({ open: true })
   ],
   server: {
