@@ -4,6 +4,8 @@ permissions:
   contents: write
 
 on:
+  schedule:
+    - cron: 32 */6 * * *
   workflow_dispatch:
 
 jobs:
