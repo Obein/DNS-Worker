@@ -11,6 +11,11 @@ import {
   handleIconPrefetch,
   cleanExpiredCache,
 } from "./sw-icon-cache.ts";
+import {
+  isGeoIPRequest,
+  handleGeoIPFetch,
+  cleanExpiredGeoIPCache,
+} from "./sw-geoip-cache.ts";
 
 // TypeScript declaration for Service Worker global scope
 declare const self: ServiceWorkerGlobalScope & {
@@ -29,7 +34,8 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
-      cleanExpiredCache()
+      cleanExpiredCache(),
+      cleanExpiredGeoIPCache()
     ])
   );
 });
@@ -41,6 +47,8 @@ self.addEventListener("fetch", (event) => {
   // Intercept DuckDuckGo icon requests
   if (isIconRequest(url)) {
     event.respondWith(handleIconFetch(event));
+  } else if (isGeoIPRequest(url)) {
+    event.respondWith(handleGeoIPFetch(event));
   }
 });
 
