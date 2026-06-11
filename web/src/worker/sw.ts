@@ -23,8 +23,7 @@ declare const self: ServiceWorkerGlobalScope & {
 };
 
 // Access the manifest placeholder to satisfy vite-plugin-pwa compilation requirements
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const manifest = self.__WB_MANIFEST;
+void self.__WB_MANIFEST;
 
 self.addEventListener("install", () => {
   self.skipWaiting();
