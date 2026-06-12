@@ -8,12 +8,15 @@ import { HelmetProvider } from "react-helmet-async";
 
 FocusStyleManager.onlyShowFocusOnTabs();
 
-// Request browser geolocation once on app load and cache it in sessionStorage
+let cachedLat: string | null = null;
+let cachedLon: string | null = null;
+
+// Request browser geolocation once on app load
 if (typeof window !== "undefined" && navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      sessionStorage.setItem("client_lat", position.coords.latitude.toString());
-      sessionStorage.setItem("client_lon", position.coords.longitude.toString());
+      cachedLat = position.coords.latitude.toString();
+      cachedLon = position.coords.longitude.toString();
     },
     (error) => {
       console.warn("Geolocation access denied or failed:", error);
@@ -36,13 +39,11 @@ window.fetch = async function (input, init) {
 
   // Only intercept same-origin or relative /api/ requests
   if (url.startsWith("/api/") || url.includes(window.location.host + "/api/")) {
-    const lat = sessionStorage.getItem("client_lat");
-    const lon = sessionStorage.getItem("client_lon");
-    if (lat && lon) {
+    if (cachedLat && cachedLon) {
       init = init || {};
       const headers = new Headers(init.headers);
-      headers.set("X-Client-Latitude", lat);
-      headers.set("X-Client-Longitude", lon);
+      headers.set("X-Client-Latitude", cachedLat);
+      headers.set("X-Client-Longitude", cachedLon);
       init.headers = headers;
     }
   }
