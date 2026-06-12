@@ -24,7 +24,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({ dohUrl, copyToClipboard,
             <div className="p-4 max-w-sm">
               <H5>{t("setup.whatIsDoh")}</H5>
               <p className="text-sm mb-2">
-                <strong>DNS over HTTPS (DoH)</strong> {t("setup.dohDesc")}
+                {t("setup.dohDesc")}
               </p>
               <ul className="list-disc list-inside text-sm opacity-80 mb-3 space-y-1">
                 <li>{t("setup.dohBenefit1")}</li>
