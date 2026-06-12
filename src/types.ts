@@ -4,6 +4,7 @@ export interface Env {
   DB: D1Database;
   ASSETS: any;
   SESSION_EXPIRATION_DAYS?: string | number;
+  SESSION_GEO_DISTANCE_KM?: string | number;
   PREAUTH_TTL_SECONDS?: string | number;
   BLOOM_MEM_TTL?: string | number;
   SYNC_TIMEOUT_MS?: string | number;

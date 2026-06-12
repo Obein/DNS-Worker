@@ -3,7 +3,7 @@
   <h1>Obex DNS</h1>
   <p>基于 Cloudflare Workers & D1 的 Protective DNS 解析服务</p>
   <p align="center">
-    简体中文 | <a href="README.md">English </a> | <a href="README_zh-TW.md">正體中文</a>
+    <a href="README.md">English </a> | 简体中文 | <a href="README_zh-TW.md">正體中文</a>
   </p>
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
@@ -15,7 +15,7 @@
 
 ## 📖 简介
 
-**Obex DNS** 是一个轻量级、可扩展的隐私保护 DNS 解析系统。它完全运行在 Cloudflare 的边缘网络上，利用 Workers 的极速响应和 D1 数据库的高效存储，为用户提供精细化 DNS 控制体验。
+**Obex DNS** 是一个轻量级、可扩展的隐私保护 DNS 解析系统。它完全运行在 Cloudflare 的边缘网络上，利用 Workers 的极速响应和 D1 数据库的高效存储，为用户提供精细化 DNS (over HTTPS) 控制体验。
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/ObexDNS)
 

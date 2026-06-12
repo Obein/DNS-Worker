@@ -307,7 +307,7 @@
     "presetCloudflareFamilies": "Cloudflare Families",
     "presetQuad9": "Quad9 (No Log/No ECS)",
     "presetQuad9Ecs": "Quad9 ECS (No Log/With ECS)",
-    "presetControlDFree": "ControlD Free",
+    "presetControlDFree": "ControlD Free (Remove ads/tracking/malicious/phishing)",
     "presetControlDUncensored": "ControlD Uncensored",
     "presetAdGuard": "AdGuard (Anti-track)",
     "presetAdGuardFamily": "AdGuard Family",

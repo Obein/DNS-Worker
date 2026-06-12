@@ -69,7 +69,7 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
                 <DetailItem
                   label={t("logs.detailStatus")}
                   value={
-                    <Tag minimal intent={selectedLog.action === "PASS" ? Intent.SUCCESS : Intent.DANGER}>
+                    <Tag minimal intent={selectedLog.action === "PASS" ? Intent.SUCCESS : selectedLog.action === "BLOCK" ? Intent.DANGER : Intent.WARNING}>
                       {selectedLog.action}
                     </Tag>
                   }

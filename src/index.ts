@@ -1,7 +1,7 @@
 import { Context, Env, User, ExecutionContext } from './types';
 import { parseDNSQuery } from './utils/dns';
 import { pipeline } from './pipeline';
-import { readSessionCookie, validateSession } from './lib/auth';
+import { readSessionCookie, validateSession, getRequestCoordinates } from './lib/auth';
 import { handleAuthRequest } from './api/auth';
 import { handleProfilesRequest } from './api/profiles';
 import { handleAccountRequest } from './api/account';
@@ -53,7 +53,8 @@ export default {
         const cookieHeader = request.headers.get("Cookie") || "";
         const sessionId = readSessionCookie(cookieHeader);
         if (sessionId) {
-          const { user } = await validateSession(env, sessionId);
+          const { latitude, longitude } = getRequestCoordinates(request);
+          const { user } = await validateSession(env, sessionId, latitude, longitude);
           if (user) currentUser = user as any;
         }
 

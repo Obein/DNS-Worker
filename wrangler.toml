@@ -63,7 +63,9 @@ IP_REGION_CN = """
 """
 # Time constants
 # Session duration for authenticated users (in days)
-SESSION_EXPIRATION_DAYS=30
+SESSION_EXPIRATION_DAYS=1
+# Maximum allowed distance (in km) between session login and current request
+SESSION_GEO_DISTANCE_KM=50
 # TTL for temporary pre-auth session during login (in seconds)
 PREAUTH_TTL_SECONDS=300
 # In-memory retention time for profile bloom filters (in milliseconds)
