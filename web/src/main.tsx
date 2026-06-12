@@ -25,7 +25,7 @@ if (typeof window !== "undefined" && navigator.geolocation) {
   );
 }
 
-// Global window.fetch interceptor to append client coordinates headers to API requests
+// Global window.fetch interceptor to append client coordinates and CSRF headers to API requests
 const originalFetch = window.fetch;
 window.fetch = async function (input, init) {
   let url = "";
@@ -39,13 +39,26 @@ window.fetch = async function (input, init) {
 
   // Only intercept same-origin or relative /api/ requests
   if (url.startsWith("/api/") || url.includes(window.location.host + "/api/")) {
+    init = init || {};
+    const headers = new Headers(init.headers);
+
+    // Geolocation headers
     if (cachedLat && cachedLon) {
-      init = init || {};
-      const headers = new Headers(init.headers);
       headers.set("X-Client-Latitude", cachedLat);
       headers.set("X-Client-Longitude", cachedLon);
-      init.headers = headers;
     }
+
+    // CSRF double submit cookie header for mutations
+    const method = init.method?.toUpperCase() || "GET";
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+      const csrfToken = match ? match[1] : null;
+      if (csrfToken) {
+        headers.set("X-CSRF-Token", csrfToken);
+      }
+    }
+
+    init.headers = headers;
   }
   return originalFetch(input, init);
 };

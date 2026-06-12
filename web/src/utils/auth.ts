@@ -13,9 +13,9 @@ export const USERNAME_REGEX = /^[a-zA-Z0-9]{5,15}$/;
 
 /**
  * Password validation regular expression.
- * Requirements: At least 12 alphanumeric characters.
+ * Requirements: 12-100 characters containing letters, numbers, and special characters.
  */
-export const PASSWORD_REGEX = /^[a-zA-Z0-9]{12,}$/;
+export const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
 
 /**
  * Validates whether a username matches the required alphanumeric 5-15 character format.

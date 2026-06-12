@@ -7,6 +7,7 @@ import {
   validatePreauthSession, invalidatePreauthSession, clearPreauthCookie,
   readPreauthCookie,
   getRequestCoordinates,
+  createCsrfCookie,
 } from "../lib/auth";
 import { hashPassword, verifyPassword } from "../utils/crypto";
 import { verifyTOTP, findMatchingRecoveryKey } from "../lib/totp";
@@ -15,6 +16,8 @@ import { ActivityLogModel } from "../models/activityLog";
 import { SystemSettingsModel } from "../models/systemSettings";
 import { SessionModel } from "../models/session";
 import { cacheUtils } from "../utils/cache";
+
+const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
 
 async function verifyTurnstile(token: string, secret: string, ip: string): Promise<boolean> {
   if (!token || !secret) return false;
@@ -86,6 +89,9 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       }
     }
     if (!/^[a-zA-Z0-9]{5,15}$/.test(username)) return new Response("Invalid username", { status: 400 });
+    if (!password || !PASSWORD_REGEX.test(password)) {
+      return new Response("Password format error", { status: 400 });
+    }
     if (await userModel.getByUsername(username)) {
       return new Response("username_exists", { status: 400 });
     }
@@ -101,9 +107,13 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       }
       const session = await createSession(env, userId, clientIp, userAgent, latitude, longitude);
       const sessionCookie = createSessionCookie(session.id, env);
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { "Set-Cookie": sessionCookie, "Content-Type": "application/json" }
-      });
+      const csrfToken = generateId(32);
+      const csrfCookie = createCsrfCookie(csrfToken);
+      const headers = new Headers();
+      headers.append("Set-Cookie", sessionCookie);
+      headers.append("Set-Cookie", csrfCookie);
+      headers.append("Content-Type", "application/json");
+      return new Response(JSON.stringify({ success: true }), { headers });
     } catch (e: any) { return new Response(e.message, { status: 400 }); }
   }
 
@@ -172,6 +182,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       if (!passwordValid) {
         await cacheUtils.isRateLimited(cache, `login_fail:${clientIp}`, 100, 900);
         await activityLog.record(userId, 'login_fail', clientIp, userAgent, { reason: 'wrong_password' });
+        await invalidatePreauthSession(env, preauthToken);
         return new Response("Invalid password", { status: 400 });
       }
     }
@@ -184,6 +195,7 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
         const matchIndex = await findMatchingRecoveryKey(recoveryKey, storedHashes);
         if (matchIndex === -1) {
           await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent, { method: 'recovery_key' });
+          await invalidatePreauthSession(env, preauthToken);
           return new Response("Invalid recovery key", { status: 400 });
         }
         await userModel.consumeRecoveryKey(userId, matchIndex, storedHashes);
@@ -192,15 +204,17 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
         const isValid = await verifyTOTP(user.totp_secret || '', totpTokenHash, totpSalt);
         if (!isValid) {
           await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent);
+          await invalidatePreauthSession(env, preauthToken);
           return new Response("Invalid TOTP code", { status: 400 });
         }
         await activityLog.record(userId, 'totp_verify_success', clientIp, userAgent);
       } else {
+        await invalidatePreauthSession(env, preauthToken);
         return new Response("Missing TOTP code or recovery key", { status: 400 });
       }
     }
 
-    // 所有验证通过，颁发正式 Session
+    // 所有验证通过，已消耗 preauthToken 颁发正式 Session
     await invalidatePreauthSession(env, preauthToken);
     await cacheUtils.delete(cache, `ratelimit:login_fail:${clientIp}`);
     await activityLog.record(userId, 'login_success', clientIp, userAgent);
@@ -210,8 +224,12 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
       return new Response("Geolocation required. Please allow location access.", { status: 400 });
     }
     const session = await createSession(env, userId, clientIp, userAgent, latitude, longitude);
+    const csrfToken = generateId(32);
+    const csrfCookie = createCsrfCookie(csrfToken);
+
     const headers = new Headers({ "Content-Type": "application/json" });
     headers.append("Set-Cookie", createSessionCookie(session.id, env));
+    headers.append("Set-Cookie", csrfCookie);
     headers.append("Set-Cookie", clearPreauthCookie());
     
     return new Response(JSON.stringify({ success: true }), { headers });
