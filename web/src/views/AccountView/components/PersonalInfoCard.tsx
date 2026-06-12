@@ -107,7 +107,7 @@ export const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
               </>
             ) : (
               <>
-                <InputGroup fill value={me?.username} disabled />
+                <InputGroup fill value={me?.username} readOnly />
                 <Button
                   icon={<Edit2 size={16} />}
                   onClick={() => setIsEditingUsername(true)}
