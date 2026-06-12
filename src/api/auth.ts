@@ -22,13 +22,19 @@ const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
 async function verifyTurnstile(token: string, secret: string, ip: string): Promise<boolean> {
   if (!token || !secret) return false;
   try {
-    const formData = new FormData();
-    formData.append('secret', secret);
-    formData.append('response', token);
-    formData.append('remoteip', ip);
-    const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { body: formData, method: 'POST' });
+    const params = new URLSearchParams();
+    params.append('secret', secret);
+    params.append('response', token);
+    params.append('remoteip', ip);
+    const result = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: params,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
     const outcome = await result.json() as any;
-    return outcome.success;
+    return !!outcome.success;
   } catch (e) { return false; }
 }
 
