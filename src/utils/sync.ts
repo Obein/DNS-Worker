@@ -35,48 +35,49 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
       try {
         if (!isSafeUrl(list.url)) {
           console.error(`[Sync] Blocked unsafe URL: ${list.url}`);
-          continue;
-        }
-        const syncTimeoutMs = Number(env.SYNC_TIMEOUT_MS) || 30000;
-        const response = await fetch(list.url, { signal: AbortSignal.timeout(syncTimeoutMs) });
-        if (response.ok) {
-          const contentLength = response.headers.get('content-length');
-          const MAX_BYTES = 20 * 1024 * 1024; // 20 MB limit
-          if (contentLength && parseInt(contentLength, 10) > MAX_BYTES) {
-            console.error(`[Sync] List too large, blocking: ${list.url}`);
-            continue;
-          }
+        } else {
+          const syncTimeoutMs = Number(env.SYNC_TIMEOUT_MS) || 30000;
+          const response = await fetch(list.url, { signal: AbortSignal.timeout(syncTimeoutMs) });
+          if (response.ok) {
+            const contentLength = response.headers.get('content-length');
+            const MAX_BYTES = 20 * 1024 * 1024; // 20 MB limit
+            if (contentLength && parseInt(contentLength, 10) > MAX_BYTES) {
+              console.error(`[Sync] List too large, blocking: ${list.url}`);
+            } else {
+              const reader = response.body?.getReader();
+              if (!reader) {
+                console.error(`[Sync] Failed to get reader for: ${list.url}`);
+              } else {
+                let totalBytes = 0;
+                const chunks: Uint8Array[] = [];
 
-          const reader = response.body?.getReader();
-          if (!reader) continue;
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  if (value) {
+                    totalBytes += value.length;
+                    if (totalBytes > MAX_BYTES) {
+                      throw new Error(`[Sync] Content exceeded maximum size of ${MAX_BYTES} bytes`);
+                    }
+                    chunks.push(value);
+                  }
+                }
 
-          let totalBytes = 0;
-          const chunks: Uint8Array[] = [];
+                const concatenated = new Uint8Array(totalBytes);
+                let offset = 0;
+                for (const chunk of chunks) {
+                  concatenated.set(chunk, offset);
+                  offset += chunk.length;
+                }
+                const textContent = new TextDecoder().decode(concatenated);
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            if (value) {
-              totalBytes += value.length;
-              if (totalBytes > MAX_BYTES) {
-                throw new Error(`[Sync] Content exceeded maximum size of ${MAX_BYTES} bytes`);
+                const domains = parseList(textContent);
+                if (domains.length > 0) {
+                  domains.forEach(d => allDomains.add(d));
+                  success = true;
+                }
               }
-              chunks.push(value);
             }
-          }
-
-          const concatenated = new Uint8Array(totalBytes);
-          let offset = 0;
-          for (const chunk of chunks) {
-            concatenated.set(chunk, offset);
-            offset += chunk.length;
-          }
-          const textContent = new TextDecoder().decode(concatenated);
-
-          const domains = parseList(textContent);
-          if (domains.length > 0) {
-            domains.forEach(d => allDomains.add(d));
-            success = true;
           }
         }
       } catch (e) {

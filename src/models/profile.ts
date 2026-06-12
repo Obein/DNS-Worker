@@ -151,7 +151,7 @@ export class ProfileModel {
 
   async getSyncTargets(threshold: number, limit: number): Promise<{id: string}[]> {
     const { results } = await this.db.prepare(
-      "SELECT id FROM profiles WHERE list_updated_at IS NULL OR list_updated_at < ? ORDER BY list_updated_at ASC LIMIT ?"
+      "SELECT id FROM profiles WHERE (list_updated_at IS NULL OR list_updated_at < ?) AND EXISTS (SELECT 1 FROM lists WHERE lists.profile_id = profiles.id) ORDER BY list_updated_at ASC LIMIT ?"
     ).bind(threshold, limit).all<{ id: string }>();
     return results;
   }
@@ -167,7 +167,12 @@ export class ProfileModel {
   }
 
   async updateListSyncStatus(id: number, now: number | null, enabled: number): Promise<boolean> {
-    const result = await this.db.prepare("UPDATE lists SET last_synced_at = ?, enabled = ? WHERE id = ?").bind(now, enabled, id).run();
+    let result;
+    if (enabled === 1) {
+      result = await this.db.prepare("UPDATE lists SET last_synced_at = ?, enabled = ? WHERE id = ?").bind(now, enabled, id).run();
+    } else {
+      result = await this.db.prepare("UPDATE lists SET enabled = ? WHERE id = ?").bind(enabled, id).run();
+    }
     return result.success;
   }
 

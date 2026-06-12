@@ -31,7 +31,7 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
                 : t("filtering.neverSynced")}
             </td>
             <td>
-              <Tag intent={list.enabled ? Intent.SUCCESS : Intent.NONE} minimal>
+              <Tag intent={list.enabled ? Intent.SUCCESS : Intent.DANGER} minimal>
                 {list.enabled ? t("filtering.enabled") : t("filtering.disabled")}
               </Tag>
             </td>
