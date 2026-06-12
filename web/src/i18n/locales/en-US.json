@@ -153,7 +153,13 @@
     "labelAllow": "Allow",
     "labelRedirect": "Redirect",
     "detailBlock": "Resolves to",
-    "detailAllow": "Forward to upstream"
+    "detailAllow": "Forward to upstream",
+    "patternEmpty": "Domain pattern cannot be empty",
+    "duplicatePattern": "Rule for this domain already exists",
+    "addSuccess": "Rule added successfully",
+    "addFailed": "Failed to add rule",
+    "updateSuccess": "Rule updated successfully",
+    "updateFailed": "Failed to update rule"
   },
   "analytics": {
     "customRange": "Custom Range",

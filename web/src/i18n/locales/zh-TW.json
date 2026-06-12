@@ -153,7 +153,13 @@
     "labelAllow": "放行",
     "labelRedirect": "重定向",
     "detailBlock": "解析至",
-    "detailAllow": "轉發至上游服務"
+    "detailAllow": "轉發至上游服務",
+    "patternEmpty": "域名模式不能為空",
+    "duplicatePattern": "該域名的規則已存在",
+    "addSuccess": "規則新增成功",
+    "addFailed": "新增規則失敗",
+    "updateSuccess": "規則更新成功",
+    "updateFailed": "更新規則失敗"
   },
   "analytics": {
     "customRange": "自定義時間範圍",

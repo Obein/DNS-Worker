@@ -1,3 +1,5 @@
+import { OverlayToaster } from "@blueprintjs/core";
+
 export interface Rule {
   id: number;
   type: "ALLOW" | "BLOCK" | "REDIRECT";
@@ -16,6 +18,7 @@ export interface RulesViewProps {
     recordType?: string;
   } | null;
   onPrefillUsed?: () => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
 export interface ProfileSettings {

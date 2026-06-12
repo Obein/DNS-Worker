@@ -82,6 +82,7 @@ export const ProfileRoutes = ({
               profileId={id}
               prefill={prefilledRule}
               onPrefillUsed={() => setPrefilledRule(null)}
+              toasterRef={toasterRef}
             />
           }
         />

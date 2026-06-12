@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Callout } from "@blueprintjs/core";
+import { Callout, Intent } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 
 import type {  Rule, RulesViewProps, ProfileSettings  } from "./types";
@@ -7,7 +7,7 @@ import { AddRuleCard } from "./components/AddRuleCard";
 import { RulesTable } from "./components/RulesTable";
 import { EditRuleDialog } from "./components/EditRuleDialog";
 
-export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPrefillUsed }) => {
+export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPrefillUsed, toasterRef }) => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [settings, setSettings] = useState<ProfileSettings | null>(null);
   const [, setLoading] = useState(true);
@@ -80,32 +80,101 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   };
 
   const addRule = async () => {
-    if (!newRule.pattern) return;
-    await fetch(`/api/profiles/${profileId}/rules`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newRule),
-    });
-    setNewRule({
-      type: "BLOCK",
-      pattern: "",
-      v_a: "",
-      v_aaaa: "",
-      v_txt: "",
-      v_cname: "",
-    });
-    fetchRules();
+    const trimmedPattern = newRule.pattern.trim();
+    if (!trimmedPattern) {
+      toasterRef?.current?.show({
+        message: t("rules.patternEmpty", "Domain pattern cannot be empty"),
+        intent: Intent.DANGER,
+      });
+      return;
+    }
+    const normalizedPattern = trimmedPattern.toLowerCase();
+    if (rules.some(r => r.pattern.trim().toLowerCase() === normalizedPattern)) {
+      toasterRef?.current?.show({
+        message: t("rules.duplicatePattern", "Rule for this domain already exists"),
+        intent: Intent.DANGER,
+      });
+      return;
+    }
+    try {
+      const response = await fetch(`/api/profiles/${profileId}/rules`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...newRule, pattern: trimmedPattern }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        toasterRef?.current?.show({
+          message: errorText || t("rules.addFailed", "Failed to add rule"),
+          intent: Intent.DANGER,
+        });
+        return;
+      }
+      toasterRef?.current?.show({
+        message: t("rules.addSuccess", "Rule added successfully"),
+        intent: Intent.SUCCESS,
+      });
+      setNewRule({
+        type: "BLOCK",
+        pattern: "",
+        v_a: "",
+        v_aaaa: "",
+        v_txt: "",
+        v_cname: "",
+      });
+      fetchRules();
+    } catch (e) {
+      toasterRef?.current?.show({
+        message: t("rules.addFailed", "Failed to add rule"),
+        intent: Intent.DANGER,
+      });
+    }
   };
 
   const saveEditRule = async () => {
-    if (!editRule || !editRule.pattern) return;
-    await fetch(`/api/profiles/${profileId}/rules`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editRule),
-    });
-    setEditRule(null);
-    fetchRules();
+    if (!editRule) return;
+    const trimmedPattern = editRule.pattern.trim();
+    if (!trimmedPattern) {
+      toasterRef?.current?.show({
+        message: t("rules.patternEmpty", "Domain pattern cannot be empty"),
+        intent: Intent.DANGER,
+      });
+      return;
+    }
+    const normalizedPattern = trimmedPattern.toLowerCase();
+    if (rules.some(r => r.id !== editRule.id && r.pattern.trim().toLowerCase() === normalizedPattern)) {
+      toasterRef?.current?.show({
+        message: t("rules.duplicatePattern", "Rule for this domain already exists"),
+        intent: Intent.DANGER,
+      });
+      return;
+    }
+    try {
+      const response = await fetch(`/api/profiles/${profileId}/rules`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...editRule, pattern: trimmedPattern }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        toasterRef?.current?.show({
+          message: errorText || t("rules.updateFailed", "Failed to update rule"),
+          intent: Intent.DANGER,
+        });
+        return;
+      }
+      toasterRef?.current?.show({
+        message: t("rules.updateSuccess", "Rule updated successfully"),
+        intent: Intent.SUCCESS,
+      });
+      setEditRule(null);
+      fetchRules();
+    } catch (e) {
+      toasterRef?.current?.show({
+        message: t("rules.updateFailed", "Failed to update rule"),
+        intent: Intent.DANGER,
+      });
+    }
   };
 
   const cancelEdit = () => {

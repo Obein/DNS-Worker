@@ -249,8 +249,34 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
     // 子资源路由: /api/profiles/:id/rules
     if (pathParts[3] === 'rules') {
       if (request.method === 'GET') { const results = await profileModel.getRules(profileId); return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } }); }
-      if (request.method === 'POST') { const rule = await request.json() as any; await profileModel.addRule(profileId, rule); ctx.waitUntil(pipeline.clearCache(profileId)); return new Response(null, { status: 201 }); }
-      if (request.method === 'PUT') { const rule = await request.json() as any; await profileModel.updateRule(rule.id, profileId, rule); ctx.waitUntil(pipeline.clearCache(profileId)); return new Response(null, { status: 200 }); }
+      if (request.method === 'POST') {
+        const rule = await request.json() as any;
+        const pattern = rule.pattern ? rule.pattern.trim() : "";
+        if (!pattern) {
+          return new Response("Domain pattern cannot be empty", { status: 400 });
+        }
+        const existing = await profileModel.getRuleByPattern(profileId, pattern);
+        if (existing) {
+          return new Response("Rule for this domain already exists", { status: 400 });
+        }
+        await profileModel.addRule(profileId, rule);
+        ctx.waitUntil(pipeline.clearCache(profileId));
+        return new Response(null, { status: 201 });
+      }
+      if (request.method === 'PUT') {
+        const rule = await request.json() as any;
+        const pattern = rule.pattern ? rule.pattern.trim() : "";
+        if (!pattern) {
+          return new Response("Domain pattern cannot be empty", { status: 400 });
+        }
+        const existing = await profileModel.getRuleByPatternExcludeId(profileId, pattern, rule.id);
+        if (existing) {
+          return new Response("Rule for this domain already exists", { status: 400 });
+        }
+        await profileModel.updateRule(rule.id, profileId, rule);
+        ctx.waitUntil(pipeline.clearCache(profileId));
+        return new Response(null, { status: 200 });
+      }
       if (request.method === 'DELETE') { const { id } = await request.json() as any; await profileModel.deleteRule(id, profileId); ctx.waitUntil(pipeline.clearCache(profileId)); return new Response(null, { status: 204 }); }
     }
   }
