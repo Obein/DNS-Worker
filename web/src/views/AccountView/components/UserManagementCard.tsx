@@ -3,6 +3,7 @@ import { Card, Elevation, H4, Button, Intent, HTMLTable, Dialog, FormGroup, Inpu
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
+import { PASSWORD_REGEX } from "../../../utils/auth";
 import type {  UserInfo  } from "../types";
 
 export interface UserManagementCardProps {
@@ -22,7 +23,7 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
 
   const handleCreateUser = async () => {
     if (!/^[a-zA-Z0-9]{5,15}$/.test(newUsername)) { alert(t("account.formatTipUsername")); return; }
-    if (!/^[a-zA-Z0-9]{12,}$/.test(newUserPassword)) { alert(t("account.formatTipPassword")); return; }
+    if (!PASSWORD_REGEX.test(newUserPassword)) { alert(t("account.formatTipPassword")); return; }
     setCreateLoading(true);
     try {
       const res = await fetch("/api/admin/users", {

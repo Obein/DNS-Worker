@@ -1,7 +1,7 @@
 import { Context, Env, User, ExecutionContext } from './types';
 import { parseDNSQuery } from './utils/dns';
 import { pipeline } from './pipeline';
-import { readSessionCookie, validateSession, getRequestCoordinates } from './lib/auth';
+import { readSessionCookie, validateSession, getRequestCoordinates, readCsrfCookie, createCsrfCookie, generateId } from './lib/auth';
 import { handleAuthRequest } from './api/auth';
 import { handleProfilesRequest } from './api/profiles';
 import { handleAccountRequest } from './api/account';
@@ -37,6 +37,8 @@ export default {
       });
     };
 
+    let currentUser: User | null = null;
+
     const handleRequest = async (): Promise<Response> => {
       const url = new URL(request.url);
 
@@ -48,7 +50,6 @@ export default {
       }
 
       // 鉴权中间件逻辑 (仅对 /api 路由生效)
-      let currentUser: User | null = null;
       if (url.pathname.startsWith('/api/')) {
         const cookieHeader = request.headers.get("Cookie") || "";
         const sessionId = readSessionCookie(cookieHeader);
@@ -65,6 +66,15 @@ export default {
 
         if (!currentUser && !isAuthRoute && !isMobileConfigRoute) {
           return new Response("Unauthorized", { status: 401 });
+        }
+
+        // CSRF Double Submit Cookie check for mutations
+        if (currentUser && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isAuthRoute) {
+          const csrfCookie = readCsrfCookie(cookieHeader);
+          const csrfHeader = request.headers.get("X-CSRF-Token");
+          if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+            return new Response("CSRF validation failed", { status: 403 });
+          }
         }
 
         // 业务 API 路由
@@ -214,7 +224,26 @@ export default {
       }
     };
 
-    return applySecurityHeaders(await handleRequest());
+    let response = await handleRequest();
+    // Ensure CSRF token is set in cookies if authenticated but cookie is missing from the request
+    if (currentUser && !readCsrfCookie(request.headers.get("Cookie"))) {
+      try {
+        const csrfToken = generateId(32);
+        response.headers.append("Set-Cookie", createCsrfCookie(csrfToken));
+      } catch (e) {
+        // If headers are immutable (e.g. from static asset fetch), clone the response and set the header
+        const newHeaders = new Headers(response.headers);
+        const csrfToken = generateId(32);
+        newHeaders.append("Set-Cookie", createCsrfCookie(csrfToken));
+        response = new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: newHeaders
+        });
+      }
+    }
+
+    return applySecurityHeaders(response);
   },
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {

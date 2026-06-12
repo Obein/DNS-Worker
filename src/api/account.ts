@@ -9,6 +9,8 @@ import { LogModel } from "../models/log";
 import { ActivityLogModel } from "../models/activityLog";
 import { SystemSettingsModel } from "../models/systemSettings";
 
+const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
+
 export async function handleAccountRequest(request: Request, env: Env, user: User, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
@@ -52,7 +54,7 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
     // POST /api/account/password (password change)
     if (pathParts[2] === 'password' && request.method === 'POST') {
       const { oldPassword, totpTokenHash, totpSalt, newPassword } = await request.json() as any;
-      if (!newPassword || newPassword.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
+      if (!newPassword || !PASSWORD_REGEX.test(newPassword)) {
         return new Response("Password format error", { status: 400 });
       }
       const dbUser = await userModel.getById(user.id);
@@ -233,7 +235,7 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
         if (!username || !/^[a-zA-Z0-9]{5,15}$/.test(username)) {
           return new Response("Invalid username format", { status: 400 });
         }
-        if (!password || password.length < 8 || !/(?=.*[a-zA-Z])(?=.*[0-9])/.test(password)) {
+        if (!password || !PASSWORD_REGEX.test(password)) {
           return new Response("Password format error", { status: 400 });
         }
         const hashedPassword = await hashPassword(password);

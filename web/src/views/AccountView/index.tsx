@@ -12,6 +12,7 @@ import { SystemSettingsCard } from "./components/SystemSettingsCard";
 import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
+import { PASSWORD_REGEX } from "../../utils/auth";
 
 /**
  * AccountView serves as the primary dashboard for user settings, profile updates,
@@ -112,7 +113,7 @@ export const AccountView: React.FC = () => {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^[a-zA-Z0-9]{12,}$/.test(newPassword)) {
+    if (!PASSWORD_REGEX.test(newPassword)) {
       setPwMessage({
         text: t("account.formatTipPassword"),
         intent: Intent.DANGER

@@ -22,21 +22,11 @@ const SESSION_COOKIE_NAME = "auth_session";
 const SESSION_ID_LENGTH = 80;
 
 /**
- * Extracts coordinates from the request (headers first, then Cloudflare geo-IP).
+ * Extracts coordinates from the request strictly using Cloudflare geo-IP.
+ * Client headers are ignored to prevent geolocation spoofing.
  */
 export function getRequestCoordinates(request: Request): { latitude: number | null, longitude: number | null } {
-  // 1. Direct browser geolocation from custom headers
-  const headerLat = request.headers.get("X-Client-Latitude");
-  const headerLon = request.headers.get("X-Client-Longitude");
-  if (headerLat && headerLon) {
-    const lat = parseFloat(headerLat);
-    const lon = parseFloat(headerLon);
-    if (!isNaN(lat) && !isNaN(lon)) {
-      return { latitude: lat, longitude: lon };
-    }
-  }
-
-  // 2. Fallback to Cloudflare IP-based location
+  // 1. Only trust Cloudflare IP-based location
   const cf = (request as any).cf;
   if (cf && cf.latitude && cf.longitude) {
     const lat = parseFloat(cf.latitude);
@@ -44,6 +34,12 @@ export function getRequestCoordinates(request: Request): { latitude: number | nu
     if (!isNaN(lat) && !isNaN(lon)) {
       return { latitude: lat, longitude: lon };
     }
+  }
+
+  // 2. Local loopback mock fallback for development
+  const clientIp = request.headers.get("CF-Connecting-IP") || "";
+  if (clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "") {
+    return { latitude: 0, longitude: 0 };
   }
 
   return { latitude: null, longitude: null };
@@ -220,6 +216,23 @@ export function createBlankSessionCookie(): string {
 export function readSessionCookie(cookieHeader: string | null): string | null {
   if (!cookieHeader) return null;
   const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]*)`));
+  return match ? match[1] : null;
+}
+
+/**
+ * Returns a serialized Set-Cookie header string for a new CSRF token.
+ * This cookie is not HttpOnly so that client-side JavaScript can read it to append the header.
+ */
+export function createCsrfCookie(token: string): string {
+  return `csrf_token=${token}; SameSite=Lax; Path=/; Secure`;
+}
+
+/**
+ * Parses the Cookie header and returns the CSRF token if present.
+ */
+export function readCsrfCookie(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null;
+  const match = cookieHeader.match(/(?:^|;\s*)csrf_token=([^;]*)/);
   return match ? match[1] : null;
 }
 
