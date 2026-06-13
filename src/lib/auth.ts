@@ -29,7 +29,7 @@ const SESSION_ID_LENGTH = 80;
  * Client headers are ignored to prevent geolocation spoofing.
  */
 export function getRequestCoordinates(request: Request): { latitude: number | null, longitude: number | null } {
-  // 1. Only trust Cloudflare IP-based location
+  // Only trust Cloudflare IP-based location
   const cf = (request as any).cf;
   if (cf && cf.latitude && cf.longitude) {
     const lat = parseFloat(cf.latitude);
@@ -39,7 +39,7 @@ export function getRequestCoordinates(request: Request): { latitude: number | nu
     }
   }
 
-  // 2. Local loopback mock fallback for development
+  // Local loopback mock fallback for development
   const clientIp = request.headers.get("CF-Connecting-IP") || "";
   if (clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "") {
     return { latitude: 0, longitude: 0 };
@@ -201,20 +201,20 @@ export async function rotateSession(
     role: result.role as 'admin' | 'user'
   };
 
-  // 1. Anti-reuse mechanism
+  // Anti-reuse mechanism
   if (session.rotation_counter !== parsed.v) {
     // Token reuse detected. Terminate the session immediately.
     await invalidateSession(env, session.id);
     return { session: null, user: null, newRefreshToken: null };
   }
 
-  // 2. Expiration check
+  // Expiration check
   if (Math.floor(Date.now() / 1000) >= session.expires_at) {
     await invalidateSession(env, session.id);
     return { session: null, user: null, newRefreshToken: null };
   }
 
-  // 3. Strict Geolocation Check
+  // Strict Geolocation Check
   if (
     session.latitude === null || session.latitude === undefined ||
     session.longitude === null || session.longitude === undefined ||
@@ -231,7 +231,7 @@ export async function rotateSession(
     return { session: null, user: null, newRefreshToken: null };
   }
 
-  // 4. Session extension (if close to expiration)
+  // Session extension (if close to expiration)
   const timeRemaining = session.expires_at - Math.floor(Date.now() / 1000);
   const expirationDays = Number(env.SESSION_EXPIRATION_DAYS) || 1;
   const totalDurationInSeconds = expirationDays * 24 * 60 * 60;
@@ -241,7 +241,7 @@ export async function rotateSession(
     await sessionModel.extendSession(session.id, session.expires_at);
   }
 
-  // 5. Rotate the token
+  // Rotate the token
   await sessionModel.incrementRotationCounter(session.id);
   const newCounter = (session.rotation_counter || 0) + 1;
   const newRefreshToken = createRefreshTokenString(session.id, newCounter);
