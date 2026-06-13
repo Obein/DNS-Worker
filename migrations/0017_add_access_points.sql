@@ -18,7 +18,7 @@ INSERT INTO access_points (id, profile_id, name, token, created_at, updated_at)
 SELECT 
     lower(hex(randomblob(6))), 
     id, 
-    'Device 1', 
+    'Device-1', 
     COALESCE(profile_key, lower(id)), 
     created_at, 
     updated_at

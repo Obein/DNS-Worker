@@ -90,7 +90,7 @@
     "currentLocation": "Current Location",
     "dohUrlTitle": "Access DoH URL",
     "accessPointTitle": "Access DoH URL",
-    "defaultAccessPointName": "Device 1",
+    "defaultAccessPointName": "Device-1",
     "moreAccessPoints": "More Access Points ↗",
     "accessPointName": "Access Point Name",
     "accessPointToken": "Access Key",

@@ -63,7 +63,7 @@ export class ProfileModel {
       ).bind(profile.id, profileKey, profile.owner_id, profile.name, JSON.stringify(profile.settings), now, now),
       this.db.prepare(
         "INSERT INTO access_points (id, profile_id, name, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
-      ).bind(apId, profile.id, "Device 1", profileKey, now, now)
+      ).bind(apId, profile.id, "Device-1", profileKey, now, now)
     ];
 
     const results = await this.db.batch(statements);
