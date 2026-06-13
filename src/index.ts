@@ -124,6 +124,54 @@ export default {
             regions
           }), { headers: { 'Content-Type': 'application/json' } });
         }
+        if (url.pathname === '/api/substitute') {
+          const subDomain = env.SUBSTITUTE_DOMAIN || "pages.dev";
+          let substituteDomainIp: string | null = null;
+          let substituteDomainIpv6: string | null = null;
+
+          const resolveRecord = async (type: 'A' | 'AAAA'): Promise<string | null> => {
+            const dnsServers = [
+              'https://cloudflare-dns.com/dns-query',
+              'https://1.1.1.1/dns-query'
+            ];
+            for (const server of dnsServers) {
+              try {
+                const res = await fetch(`${server}?name=${subDomain}&type=${type}`, {
+                  headers: { 'Accept': 'application/dns-json' },
+                  signal: AbortSignal.timeout(3000)
+                });
+                if (res.ok) {
+                  const data = await res.json() as any;
+                  if (data?.Answer?.length > 0) {
+                    const record = data.Answer.find((a: any) => a.type === (type === 'A' ? 1 : 28));
+                    if (record?.data) {
+                      return record.data;
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error(`[Substitute Resolve] Failed resolving ${type} via ${server}:`, e);
+              }
+            }
+            return null;
+          };
+
+          try {
+            const [ip, ipv6] = await Promise.all([
+              resolveRecord('A'),
+              resolveRecord('AAAA')
+            ]);
+            substituteDomainIp = ip;
+            substituteDomainIpv6 = ipv6;
+          } catch (e) {
+            console.error('[Substitute API] Error resolving substitute domain:', e);
+          }
+
+          return new Response(JSON.stringify({
+            ip: substituteDomainIp,
+            ipv6: substituteDomainIpv6
+          }), { headers: { 'Content-Type': 'application/json' } });
+        }
         if (url.pathname.startsWith('/api/profiles')) {
           return handleProfilesRequest(request, env, currentUser, ctx);
         }
