@@ -78,7 +78,7 @@ export const LogsTable: React.FC<LogsTableProps> = ({ logs, setSelectedLog, setI
                       {getFlagEmoji(log.geo_country || "UN")}
                     </Tag>
                     {log.access_point_name && (
-                      <span className="text-xs opacity-70 truncate max-w-[80px]" title={log.access_point_name}>
+                      <span className="text-xs opacity-70 truncate max-w-20" title={log.access_point_name}>
                         {log.access_point_name}
                       </span>
                     )}
