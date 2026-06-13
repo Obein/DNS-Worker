@@ -40,16 +40,31 @@ export const ScrollingIntro: React.FC = () => {
     let requestId: number;
     const scrollSpeed = 0.6;
     const scroll = () => {
-      if (!isPaused) {
-        container.scrollTop += scrollSpeed;
-        if (container.scrollTop >= container.scrollHeight / 2) container.scrollTop = 0;
+      const bubbles = Array.from(container.children) as HTMLElement[];
+      if (bubbles.length >= INTRO_ITEMS.length * 3) {
+        const y0 = bubbles[0].offsetTop;
+        const yN = bubbles[INTRO_ITEMS.length].offsetTop;
+        const loopHeight = yN - y0;
+
+        if (loopHeight > 0) {
+          if (!isPaused) {
+            container.scrollTop += scrollSpeed;
+          }
+
+          if (container.scrollTop >= loopHeight * 2) {
+            container.scrollTop -= loopHeight;
+          } else if (container.scrollTop < loopHeight) {
+            container.scrollTop += loopHeight;
+          }
+        }
       }
+
       const rect = container.getBoundingClientRect();
       const hotZone = rect.top + rect.height / 3;
-      const bubbles = Array.from(container.children);
+      const bubblesForFocus = Array.from(container.children);
       let foundIdx = -1;
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubbleRect = bubbles[i].getBoundingClientRect();
+      for (let i = 0; i < bubblesForFocus.length; i++) {
+        const bubbleRect = bubblesForFocus[i].getBoundingClientRect();
         if (bubbleRect.top <= hotZone && bubbleRect.bottom >= hotZone) {
           foundIdx = i % INTRO_ITEMS.length;
           break;
@@ -62,7 +77,7 @@ export const ScrollingIntro: React.FC = () => {
     return () => cancelAnimationFrame(requestId);
   }, [isPaused]);
 
-  const displayItems = [...INTRO_ITEMS, ...INTRO_ITEMS, ...INTRO_ITEMS, ...INTRO_ITEMS, ...INTRO_ITEMS, ...INTRO_ITEMS];
+  const displayItems = [...INTRO_ITEMS, ...INTRO_ITEMS, ...INTRO_ITEMS];
 
   return (
     <div
