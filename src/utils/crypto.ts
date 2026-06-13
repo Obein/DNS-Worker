@@ -81,3 +81,18 @@ export async function verifyPassword(password: string, storedHash: string): Prom
   }
   return result === 0;
 }
+
+/**
+ * Generates a secure random ID of the specified length.
+ */
+export function generateId(length: number): string {
+  const byteLength = Math.ceil(length / 2);
+  const bytes = new Uint8Array(byteLength);
+  
+  crypto.getRandomValues(bytes);
+  
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, length);
+}
