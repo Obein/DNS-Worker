@@ -8,7 +8,6 @@ import { UpstreamCard } from "./components/UpstreamCard";
 import { DefaultPolicyCard } from "./components/DefaultPolicyCard";
 import { LogRetentionCard } from "./components/LogRetentionCard";
 import { AdvancedEcsCard } from "./components/AdvancedEcsCard";
-import { SecurityAccessCard } from "./components/SecurityAccessCard";
 import { DnsTestCard } from "./components/DnsTestCard";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef }) => {
@@ -20,7 +19,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
-  const [rotatingKey, setRotatingKey] = useState(false);
 
   // DNS 测试相关状态
   const [testInput, setTestInput] = useState({
@@ -102,34 +100,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
     }
   };
 
-  const rotateProfileKey = async () => {
-    if (!window.confirm(t("settings.rotateKeyWarning", "This will generate a new access URL. Existing devices using the old URL will immediately lose connection. Are you sure you want to continue?"))) {
-      return;
-    }
-    setRotatingKey(true);
-    try {
-      const res = await fetch(`/api/profiles/${profileId}/rotate_key`, { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile((prev) => (prev ? { ...prev, profile_key: data.profile_key } : null));
-        toasterRef?.current?.show({
-          message: t("settings.rotateKeySuccess", "Profile access URL rotated successfully."),
-          intent: Intent.SUCCESS,
-          icon: "tick",
-        });
-      } else {
-        throw new Error("Failed to rotate key");
-      }
-    } catch (e) {
-      toasterRef?.current?.show({
-        message: t("settings.rotateKeyError", "Failed to rotate access URL."),
-        intent: Intent.DANGER,
-        icon: "error",
-      });
-    } finally {
-      setRotatingKey(false);
-    }
-  };
+
 
   const handleDnsTest = async () => {
     if (!testInput.domain) return;
@@ -218,14 +189,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         <LogRetentionCard settings={settings} setSettings={setSettings} />
         <AdvancedEcsCard settings={settings} setSettings={setSettings} />
       </div>
-
-      <SecurityAccessCard
-        profileId={profileId}
-        profile={profile}
-        rotateProfileKey={rotateProfileKey}
-        rotatingKey={rotatingKey}
-        toasterRef={toasterRef}
-      />
 
       <DnsTestCard
         testInput={testInput}
