@@ -8,7 +8,8 @@ import {
   BarChart3,
   Edit3,
   Zap,
-  Cpu
+  Cpu,
+  MonitorSmartphone
 } from "lucide-react";
 
 const INTRO_ITEMS = [
@@ -19,6 +20,7 @@ const INTRO_ITEMS = [
   { icon: BarChart3, colorClass: "text-red-500", titleKey: "intro.item5Title", descKey: "intro.item5Desc" },
   { icon: Zap, colorClass: "text-yellow-500", titleKey: "intro.item6Title", descKey: "intro.item6Desc" },
   { icon: Cpu, colorClass: "text-cyan-500", titleKey: "intro.item7Title", descKey: "intro.item7Desc" },
+  { icon: MonitorSmartphone, colorClass: "text-indigo-500", titleKey: "intro.item9Title", descKey: "intro.item9Desc" },
   { icon: Edit3, colorClass: "text-pink-500", titleKey: "intro.item8Title", descKey: "intro.item8Desc" },
 ];
 

@@ -457,6 +457,8 @@
     "item7Title": "Cloud Native Architecture",
     "item7Desc": "Serverless architecture ensures zero maintenance and infinite scalability.",
     "item8Title": "Multi-Profile Management",
-    "item8Desc": "Manage independent configurations for different devices or environments."
+    "item8Desc": "Manage independent configurations for different devices or environments.",
+    "item9Title": "Multiple Access Points",
+    "item9Desc": "Configure unique sub-URLs for different devices to monitor logs and statistics independently."
   }
 }
