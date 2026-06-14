@@ -1,6 +1,6 @@
 import { Env, User, ExecutionContext } from "../types";
 import { RBAC } from "../lib/rbac";
-import { generateId, createBlankRefreshTokenCookie, readRefreshTokenCookie } from "../lib/auth";
+import { generateId, createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../lib/auth";
 import { hashPassword, verifyPassword } from "../utils/crypto";
 import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../lib/totp";
 import { UserModel } from "../models/user";
@@ -104,7 +104,8 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
       const sessions = await sessionModel.getSessionsByUser(user.id);
       
       const cookieHeader = request.headers.get("Cookie") || "";
-      const currentSessionId = readRefreshTokenCookie(cookieHeader);
+      const refreshToken = readRefreshTokenCookie(cookieHeader);
+      const currentSessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
       
       const sessionData = sessions.map(s => ({
         ...s,
@@ -131,7 +132,8 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
       await activityLog.record(user.id, 'session_revoked', clientIp, userAgent);
       
       // If revoking current session, clear cookie
-      const currentSessionId = readRefreshTokenCookie(request.headers.get("Cookie") || "");
+      const refreshToken = readRefreshTokenCookie(request.headers.get("Cookie") || "");
+      const currentSessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
       if (targetSessionId === currentSessionId) {
         return new Response(JSON.stringify({ success: true, is_current: true }), {
           headers: { "Set-Cookie": createBlankRefreshTokenCookie(), "Content-Type": "application/json" }
@@ -215,7 +217,8 @@ export async function handleAccountRequest(request: Request, env: Env, user: Use
     if (pathParts[2] === 'delete' && request.method === 'POST') {
       const { invalidateSession } = await import("../lib/auth");
       const cookieHeader = request.headers.get("Cookie") || "";
-      const sessionId = readRefreshTokenCookie(cookieHeader);
+      const refreshToken = readRefreshTokenCookie(cookieHeader);
+      const sessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
       if (sessionId) await invalidateSession(env, sessionId);
       await userModel.delete(user.id);
       return new Response(JSON.stringify({ success: true }), {
