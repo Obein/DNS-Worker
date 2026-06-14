@@ -102,6 +102,7 @@
     "deleteAccessPoint": "刪除",
     "deleteAccessPointConfirm": "確定要刪除此存取點嗎？",
     "manageAccessPoints": "管理存取點",
+    "searchAccessPoints": "搜尋存取點...",
     "accessPointCreated": "存取點創建成功",
     "accessPointRenamed": "存取點重命名成功",
     "accessPointDeleted": "存取點刪除成功",

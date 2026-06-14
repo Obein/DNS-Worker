@@ -27,7 +27,11 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
 
     if (request.method === 'POST') {
       const body = await request.json() as { name: string };
-      const existing = await profileModel.findByName(user.id, body.name);
+      
+      const existingProfiles = await profileModel.listByOwner(user.id);
+      if (existingProfiles.length >= 10) return new Response("Profile limit exceeded (max 10)", { status: 400 });
+
+      const existing = existingProfiles.find(p => p.name === body.name);
       if (existing) return new Response("The profile name already exists", { status: 400 });
 
       const newId = generateId(6);
@@ -277,6 +281,10 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
         const body = await request.json() as { name: string };
         if (!body.name) return new Response("Name is required", { status: 400 });
         if (!AP_NAME_REGEX.test(body.name)) return new Response("Invalid Access Point name format", { status: 400 });
+        
+        const currentAps = await profileModel.getAccessPoints(profileId);
+        if (currentAps.length >= 100) return new Response("Access point limit exceeded (max 100)", { status: 400 });
+        
         const result = await profileModel.addAccessPoint(profileId, body.name);
         return new Response(JSON.stringify(result), { status: 201, headers: { 'Content-Type': 'application/json' } });
       }

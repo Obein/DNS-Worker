@@ -101,6 +101,7 @@
     "deleteAccessPoint": "Delete",
     "deleteAccessPointConfirm": "Are you sure you want to delete this access point?",
     "manageAccessPoints": "Manage Access Points",
+    "searchAccessPoints": "Search Access Points...",
     "accessPointCreated": "Access Point created successfully",
     "accessPointRenamed": "Access Point renamed successfully",
     "accessPointDeleted": "Access Point deleted successfully",

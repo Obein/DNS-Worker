@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Drawer, Position, Section, SectionCard, Button, Intent, Spinner, Dialog, Classes, InputGroup, Tooltip, Popover } from "@blueprintjs/core";
-import { Trash2, Edit2, RefreshCw, Plus, MonitorSmartphone, Copy } from "lucide-react";
+import { Trash2, Edit2, RefreshCw, Plus, MonitorSmartphone, Copy, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
 import { formatDateTime } from "../../../utils/date";
@@ -44,6 +44,14 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
   const [newApNameFocused, setNewApNameFocused] = useState(false);
   const [renameApNameFocused, setRenameApNameFocused] = useState(false);
   const [rotateConfirmApId, setRotateConfirmApId] = useState<string | null>(null);
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredAccessPoints = accessPoints.filter(ap => 
+    ap.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    ap.token.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const isValidApName = (name: string) => AP_NAME_REGEX.test(name);
 
@@ -130,7 +138,23 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
       <Drawer
         isOpen={isOpen}
         onClose={onClose}
-        title={t("setup.manageAccessPoints")}
+        title={
+          isSearchOpen ? (
+            <InputGroup
+              leftIcon="search"
+              placeholder={t("setup.searchAccessPoints", "Search...")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              rightElement={<Button icon="cross" minimal onClick={() => { setIsSearchOpen(false); setSearchQuery(""); }} />}
+              autoFocus
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <span>{t("setup.manageAccessPoints")}</span>
+              <Button icon={<Search size={14} />} minimal onClick={() => setIsSearchOpen(true)} className="opacity-50 hover:opacity-100" />
+            </div>
+          )
+        }
         icon="diagram-tree"
         position={Position.RIGHT}
         size={isMobile ? "100%" : "450px"}
@@ -150,7 +174,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
             <div className="flex justify-center p-8"><Spinner /></div>
           ) : (
             <div className="space-y-4 mt-4">
-              {accessPoints.map(ap => (
+              {filteredAccessPoints.map(ap => (
                 <Section key={ap.id} title={
                   <div className="flex items-center gap-2">
                     <MonitorSmartphone size={16} />
