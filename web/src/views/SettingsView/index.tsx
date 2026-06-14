@@ -64,6 +64,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
           message: t("settings.nameUpdateSuccess", "名称已更新"),
           intent: Intent.SUCCESS,
         });
+      } else {
+        const rawErr = await res.text();
+        let errMsg = rawErr;
+        if (rawErr === "The profile name already exists") {
+          errMsg = t("common.profileNameExists", "The profile name already exists");
+        } else if (rawErr === "Invalid Profile Name format") {
+          errMsg = t("common.profileNameFormatError", "Invalid Profile Name format");
+        }
+        toasterRef?.current?.show({
+          message: errMsg || t("settings.nameUpdateFailed", "更新失败"),
+          intent: Intent.DANGER,
+        });
       }
     } catch (e) {
       console.error(e);
