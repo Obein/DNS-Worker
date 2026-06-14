@@ -106,7 +106,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     { title: t("analytics.blocked"), value: blocked.toLocaleString(), icon: <ShieldAlert className="text-red-500" size={20} /> },
     { title: t("analytics.redirected"), value: redirected.toLocaleString(), icon: <RotateCcw className="text-amber-500" size={20} /> },
     { title: t("analytics.blockRate"), value: `${blockRate}%`, icon: <Shield className="text-green-500" size={20} /> },
-    { title: t("analytics."), value: data?.clients.length.toString() || "0", icon: <Globe className="text-purple-500" size={20} /> },
+    { title: t("analytics.activeIPs"), value: data?.clients.length.toString() || "0", icon: <Globe className="text-purple-500" size={20} /> },
   ];
 
   return (
