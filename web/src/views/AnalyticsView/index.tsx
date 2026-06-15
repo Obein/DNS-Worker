@@ -23,6 +23,7 @@ import {
   Geographies,
   Geography,
   createCoordinates,
+  createTranslateExtent,
 } from "@vnedyalk0v/react19-simple-maps";
 
 import type {  AnalyticsData, TimeRange  } from "./types";
@@ -53,6 +54,13 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     y: number;
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const bounds = React.useMemo(() => {
+    return createTranslateExtent(
+      createCoordinates(-100, -50),
+      createCoordinates(900, 450)
+    );
+  }, []);
 
   useEffect(() => {
     fetch("/world-110m.json")
@@ -337,6 +345,8 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
                   onMoveEnd={(pos) => setPosition({ coordinates: createCoordinates(pos.coordinates[0], pos.coordinates[1]), zoom: pos.zoom })}
                   maxZoom={8}
                   minZoom={1}
+                  enablePan={true}
+                  translateExtent={bounds}
                 >
                   {geographyData && (
                     <Geographies geography={geographyData}>
