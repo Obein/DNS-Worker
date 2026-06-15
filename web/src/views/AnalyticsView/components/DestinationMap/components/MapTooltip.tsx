@@ -34,6 +34,11 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
 
   useEffect(() => {
     if (!countryCode || !profileId) return;
+    if (count <= 0) {
+      setIsps([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     let queryParams = `?country_code=${countryCode}&range=${range}`;
     if (range === "custom" && customRange.start && customRange.end) {
@@ -57,7 +62,7 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [countryCode, profileId, range, customRange, accessPointId]);
+  }, [countryCode, profileId, range, customRange, accessPointId, count]);
 
   useLayoutEffect(() => {
     if (!tooltipRef.current) return;
