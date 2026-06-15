@@ -44,7 +44,6 @@ export const MapGeographies: React.FC<MapGeographiesProps> = ({
               flag,
               x,
               y,
-              isps: dest?.isps || [],
             });
           };
 

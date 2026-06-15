@@ -220,7 +220,13 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
         </Section>
 
         <Section title={t("analytics.destinationDistribution")} icon={<MapPin size={16} />}>
-          <DestinationMap destinations={data?.destinations || []} />
+          <DestinationMap
+            destinations={data?.destinations || []}
+            profileId={profileId || ""}
+            range={range}
+            customRange={customRange}
+            accessPointId={accessPointIdFilter || undefined}
+          />
         </Section>
       </div>
     </div>

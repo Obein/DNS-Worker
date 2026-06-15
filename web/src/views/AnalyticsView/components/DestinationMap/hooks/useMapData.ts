@@ -1,9 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-
-interface DestinationItem {
-  dest_geoip: string;
-  count: number;
-}
+import type { DestinationItem, CountryMapData } from "../types";
 
 export function useMapData(destinations: DestinationItem[]) {
   const [geographyData, setGeographyData] = useState<any>(null);
@@ -33,63 +29,18 @@ export function useMapData(destinations: DestinationItem[]) {
   }, [totalQueriesCount]);
 
   const destinationMap = useMemo(() => {
-    const map: Record<
-      string,
-      {
-        count: number;
-        name: string;
-        countryCode: string;
-        isps: Record<string, number>;
-      }
-    > = {};
-
+    const map: Record<string, CountryMapData> = {};
     destinations.forEach((d) => {
-      try {
-        const geo = JSON.parse(d.dest_geoip);
-        if (geo && geo.country_code) {
-          const code = geo.country_code.toUpperCase();
-          const isp = geo.isp || "Unknown";
-          if (map[code]) {
-            map[code].count += d.count;
-            map[code].isps[isp] = (map[code].isps[isp] || 0) + d.count;
-          } else {
-            map[code] = {
-              count: d.count,
-              name: geo.country,
-              countryCode: code,
-              isps: { [isp]: d.count },
-            };
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse dest_geoip", e);
+      if (d.country_code) {
+        const code = d.country_code.toUpperCase();
+        map[code] = {
+          count: d.count,
+          name: d.country,
+          countryCode: code,
+        };
       }
     });
-
-    const finalMap: Record<
-      string,
-      {
-        count: number;
-        name: string;
-        countryCode: string;
-        isps: { name: string; count: number }[];
-      }
-    > = {};
-
-    Object.keys(map).forEach((code) => {
-      const ispsArray = Object.entries(map[code].isps)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count);
-
-      finalMap[code] = {
-        count: map[code].count,
-        name: map[code].name,
-        countryCode: map[code].countryCode,
-        isps: ispsArray,
-      };
-    });
-
-    return finalMap;
+    return map;
   }, [destinations]);
 
   const getLevel = (count: number) => {

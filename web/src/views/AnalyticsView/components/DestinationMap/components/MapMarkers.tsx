@@ -54,7 +54,6 @@ export const MapMarkers: React.FC<MapMarkersProps> = ({
             flag,
             x,
             y,
-            isps: dest?.isps || [],
           });
         };
 
