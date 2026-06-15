@@ -39,8 +39,21 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
 
   const [position, setPosition] = useState({ coordinates: createCoordinates(0, 0), zoom: 1 });
   const [hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
+  const [ispCache, setIspCache] = useState<Record<string, { name: string; count: number }[]>>({});
   
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Clear cache when filters change
+  React.useEffect(() => {
+    setIspCache({});
+  }, [profileId, range, customRange, accessPointId]);
+
+  const handleCacheIsp = React.useCallback((countryCode: string, isps: { name: string; count: number }[]) => {
+    setIspCache((prev) => ({
+      ...prev,
+      [countryCode]: isps
+    }));
+  }, []);
 
   const bounds = React.useMemo(() => {
     return createTranslateExtent(
@@ -120,6 +133,8 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
             range={range}
             customRange={customRange}
             accessPointId={accessPointId}
+            ispCache={ispCache}
+            onCacheIsp={handleCacheIsp}
           />
         )}
       </div>

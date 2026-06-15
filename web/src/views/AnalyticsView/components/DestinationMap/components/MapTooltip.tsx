@@ -12,6 +12,8 @@ interface MapTooltipProps {
   range: string;
   customRange: { start: string; end: string };
   accessPointId?: string;
+  ispCache: Record<string, { name: string; count: number }[]>;
+  onCacheIsp: (countryCode: string, isps: { name: string; count: number }[]) => void;
 }
 
 export const MapTooltip: React.FC<MapTooltipProps> = ({
@@ -25,12 +27,19 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
   range,
   customRange,
   accessPointId,
+  ispCache,
+  onCacheIsp,
 }) => {
   const { t } = useTranslation();
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ left: x, top: y - 10, alignBottom: false });
   const [isps, setIsps] = useState<{ name: string; count: number }[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const cacheRef = useRef(ispCache);
+  cacheRef.current = ispCache;
+  const onCacheIspRef = useRef(onCacheIsp);
+  onCacheIspRef.current = onCacheIsp;
 
   useEffect(() => {
     if (!countryCode || !profileId) return;
@@ -39,6 +48,14 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
       setLoading(false);
       return;
     }
+
+    const cached = cacheRef.current[countryCode];
+    if (cached) {
+      setIsps(cached);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     let queryParams = `?country_code=${countryCode}&range=${range}`;
     if (range === "custom" && customRange.start && customRange.end) {
@@ -53,7 +70,10 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
     const controller = new AbortController();
     fetch(`/api/profiles/${profileId}/analytics/isps${queryParams}`, { signal: controller.signal })
       .then((r) => r.json())
-      .then((data) => setIsps(data))
+      .then((data) => {
+        setIsps(data);
+        onCacheIspRef.current(countryCode, data);
+      })
       .catch((e) => {
         if (e.name !== "AbortError") {
           console.error("Failed to fetch ISPs", e);
@@ -127,7 +147,7 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
               {t("analytics.topIsps", "Top ISPs")}
             </div>
             <div className="flex flex-col gap-0.5 min-w-36 max-w-48">
-              {isps.slice(0, 3).map((isp) => (
+              {isps.map((isp) => (
                 <div key={isp.name} className="flex justify-between gap-3 text-[11px] text-gray-600 dark:text-gray-300">
                   <span className="truncate" title={isp.name}>{isp.name}</span>
                   <span className="font-mono text-gray-400 dark:text-gray-500">{isp.count.toLocaleString()}</span>
