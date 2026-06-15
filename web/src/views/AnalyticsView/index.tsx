@@ -171,7 +171,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 xl:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 xl:gap-4">
         {metricCardsConfig.map((config, index) => (
           <MetricCard key={index} title={config.title} value={config.value} icon={config.icon} />
         ))}
