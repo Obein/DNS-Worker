@@ -239,6 +239,12 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
           const destinations = await logModel.getDestinations(profileId, since, until, accessPointId);
           return new Response(JSON.stringify(destinations), { headers: { 'Content-Type': 'application/json' } });
         }
+        if (subResource === 'isps') {
+          const countryCode = urlParams.get('country_code');
+          if (!countryCode) return new Response("country_code is required", { status: 400 });
+          const isps = await logModel.getISPByCountry(profileId, countryCode, since, until, accessPointId);
+          return new Response(JSON.stringify(isps), { headers: { 'Content-Type': 'application/json' } });
+        }
         return new Response("Not Found", { status: 404 });
       }
       

@@ -16,9 +16,19 @@ import type { DestinationItem, HoveredCountry } from "./types";
 
 interface DestinationMapProps {
   destinations: DestinationItem[];
+  profileId: string;
+  range: string;
+  customRange: { start: string; end: string };
+  accessPointId?: string;
 }
 
-export const DestinationMap: React.FC<DestinationMapProps> = ({ destinations }) => {
+export const DestinationMap: React.FC<DestinationMapProps> = ({
+  destinations,
+  profileId,
+  range,
+  customRange,
+  accessPointId,
+}) => {
   const {
     geographyData,
     destinationMap,
@@ -105,7 +115,11 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({ destinations }) 
             flag={hoveredCountry.flag}
             x={hoveredCountry.x}
             y={hoveredCountry.y}
-            isps={hoveredCountry.isps}
+            countryCode={hoveredCountry.code}
+            profileId={profileId}
+            range={range}
+            customRange={customRange}
+            accessPointId={accessPointId}
           />
         )}
       </div>

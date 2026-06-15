@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 interface MapTooltipProps {
@@ -7,15 +7,59 @@ interface MapTooltipProps {
   flag: string;
   x: number;
   y: number;
-  isps?: { name: string; count: number }[];
+  countryCode: string;
+  profileId: string;
+  range: string;
+  customRange: { start: string; end: string };
+  accessPointId?: string;
 }
 
-export const MapTooltip: React.FC<MapTooltipProps> = ({ name, count, flag, x, y, isps }) => {
+export const MapTooltip: React.FC<MapTooltipProps> = ({
+  name,
+  count,
+  flag,
+  x,
+  y,
+  countryCode,
+  profileId,
+  range,
+  customRange,
+  accessPointId,
+}) => {
   const { t } = useTranslation();
-  const tooltipRef = React.useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = React.useState({ left: x, top: y - 10, alignBottom: false });
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ left: x, top: y - 10, alignBottom: false });
+  const [isps, setIsps] = useState<{ name: string; count: number }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  React.useLayoutEffect(() => {
+  useEffect(() => {
+    if (!countryCode || !profileId) return;
+    setLoading(true);
+    let queryParams = `?country_code=${countryCode}&range=${range}`;
+    if (range === "custom" && customRange.start && customRange.end) {
+      const startTs = Math.floor(new Date(customRange.start).getTime() / 1000);
+      const endTs = Math.floor(new Date(customRange.end).getTime() / 1000);
+      queryParams += `&start=${startTs}&end=${endTs}`;
+    }
+    if (accessPointId) {
+      queryParams += `&access_point_id=${accessPointId}`;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/profiles/${profileId}/analytics/isps${queryParams}`, { signal: controller.signal })
+      .then((r) => r.json())
+      .then((data) => setIsps(data))
+      .catch((e) => {
+        if (e.name !== "AbortError") {
+          console.error("Failed to fetch ISPs", e);
+        }
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, [countryCode, profileId, range, customRange, accessPointId]);
+
+  useLayoutEffect(() => {
     if (!tooltipRef.current) return;
     const rect = tooltipRef.current.getBoundingClientRect();
     const container = tooltipRef.current.parentElement;
@@ -43,7 +87,7 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({ name, count, flag, x, y,
     }
 
     setCoords({ left, top, alignBottom });
-  }, [x, y]);
+  }, [x, y, isps]);
 
   return (
     <div
@@ -62,20 +106,31 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({ name, count, flag, x, y,
       <div className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
         {count.toLocaleString()} {t("analytics.queries")}
       </div>
-      {isps && isps.length > 0 && (
-        <div className="mt-1.5 pt-1.5 border-t border-gray-150 dark:border-slate-800 flex flex-col gap-1">
+      {loading ? (
+        <div className="mt-1.5 pt-1.5 border-t border-gray-150 dark:border-slate-850 flex flex-col gap-1 min-w-36">
           <div className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">
             {t("analytics.topIsps", "Top ISPs")}
           </div>
-          <div className="flex flex-col gap-0.5 min-w-36 max-w-48">
-            {isps.slice(0, 5).map((isp) => (
-              <div key={isp.name} className="flex justify-between gap-3 text-[11px] text-gray-600 dark:text-gray-300">
-                <span className="truncate" title={isp.name}>{isp.name}</span>
-                <span className="font-mono text-gray-400 dark:text-gray-500">{isp.count.toLocaleString()}</span>
-              </div>
-            ))}
+          <div className="text-[11px] text-gray-400 dark:text-gray-500 italic">
+            {t("analytics.loading", "Loading...")}
           </div>
         </div>
+      ) : (
+        isps.length > 0 && (
+          <div className="mt-1.5 pt-1.5 border-t border-gray-150 dark:border-slate-800 flex flex-col gap-1">
+            <div className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-wider">
+              {t("analytics.topIsps", "Top ISPs")}
+            </div>
+            <div className="flex flex-col gap-0.5 min-w-36 max-w-48">
+              {isps.slice(0, 3).map((isp) => (
+                <div key={isp.name} className="flex justify-between gap-3 text-[11px] text-gray-600 dark:text-gray-300">
+                  <span className="truncate" title={isp.name}>{isp.name}</span>
+                  <span className="font-mono text-gray-400 dark:text-gray-500">{isp.count.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
       )}
     </div>
   );

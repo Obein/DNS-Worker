@@ -148,12 +148,41 @@ export class LogModel {
   }
 
   async getDestinations(profileId: string, since: number, until: number, accessPointId?: string) {
-    let queryStr = "SELECT dest_geoip, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND dest_geoip IS NOT NULL";
+    let queryStr = `
+      SELECT 
+        json_extract(dest_geoip, '$.country_code') as country_code,
+        json_extract(dest_geoip, '$.country') as country,
+        SUM(count) as count
+      FROM logs 
+      WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND dest_geoip IS NOT NULL
+    `;
     let params: any[] = [profileId, since, until];
     if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
-    queryStr += " GROUP BY dest_geoip ORDER BY count DESC LIMIT 100";
-    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ dest_geoip: string, count: number }>();
+    queryStr += " GROUP BY country_code ORDER BY count DESC LIMIT 100";
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ country_code: string, country: string, count: number }>();
     return results;
+  }
+
+  async getISPByCountry(profileId: string, countryCode: string, since: number, until: number, accessPointId?: string) {
+    let queryStr = `
+      SELECT 
+        json_extract(dest_geoip, '$.isp') as name, 
+        SUM(count) as count 
+      FROM logs 
+      WHERE profile_id = ? 
+        AND timestamp >= ? 
+        AND timestamp <= ? 
+        AND json_extract(dest_geoip, '$.country_code') = ? 
+        AND dest_geoip IS NOT NULL
+    `;
+    let params: any[] = [profileId, since, until, countryCode.toUpperCase()];
+    if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
+    queryStr += " GROUP BY name ORDER BY count DESC LIMIT 5";
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ name: string | null, count: number }>();
+    return results.map(r => ({
+      name: r.name || "Unknown",
+      count: r.count
+    }));
   }
 
   async getAnalytics(profileId: string, since: number, until: number, interval: string, accessPointId?: string) {
