@@ -72,25 +72,29 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
       queryParams += `&access_point_id=${accessPointId}`;
     }
 
-    const controller = new AbortController();
+    let isMounted = true;
     const timer = setTimeout(() => {
-      fetch(`/api/profiles/${profileId}/analytics/isps${queryParams}`, { signal: controller.signal })
+      fetch(`/api/profiles/${profileId}/analytics/isps${queryParams}`)
         .then((r) => r.json())
         .then((data) => {
-          setIsps(data);
           onCacheIspRef.current(countryCode, data);
-        })
-        .catch((e) => {
-          if (e.name !== "AbortError") {
-            console.error("Failed to fetch ISPs", e);
+          if (isMounted) {
+            setIsps(data);
           }
         })
-        .finally(() => setLoading(false));
+        .catch((e) => {
+          console.error("Failed to fetch ISPs", e);
+        })
+        .finally(() => {
+          if (isMounted) {
+            setLoading(false);
+          }
+        });
     }, 200);
 
     return () => {
+      isMounted = false;
       clearTimeout(timer);
-      controller.abort();
     };
   }, [countryCode, profileId, range, customRange, accessPointId, count]);
 
