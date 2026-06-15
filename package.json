@@ -7,6 +7,7 @@
     "dev": "npm run db:migrate:dev && concurrently \"npm run ui:dev\" \"wrangler dev\"",
     "start": "npm run build && wrangler dev",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
+    "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",
     "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:*",
     "postinstall": "npm run ui:install",
@@ -27,9 +28,12 @@
   "author": "Hugo Koo",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260313.1",
+    "@cloudflare/workers-types": "^4.20260615.1",
     "concurrently": "^10.0.1",
     "typescript": "^6.0.3",
-    "wrangler": "^4.63.0"
+    "wrangler": "^4.100.0"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }
