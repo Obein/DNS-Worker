@@ -96,10 +96,11 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
     }));
   }, []);
 
+  /** Define the boundaries for map panning */
   const bounds = React.useMemo(() => {
     return createTranslateExtent(
       createCoordinates(-100, -50),
-      createCoordinates(900, 450)
+      createCoordinates(900, 600)
     );
   }, []);
 
