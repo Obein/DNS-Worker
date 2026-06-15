@@ -12,13 +12,47 @@ interface MapTooltipProps {
 
 export const MapTooltip: React.FC<MapTooltipProps> = ({ name, count, flag, x, y, isps }) => {
   const { t } = useTranslation();
+  const tooltipRef = React.useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = React.useState({ left: x, top: y - 10, alignBottom: false });
+
+  React.useLayoutEffect(() => {
+    if (!tooltipRef.current) return;
+    const rect = tooltipRef.current.getBoundingClientRect();
+    const container = tooltipRef.current.parentElement;
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+
+    let left = x;
+    const halfWidth = rect.width / 2;
+    // Prevent left overflow
+    if (x - halfWidth < 4) {
+      left = halfWidth + 4;
+    }
+    // Prevent right overflow
+    else if (x + halfWidth > containerRect.width - 4) {
+      left = containerRect.width - halfWidth - 4;
+    }
+
+    let top = y - 10;
+    let alignBottom = false;
+
+    // If positioning above exceeds the top boundary of the container
+    if (y - rect.height - 15 < 4) {
+      top = y + 15;
+      alignBottom = true;
+    }
+
+    setCoords({ left, top, alignBottom });
+  }, [x, y]);
+
   return (
     <div
+      ref={tooltipRef}
       className="absolute pointer-events-none bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-xl border border-gray-200/50 dark:border-slate-800/50 text-xs z-50 flex flex-col gap-1 transition-all duration-75 text-gray-900 dark:text-gray-100"
       style={{
-        left: `${x}px`,
-        top: `${y}px`,
-        transform: "translate(-50%, -100%)",
+        left: `${coords.left}px`,
+        top: `${coords.top}px`,
+        transform: coords.alignBottom ? "translate(-50%, 0)" : "translate(-50%, -100%)",
       }}
     >
       <div className="flex items-center gap-1.5 font-semibold whitespace-nowrap">
