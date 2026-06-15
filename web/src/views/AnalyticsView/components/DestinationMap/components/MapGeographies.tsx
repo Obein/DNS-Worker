@@ -2,11 +2,11 @@ import React from "react";
 import { Geographies, Geography } from "@vnedyalk0v/react19-simple-maps";
 import { numericToAlpha2 } from "../../../countryMapping";
 import { getFlagEmoji } from "../../../utils";
-import type { HoveredCountry } from "../types";
+import type { HoveredCountry, CountryMapData } from "../types";
 
 interface MapGeographiesProps {
   geographyData: any;
-  destinationMap: Record<string, { count: number; name: string; countryCode: string }>;
+  destinationMap: Record<string, CountryMapData>;
   getLevel: (count: number) => number;
   containerRef: React.RefObject<HTMLDivElement | null>;
   setHoveredCountry: React.Dispatch<React.SetStateAction<HoveredCountry | null>>;
@@ -44,6 +44,7 @@ export const MapGeographies: React.FC<MapGeographiesProps> = ({
               flag,
               x,
               y,
+              isps: dest?.isps || [],
             });
           };
 
