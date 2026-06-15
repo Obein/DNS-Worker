@@ -42,47 +42,45 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
   const [debouncedCountry, setDebouncedCountry] = useState<HoveredCountry | null>(null);
   const [ispCache, setIspCache] = useState<Record<string, { name: string; count: number }[]>>({});
 
-  const pendingCodeRef = useRef<string | null>(null);
-  const latestHoveredCountryRef = useRef<HoveredCountry | null>(null);
+  const latestHoveredRef = useRef<HoveredCountry | null>(null);
+  latestHoveredRef.current = hoveredCountry;
 
   useEffect(() => {
     if (!hoveredCountry) {
       setDebouncedCountry(null);
-      pendingCodeRef.current = null;
       return;
     }
 
     if (hoveredCountry.isPinned) {
       setDebouncedCountry(hoveredCountry);
-      pendingCodeRef.current = null;
       return;
     }
 
-    if (debouncedCountry && debouncedCountry.code === hoveredCountry.code && !debouncedCountry.isPinned) {
-      setDebouncedCountry(hoveredCountry);
-      pendingCodeRef.current = null;
+    if (debouncedCountry && debouncedCountry.code === hoveredCountry.code) {
       return;
     }
-
-    if (pendingCodeRef.current === hoveredCountry.code) {
-      latestHoveredCountryRef.current = hoveredCountry;
-      return;
-    }
-
-    pendingCodeRef.current = hoveredCountry.code;
-    latestHoveredCountryRef.current = hoveredCountry;
 
     const timer = setTimeout(() => {
-      if (latestHoveredCountryRef.current && latestHoveredCountryRef.current.code === pendingCodeRef.current) {
-        setDebouncedCountry(latestHoveredCountryRef.current);
+      if (latestHoveredRef.current && latestHoveredRef.current.code === hoveredCountry.code) {
+        setDebouncedCountry(latestHoveredRef.current);
       }
-      pendingCodeRef.current = null;
     }, 100);
 
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [hoveredCountry, debouncedCountry]);
+    return () => clearTimeout(timer);
+  }, [hoveredCountry?.code, hoveredCountry?.isPinned, debouncedCountry?.code]);
+
+  useEffect(() => {
+    if (
+      hoveredCountry &&
+      debouncedCountry &&
+      hoveredCountry.code === debouncedCountry.code &&
+      (hoveredCountry.x !== debouncedCountry.x ||
+        hoveredCountry.y !== debouncedCountry.y ||
+        hoveredCountry.isPinned !== debouncedCountry.isPinned)
+    ) {
+      setDebouncedCountry(hoveredCountry);
+    }
+  }, [hoveredCountry?.x, hoveredCountry?.y, hoveredCountry?.isPinned, debouncedCountry]);
   
   const containerRef = useRef<HTMLDivElement>(null);
 
