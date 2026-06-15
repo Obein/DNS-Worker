@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ComposableMap,
   ZoomableGroup,
@@ -39,7 +39,50 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
 
   const [position, setPosition] = useState({ coordinates: createCoordinates(0, 0), zoom: 1 });
   const [hoveredCountry, setHoveredCountry] = useState<HoveredCountry | null>(null);
+  const [debouncedCountry, setDebouncedCountry] = useState<HoveredCountry | null>(null);
   const [ispCache, setIspCache] = useState<Record<string, { name: string; count: number }[]>>({});
+
+  const pendingCodeRef = useRef<string | null>(null);
+  const latestHoveredCountryRef = useRef<HoveredCountry | null>(null);
+
+  useEffect(() => {
+    if (!hoveredCountry) {
+      setDebouncedCountry(null);
+      pendingCodeRef.current = null;
+      return;
+    }
+
+    if (hoveredCountry.isPinned) {
+      setDebouncedCountry(hoveredCountry);
+      pendingCodeRef.current = null;
+      return;
+    }
+
+    if (debouncedCountry && debouncedCountry.code === hoveredCountry.code && !debouncedCountry.isPinned) {
+      setDebouncedCountry(hoveredCountry);
+      pendingCodeRef.current = null;
+      return;
+    }
+
+    if (pendingCodeRef.current === hoveredCountry.code) {
+      latestHoveredCountryRef.current = hoveredCountry;
+      return;
+    }
+
+    pendingCodeRef.current = hoveredCountry.code;
+    latestHoveredCountryRef.current = hoveredCountry;
+
+    const timer = setTimeout(() => {
+      if (latestHoveredCountryRef.current && latestHoveredCountryRef.current.code === pendingCodeRef.current) {
+        setDebouncedCountry(latestHoveredCountryRef.current);
+      }
+      pendingCodeRef.current = null;
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [hoveredCountry, debouncedCountry]);
   
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -123,21 +166,21 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({
         </ComposableMap>
 
         {/* Tooltip */}
-        {hoveredCountry && (
+        {debouncedCountry && (
           <MapTooltip
-            name={hoveredCountry.name}
-            count={hoveredCountry.count}
-            flag={hoveredCountry.flag}
-            x={hoveredCountry.x}
-            y={hoveredCountry.y}
-            countryCode={hoveredCountry.code}
+            name={debouncedCountry.name}
+            count={debouncedCountry.count}
+            flag={debouncedCountry.flag}
+            x={debouncedCountry.x}
+            y={debouncedCountry.y}
+            countryCode={debouncedCountry.code}
             profileId={profileId}
             range={range}
             customRange={customRange}
             accessPointId={accessPointId}
             ispCache={ispCache}
             onCacheIsp={handleCacheIsp}
-            isPinned={hoveredCountry.isPinned || false}
+            isPinned={debouncedCountry.isPinned || false}
             onClose={() => setHoveredCountry(null)}
           />
         )}
