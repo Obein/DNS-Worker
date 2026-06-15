@@ -213,7 +213,8 @@
     "location": "归属地",
     "queries": "查询数",
     "destinationDistribution": "流量目的地分布",
-    "requests": "请求"
+    "requests": "请求",
+    "topIsps": "主要运营商"
   },
   "logs": {
     "title": "查询日志",

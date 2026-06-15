@@ -213,7 +213,8 @@
     "location": "Location",
     "queries": "Queries",
     "destinationDistribution": "Destination Distribution",
-    "requests": "Requests"
+    "requests": "Requests",
+    "topIsps": "Top ISPs"
   },
   "logs": {
     "title": "Query Logs",

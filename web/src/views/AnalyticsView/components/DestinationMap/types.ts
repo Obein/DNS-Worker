@@ -3,6 +3,13 @@ export interface DestinationItem {
   count: number;
 }
 
+export interface CountryMapData {
+  count: number;
+  name: string;
+  countryCode: string;
+  isps: { name: string; count: number }[];
+}
+
 export interface HoveredCountry {
   name: string;
   code: string;
@@ -10,4 +17,5 @@ export interface HoveredCountry {
   flag: string;
   x: number;
   y: number;
+  isps?: { name: string; count: number }[];
 }

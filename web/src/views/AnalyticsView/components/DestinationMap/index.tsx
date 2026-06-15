@@ -105,6 +105,7 @@ export const DestinationMap: React.FC<DestinationMapProps> = ({ destinations }) 
             flag={hoveredCountry.flag}
             x={hoveredCountry.x}
             y={hoveredCountry.y}
+            isps={hoveredCountry.isps}
           />
         )}
       </div>

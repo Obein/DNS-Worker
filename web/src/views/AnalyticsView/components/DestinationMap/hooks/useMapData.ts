@@ -33,19 +33,31 @@ export function useMapData(destinations: DestinationItem[]) {
   }, [totalQueriesCount]);
 
   const destinationMap = useMemo(() => {
-    const map: Record<string, { count: number; name: string; countryCode: string }> = {};
+    const map: Record<
+      string,
+      {
+        count: number;
+        name: string;
+        countryCode: string;
+        isps: Record<string, number>;
+      }
+    > = {};
+
     destinations.forEach((d) => {
       try {
         const geo = JSON.parse(d.dest_geoip);
         if (geo && geo.country_code) {
           const code = geo.country_code.toUpperCase();
+          const isp = geo.isp || "Unknown";
           if (map[code]) {
             map[code].count += d.count;
+            map[code].isps[isp] = (map[code].isps[isp] || 0) + d.count;
           } else {
             map[code] = {
               count: d.count,
               name: geo.country,
-              countryCode: code
+              countryCode: code,
+              isps: { [isp]: d.count },
             };
           }
         }
@@ -53,7 +65,31 @@ export function useMapData(destinations: DestinationItem[]) {
         console.error("Failed to parse dest_geoip", e);
       }
     });
-    return map;
+
+    const finalMap: Record<
+      string,
+      {
+        count: number;
+        name: string;
+        countryCode: string;
+        isps: { name: string; count: number }[];
+      }
+    > = {};
+
+    Object.keys(map).forEach((code) => {
+      const ispsArray = Object.entries(map[code].isps)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count);
+
+      finalMap[code] = {
+        count: map[code].count,
+        name: map[code].name,
+        countryCode: map[code].countryCode,
+        isps: ispsArray,
+      };
+    });
+
+    return finalMap;
   }, [destinations]);
 
   const getLevel = (count: number) => {

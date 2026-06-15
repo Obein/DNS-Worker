@@ -1,7 +1,7 @@
 import React from "react";
 import { Marker, createCoordinates } from "@vnedyalk0v/react19-simple-maps";
 import { getFlagEmoji } from "../../../utils";
-import type { HoveredCountry } from "../types";
+import type { HoveredCountry, CountryMapData } from "../types";
 
 export const microRegions: Record<string, { name: string; coordinates: [number, number] }> = {
   SG: { name: "Singapore", coordinates: [103.8198, 1.3521] },
@@ -20,7 +20,7 @@ export const microRegions: Record<string, { name: string; coordinates: [number, 
 };
 
 interface MapMarkersProps {
-  destinationMap: Record<string, { count: number; name: string; countryCode: string }>;
+  destinationMap: Record<string, CountryMapData>;
   getLevel: (count: number) => number;
   containerRef: React.RefObject<HTMLDivElement | null>;
   setHoveredCountry: React.Dispatch<React.SetStateAction<HoveredCountry | null>>;
@@ -54,6 +54,7 @@ export const MapMarkers: React.FC<MapMarkersProps> = ({
             flag,
             x,
             y,
+            isps: dest?.isps || [],
           });
         };
 
