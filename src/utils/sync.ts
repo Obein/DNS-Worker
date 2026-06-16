@@ -1,4 +1,4 @@
-import { Env, List, ExecutionContext } from "../types";
+import { Env, ExecutionContext } from "../types";
 import { parseList } from "./parser";
 import { BloomFilter } from "./bloom";
 import { pipelineCache } from "../pipeline/cache";
