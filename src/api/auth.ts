@@ -320,8 +320,11 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
         }
       }
     }
+    const responseHeaders = new Headers({ "Content-Type": "application/json" });
+    responseHeaders.append("Set-Cookie", createBlankRefreshTokenCookie());
+    responseHeaders.append("Set-Cookie", "csrf_token=; SameSite=Lax; Path=/; Max-Age=0; Secure");
     return new Response(JSON.stringify({ success: true }), {
-      headers: { "Set-Cookie": createBlankRefreshTokenCookie(), "Content-Type": "application/json" }
+      headers: responseHeaders
     });
   }
 
