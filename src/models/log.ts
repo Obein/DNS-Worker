@@ -147,7 +147,7 @@ export class LogModel {
     return results;
   }
 
-  async getDestinations(profileId: string, since: number, until: number, accessPointId?: string, limit: number = 100) {
+  async getDestinations(profileId: string, since: number, until: number, accessPointId?: string, limit: number = 250) {
     let queryStr = `
       SELECT 
         json_extract(dest_geoip, '$.country_code') as country_code,
@@ -163,7 +163,7 @@ export class LogModel {
     return results;
   }
 
-  async getISPByCountry(profileId: string, countryCode: string, since: number, until: number, accessPointId?: string, limit: number = 50) {
+  async getISPByCountry(profileId: string, countryCode: string, since: number, until: number, accessPointId?: string, limit: number = 250) {
     let queryStr = `
       SELECT 
         json_extract(dest_geoip, '$.isp') as name, 
