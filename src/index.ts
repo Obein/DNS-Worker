@@ -13,6 +13,7 @@ import { handleAccountRequest } from './api/account';
 import { handleSystemRequest } from './api/system';
 import { handleDoHRequest } from './api/doh';
 import { handleScheduled } from './cron';
+import { handleMapDataRequest } from './api/mapData';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -24,6 +25,11 @@ export default {
 
     const handleRequest = async (): Promise<Response> => {
       const url = new URL(request.url);
+
+      // Map Data API Proxy
+      if (url.pathname === '/world-110m.json') {
+        return handleMapDataRequest(request, env, ctx);
+      }
 
       // Auth API Routes (Unauthenticated)
       if (url.pathname.startsWith('/api/auth/')) {

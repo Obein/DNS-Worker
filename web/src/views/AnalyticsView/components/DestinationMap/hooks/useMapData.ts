@@ -7,7 +7,31 @@ export function useMapData(destinations: DestinationItem[]) {
   useEffect(() => {
     fetch("/world-110m.json")
       .then((r) => r.json())
-      .then((data) => setGeographyData(data))
+      .then((data) => {
+        // Ensure "countries" is the first key in data.objects because react-simple-maps
+        // defaults to parsing the first key returned by Object.keys(data.objects).
+        if (data && data.objects) {
+          const sortedObjects: any = {};
+          if (data.objects.countries) {
+            sortedObjects.countries = data.objects.countries;
+          }
+          if (data.objects.land) {
+            sortedObjects.land = data.objects.land;
+          }
+          data.objects = sortedObjects;
+        }
+
+        // Ensure all country geometry IDs are 3-digit padded strings (e.g. 4 -> "004")
+        // to maintain compatibility with client-side country code mappings.
+        if (data && data.objects && data.objects.countries && Array.isArray(data.objects.countries.geometries)) {
+          data.objects.countries.geometries.forEach((geom: any) => {
+            if (geom.id !== undefined && geom.id !== null) {
+              geom.id = String(geom.id).padStart(3, "0");
+            }
+          });
+        }
+        setGeographyData(data);
+      })
       .catch((e) => console.error("Failed to load map topology", e));
   }, []);
 

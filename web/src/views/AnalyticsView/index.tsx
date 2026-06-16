@@ -10,7 +10,7 @@ import {
   Section,
   ButtonGroup,
   Button,
-  Popover,
+  PopoverNext,
   FormGroup,
   InputGroup,
   HTMLSelect,
@@ -34,12 +34,28 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [accessPointIdFilter, setAccessPointIdFilter] = useState<string | null>(null);
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>([]);
+  const [logRetentionDays, setLogRetentionDays] = useState<number>(30);
 
   useEffect(() => {
     fetch(`/api/profiles/${profileId}/access_points`)
       .then(r => r.json())
       .then(data => setAccessPoints(data))
       .catch(e => console.error("Failed to load access points", e));
+  }, [profileId]);
+
+  // Fetch log retention days from profile settings
+  useEffect(() => {
+    fetch(`/api/profiles/${profileId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        try {
+          const settings = JSON.parse(data.settings);
+          setLogRetentionDays(settings.log_retention_days !== undefined ? Number(settings.log_retention_days) : 30);
+        } catch (e) {
+          console.error("Failed to parse settings", e);
+        }
+      })
+      .catch((e) => console.error("Failed to fetch profile settings", e));
   }, [profileId]);
 
   const fetchData = async (selectedRange: TimeRange, customStart?: string, customEnd?: string, apIdFilter?: string | null) => {
@@ -110,15 +126,27 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     { title: t("analytics.activeIPs"), value: data?.clients.length.toString() || "0", icon: <Globe className="text-purple-500" size={20} /> },
   ];
 
+  const RANGE_PRESETS = [
+    { key: "10m", days: 0.007 },
+    { key: "1h", days: 0.0416 },
+    { key: "24h", days: 1 },
+    { key: "7d", days: 7 },
+    { key: "30d", days: 30 },
+    { key: "180d", days: 180 },
+    { key: "360d", days: 360 },
+    { key: "720d", days: 720 },
+  ];
+  const visibleRanges = RANGE_PRESETS.filter(r => r.days <= logRetentionDays).map(r => r.key as TimeRange);
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Time Range Selector */}
       <div className="flex justify-between items-center bg-white dark:bg-gray-900 p-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800">
         <ButtonGroup variant="minimal">
-          {(["10m", "1h", "24h", "7d", "30d"] as TimeRange[]).map((r) => (
+          {visibleRanges.map((r) => (
             <Button key={r} active={range === r} onClick={() => setRange(r)} text={r.toUpperCase()} />
           ))}
-          <Popover
+          <PopoverNext
             content={
               <div className="p-4 space-y-4 w-64">
                 <H5>{t("analytics.customRange")}</H5>
@@ -152,7 +180,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
             }
           >
             <Button active={range === "custom"} icon={<Calendar size={14} className="mr-1" />} text={t("analytics.custom")} />
-          </Popover>
+          </PopoverNext>
         </ButtonGroup>
         <div className="flex items-center gap-4">
           {accessPoints.length > 0 && (

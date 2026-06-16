@@ -53,7 +53,7 @@ async function main() {
 
   const mapDest = path.join(publicDir, 'world-110m.json');
   console.log('Downloading world-110m.json...');
-  await download('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json', mapDest);
+  await download('https://openlayers.org/en/latest/examples/data/topojson/world-110m.json', mapDest);
   console.log('world-110m.json downloaded successfully.');
 
   console.log('Downloading country codes mapping...');

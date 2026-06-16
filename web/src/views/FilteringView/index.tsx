@@ -20,9 +20,9 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/filters`);
+      const res = await fetch(`/api/profiles/${profileId}/lists`);
       const data = await res.json();
-      setLists(data.lists);
+      setLists(data);
     } catch (e) {
       console.error("Failed to fetch filters", e);
     } finally {
@@ -47,10 +47,10 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       try {
-        const res = await fetch(`/api/profiles/${profileId}/filters`);
+        const res = await fetch(`/api/profiles/${profileId}/lists`);
         if (res.ok) {
           const data = await res.json();
-          const newLists = data.lists as FilterList[];
+          const newLists = data as FilterList[];
           
           let allUpdated = true;
           for (const list of newLists) {

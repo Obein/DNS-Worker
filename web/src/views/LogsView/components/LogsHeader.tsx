@@ -3,13 +3,12 @@ import {
   Tag,
   ButtonGroup,
   Button,
-  Popover,
+  PopoverNext,
   H5,
   FormGroup,
   InputGroup,
   Intent,
   Switch,
-  Position,
   Menu,
   MenuItem,
   MenuDivider,
@@ -38,6 +37,7 @@ export interface LogsHeaderProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   stats: { total: number; pass: number; block: number; redirect: number } | null;
+  logRetentionDays: number;
 }
 
 export const LogsHeader: React.FC<LogsHeaderProps> = ({
@@ -58,6 +58,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
   searchQuery,
   setSearchQuery,
   stats,
+  logRetentionDays,
 }) => {
   const { t } = useTranslation();
   console.log("stats in LogsHeader:", stats);
@@ -106,6 +107,18 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
 
   const currentFilter = getFilterLabel();
 
+  const RANGE_PRESETS = [
+    { key: "10m", days: 0.007 },
+    { key: "1h", days: 0.0416 },
+    { key: "24h", days: 1 },
+    { key: "7d", days: 7 },
+    { key: "30d", days: 30 },
+    { key: "180d", days: 180 },
+    { key: "360d", days: 360 },
+    { key: "720d", days: 720 },
+  ];
+  const visibleRanges = RANGE_PRESETS.filter(r => r.days <= logRetentionDays).map(r => r.key as TimeRange);
+
   return (
     <div className="p-4 space-y-4 shrink-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border-b border-gray-100 dark:border-gray-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -138,10 +151,10 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
         <div className="flex flex-col items-stretch md:items-end gap-2">
           <div className="overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
             <ButtonGroup minimal={isMobile} variant={isMobile ? undefined : "minimal"}>
-              {(["10m", "1h", "24h", "7d", "30d"] as TimeRange[]).map((r) => (
+              {visibleRanges.map((r) => (
                 <Button key={r} active={range === r} onClick={() => setRange(r)} text={r.toUpperCase()} small={isMobile} />
               ))}
-              <Popover
+              <PopoverNext
                 content={
                   <div className="p-4 space-y-2 w-64">
                     <H5>{t("analytics.customRange")}</H5>
@@ -175,7 +188,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
                 }
               >
                 <Button active={range === "custom"} icon={<Calendar size={14} />} text={isMobile ? "" : t("analytics.custom")} small={isMobile} />
-              </Popover>
+              </PopoverNext>
             </ButtonGroup>
           </div>
 
@@ -193,7 +206,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
 
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Popover content={filterMenu} position={Position.BOTTOM_LEFT}>
+          <PopoverNext content={filterMenu} placement="bottom-start">
             <Button
               icon={<Filter size={14} />}
               rightIcon="caret-down"
@@ -202,7 +215,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
               variant="outlined"
               fill={isMobile}
             />
-          </Popover>
+          </PopoverNext>
           {accessPoints.length > 0 && (
             <HTMLSelect 
               value={accessPointIdFilter || ""}

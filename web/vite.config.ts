@@ -35,6 +35,10 @@ export default defineConfig({
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
+      '/world-110m.json': {
+        target: 'http://127.0.0.1:8787',
+        changeOrigin: true,
+      },
       '^/[a-zA-Z0-9]{6}$': {
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,

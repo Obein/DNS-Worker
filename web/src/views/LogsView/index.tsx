@@ -28,6 +28,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
   const [hasMore, setHasMore] = useState(true);
   const [realtimeRefresh, setRealtimeRefresh] = useState(false);
   const [stats, setStats] = useState<{ total: number; pass: number; block: number; redirect: number } | null>(null);
+  const [logRetentionDays, setLogRetentionDays] = useState<number>(30);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const observer = useRef<IntersectionObserver | null>(null);
@@ -42,6 +43,21 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
       }
     };
   }, []);
+
+  // Fetch log retention days from profile settings
+  useEffect(() => {
+    fetch(`/api/profiles/${profileId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        try {
+          const settings = JSON.parse(data.settings);
+          setLogRetentionDays(settings.log_retention_days !== undefined ? Number(settings.log_retention_days) : 30);
+        } catch (e) {
+          console.error("Failed to parse settings", e);
+        }
+      })
+      .catch((e) => console.error("Failed to fetch profile settings", e));
+  }, [profileId]);
 
   useEffect(() => {
     fetch(`/api/profiles/${profileId}/access_points`)
@@ -207,6 +223,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         stats={stats}
+        logRetentionDays={logRetentionDays}
       />
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 relative">

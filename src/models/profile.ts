@@ -204,7 +204,7 @@ export class ProfileModel {
 
   async getSyncTargets(threshold: number, limit: number): Promise<{id: string}[]> {
     const { results } = await this.db.prepare(
-      "SELECT id FROM profiles WHERE (list_updated_at IS NULL OR list_updated_at < ?) AND EXISTS (SELECT 1 FROM lists WHERE lists.profile_id = profiles.id) ORDER BY list_updated_at ASC LIMIT ?"
+      "SELECT id FROM profiles WHERE (list_updated_at IS NULL OR list_updated_at <= ?) AND EXISTS (SELECT 1 FROM lists WHERE lists.profile_id = profiles.id) ORDER BY list_updated_at ASC LIMIT ?"
     ).bind(threshold, limit).all<{ id: string }>();
     return results;
   }
@@ -219,12 +219,12 @@ export class ProfileModel {
     return result.success;
   }
 
-  async updateListSyncStatus(id: number, now: number | null, enabled: number): Promise<boolean> {
+  async updateListSyncStatus(id: number, now: number | null, enabled: number, syncError: string | null = null): Promise<boolean> {
     let result;
     if (enabled === 1) {
-      result = await this.db.prepare("UPDATE lists SET last_synced_at = ?, enabled = ? WHERE id = ?").bind(now, enabled, id).run();
+      result = await this.db.prepare("UPDATE lists SET last_synced_at = ?, enabled = ?, sync_error = NULL WHERE id = ?").bind(now, enabled, id).run();
     } else {
-      result = await this.db.prepare("UPDATE lists SET enabled = ? WHERE id = ?").bind(enabled, id).run();
+      result = await this.db.prepare("UPDATE lists SET enabled = ?, sync_error = ? WHERE id = ?").bind(enabled, syncError, id).run();
     }
     return result.success;
   }

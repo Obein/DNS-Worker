@@ -297,6 +297,7 @@
     "syncing": "同步中...",
     "syncSuccess": "同步成功",
     "syncError": "同步失败",
+    "syncErrorDesc": "无法下载或解析此拦截列表。请检查链接是否正确，并确保该链接可以正常访问。",
     "deleteConfirm": "确认删除订阅？",
     "deleteSuccess": "列表删除成功",
     "deleteError": "列表删除失败",

@@ -40,6 +40,18 @@ export function processTrendData(data: AnalyticsData | null, range: TimeRange, c
       interval = 86400;
       since = until - 30 * 86400;
       break;
+    case "180d":
+      interval = 86400;
+      since = until - 180 * 86400;
+      break;
+    case "360d":
+      interval = 86400;
+      since = until - 360 * 86400;
+      break;
+    case "720d":
+      interval = 86400;
+      since = until - 720 * 86400;
+      break;
     case "custom":
       interval = 3600;
       if (customRange.start && customRange.end) {

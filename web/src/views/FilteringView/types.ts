@@ -11,4 +11,5 @@ export interface FilterList {
   url: string;
   last_synced_at?: number;
   enabled: boolean;
+  sync_error?: string | null;
 }

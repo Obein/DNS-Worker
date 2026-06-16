@@ -26,4 +26,4 @@ export interface LogsViewProps {
   ) => void;
 }
 
-export type TimeRange = "10m" | "1h" | "24h" | "7d" | "30d" | "custom";
+export type TimeRange = "10m" | "1h" | "24h" | "7d" | "30d" | "180d" | "360d" | "720d" | "custom";

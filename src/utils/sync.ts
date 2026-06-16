@@ -32,8 +32,10 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
     // 逐个拉取所有列表的最新的规则文件
     for (const list of lists) {
       let success = false;
+      let syncError: string | null = null;
       try {
         if (!isSafeUrl(list.url)) {
+          syncError = "Invalid list URL. Private networks and localhosts are not allowed.";
           console.error(`[Sync] Blocked unsafe URL: ${list.url}`);
         } else {
           const syncTimeoutMs = Number(env.SYNC_TIMEOUT_MS) || 30000;
@@ -42,10 +44,12 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
             const contentLength = response.headers.get('content-length');
             const MAX_BYTES = 20 * 1024 * 1024; // 20 MB limit
             if (contentLength && parseInt(contentLength, 10) > MAX_BYTES) {
+              syncError = `List too large (${(parseInt(contentLength, 10) / 1024 / 1024).toFixed(2)} MB), limit is 20 MB`;
               console.error(`[Sync] List too large, blocking: ${list.url}`);
             } else {
               const reader = response.body?.getReader();
               if (!reader) {
+                syncError = "Failed to get stream reader from response";
                 console.error(`[Sync] Failed to get reader for: ${list.url}`);
               } else {
                 let totalBytes = 0;
@@ -57,7 +61,7 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
                   if (value) {
                     totalBytes += value.length;
                     if (totalBytes > MAX_BYTES) {
-                      throw new Error(`[Sync] Content exceeded maximum size of ${MAX_BYTES} bytes`);
+                      throw new Error(`Content exceeded maximum size of ${MAX_BYTES} bytes`);
                     }
                     chunks.push(value);
                   }
@@ -75,17 +79,22 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
                 if (domains.length > 0) {
                   domains.forEach(d => allDomains.add(d));
                   success = true;
+                } else {
+                  syncError = "No valid domain rules found in the list";
                 }
               }
             }
+          } else {
+            syncError = `HTTP error! Status: ${response.status} ${response.statusText}`;
           }
         }
-      } catch (e) {
+      } catch (e: any) {
+        syncError = e.message || String(e);
         console.error(`[Sync] Failed to fetch ${list.url}:`, e);
       }
 
       // 单个列表拉取完毕后更新其同步时间和可用状态
-      await profileModel.updateListSyncStatus(list.id, now, success ? 1 : 0);
+      await profileModel.updateListSyncStatus(list.id, now, success ? 1 : 0, syncError);
     }
 
     let domainArray = Array.from(allDomains);

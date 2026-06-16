@@ -3,7 +3,7 @@ import {
   Button,
   Menu,
   MenuItem,
-  Popover,
+  PopoverNext,
   Intent,
   Tag,
 } from "@blueprintjs/core";
@@ -116,9 +116,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             active={location.pathname === "/account"}
             onClick={() => navigate("/account")}
           />
-          <Popover
+          <PopoverNext
             className="w-full"
-            position="right-bottom"
+            placement="right-end"
             content={
               <div className="p-4 space-y-3">
                 <div className="font-bold text-sm">
@@ -139,7 +139,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
               intent={Intent.DANGER}
               shouldDismissPopover={false}
             />
-          </Popover>
+          </PopoverNext>
         </Menu>
       </div>
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">

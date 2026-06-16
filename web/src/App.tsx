@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { GitHubCorner } from "./components/GithubCorner";
 import { lazyWithPreload } from "./utils/lazyWithPreload";
+import { getAccessToken, setAccessToken } from "./utils/token";
 import { DashboardHomeView } from "./views/DashboardHomeView";
 import { MainLayout } from "./layouts/MainLayout";
 import { NotFoundView } from "./views/NotFoundView";
@@ -78,13 +79,41 @@ function App() {
     }
   }, [theme]);
 
+  const clearCsrfToken = () => {
+    document.cookie = "csrf_token=; Max-Age=0; path=/; Secure; SameSite=Lax";
+  };
+
   const checkAuthAndFetchData = async () => {
     try {
+      // 1. Check if we have a csrf_token cookie.
+      const hasCsrfToken = document.cookie.includes("csrf_token=");
+      if (!hasCsrfToken) {
+        setIsLoggedIn(false);
+        return;
+      }
+
+      // 2. If we don't have an access token in memory, try to refresh first.
+      let token = getAccessToken();
+      if (!token) {
+        const refreshRes = await fetch("/api/auth/refresh", { method: "POST" });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          setAccessToken(data.accessToken);
+          token = data.accessToken;
+        } else {
+          clearCsrfToken();
+          setIsLoggedIn(false);
+          return;
+        }
+      }
+
+      // 3. Fetch data (uses token automatically via fetch interceptor).
       const [profilesRes, meRes] = await Promise.all([
         fetch("/api/profiles"),
         fetch("/api/account/me"),
       ]);
       if (profilesRes.status === 401 || meRes.status === 401) {
+        clearCsrfToken();
         setIsLoggedIn(false);
         return;
       }
@@ -92,23 +121,31 @@ function App() {
         setProfiles(await profilesRes.json());
         setCurrentUser(await meRes.json());
         setIsLoggedIn(true);
-      } else setIsLoggedIn(false);
-    } catch (e) {
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch {
       setIsLoggedIn(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAuthAndFetchData();
   }, []);
 
   useEffect(() => {
     const handleUnauthorized = (e: Event) => {
+      clearCsrfToken();
       setIsLoggedIn(false);
       setSelectedProfile(null);
       
       const customEvent = e as CustomEvent<{ reason?: string }>;
       const reason = customEvent.detail?.reason;
+      
+      if (reason === "missing") {
+        return;
+      }
       
       let message = t("auth.unauthorizedDefault");
       if (reason === "geolocation_mismatch" || reason === "geolocation_missing") {
@@ -150,7 +187,7 @@ function App() {
         setShowCreateDialog(false);
         await checkAuthAndFetchData();
       } else setCreateError(await res.text());
-    } catch (e) {
+    } catch {
       setCreateError(t("common.errorNetwork"));
     }
   };
@@ -169,11 +206,13 @@ function App() {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout failed", e);
+    } finally {
+      clearCsrfToken();
       setIsLoggedIn(false);
       setSelectedProfile(null);
       window.location.reload();
-    } catch (e) {
-      console.error("Logout failed", e);
     }
   };
 

@@ -85,6 +85,7 @@ export interface List {
   url: string;
   enabled: boolean;
   last_synced_at?: number;
+  sync_error?: string | null;
 }
 
 export interface DNSQuery {

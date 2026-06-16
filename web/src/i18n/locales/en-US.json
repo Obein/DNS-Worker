@@ -297,6 +297,7 @@
     "syncing": "Syncing...",
     "syncSuccess": "List synced successfully",
     "syncError": "Failed to sync list",
+    "syncErrorDesc": "Failed to download or parse the filter list. Please check the URL and ensure it is accessible.",
     "deleteConfirm": "Are you sure you want to delete this list subscription?",
     "deleteSuccess": "List deleted successfully",
     "deleteError": "Failed to delete list",

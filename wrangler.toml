@@ -32,11 +32,11 @@ enabled = true
 [observability.logs]
 enabled = true
 invocation_logs = true
-head_sampling_rate = 0.3
+head_sampling_rate = 0.001
 
 [observability.traces]
 enabled = true
-head_sampling_rate = 0.05
+head_sampling_rate = 0.01
 
 [vars]
 # Used to resolve DoH domains

@@ -297,6 +297,7 @@
     "syncing": "正在同步...",
     "syncSuccess": "清單同步成功",
     "syncError": "清單同步失敗",
+    "syncErrorDesc": "無法下載或解析此攔截列表。請檢查連結是否正確，並確保該連結可以正常存取。",
     "deleteConfirm": "確定要刪除此清單訂閱嗎？",
     "deleteSuccess": "清單刪除成功",
     "deleteError": "清單刪除失敗",

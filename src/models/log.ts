@@ -80,15 +80,20 @@ export class LogModel {
    */
   async cleanupGlobal(): Promise<void> {
     // 这里的逻辑比较复杂，因为每个 Profile 的保留天数不同
-    // 我们先查询出所有不同的天数配置
-    const { results } = await this.db.prepare("SELECT DISTINCT json_extract(settings, '$.log_retention_days') as days FROM profiles").all<{days: number}>();
+    // 我们先查询出所有不同的天数配置，并使用 CAST 确保其为数字/NULL
+    const { results } = await this.db.prepare(
+      "SELECT DISTINCT CAST(json_extract(settings, '$.log_retention_days') AS INTEGER) as days FROM profiles"
+    ).all<{days: number | null}>();
     
     for (const row of results) {
-      const days = row.days || 30;
+      const days = row.days !== null ? Number(row.days) : 30;
       const threshold = Math.floor(Date.now() / 1000 - (days * 24 * 3600));
-      // 清理所有设置为该天数的 Profile 的过期日志
-      await this.db.prepare("DELETE FROM logs WHERE timestamp < ? AND profile_id IN (SELECT id FROM profiles WHERE json_extract(settings, '$.log_retention_days') = ? OR (? = 30 AND json_extract(settings, '$.log_retention_days') IS NULL))")
-        .bind(threshold, days, days).run();
+      // 清理所有设置为该天数的 Profile 的过期日志，并在 SQL 中使用 CAST 比较以避免 SQLite 的类型差异问题
+      await this.db.prepare(
+        "DELETE FROM logs WHERE timestamp < ? AND profile_id IN (SELECT id FROM profiles WHERE CAST(json_extract(settings, '$.log_retention_days') AS INTEGER) = ? OR (? = 30 AND json_extract(settings, '$.log_retention_days') IS NULL))"
+      )
+        .bind(threshold, days, days)
+        .run();
     }
   }
 
