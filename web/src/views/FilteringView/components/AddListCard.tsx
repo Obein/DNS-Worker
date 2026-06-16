@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Elevation, InputGroup, Button, Popover, Position, Intent, Menu, MenuItem } from "@blueprintjs/core";
+import { Card, Elevation, InputGroup, Button, PopoverNext, Intent, Menu, MenuItem } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { usePresetLists } from "../hooks";
 import type {  FilterList  } from "../types";
@@ -48,9 +48,9 @@ export const AddListCard: React.FC<AddListCardProps> = ({ newUrl, setNewUrl, onA
           onChange={(e) => setNewUrl(e.target.value)}
           leftIcon="globe"
           rightElement={
-            <Popover content={presetMenu} position={Position.BOTTOM_RIGHT} minimal={true} usePortal={true}>
+            <PopoverNext content={presetMenu} placement="bottom-end" animation="minimal" arrow={false} usePortal={true}>
               <Button variant="minimal" icon="chevron-down" />
-            </Popover>
+            </PopoverNext>
           }
         />
         <Button

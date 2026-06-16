@@ -3,13 +3,12 @@ import {
   Tag,
   ButtonGroup,
   Button,
-  Popover,
+  PopoverNext,
   H5,
   FormGroup,
   InputGroup,
   Intent,
   Switch,
-  Position,
   Menu,
   MenuItem,
   MenuDivider,
@@ -141,7 +140,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
               {(["10m", "1h", "24h", "7d", "30d"] as TimeRange[]).map((r) => (
                 <Button key={r} active={range === r} onClick={() => setRange(r)} text={r.toUpperCase()} small={isMobile} />
               ))}
-              <Popover
+              <PopoverNext
                 content={
                   <div className="p-4 space-y-2 w-64">
                     <H5>{t("analytics.customRange")}</H5>
@@ -175,7 +174,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
                 }
               >
                 <Button active={range === "custom"} icon={<Calendar size={14} />} text={isMobile ? "" : t("analytics.custom")} small={isMobile} />
-              </Popover>
+              </PopoverNext>
             </ButtonGroup>
           </div>
 
@@ -193,7 +192,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
 
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Popover content={filterMenu} position={Position.BOTTOM_LEFT}>
+          <PopoverNext content={filterMenu} placement="bottom-start">
             <Button
               icon={<Filter size={14} />}
               rightIcon="caret-down"
@@ -202,7 +201,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
               variant="outlined"
               fill={isMobile}
             />
-          </Popover>
+          </PopoverNext>
           {accessPoints.length > 0 && (
             <HTMLSelect 
               value={accessPointIdFilter || ""}

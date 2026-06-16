@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Elevation, H5, FormGroup, InputGroup, Button, Popover, Position, Menu, MenuItem } from "@blueprintjs/core";
+import { Card, Elevation, H5, FormGroup, InputGroup, Button, PopoverNext, Menu, MenuItem } from "@blueprintjs/core";
 import { Server } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  ProfileSettings  } from "../types";
@@ -46,9 +46,9 @@ export const UpstreamCard: React.FC<UpstreamCardProps> = ({ settings, setSetting
           onChange={(e) => setSettings({ ...settings, upstream: [e.target.value] })}
           onFocus={(e) => e.target.select()}
           rightElement={
-            <Popover content={upstreamMenu} position={Position.BOTTOM_RIGHT} minimal={true}>
+            <PopoverNext content={upstreamMenu} placement="bottom-end" animation="minimal" arrow={false}>
               <Button variant="minimal" icon="chevron-down" />
-            </Popover>
+            </PopoverNext>
           }
         />
       </FormGroup>

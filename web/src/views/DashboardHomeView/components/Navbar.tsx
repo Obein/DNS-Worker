@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Intent, Popover } from "@blueprintjs/core";
+import { Button, Intent, PopoverNext } from "@blueprintjs/core";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
@@ -35,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
             text={isMobile ? "" : t("common.account")}
             onClick={() => navigate("/account")}
           />
-          <Popover
+          <PopoverNext
             content={
               <div className="p-4 space-y-3">
                 <div className="font-bold text-sm">
@@ -56,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
               icon={<LogOut size={18} />}
               text={isMobile ? "" : t("common.logout")}
             />
-          </Popover>
+          </PopoverNext>
         </div>
       </div>
     </div>

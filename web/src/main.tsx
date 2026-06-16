@@ -71,7 +71,7 @@ window.fetch = async function (input, init) {
             const data = await refreshRes.json();
             setAccessToken(data.accessToken);
             onRefreshed(data.accessToken);
-          } catch (e) {
+          } catch {
             setAccessToken(null);
             lastRefreshReason = "invalid_payload";
             onRefreshed("");
@@ -80,9 +80,16 @@ window.fetch = async function (input, init) {
           setAccessToken(null);
           let reason = "unknown";
           try {
-            const data = await refreshRes.json();
-            if (data && data.reason) reason = data.reason;
-          } catch (e) {}
+            const text = await refreshRes.text();
+            if (text === "Refresh token missing") {
+              reason = "missing";
+            } else {
+              const data = JSON.parse(text);
+              if (data && data.reason) reason = data.reason;
+            }
+          } catch {
+            // Ignore JSON parsing/network errors
+          }
           lastRefreshReason = reason;
           onRefreshed("");
         }

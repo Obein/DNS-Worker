@@ -10,7 +10,7 @@ import {
   Section,
   ButtonGroup,
   Button,
-  Popover,
+  PopoverNext,
   FormGroup,
   InputGroup,
   HTMLSelect,
@@ -118,7 +118,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           {(["10m", "1h", "24h", "7d", "30d"] as TimeRange[]).map((r) => (
             <Button key={r} active={range === r} onClick={() => setRange(r)} text={r.toUpperCase()} />
           ))}
-          <Popover
+          <PopoverNext
             content={
               <div className="p-4 space-y-4 w-64">
                 <H5>{t("analytics.customRange")}</H5>
@@ -152,7 +152,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
             }
           >
             <Button active={range === "custom"} icon={<Calendar size={14} className="mr-1" />} text={t("analytics.custom")} />
-          </Popover>
+          </PopoverNext>
         </ButtonGroup>
         <div className="flex items-center gap-4">
           {accessPoints.length > 0 && (

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Drawer, Position, Section, SectionCard, Button, Intent, Spinner, Dialog, Classes, InputGroup, Tooltip, Popover } from "@blueprintjs/core";
+import { Drawer, Position, Section, SectionCard, Button, Intent, Spinner, Dialog, Classes, InputGroup, Tooltip, PopoverNext } from "@blueprintjs/core";
 import { Trash2, Edit2, RefreshCw, Plus, MonitorSmartphone, Copy, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
@@ -234,7 +234,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
                         text={t("setup.renameAccessPoint")} 
                         onClick={() => { setRenameApId(ap.id); setRenameApName(ap.name); }}
                       />
-                      <Popover
+                      <PopoverNext
                         isOpen={rotateConfirmApId === ap.id}
                         onInteraction={(nextOpenState) => {
                           if (!nextOpenState) {
@@ -265,7 +265,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
                             </div>
                           </div>
                         }
-                        position={Position.TOP}
+                        placement="top"
                       >
                         <Button 
                           small 
@@ -274,7 +274,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
                           loading={rotatingApId === ap.id}
                           onClick={() => setRotateConfirmApId(ap.id)}
                         />
-                      </Popover>
+                      </PopoverNext>
                       <Button 
                         small 
                         intent={Intent.DANGER}

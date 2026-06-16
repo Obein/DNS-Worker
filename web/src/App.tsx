@@ -93,12 +93,13 @@ function App() {
         setCurrentUser(await meRes.json());
         setIsLoggedIn(true);
       } else setIsLoggedIn(false);
-    } catch (e) {
+    } catch {
       setIsLoggedIn(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAuthAndFetchData();
   }, []);
 
@@ -109,6 +110,10 @@ function App() {
       
       const customEvent = e as CustomEvent<{ reason?: string }>;
       const reason = customEvent.detail?.reason;
+      
+      if (reason === "missing") {
+        return;
+      }
       
       let message = t("auth.unauthorizedDefault");
       if (reason === "geolocation_mismatch" || reason === "geolocation_missing") {
@@ -150,7 +155,7 @@ function App() {
         setShowCreateDialog(false);
         await checkAuthAndFetchData();
       } else setCreateError(await res.text());
-    } catch (e) {
+    } catch {
       setCreateError(t("common.errorNetwork"));
     }
   };

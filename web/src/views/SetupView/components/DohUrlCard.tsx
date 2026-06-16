@@ -1,5 +1,5 @@
 import React from "react";
-import { Section, SectionCard, Button, Popover, Position, H5, Intent, HTMLSelect } from "@blueprintjs/core";
+import { Section, SectionCard, Button, PopoverNext, H5, Intent, HTMLSelect } from "@blueprintjs/core";
 import { ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
@@ -32,8 +32,8 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
       title={t("setup.accessPointTitle")}
       icon="globe"
       rightElement={
-        <Popover
-          position={Position.BOTTOM_RIGHT}
+        <PopoverNext
+          placement="bottom-end"
           usePortal={true}
           content={
             <div className="p-4 max-w-sm">
@@ -59,7 +59,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
           }
         >
           <Button icon="help" variant="minimal" intent={Intent.NONE} />
-        </Popover>
+        </PopoverNext>
       }
     >
       <SectionCard>
