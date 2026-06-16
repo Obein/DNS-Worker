@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { ProfileModel } from "../../models/profile";
+import { ListModel } from "../../models/list";
 import { syncProfileLists } from "../../utils/sync";
 import { isSafeUrl } from "../../utils/validator";
 import { pipeline } from "../../pipeline";
@@ -15,10 +15,10 @@ export async function handleProfileListsRequest(
   pathParts: string[],
   ctx: ExecutionContext
 ): Promise<Response> {
-  const profileModel = new ProfileModel(env.DB);
+  const listModel = new ListModel(env.DB);
 
   if (request.method === 'GET') {
-    const results = await profileModel.getLists(profileId);
+    const results = await listModel.getLists(profileId);
     return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -36,7 +36,7 @@ export async function handleProfileListsRequest(
       return new Response("Invalid list URL. Private networks and localhosts are not allowed.", { status: 400 });
     }
     
-    await profileModel.addList(profileId, listUrl);
+    await listModel.addList(profileId, listUrl);
     ctx.waitUntil(syncProfileLists(profileId, env, ctx));
     ctx.waitUntil(pipeline.clearCache(profileId));
     return new Response(null, { status: 201 });
@@ -44,7 +44,7 @@ export async function handleProfileListsRequest(
 
   if (request.method === 'DELETE') {
     const { id } = await request.json() as { id: number };
-    await profileModel.deleteList(id, profileId);
+    await listModel.deleteList(id, profileId);
     ctx.waitUntil(syncProfileLists(profileId, env, ctx));
     ctx.waitUntil(pipeline.clearCache(profileId));
     return new Response(null, { status: 204 });

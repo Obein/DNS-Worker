@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { ProfileModel } from "../../models/profile";
+import { RuleModel } from "../../models/rule";
 import { pipeline } from "../../pipeline";
 
 /**
@@ -13,10 +13,10 @@ export async function handleProfileRulesRequest(
   pathParts: string[],
   ctx: ExecutionContext
 ): Promise<Response> {
-  const profileModel = new ProfileModel(env.DB);
+  const ruleModel = new RuleModel(env.DB);
 
   if (request.method === 'GET') {
-    const results = await profileModel.getRules(profileId);
+    const results = await ruleModel.getRules(profileId);
     return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -26,11 +26,11 @@ export async function handleProfileRulesRequest(
     if (!pattern) {
       return new Response("Domain pattern cannot be empty", { status: 400 });
     }
-    const existing = await profileModel.getRuleByPattern(profileId, pattern);
+    const existing = await ruleModel.getRuleByPattern(profileId, pattern);
     if (existing) {
       return new Response("Rule for this domain already exists", { status: 400 });
     }
-    await profileModel.addRule(profileId, rule);
+    await ruleModel.addRule(profileId, rule);
     ctx.waitUntil(pipeline.clearCache(profileId));
     return new Response(null, { status: 201 });
   }
@@ -41,18 +41,18 @@ export async function handleProfileRulesRequest(
     if (!pattern) {
       return new Response("Domain pattern cannot be empty", { status: 400 });
     }
-    const existing = await profileModel.getRuleByPatternExcludeId(profileId, pattern, rule.id);
+    const existing = await ruleModel.getRuleByPatternExcludeId(profileId, pattern, rule.id);
     if (existing) {
       return new Response("Rule for this domain already exists", { status: 400 });
     }
-    await profileModel.updateRule(rule.id, profileId, rule);
+    await ruleModel.updateRule(rule.id, profileId, rule);
     ctx.waitUntil(pipeline.clearCache(profileId));
     return new Response(null, { status: 200 });
   }
 
   if (request.method === 'DELETE') {
     const { id } = await request.json() as any;
-    await profileModel.deleteRule(id, profileId);
+    await ruleModel.deleteRule(id, profileId);
     ctx.waitUntil(pipeline.clearCache(profileId));
     return new Response(null, { status: 204 });
   }

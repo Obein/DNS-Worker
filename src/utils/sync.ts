@@ -3,6 +3,8 @@ import { parseList } from "./parser";
 import { BloomFilter } from "./bloom";
 import { pipelineCache } from "../pipeline/cache";
 import { ProfileModel } from "../models/profile";
+import { ListModel } from "../models/list";
+import { ProfileBloomModel } from "../models/profileBloom";
 import { isSafeUrl } from "./validator";
 
 /**
@@ -17,19 +19,21 @@ import { isSafeUrl } from "./validator";
  */
 export async function syncProfileLists(profileId: string, env: Env, ctx: ExecutionContext): Promise<void> {
   const profileModel = new ProfileModel(env.DB);
+  const listModel = new ListModel(env.DB);
+  const bloomModel = new ProfileBloomModel(env.DB);
   const now = Math.floor(Date.now() / 1000);
 
   try {
-    const lists = await profileModel.getLists(profileId);
+    const lists = await listModel.getLists(profileId);
     
     if (lists.length === 0) {
       // 如果当前 Profile 没有配置任何订阅列表，则清理旧的布隆过滤器数据
-      await profileModel.clearProfileBlooms(profileId);
+      await bloomModel.clearProfileBlooms(profileId);
       return;
     }
     const allDomains = new Set<string>();
 
-    // 逐个拉取所有列表的最新的规则文件
+    // 逐个拉取所有列表的最新的规则 file
     for (const list of lists) {
       let success = false;
       let syncError: string | null = null;
@@ -94,7 +98,7 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
       }
 
       // 单个列表拉取完毕后更新其同步时间和可用状态
-      await profileModel.updateListSyncStatus(list.id, now, success ? 1 : 0, syncError);
+      await listModel.updateListSyncStatus(list.id, now, success ? 1 : 0, syncError);
     }
 
     let domainArray = Array.from(allDomains);
@@ -113,7 +117,7 @@ export async function syncProfileLists(profileId: string, env: Env, ctx: Executi
       const binary = bloom.toUint8Array();
 
       // 将序列化后的布隆过滤器二进制数据存储到 D1 数据库中
-      await profileModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
+      await bloomModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
 
       // 通知缓存层异步清除此 Profile 的相关解析缓存，以使新规则立刻生效
       if (ctx && typeof ctx.waitUntil === 'function') {

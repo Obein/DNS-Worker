@@ -1,10 +1,10 @@
 import { Context, ProfileSettings, Rule } from "../types";
 import { ProfileModel } from "../models/profile";
+import { RuleModel } from "../models/rule";
+import { ProfileBloomModel } from "../models/profileBloom";
 import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
 import { configCache, bloomMemoryMap } from "./cache";
-
-
 
 export const pipelineConfig = {
   async load(context: Context, track: (name: string) => void): Promise<{ settings: ProfileSettings; rules: Rule[]; bloom?: BloomFilter } | null> {
@@ -45,15 +45,18 @@ export const pipelineConfig = {
 
     // 回退到 D1 (配置) 和 R2 (布隆过滤器)
     const profileModel = new ProfileModel(env.DB);
+    const ruleModel = new RuleModel(env.DB);
+    const bloomModel = new ProfileBloomModel(env.DB);
+
     const profile = await profileModel.getById(profileId);
     if (!profile) return null;
     
     const settings = JSON.parse(profile.settings);
-    const rules = await profileModel.getRules(profileId);
+    const rules = await ruleModel.getRules(profileId);
     
     // 从 D1 直接加载布隆过滤器
     try {
-      const buffer = await profileModel.getProfileBloom(profileId);
+      const buffer = await bloomModel.getProfileBloom(profileId);
         
       if (buffer) {
         track('load_bloom_l3_d1');
