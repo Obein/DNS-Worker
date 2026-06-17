@@ -59,7 +59,7 @@ export default {
         }
 
         // Route requests to handlers
-        if (url.pathname === '/api/debug' || url.pathname === '/api/substitute') {
+        if (url.pathname === '/api/clientinfo' || url.pathname === '/api/substitute') {
           return handleSystemRequest(request, env);
         }
         if (url.pathname.startsWith('/api/profiles')) {

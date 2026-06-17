@@ -83,7 +83,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.currentLocation")}</div>
                   <div className="font-bold truncate">
-                    {debugInfo.city}, {debugInfo.country}
+                    {debugInfo.city}, {debugInfo.region ? `${debugInfo.region}, ` : ""}{debugInfo.country}
                   </div>
                 </div>
               </div>

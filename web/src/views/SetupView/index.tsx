@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Intent } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { getPresetRegions, type RegionConfigItem } from "../../config/regions";
+import { setSystemTimeZone } from "../../utils/date";
 
 import type {  SetupViewProps, DebugInfo  } from "./types";
 import { useIsMobile } from "./utils";
@@ -117,9 +118,13 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
     setIsVerifying(true);
     setVerifyResult(null);
     try {
-      const debugRes = await fetch("/api/debug");
+      const debugRes = await fetch("/api/clientinfo");
       const debugData = await debugRes.json();
       setDebugInfo(debugData);
+
+      if (debugData.timezone && debugData.timezone !== "UNKNOWN") {
+        setSystemTimeZone(debugData.timezone);
+      }
 
       const domainToResolve = debugData.substituteDomain || "pages.dev";
       

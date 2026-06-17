@@ -7,6 +7,13 @@
  */
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
+let systemTimeZone: string | undefined = undefined;
+
+export function setSystemTimeZone(tz: string) {
+  systemTimeZone = tz;
+  formatterCache.clear();
+}
+
 function getFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const key = options ? JSON.stringify(options) : "";
   let formatter = formatterCache.get(key);
@@ -22,6 +29,7 @@ export function formatDateTime(
   options?: Intl.DateTimeFormatOptions
 ): string {
   const mergedOptions: Intl.DateTimeFormatOptions = {
+    timeZone: systemTimeZone,
     timeZoneName: "short",
     ...options,
   };

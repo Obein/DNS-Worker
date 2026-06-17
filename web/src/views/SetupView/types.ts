@@ -10,7 +10,9 @@ export interface SetupViewProps {
 export interface DebugInfo {
   ip: string;
   country: string;
+  region?: string;
   city: string;
+  timezone?: string;
   asn: number;
   asOrganization: string;
   connectedProfileId?: string;

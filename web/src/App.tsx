@@ -11,6 +11,7 @@ import { MainLayout } from "./layouts/MainLayout";
 import { NotFoundView } from "./views/NotFoundView";
 import { ProfileRoutes } from "./routes/ProfileRoutes";
 import type { Profile, UserInfo } from "./types/auth";
+import { setSystemTimeZone } from "./utils/date";
 
 const AuthView = lazyWithPreload(() =>
   import("./components/AuthView").then((m) => ({ default: m.AuthView })),
@@ -130,6 +131,19 @@ function App() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     checkAuthAndFetchData();
+
+    // Fetch system timezone and regions info
+    fetch("/api/debug")
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error("Failed to fetch debug info");
+      })
+      .then((data) => {
+        if (data.timezone && data.timezone !== "UNKNOWN") {
+          setSystemTimeZone(data.timezone);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch system timezone:", err));
   }, []);
 
   useEffect(() => {
