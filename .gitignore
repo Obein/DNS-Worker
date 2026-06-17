@@ -6,3 +6,4 @@ build
 package-lock.json
 /web/stats.html
 .env
+.vscode

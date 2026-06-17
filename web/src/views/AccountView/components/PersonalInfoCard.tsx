@@ -61,7 +61,6 @@ export const PersonalInfoCard: React.FC<PersonalInfoCardProps> = ({
   setUsernameFocused,
   onUpdateUsername,
   onUpdateTimezone,
-  onUpdateLocale
 }) => {
   const { t } = useTranslation();
 
