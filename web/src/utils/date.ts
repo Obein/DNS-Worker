@@ -5,20 +5,25 @@
  * @param options - Optional Intl.DateTimeFormatOptions to customize the format.
  * @returns The formatted date string with the timezone offset suffix.
  */
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function getFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = options ? JSON.stringify(options) : "";
+  let formatter = formatterCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(undefined, options);
+    formatterCache.set(key, formatter);
+  }
+  return formatter;
+}
+
 export function formatDateTime(
   date: Date,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  const dateString = date.toLocaleString([], options);
-  const offset = -date.getTimezoneOffset();
-  const absOffset = Math.abs(offset);
-  const hours = Math.floor(absOffset / 60);
-  const minutes = absOffset % 60;
-  const sign = offset >= 0 ? "+" : "-";
-
-  const tzSuffix = offset === 0
-    ? "UTC"
-    : `UTC${sign}${hours}${minutes ? `:${minutes.toString().padStart(2, '0')}` : ""}`;
-
-  return `${dateString} ${tzSuffix}`;
+  const mergedOptions: Intl.DateTimeFormatOptions = {
+    timeZoneName: "short",
+    ...options,
+  };
+  return getFormatter(mergedOptions).format(date);
 }
