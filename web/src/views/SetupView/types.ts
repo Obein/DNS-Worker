@@ -7,7 +7,7 @@ export interface SetupViewProps {
   toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
-export interface DebugInfo {
+export interface ClientInfo {
   ip: string;
   country: string;
   region?: string;

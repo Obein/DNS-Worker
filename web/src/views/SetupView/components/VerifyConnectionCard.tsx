@@ -2,14 +2,14 @@ import React from "react";
 import { Section, SectionCard, Button, Spinner, Intent } from "@blueprintjs/core";
 import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type {  DebugInfo  } from "../types";
+import type {  ClientInfo  } from "../types";
 
 export interface VerifyConnectionCardProps {
   isVerifying: boolean;
   verifyResult: { success: boolean; profileMatch: boolean } | null;
   handleVerify: () => void;
   isMobile: boolean;
-  debugInfo: DebugInfo | null;
+  clientInfo: ClientInfo | null;
   showIp: boolean;
   setShowIp: (show: boolean) => void;
 }
@@ -19,7 +19,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
   verifyResult,
   handleVerify,
   isMobile,
-  debugInfo,
+  clientInfo,
   showIp,
   setShowIp,
 }) => {
@@ -62,7 +62,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
             />
           </div>
 
-          {debugInfo && (
+          {clientInfo && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3">
                 <Globe size={18} className="text-blue-500 mt-1" />
@@ -74,7 +74,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                     </button>
                   </div>
                   <div className="font-mono font-bold text-blue-600 dark:text-blue-400 truncate">
-                    {showIp ? debugInfo.ip : "• • • • • • • • • •"}
+                    {showIp ? clientInfo.ip : "• • • • • • • • • •"}
                   </div>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                 <div className="min-w-0">
                   <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.currentLocation")}</div>
                   <div className="font-bold truncate">
-                    {debugInfo.city}, {debugInfo.region ? `${debugInfo.region}, ` : ""}{debugInfo.country}
+                    {clientInfo.city}, {clientInfo.region ? `${clientInfo.region}, ` : ""}{clientInfo.country}
                   </div>
                 </div>
               </div>

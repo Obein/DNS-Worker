@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getPresetRegions, type RegionConfigItem } from "../../config/regions";
 import { setSystemTimeZone } from "../../utils/date";
 
-import type {  SetupViewProps, DebugInfo  } from "./types";
+import type {  SetupViewProps, ClientInfo  } from "./types";
 import { useIsMobile } from "./utils";
 import { SetupHeader } from "./components/SetupHeader";
 import { VerifyConnectionCard } from "./components/VerifyConnectionCard";
@@ -49,7 +49,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const activeToken = activeAp ? activeAp.token : profileKey;
   const activeName = activeAp ? activeAp.name : undefined;
   const dohUrl = `${window.location.origin}/${activeToken}`;
-  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
+  const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [substituteDomainIp, setSubstituteDomainIp] = useState<string | null>(null);
   const [substituteDomainIpv6, setSubstituteDomainIpv6] = useState<string | null>(null);
@@ -120,7 +120,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
     try {
       const debugRes = await fetch("/api/clientinfo");
       const debugData = await debugRes.json();
-      setDebugInfo(debugData);
+      setClientInfo(debugData);
 
       if (debugData.timezone && debugData.timezone !== "UNKNOWN") {
         setSystemTimeZone(debugData.timezone);
@@ -194,7 +194,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const currentIps = useMemo(() => {
     const region = allRegions[selectedRegion] || OTHER_REGION;
     const baseIps: { ip: string; area: string | null }[] = [...region.ips];
-    const domain = debugInfo?.substituteDomain || "pages.dev";
+    const domain = clientInfo?.substituteDomain || "pages.dev";
     if (substituteDomainIpv6) {
       baseIps.unshift({
         ip: substituteDomainIpv6,
@@ -208,7 +208,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
       });
     }
     return baseIps;
-  }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, debugInfo, t, OTHER_REGION]);
+  }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, clientInfo, t, OTHER_REGION]);
 
   return (
     <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-4" : "p-8 max-w-5xl"}`}>
@@ -219,7 +219,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         verifyResult={verifyResult}
         handleVerify={handleVerify}
         isMobile={isMobile}
-        debugInfo={debugInfo}
+        clientInfo={clientInfo}
         showIp={showIp}
         setShowIp={setShowIp}
       />

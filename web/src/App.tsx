@@ -133,10 +133,10 @@ function App() {
     checkAuthAndFetchData();
 
     // Fetch system timezone and regions info
-    fetch("/api/debug")
+    fetch("/api/clientinfo")
       .then((res) => {
         if (res.ok) return res.json();
-        throw new Error("Failed to fetch debug info");
+        throw new Error("Failed to fetch client info");
       })
       .then((data) => {
         if (data.timezone && data.timezone !== "UNKNOWN") {
