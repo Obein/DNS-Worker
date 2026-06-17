@@ -8,17 +8,26 @@
 const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
 let systemTimeZone: string | undefined = undefined;
+let systemLocale: string = typeof navigator !== "undefined" ? navigator.language : "en-US";
 
 export function setSystemTimeZone(tz: string) {
-  systemTimeZone = tz;
+  systemTimeZone = tz || undefined;
   formatterCache.clear();
 }
 
-function getFormatter(options?: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
-  const key = options ? JSON.stringify(options) : "";
+export function setSystemLocale(locale: string) {
+  systemLocale = locale || (typeof navigator !== "undefined" ? navigator.language : "en-US");
+  formatterCache.clear();
+}
+
+function getFormatter(
+  locale: string | undefined,
+  options?: Intl.DateTimeFormatOptions
+): Intl.DateTimeFormat {
+  const key = `${locale || ""}:${options ? JSON.stringify(options) : ""}`;
   let formatter = formatterCache.get(key);
   if (!formatter) {
-    formatter = new Intl.DateTimeFormat(undefined, options);
+    formatter = new Intl.DateTimeFormat(locale, options);
     formatterCache.set(key, formatter);
   }
   return formatter;
@@ -31,7 +40,15 @@ export function formatDateTime(
   const mergedOptions: Intl.DateTimeFormatOptions = {
     timeZone: systemTimeZone,
     timeZoneName: "short",
-    ...options,
+    ...(options || {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }),
   };
-  return getFormatter(mergedOptions).format(date);
+
+  return getFormatter(systemLocale, mergedOptions).format(date);
 }

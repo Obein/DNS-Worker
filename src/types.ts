@@ -32,6 +32,8 @@ export interface User {
   created_at?: number;
   last_active_at?: number;
   last_resolve_at?: number;
+  timezone?: string | null;
+  locale?: string | null;
 }
 
 export interface UserActivityLog {

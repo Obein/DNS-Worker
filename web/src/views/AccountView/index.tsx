@@ -25,7 +25,7 @@ export const AccountView: React.FC = () => {
   const [me, setMe] = useState<UserInfo | null>(null);
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editUsername, setEditUsername] = useState("");
@@ -70,6 +70,15 @@ export const AccountView: React.FC = () => {
         const data = await res.json();
         setMe(data);
         setEditUsername(data.username);
+        if (data.timezone) {
+          const { setSystemTimeZone } = await import("../../utils/date");
+          setSystemTimeZone(data.timezone);
+        }
+        if (data.locale) {
+          const { setSystemLocale } = await import("../../utils/date");
+          setSystemLocale(data.locale);
+          i18n.changeLanguage(data.locale);
+        }
         if (data.role === "admin") {
           fetchUsers();
           fetchSystemSettings();
@@ -108,6 +117,45 @@ export const AccountView: React.FC = () => {
       console.error(e);
     } finally {
       setUsernameLoading(false);
+    }
+  };
+
+  const handleUpdateTimezone = async (newTimezone: string | null) => {
+    try {
+      const res = await fetch("/api/account/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ timezone: newTimezone || "" })
+      });
+      if (res.ok) {
+        setMe((prev) => (prev ? { ...prev, timezone: newTimezone } : null));
+        const { setSystemTimeZone } = await import("../../utils/date");
+        setSystemTimeZone(newTimezone || "");
+      } else {
+        alert(await res.text());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleUpdateLocale = async (newLocale: string | null) => {
+    try {
+      const res = await fetch("/api/account/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale: newLocale || "en-US" })
+      });
+      if (res.ok) {
+        setMe((prev) => (prev ? { ...prev, locale: newLocale || "en-US" } : null));
+        const { setSystemLocale } = await import("../../utils/date");
+        setSystemLocale(newLocale || "en-US");
+        i18n.changeLanguage(newLocale || "en-US");
+      } else {
+        alert(await res.text());
+      }
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -204,6 +252,8 @@ export const AccountView: React.FC = () => {
           usernameFocused={usernameFocused}
           setUsernameFocused={setUsernameFocused}
           onUpdateUsername={handleUpdateUsername}
+          onUpdateTimezone={handleUpdateTimezone}
+          onUpdateLocale={handleUpdateLocale}
         />
 
         <ChangePasswordCard

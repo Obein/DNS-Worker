@@ -13,7 +13,20 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     const connectedProfileId = await cacheUtils.get<string>(cache, `active_dns:${clientIp}`);
     const cf = (request as any).cf;
 
-    // Extract region configuration variables
+    return new Response(JSON.stringify({
+      ip: clientIp,
+      country: cf?.country || "UNKNOWN",
+      region: cf?.region || "UNKNOWN",
+      city: cf?.city || "UNKNOWN",
+      timezone: cf?.timezone || "UNKNOWN",
+      asn: cf?.asn || 0,
+      asOrganization: cf?.asOrganization || "UNKNOWN",
+      connectedProfileId: connectedProfileId || null,
+      substituteDomain: env.SUBSTITUTE_DOMAIN || "pages.dev"
+    }), { headers: { 'Content-Type': 'application/json' } });
+  }
+
+  if (url.pathname === '/api/regions') {
     const regions: Record<string, any> = {};
     for (const [key, value] of Object.entries(env)) {
       if (key.startsWith('IP_REGION_') && typeof value === 'string') {
@@ -31,19 +44,7 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
         }
       }
     }
-
-    return new Response(JSON.stringify({
-      ip: clientIp,
-      country: cf?.country || "UNKNOWN",
-      region: cf?.region || "UNKNOWN",
-      city: cf?.city || "UNKNOWN",
-      timezone: cf?.timezone || "UNKNOWN",
-      asn: cf?.asn || 0,
-      asOrganization: cf?.asOrganization || "UNKNOWN",
-      connectedProfileId: connectedProfileId || null,
-      substituteDomain: env.SUBSTITUTE_DOMAIN || "pages.dev",
-      regions
-    }), { headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(regions), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname === '/api/substitute') {

@@ -8,6 +8,8 @@ export interface UserInfo {
   id: string;
   username: string;
   role: "admin" | "user";
+  timezone?: string | null;
+  locale?: string | null;
 }
 
 export interface AccessPoint {

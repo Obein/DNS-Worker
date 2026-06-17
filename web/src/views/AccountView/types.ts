@@ -7,6 +7,8 @@ export interface UserInfo {
   totp_skip_password?: boolean;
   last_active_at?: number;
   last_resolve_at?: number;
+  timezone?: string | null;
+  locale?: string | null;
 }
 
 export interface ActivityEntry {

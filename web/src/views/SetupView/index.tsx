@@ -118,15 +118,20 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
     setIsVerifying(true);
     setVerifyResult(null);
     try {
-      const debugRes = await fetch("/api/clientinfo");
-      const debugData = await debugRes.json();
-      setClientInfo(debugData);
+      const [clientRes, regionsRes] = await Promise.all([
+        fetch("/api/clientinfo"),
+        fetch("/api/regions"),
+      ]);
 
-      if (debugData.timezone && debugData.timezone !== "UNKNOWN") {
-        setSystemTimeZone(debugData.timezone);
+      const clientData = await clientRes.json();
+      const regionsData = await regionsRes.json();
+      setClientInfo(clientData);
+
+      if (clientData.timezone && clientData.timezone !== "UNKNOWN") {
+        setSystemTimeZone(clientData.timezone);
       }
 
-      const domainToResolve = debugData.substituteDomain || "pages.dev";
+      const domainToResolve = clientData.substituteDomain || "pages.dev";
       
       try {
         const substituteRes = await fetch("/api/substitute");
@@ -150,9 +155,9 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         resolveSubstituteDomain(domainToResolve);
       }
 
-      if (debugData.regions) {
+      if (regionsData) {
         const enriched: Record<string, RegionConfigItem> = {};
-        for (const [key, ips] of Object.entries(debugData.regions)) {
+        for (const [key, ips] of Object.entries(regionsData)) {
           enriched[key] = {
             label: presetRegions[key]?.label || key,
             countries: presetRegions[key]?.countries || [],
@@ -162,10 +167,10 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         setServerRegions(enriched);
       }
 
-      if (debugData.country) {
+      if (clientData.country) {
         let matched = false;
         for (const [key, config] of Object.entries(presetRegions)) {
-          if (config.countries.includes(debugData.country)) {
+          if (config.countries.includes(clientData.country)) {
             setSelectedRegion(key);
             matched = true;
             break;
@@ -177,8 +182,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
       }
 
       setVerifyResult({
-        success: !!debugData.connectedProfileId,
-        profileMatch: debugData.connectedProfileId === profileId,
+        success: !!clientData.connectedProfileId,
+        profileMatch: clientData.connectedProfileId === profileId,
       });
     } catch (e) {
       console.error("Verification failed", e);

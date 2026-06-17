@@ -41,25 +41,26 @@ export default {
         // Authenticate request
         currentUser = await getCurrentUser(request, env);
 
-        const isAuthRoute = [
-          '/api/auth/login', '/api/auth/signup', '/api/auth/prelogin', '/api/auth/check-username'
+        const isPublicRoute = [
+          '/api/auth/login', '/api/auth/signup', '/api/auth/prelogin', '/api/auth/check-username',
+          '/api/clientinfo', '/api/regions'
         ].includes(url.pathname);
         const isMobileConfigRoute = url.pathname.endsWith('/mobileconfig');
 
         // Check authentication boundary
-        if (!currentUser && !isAuthRoute && !isMobileConfigRoute) {
+        if (!currentUser && !isPublicRoute && !isMobileConfigRoute) {
           return new Response("Unauthorized", { status: 401 });
         }
 
         // Validate CSRF for mutating requests
-        if (currentUser && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isAuthRoute) {
+        if (currentUser && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) && !isPublicRoute) {
           if (!validateCsrf(request)) {
             return new Response("CSRF validation failed", { status: 403 });
           }
         }
 
         // Route requests to handlers
-        if (url.pathname === '/api/clientinfo' || url.pathname === '/api/substitute') {
+        if (url.pathname === '/api/clientinfo' || url.pathname === '/api/regions' || url.pathname === '/api/substitute') {
           return handleSystemRequest(request, env);
         }
         if (url.pathname.startsWith('/api/profiles')) {

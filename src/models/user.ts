@@ -25,6 +25,8 @@ export class UserModel {
         u.role, 
         u.created_at, 
         u.totp_enabled,
+        u.timezone,
+        u.locale,
         MAX(al.timestamp) as last_active_at,
         u.last_active_at as last_resolve_at
       FROM users u
@@ -35,16 +37,26 @@ export class UserModel {
     return results;
   }
 
-  async create(user: { id: string, username: string, passwordHash: string, role: string }): Promise<boolean> {
+  async create(user: { id: string, username: string, passwordHash: string, role: string, timezone?: string | null, locale?: string | null }): Promise<boolean> {
     const now = Math.floor(Date.now() / 1000);
     const result = await this.db.prepare(
-      "INSERT INTO users (id, username, hashed_password, role, created_at) VALUES (?, ?, ?, ?, ?)"
-    ).bind(user.id, user.username, user.passwordHash, user.role, now).run();
+      "INSERT INTO users (id, username, hashed_password, role, created_at, timezone, locale) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).bind(user.id, user.username, user.passwordHash, user.role, now, user.timezone || null, user.locale || 'en-US').run();
     return result.success;
   }
 
   async updateUsername(id: string, username: string): Promise<boolean> {
     const result = await this.db.prepare("UPDATE users SET username = ? WHERE id = ?").bind(username, id).run();
+    return result.success;
+  }
+
+  async updateTimezone(id: string, timezone: string | null): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE users SET timezone = ? WHERE id = ?").bind(timezone, id).run();
+    return result.success;
+  }
+
+  async updateLocale(id: string, locale: string | null): Promise<boolean> {
+    const result = await this.db.prepare("UPDATE users SET locale = ? WHERE id = ?").bind(locale || 'en-US', id).run();
     return result.success;
   }
 

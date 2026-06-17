@@ -27,20 +27,50 @@ export async function handleMeRequest(
         role: user.role,
         totp_enabled: !!(dbUser?.totp_enabled),
         totp_skip_password: !!(dbUser?.totp_skip_password),
+        timezone: dbUser?.timezone || null,
+        locale: dbUser?.locale || "en-US",
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     if (request.method === 'PATCH') {
-      const { username: newUsername } = await request.json() as any;
-      if (!newUsername || !/^[a-z_][a-z0-9_-]{4,31}$/.test(newUsername)) {
-        return new Response("Username format error", { status: 400 });
-      }
+      const body = await request.json() as any;
       try {
-        await userModel.updateUsername(user.id, newUsername);
+        if (body.username !== undefined) {
+          const newUsername = body.username;
+          if (!newUsername || !/^[a-z_][a-z0-9_-]{4,31}$/.test(newUsername)) {
+            return new Response("Username format error", { status: 400 });
+          }
+          await userModel.updateUsername(user.id, newUsername);
+        }
+
+        if (body.timezone !== undefined) {
+          const newTimezone = body.timezone;
+          if (newTimezone !== null && typeof newTimezone === 'string' && newTimezone !== '') {
+            try {
+              Intl.DateTimeFormat(undefined, { timeZone: newTimezone });
+            } catch (e) {
+              return new Response("Invalid timezone format", { status: 400 });
+            }
+          }
+          await userModel.updateTimezone(user.id, newTimezone || null);
+        }
+
+        if (body.locale !== undefined) {
+          const newLocale = body.locale;
+          if (newLocale !== null && typeof newLocale === 'string' && newLocale !== '') {
+            try {
+              Intl.DateTimeFormat(newLocale);
+            } catch (e) {
+              return new Response("Invalid locale format", { status: 400 });
+            }
+          }
+          await userModel.updateLocale(user.id, newLocale || "en-US");
+        }
+
         return new Response(JSON.stringify({ success: true }));
       } catch (e: any) {
         if (e.message?.includes("UNIQUE constraint failed")) return new Response("The username is already taken", { status: 400 });
-        return new Response("Failed to update username", { status: 500 });
+        return new Response("Failed to update settings", { status: 500 });
       }
     }
 
