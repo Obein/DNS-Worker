@@ -185,13 +185,13 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
           {isMobile ? (
             <ButtonGroup minimal fill={isMobile}>
               <Button
-                active={true}
+                active={false}
                 onClick={() => navigate(`/dash/${profileId}/rules`)}
                 text={t("rules.title")}
                 large
               />
               <Button
-                active={false}
+                active={true}
                 onClick={() => navigate(`/dash/${profileId}/filter`)}
                 text={t("filtering.title")}
                 large
