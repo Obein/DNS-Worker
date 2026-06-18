@@ -182,21 +182,25 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     <div className={clsx("md:p-8 w-full min-w-0 max-w-5xl mx-auto", isMobile ? "p-1" : "p-8")}>
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="w-full md:w-auto flex-1">
-          <ButtonGroup minimal fill={isMobile}>
-            <Button
-              active={false}
-              onClick={() => navigate(`/dash/${profileId}/rules`)}
-              text={t("rules.title")}
-              large
-            />
-            <Button
-              active={true}
-              onClick={() => navigate(`/dash/${profileId}/filter`)}
-              text={t("filtering.title")}
-              large
-            />
-          </ButtonGroup>
-          <p className="bp6-text-muted mt-2">{t("filtering.subtitle")}</p>
+          {isMobile ? (
+            <ButtonGroup minimal fill={isMobile}>
+              <Button
+                active={true}
+                onClick={() => navigate(`/dash/${profileId}/rules`)}
+                text={t("rules.title")}
+                large
+              />
+              <Button
+                active={false}
+                onClick={() => navigate(`/dash/${profileId}/filter`)}
+                text={t("filtering.title")}
+                large
+              />
+            </ButtonGroup>
+          ) : (
+            <h1 className="bp6-heading">{t("rules.title")}</h1>
+          )}
+          <p className="bp6-text-muted mt-2!">{t("filtering.subtitle")}</p>
         </div>
         <Button
           icon={<RefreshCw size={16} />}

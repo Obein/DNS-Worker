@@ -29,7 +29,6 @@ export const preloadMainViews = () => {
 };
 
 export const preloadHeavyViews = () => {
-  AnalyticsView.preload();
   SettingsView.preload();
   RulesView.preload();
   FilteringView.preload();

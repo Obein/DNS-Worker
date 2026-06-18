@@ -209,21 +209,25 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       <div className="mb-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="w-full md:w-auto flex-1">
-            <ButtonGroup minimal fill={isMobile}>
-              <Button
-                active={true}
-                onClick={() => navigate(`/dash/${profileId}/rules`)}
-                text={t("rules.title")}
-                large
-              />
-              <Button
-                active={false}
-                onClick={() => navigate(`/dash/${profileId}/filter`)}
-                text={t("filtering.title")}
-                large
-              />
-            </ButtonGroup>
-            <p className="bp6-text-muted mt-2">{t("rules.subtitle")}</p>
+            {isMobile ? (
+              <ButtonGroup minimal fill={isMobile}>
+                <Button
+                  active={true}
+                  onClick={() => navigate(`/dash/${profileId}/rules`)}
+                  text={t("rules.title")}
+                  large
+                />
+                <Button
+                  active={false}
+                  onClick={() => navigate(`/dash/${profileId}/filter`)}
+                  text={t("filtering.title")}
+                  large
+                />
+              </ButtonGroup>
+            ) : (
+              <h1 className="bp6-heading">{t("rules.title")}</h1>
+            )}
+            <p className="bp6-text-muted mt-2!">{t("rules.subtitle")}</p>
           </div>
         </div>
       </div>
