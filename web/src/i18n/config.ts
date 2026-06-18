@@ -10,7 +10,7 @@ import frFR from './locales/fr-FR.json';
 import deDE from './locales/de-DE.json';
 import esES from './locales/es-ES.json';
 import ruRU from './locales/ru-RU.json';
-import viVN from './locales/de-DE.json';
+import viVN from './locales/vi-VN.json';
 
 i18n
   .use(LanguageDetector)

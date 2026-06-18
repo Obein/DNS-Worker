@@ -17,19 +17,23 @@ import {
 } from "@blueprintjs/core";
 import { Shield, ShieldAlert, Zap, Globe, MapPin, Calendar, RotateCcw, } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { clsx } from "clsx";
 
 import type {  AnalyticsData, TimeRange  } from "./types";
-import { getFlagEmoji, processTrendData } from "./utils";
+import { processTrendData } from "./utils";
+import { getFlagEmoji } from "../../utils/getFlagEmoji";
 import { MetricCard } from "./components/MetricCard";
 import { RankTable } from "./components/RankTable";
 import { TrendChart } from "./components/TrendChart";
 import type { AccessPoint } from "../../types/auth";
 import { DestinationMap } from "./components/DestinationMap";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [range, setRange] = useState<TimeRange>("24h");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [accessPointIdFilter, setAccessPointIdFilter] = useState<string | null>(null);
@@ -136,7 +140,7 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
   const visibleRanges = RANGE_PRESETS.filter(r => r.days <= logRetentionDays).map(r => r.key as TimeRange);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className={clsx("max-w-7xl mx-auto space-y-6", isMobile ? "p-0" : "p-6")}>
       {/* Time Range Selector */}
       <div className="flex justify-between items-center bg-white dark:bg-gray-900 p-2 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800">
         <ButtonGroup variant="minimal">

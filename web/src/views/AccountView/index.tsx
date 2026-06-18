@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Divider, Tag, Intent } from "@blueprintjs/core";
 import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { clsx } from "clsx";
 
 import type { UserInfo } from "./types";
 import { TOTPCard } from "./components/TOTPCard";
@@ -13,6 +14,7 @@ import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
 import { PASSWORD_REGEX } from "../../utils/auth";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 /**
  * AccountView serves as the primary dashboard for user settings, profile updates,
@@ -26,6 +28,7 @@ export const AccountView: React.FC = () => {
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const { t, i18n } = useTranslation();
+  const isMobile = useIsMobile();
 
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [editUsername, setEditUsername] = useState("");
@@ -202,7 +205,7 @@ export const AccountView: React.FC = () => {
     return <div className="p-8 text-center">{t("common.loading")}</div>;
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
+    <div className={clsx("max-w-5xl mx-auto space-y-8", isMobile ? "p-0" : "p-8")}>
       <div className="flex justify-between items-end">
         <div>
           <h2 className="bp6-heading">{t("account.title")}</h2>

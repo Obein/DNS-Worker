@@ -2,7 +2,8 @@ import React from "react";
 import { Geographies, Geography } from "@vnedyalk0v/react19-simple-maps";
 import { useTranslation } from "react-i18next";
 import { numericToAlpha2 } from "../../../countryMapping";
-import { getFlagEmoji, getCountryName } from "../../../utils";
+import { getCountryName } from "../../../utils";
+import { getFlagEmoji } from "../../../../../utils/getFlagEmoji";
 import type { HoveredCountry, CountryMapData } from "../types";
 
 interface MapGeographiesProps {

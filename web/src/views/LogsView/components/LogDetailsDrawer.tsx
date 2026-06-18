@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import type {  LogEntry  } from "../types";
-import { getFlagEmoji } from "../utils";
+import { getFlagEmoji } from "../../../utils/getFlagEmoji";
 
 export interface LogDetailsDrawerProps {
   isDrawerOpen: boolean;
@@ -77,7 +77,7 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
       className="dark:bg-gray-900 dark:text-white shadow-none! bg-transparent! bg-bulletin! backdrop-blur-sm!"
     >
       {selectedLog && (
-        <div className="p-6 space-y-4 overflow-y-auto h-full pb-safe">
+        <div className={clsx("space-y-4 overflow-y-auto h-full pb-safe", isMobile ? "px-2" : "px-6")}>
           <Section title={t("logs.basicInfo")} icon={<Activity size={16} />} className="shadow-none! rounded-lg!">
             <SectionCard>
               <div className="space-y-3">

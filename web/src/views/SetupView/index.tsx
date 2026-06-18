@@ -5,7 +5,7 @@ import { getPresetRegions, type RegionConfigItem } from "../../config/regions";
 import { setSystemTimeZone } from "../../utils/date";
 
 import type {  SetupViewProps, ClientInfo  } from "./types";
-import { useIsMobile } from "./utils";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { SetupHeader } from "./components/SetupHeader";
 import { VerifyConnectionCard } from "./components/VerifyConnectionCard";
 import { DohUrlCard } from "./components/DohUrlCard";
@@ -216,7 +216,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, clientInfo, t, OTHER_REGION]);
 
   return (
-    <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-4" : "p-8 max-w-5xl"}`}>
+    <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "p-8 max-w-5xl"}`}>
       <SetupHeader isMobile={isMobile} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} allRegions={allRegions} />
 
       <VerifyConnectionCard

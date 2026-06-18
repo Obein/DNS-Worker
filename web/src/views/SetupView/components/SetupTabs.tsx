@@ -37,7 +37,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
           "[&_.bp6-tab-list]:overflow-x-auto!",
           "[&_.bp6-tab-list]:flex-nowrap!",
           "[&_.bp6-tab-list]:pb-1",
-          "[&_.bp6-tab-list]:[scrollbar-width:none]",
+          "[&_.bp6-tab-list]:scrollbar-none",
           "[&_.bp6-tab-list]:[-ms-overflow-style:none]",
           "[&_.bp6-tab-list::-webkit-scrollbar]:hidden",
           "[&_.bp6-tab]:shrink-0",

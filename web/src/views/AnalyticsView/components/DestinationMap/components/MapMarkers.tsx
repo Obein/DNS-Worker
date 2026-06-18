@@ -1,7 +1,8 @@
 import React from "react";
 import { Marker, createCoordinates } from "@vnedyalk0v/react19-simple-maps";
 import { useTranslation } from "react-i18next";
-import { getFlagEmoji, getCountryName } from "../../../utils";
+import { getCountryName } from "../../../utils";
+import { getFlagEmoji } from "../../../../../utils/getFlagEmoji";
 import type { HoveredCountry, CountryMapData } from "../types";
 
 export const microRegions: Record<string, { name: string; coordinates: [number, number] }> = {

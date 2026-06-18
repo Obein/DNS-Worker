@@ -3,7 +3,7 @@ import { HTMLTable, Tag } from "@blueprintjs/core";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import type {  LogEntry  } from "../types";
-import { getFlagEmoji } from "../utils";
+import { getFlagEmoji } from "../../../utils/getFlagEmoji";
 
 export interface LogsTableProps {
   logs: LogEntry[];

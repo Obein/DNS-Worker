@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Spinner, Callout } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
+import { clsx } from "clsx";
 
 import type {  LogEntry, LogsViewProps, TimeRange  } from "./types";
 import type { AccessPoint } from "../../types/auth";
-import { useIsMobile } from "./utils";
+import { useIsMobile } from "../../hooks/useIsMobile";
 import { LogsHeader } from "./components/LogsHeader";
 import { LogsTable } from "./components/LogsTable";
 import { LogsList } from "./components/LogsList";
 import { LogDetailsDrawer } from "./components/LogDetailsDrawer";
+
 const PAGE_SIZE = 50;
 const PAGE_SIZE_IN_REALTIME = 25;
 
@@ -240,7 +242,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction }) 
         logRetentionDays={logRetentionDays}
       />
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-4 relative">
+      <div ref={scrollContainerRef} className={clsx("flex-1 overflow-y-auto relative", isMobile ? "px-1" : "px-4")}>
         {logs.length === 0 && !loading ? (
           <div className="py-20">
             <Callout title={searchQuery ? t("logs.noResults") : t("logs.noRecords")} icon={searchQuery ? "search" : "outdated"}>
