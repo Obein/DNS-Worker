@@ -5,6 +5,7 @@ import {
   BarChart3,
   Clock,
   Download,
+  ListFilter,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useIsMobile } from "../hooks/useIsMobile";
@@ -90,9 +91,11 @@ export const MainLayout = ({
     },
     {
       id: "rules",
-      label: t("nav.rules"),
-      icon: <Edit3 size={20} />,
-      path: `/dash/${activeId}/rules`,
+      label: isMobile && location.pathname.includes("/filter") ? t("nav.filter") : t("nav.rules"),
+      icon: isMobile && location.pathname.includes("/filter") ? <ListFilter size={20} /> : <Edit3 size={20} />,
+      path: isMobile && location.pathname.includes("/filter")
+        ? `/dash/${activeId}/filter`
+        : `/dash/${activeId}/rules`,
     },
     {
       id: "stats",

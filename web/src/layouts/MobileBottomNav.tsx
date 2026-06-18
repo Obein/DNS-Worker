@@ -36,9 +36,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-gray-800/50 flex items-center justify-around px-2 z-50 pb-safe">
       {navItems.map((item) => {
-        const isActive = location.pathname.includes(
-          item.id === "stats" ? "/stats" : `/${item.id}`,
-        );
+        const isActive = item.id === "rules"
+          ? (location.pathname.includes("/rules") || location.pathname.includes("/filter"))
+          : location.pathname.includes(
+              item.id === "stats" ? "/stats" : `/${item.id}`,
+            );
         return (
           <button
             key={item.id}

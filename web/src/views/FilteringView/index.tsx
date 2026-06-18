@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Button, Intent, Callout } from "@blueprintjs/core";
+import { Button, Intent, Callout, ButtonGroup } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "../../hooks/useIsMobile";
+import { clsx } from "clsx";
 
 import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
@@ -9,6 +12,8 @@ import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [lists, setLists] = useState<FilterList[]>([]);
   const [newUrl, setNewUrl] = useState("");
   const [loading, setLoading] = useState(true);
@@ -174,11 +179,24 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   }, [profileId]);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h2 className="bp6-heading">{t("filtering.title")}</h2>
-          <p className="bp6-text-muted">{t("filtering.subtitle")}</p>
+    <div className={clsx("md:p-8 w-full min-w-0 max-w-5xl mx-auto", isMobile ? "p-1" : "p-8")}>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div className="w-full md:w-auto flex-1">
+          <ButtonGroup minimal fill={isMobile}>
+            <Button
+              active={false}
+              onClick={() => navigate(`/dash/${profileId}/rules`)}
+              text={t("rules.title")}
+              large
+            />
+            <Button
+              active={true}
+              onClick={() => navigate(`/dash/${profileId}/filter`)}
+              text={t("filtering.title")}
+              large
+            />
+          </ButtonGroup>
+          <p className="bp6-text-muted mt-2">{t("filtering.subtitle")}</p>
         </div>
         <Button
           icon={<RefreshCw size={16} />}
@@ -186,6 +204,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
           onClick={syncLists}
           loading={syncing || loading}
           disabled={syncing || loading || lists.length === 0}
+          className={isMobile ? "w-full" : ""}
         />
       </div>
 
