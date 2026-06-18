@@ -77,6 +77,7 @@ export const SignupUsernameStep: React.FC<SignupUsernameStepProps> = ({
                 setUsernameFocused(false);
                 checkUsernameDuplicate(username);
               }}
+              autoFocus
               required
             />
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import {
   Card,
   Elevation,
@@ -24,10 +24,24 @@ import { processTrendData } from "./utils";
 import { getFlagEmoji } from "../../utils/getFlagEmoji";
 import { MetricCard } from "./components/MetricCard";
 import { RankTable } from "./components/RankTable";
-import { TrendChart } from "./components/TrendChart";
 import type { AccessPoint } from "../../types/auth";
-import { DestinationMap } from "./components/DestinationMap";
 import { useIsMobile } from "../../hooks/useIsMobile";
+
+// Lazy-load chart components so that recharts and react19-simple-maps
+// are only fetched when the Analytics page is actually rendered.
+const TrendChart = lazy(() =>
+  import("./components/TrendChart").then((m) => ({ default: m.TrendChart })),
+);
+const DestinationMap = lazy(() =>
+  import("./components/DestinationMap").then((m) => ({ default: m.DestinationMap })),
+);
+
+/** Minimal inline spinner used as fallback while lazy chunks load. */
+const ChartFallback = () => (
+  <div className="h-64 flex items-center justify-center">
+    <Spinner size={30} />
+  </div>
+);
 
 export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) => {
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -214,7 +228,9 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
             {range === "custom" ? t("analytics.custom") : range.toUpperCase()}
           </Tag>
         </H5>
-        <TrendChart chartData={chartData} range={range} />
+        <Suspense fallback={<ChartFallback />}>
+          <TrendChart chartData={chartData} range={range} />
+        </Suspense>
       </Card>
 
       {/* Ranks */}
@@ -229,13 +245,15 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           title={t("analytics.destinationDistribution")}
           icon={<MapPin size={16} />}
         >
-          <DestinationMap
-            destinations={data?.destinations || []}
-            profileId={profileId || ""}
-            range={range}
-            customRange={customRange}
-            accessPointId={accessPointIdFilter || undefined}
-          />
+          <Suspense fallback={<ChartFallback />}>
+            <DestinationMap
+              destinations={data?.destinations || []}
+              profileId={profileId || ""}
+              range={range}
+              customRange={customRange}
+              accessPointId={accessPointIdFilter || undefined}
+            />
+          </Suspense>
         </Section>
         <Section title={t("analytics.clientActivity")} icon={<Globe size={16} />}>
           <HTMLTable striped className="w-full mt-2">

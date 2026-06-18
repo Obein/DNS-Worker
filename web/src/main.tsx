@@ -3,11 +3,22 @@ import "./index.css";
 import "./i18n/config";
 import App from "./App.tsx";
 import { OverlaysProvider, FocusStyleManager } from "@blueprintjs/core";
+import { Icons } from "@blueprintjs/icons";
+
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { getAccessToken, setAccessToken } from "./utils/token";
 
+// Use Blueprint's dynamic split-by-size loader so that icon SVG path data
+// is fetched on demand per icon rather than bundled statically upfront.
+Icons.setLoaderOptions({ loader: "split-by-size" });
 FocusStyleManager.onlyShowFocusOnTabs();
+
+// Non-blocking: dynamically loads the full icon path data for both sizes
+// via splitPathsBySizeLoader. After this resolves, all Blueprint string icons
+// used anywhere in the app will render correctly. New icons added in the
+// future require no changes here.
+Icons.loadAll();
 
 let isRefreshing = false;
 let lastRefreshReason = "unknown";

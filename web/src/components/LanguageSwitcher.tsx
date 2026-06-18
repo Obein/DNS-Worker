@@ -37,7 +37,7 @@ export const LanguageSwitcher = ({
 
   return (
     <PopoverNext
-      placement="bottom"
+      placement="bottom-start"
       content={
         <Menu style={{ maxHeight: "300px", overflowY: "auto" }}>
           {LOCALE.map((lang) => (

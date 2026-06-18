@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Callout, Intent } from "@blueprintjs/core";
+import { Callout, Intent, ButtonGroup, Button } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { clsx } from "clsx";
 
 import type {  Rule, RulesViewProps, ProfileSettings  } from "./types";
@@ -10,6 +11,7 @@ import { EditRuleDialog } from "./components/EditRuleDialog";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPrefillUsed, toasterRef }) => {
+  const navigate = useNavigate();
   const [rules, setRules] = useState<Rule[]>([]);
   const [settings, setSettings] = useState<ProfileSettings | null>(null);
   const [, setLoading] = useState(true);
@@ -205,8 +207,29 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   return (
     <div className={clsx("md:p-8 w-full min-w-0 max-w-5xl mx-auto", isMobile ? "p-1" : "p-8")}>
       <div className="mb-8">
-        <h2 className="bp6-heading">{t("rules.title")}</h2>
-        <p className="bp6-text-muted">{t("rules.subtitle")}</p>
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+          <div className="w-full md:w-auto flex-1">
+            {isMobile ? (
+              <ButtonGroup minimal fill={isMobile}>
+                <Button
+                  active={true}
+                  onClick={() => navigate(`/dash/${profileId}/rules`)}
+                  text={t("rules.title")}
+                  large
+                />
+                <Button
+                  active={false}
+                  onClick={() => navigate(`/dash/${profileId}/filter`)}
+                  text={t("filtering.title")}
+                  large
+                />
+              </ButtonGroup>
+            ) : (
+              <h1 className="bp6-heading">{t("rules.title")}</h1>
+            )}
+            <p className="bp6-text-muted mt-2!">{t("rules.subtitle")}</p>
+          </div>
+        </div>
       </div>
 
       <AddRuleCard newRule={newRule} setNewRule={setNewRule} addRule={addRule} />

@@ -88,6 +88,7 @@ export const SignupTotpStep: React.FC<SignupTotpStepProps> = ({
             maxLength={6}
             inputMode="numeric"
             className="font-mono tracking-widest text-center"
+            autoFocus
             required
           />
         </FormGroup>

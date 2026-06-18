@@ -32,6 +32,18 @@ export const SignupRecoveryStep: React.FC<SignupRecoveryStepProps> = ({
 }) => {
   const { t } = useTranslation();
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        onSuccess();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onSuccess]);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2 mb-4">

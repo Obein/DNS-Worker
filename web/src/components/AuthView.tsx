@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, Elevation, Button } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { clsx } from "clsx";
 import { ScrollingIntro } from "./ScrollingIntro";
 import { LoginForm } from "./LoginForm";
 import { SignupWizard } from "./SignupWizard";
@@ -35,7 +36,16 @@ interface AuthViewProps {
 export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [isPanelVisible, setIsPanelVisible] = useState(true);
+  const [isBlurring, setIsBlurring] = useState(false);
   const { t } = useTranslation();
+
+  const handleToggleMode = () => {
+    setIsBlurring(true);
+    setTimeout(() => {
+      setIsLogin((prev) => !prev);
+      setIsBlurring(false);
+    }, 300);
+  };
 
   // Dynamic system configuration state
   const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null);
@@ -115,27 +125,34 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           <LanguageSwitcher />
         </div>
 
-        <Card
-          elevation={Elevation.FOUR}
-          className="w-full max-w-md p-8 rounded-2xl shadow-none! z-10 dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {isLogin ? (
-            <LoginForm
-              authConfig={authConfig}
-              turnstileReady={turnstileReady}
-              onSuccess={onSuccess}
-              onToggleMode={() => setIsLogin(false)}
-            />
-          ) : (
-            <SignupWizard
-              authConfig={authConfig}
-              turnstileReady={turnstileReady}
-              onSuccess={onSuccess}
-              onToggleMode={() => setIsLogin(true)}
-            />
+        <div
+          className={clsx(
+            "w-full max-w-md transition-all duration-200 ease-in-out transform-gpu",
+            isBlurring ? "blur-lg opacity-20 scale-95" : "blur-0 opacity-100 scale-100"
           )}
-        </Card>
+        >
+          <Card
+            elevation={Elevation.FOUR}
+            className="w-full p-8 rounded-2xl shadow-none! z-10 dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isLogin ? (
+              <LoginForm
+                authConfig={authConfig}
+                turnstileReady={turnstileReady}
+                onSuccess={onSuccess}
+                onToggleMode={handleToggleMode}
+              />
+            ) : (
+              <SignupWizard
+                authConfig={authConfig}
+                turnstileReady={turnstileReady}
+                onSuccess={onSuccess}
+                onToggleMode={handleToggleMode}
+              />
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );

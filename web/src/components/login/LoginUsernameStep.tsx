@@ -53,6 +53,7 @@ export const LoginUsernameStep: React.FC<LoginUsernameStepProps> = ({
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setUsername(e.target.value)
           }
+          autoFocus
           required
         />
       </FormGroup>
