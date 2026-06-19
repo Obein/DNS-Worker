@@ -1,5 +1,3 @@
-export const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
-
 /**
  * Verify Cloudflare Turnstile token
  */

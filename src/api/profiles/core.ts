@@ -5,8 +5,7 @@ import { generateId } from "../../lib/auth";
 import { isSafeUrl } from "../../utils/validator";
 import { buildDNSQuery, parseDNSAnswer } from "../../utils/dns";
 import { pipeline } from "../../pipeline";
-
-const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+import { PROFILE_NAME_REGEX } from "../../utils/validator";
 
 /**
  * Handle requests to /api/profiles (without specific profile ID)

@@ -3,8 +3,7 @@ import { hashPassword, verifyPassword } from "../../utils/crypto";
 import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
-
-const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
+import { PASSWORD_REGEX } from "../../utils/validator";
 
 /**
  * Handle security credentials requests to /api/account/password and /api/account/totp/...

@@ -1,7 +1,6 @@
 import { Env, User, ExecutionContext } from "../../types";
 import { AccessPointModel } from "../../models/accessPoint";
-
-const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
+import { AP_NAME_REGEX } from "../../utils/validator";
 
 /**
  * Handle access points requests to /api/profiles/:id/access_points

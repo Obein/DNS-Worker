@@ -4,8 +4,7 @@ import { hashPassword } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
 import { ProfileModel } from "../../models/profile";
 import { SystemSettingsModel } from "../../models/systemSettings";
-
-const PASSWORD_REGEX = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{12,100}$/;
+import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
 
 /**
  * Handle admin requests to /api/admin/...
@@ -28,7 +27,7 @@ export async function handleAdminRequest(
 
     if (request.method === 'POST') {
       const { username, password, role } = await request.json() as any;
-      if (!username || !/^[a-z_][a-z0-9_-]{4,31}$/.test(username)) {
+      if (!username || !USERNAME_REGEX.test(username)) {
         return new Response("Invalid username format", { status: 400 });
       }
       if (!password || !PASSWORD_REGEX.test(password)) {

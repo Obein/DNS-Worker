@@ -3,6 +3,8 @@
  * RFC 6238 / RFC 4226 compliant, using Web Crypto API only (no Node.js dependencies)
  */
 
+import { TOTP_TOKEN_REGEX } from "../utils/validator";
+
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 /**
@@ -109,7 +111,7 @@ async function computeHOTP(secret: string, counter: number): Promise<string> {
  * @returns true if the token is valid within the time window
  */
 export async function verifyTOTP(secret: string, token: string, salt?: string): Promise<boolean> {
-  if (!salt && !/^\d{6}$/.test(token)) return false;
+  if (!salt && !TOTP_TOKEN_REGEX.test(token)) return false;
 
   const timeStep = Math.floor(Date.now() / 1000 / 30);
 

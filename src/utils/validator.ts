@@ -1,6 +1,47 @@
 /**
- * Utility functions for input validation and security.
+ * @file validator.ts
+ * @description Utility functions for validating inputs and ensuring security.
+ * This includes regex patterns for usernames, passwords, access keys, and TOTP tokens,
+ * as well as functions to validate URLs against SSRF attacks and check IP address types.
+ * 
+ * The URL validation function checks for:
+ * - Allowed protocols (http, https, tcp)
+ * - Forbidden hostnames (localhost, metadata services)
+ * - IP addresses in private, loopback, or link-local ranges
+ * - Common URL parsing bypass techniques (user info in URLs)
  */
+
+/**
+ * Password validation regular expression.
+ * Requirements: 12-100 characters containing letters, numbers, and special characters.
+ * Allowed special characters: ~`!@#$%^&*()_-+={[}]|\:;"'<,>.?/
+ */
+export const PASSWORD_REGEX = /^[a-zA-Z\d~`!@#$%^&*()_\-+={[}\]|\\:;"'<,>.?\/]{12,100}$/;
+/**
+ * Username validation regular expression.
+ * Requirements: 5-32 characters, starting with a letter or underscore, followed by letters, numbers, underscores, or hyphens.
+ */
+export const USERNAME_REGEX = /^[a-z_][a-z0-9_-]{4,31}$/;
+/**
+ * Access point name validation regular expression.
+ * Requirements: 1-30 characters, containing letters, numbers, underscores, or hyphens.
+ */
+export const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
+/**
+ * Profile name validation regular expression.
+ * Requirements: 1-30 characters, containing letters, numbers, underscores, or hyphens.
+ */
+export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+/**
+ * Access key validation regular expression.
+ * Requirements: 6-12 characters, containing only letters and numbers.
+ */
+export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
+/**
+ * TOTP token validation regular expression.
+ * Requirements: exactly 6 digits.
+ */
+export const TOTP_TOKEN_REGEX = /^\d{6}$/;
 
 const FORBIDDEN_HOSTNAMES = [
   'localhost',

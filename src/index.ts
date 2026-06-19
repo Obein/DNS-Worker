@@ -2,6 +2,7 @@ import { Env, User, ExecutionContext } from './types';
 import { ScheduledEvent } from '@cloudflare/workers-types';
 import { readCsrfCookie, createCsrfCookie, generateId } from './lib/auth';
 import { generateLinuxSetupScript } from './utils/linuxSetup';
+import { ACCESS_KEY_REGEX } from './utils/validator';
 
 // Middleware imports
 import { applySecurityHeaders, getCurrentUser, validateCsrf } from './lib/middleware';
@@ -85,7 +86,7 @@ export default {
       // Linux Setup Script Route
       if (url.pathname === '/setup.sh') {
         const key = url.searchParams.get('key');
-        if (!key || !/^[a-zA-Z0-9]{6,12}$/.test(key)) {
+        if (!key || !ACCESS_KEY_REGEX.test(key)) {
           return new Response('Missing or invalid key parameter', { status: 400 });
         }
         const script = generateLinuxSetupScript(url.origin, key);

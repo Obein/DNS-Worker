@@ -12,7 +12,8 @@ import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
 import { SystemSettingsModel } from "../../models/systemSettings";
 import { cacheUtils } from "../../utils/cache";
-import { PASSWORD_REGEX, verifyTurnstile } from "./utils";
+import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
+import { verifyTurnstile } from "./utils";
 
 /**
  * Handle user registration requests (signup)
@@ -45,7 +46,7 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
     }
   }
 
-  if (!/^[a-z_][a-z0-9_-]{4,31}$/.test(username)) return new Response("Invalid username", { status: 400 });
+  if (!USERNAME_REGEX.test(username)) return new Response("Invalid username", { status: 400 });
   if (!password || !PASSWORD_REGEX.test(password)) {
     return new Response("Password format error", { status: 400 });
   }

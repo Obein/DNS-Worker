@@ -2,6 +2,7 @@ import { Env, User, ExecutionContext } from "../../types";
 import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../../lib/auth";
 import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
+import { USERNAME_REGEX } from "../../utils/validator";
 
 /**
  * Handle requests to /api/account/me, /api/account/logs, /api/account/delete
@@ -37,7 +38,7 @@ export async function handleMeRequest(
       try {
         if (body.username !== undefined) {
           const newUsername = body.username;
-          if (!newUsername || !/^[a-z_][a-z0-9_-]{4,31}$/.test(newUsername)) {
+          if (!newUsername || !USERNAME_REGEX.test(newUsername)) {
             return new Response("Username format error", { status: 400 });
           }
           await userModel.updateUsername(user.id, newUsername);
