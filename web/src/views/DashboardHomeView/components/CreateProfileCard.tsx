@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Card, Elevation, InputGroup, Button, Intent, Tooltip, Position } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-
-const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+import { PROFILE_NAME_REGEX } from "../../../utils/auth";
 
 interface CreateProfileCardProps {
   newName: string;

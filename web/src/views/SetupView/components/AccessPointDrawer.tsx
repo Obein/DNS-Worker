@@ -4,8 +4,7 @@ import { Trash2, Edit2, RefreshCw, Plus, MonitorSmartphone, Copy, Search } from 
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
 import { formatDateTime } from "../../../utils/date";
-
-const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
+import { AP_NAME_REGEX } from "../../../utils/auth";
 
 export interface AccessPointDrawerProps {
   isOpen: boolean;

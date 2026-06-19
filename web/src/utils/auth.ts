@@ -89,3 +89,8 @@ export async function hashTotpToken(token: string, salt: string): Promise<string
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 }
+
+export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
+export const TOTP_TOKEN_REGEX = /^\d{6}$/;
+export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+export const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;

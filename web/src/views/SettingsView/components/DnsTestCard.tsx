@@ -22,17 +22,17 @@ export const DnsTestCard: React.FC<DnsTestCardProps> = ({ testInput, setTestInpu
       </H5>
 
       <div className="flex flex-col space-y-6">
-        <div className="flex gap-4">
-          <FormGroup label={t("settings.testDomain")} className="flex-1 mb-0">
-            <InputGroup
-              fill
-              large
-              placeholder={t("settings.domainPlaceholder")}
-              value={testInput.domain}
-              onChange={(e) => setTestInput({ ...testInput, domain: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && handleDnsTest()}
-            />
-          </FormGroup>
+        <FormGroup label={t("settings.testDomain")} className="mb-0">
+          <InputGroup
+            fill
+            large
+            placeholder={t("settings.domainPlaceholder")}
+            value={testInput.domain}
+            onChange={(e) => setTestInput({ ...testInput, domain: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleDnsTest()}
+          />
+        </FormGroup>
+        <div className="flex gap-4 items-end">
           <FormGroup label={t("settings.recordType")} className="w-32 mb-0">
             <HTMLSelect
               fill

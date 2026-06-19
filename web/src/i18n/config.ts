@@ -28,18 +28,21 @@ const LOCALE_LOADERS: Record<string, () => Promise<Record<string, unknown>>> = {
 /**
  * Load a locale bundle into the i18n instance if it has not been loaded yet.
  * Silently ignores unknown locale keys (falls back to en-US automatically).
+ * Returns true if the locale was successfully loaded (or was already cached).
  */
-async function loadLocale(lang: string): Promise<void> {
-  if (i18n.hasResourceBundle(lang, 'translation')) return;
+export async function loadLocale(lang: string): Promise<boolean> {
+  if (i18n.hasResourceBundle(lang, 'translation')) return true;
 
   const loader = LOCALE_LOADERS[lang];
-  if (!loader) return;
+  if (!loader) return false;
 
   try {
     const translations = await loader();
     i18n.addResourceBundle(lang, 'translation', translations, true, true);
+    return true;
   } catch (err) {
     console.warn(`[i18n] Failed to load locale "${lang}":`, err);
+    return false;
   }
 }
 
@@ -61,10 +64,5 @@ i18n
 
 // Load the initially detected language as soon as possible.
 loadLocale(i18n.language);
-
-// Whenever the language changes, fetch the new locale bundle on demand.
-i18n.on('languageChanged', (lang: string) => {
-  loadLocale(lang);
-});
 
 export default i18n;

@@ -1,18 +1,10 @@
 import React from "react";
-import {
-  Button,
-  Navbar,
-  Alignment,
-  Icon,
-} from "@blueprintjs/core";
+import { Button, Navbar, Alignment, Icon } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import {
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react";
+import { Sun, Moon, Monitor, Settings } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import type { Profile } from "../types/auth";
+import clsx from "clsx";
 
 /**
  * Properties for the HeaderNavbar component.
@@ -60,10 +52,30 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             {location.pathname === "/account"
               ? t("common.account")
               : isProfileActive
-              ? selectedProfile?.name || t("common.loading")
-              : t("common.selectProfile")}
+                ? selectedProfile?.name || t("common.loading")
+                : t("common.selectProfile")}
           </span>
         </button>
+        {isProfileActive && location.pathname !== "/account" && (
+          <button
+            onClick={() => {
+              const profileId =
+                selectedProfile?.id || location.pathname.split("/")[2];
+              if (profileId) {
+                navigate(`/dash/${profileId}/settings`);
+              }
+            }}
+            className={clsx(
+              "md:hidden ml-2 hover:text-gray-700  dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
+              location.pathname.includes("/settings")
+                ? "text-blue-500 dark:text-blue-400"
+                : "text-gray-500 dark:text-gray-400",
+            )}
+            title={t("nav.settings")}
+          >
+            <Settings size={18} />
+          </button>
+        )}
       </Navbar.Group>
       <Navbar.Group align={Alignment.RIGHT}>
         <div className="flex items-center gap-2">

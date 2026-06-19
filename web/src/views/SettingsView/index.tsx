@@ -182,7 +182,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
     );
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="p-0 sm:p-4 lg:p-8 max-w-5xl mx-auto space-y-8 pb-20">
       <SettingsHeader
         profile={profile}
         isEditingName={isEditingName}

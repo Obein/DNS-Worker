@@ -3,8 +3,7 @@ import { Button, InputGroup, Intent, Tooltip, Position } from "@blueprintjs/core
 import { Download, Edit2, Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  Profile  } from "../types";
-
-const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+import { PROFILE_NAME_REGEX } from "../../../utils/auth";
 
 export interface SettingsHeaderProps {
   profile: Profile | null;
@@ -33,7 +32,7 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   const [nameFocused, setNameFocused] = useState(false);
 
   return (
-    <div className="mb-6 flex justify-between items-center">
+    <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div className="flex flex-col justify-start">
         {isEditingName ? (
           <div className="flex items-center gap-2 mb-1">
