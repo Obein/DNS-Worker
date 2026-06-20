@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Drawer, Position, Section, SectionCard, Tag, Intent, Button, Spinner } from "@blueprintjs/core";
 import { Activity, Globe, User, Edit3, ShieldCheck, ShieldAlert, ArrowRight, MapPin } from "lucide-react";
 import { clsx } from "clsx";
@@ -34,6 +34,28 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
   const { t } = useTranslation();
   const [detailedLog, setDetailedLog] = useState<LogEntry | null>(null);
   const [loading, setLoading] = useState(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!touchStartRef.current) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartRef.current.x;
+    const diffY = touch.clientY - touchStartRef.current.y;
+
+    if (diffX > 80 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      setIsDrawerOpen(false);
+      touchStartRef.current = null;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartRef.current = null;
+  };
 
   useEffect(() => {
     if (isDrawerOpen && selectedLog?.id) {
@@ -77,7 +99,12 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
       className="dark:bg-gray-900 dark:text-white shadow-none! bg-transparent! bg-bulletin! backdrop-blur-sm!"
     >
       {selectedLog && (
-        <div className={clsx("space-y-4 overflow-y-auto h-full pb-safe", isMobile ? "px-2" : "px-6")}>
+        <div
+          className={clsx("space-y-4 overflow-y-auto h-full pb-safe", isMobile ? "px-2" : "px-6")}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <Section title={t("logs.basicInfo")} icon={<Activity size={16} />} className="shadow-none! rounded-lg!">
             <SectionCard>
               <div className="space-y-3">
