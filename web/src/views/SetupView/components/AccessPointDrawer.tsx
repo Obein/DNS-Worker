@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { Drawer, Position, Section, SectionCard, Button, Intent, Spinner, Dialog, Classes, InputGroup, Tooltip, PopoverNext } from "@blueprintjs/core";
+import React, { useState } from "react";
+import { Section, SectionCard, Button, Intent, Spinner, Dialog, Classes, InputGroup, Tooltip, PopoverNext, Position } from "@blueprintjs/core";
 import { Trash2, Edit2, RefreshCw, Plus, MonitorSmartphone, Copy, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
@@ -11,6 +11,7 @@ import {
   rotateProfileAccessPointToken,
   deleteProfileAccessPoint
 } from "../../../services";
+import { SwipeableDrawer } from "../../../components/SwipeableDrawer";
 
 export interface AccessPointDrawerProps {
   isOpen: boolean;
@@ -39,28 +40,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
   const [newApName, setNewApName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
 
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.touches[0];
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!touchStartRef.current) return;
-    const touch = e.touches[0];
-    const diffX = touch.clientX - touchStartRef.current.x;
-    const diffY = touch.clientY - touchStartRef.current.y;
-
-    if (diffX > 80 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-      onClose();
-      touchStartRef.current = null;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    touchStartRef.current = null;
-  };
 
   const [renameApId, setRenameApId] = useState<string | null>(null);
   const [renameApName, setRenameApName] = useState("");
@@ -164,7 +144,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
 
   return (
     <>
-      <Drawer
+      <SwipeableDrawer
         isOpen={isOpen}
         onClose={onClose}
         title={
@@ -185,16 +165,8 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
           )
         }
         icon="diagram-tree"
-        position={Position.RIGHT}
         size={isMobile ? "100%" : "450px"}
-        className="dark:bg-gray-900 dark:text-white shadow-none! bg-transparent! bg-bulletin! backdrop-blur-sm!"
       >
-        <div
-          className="p-6 space-y-4 overflow-y-auto h-full pb-safe"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
           <Button 
             fill 
             intent={Intent.PRIMARY} 
@@ -305,8 +277,7 @@ export const AccessPointDrawer: React.FC<AccessPointDrawerProps> = ({
               ))}
             </div>
           )}
-        </div>
-      </Drawer>
+      </SwipeableDrawer>
 
       <Dialog isOpen={isAddDialogOpen} onClose={() => { setIsAddDialogOpen(false); setNewApName(""); }} title={t("setup.addAccessPoint")}>
         <div className={Classes.DIALOG_BODY}>
