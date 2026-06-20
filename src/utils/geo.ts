@@ -3,7 +3,7 @@
  * Client headers are ignored to prevent geolocation spoofing.
  */
 export function getRequestCoordinates(request: Request): { latitude: number | null; longitude: number | null } {
-  // Only trust Cloudflare IP-based location
+  // Try Cloudflare Workers context cf object
   const cf = (request as any).cf;
   if (cf && cf.latitude && cf.longitude) {
     const lat = parseFloat(cf.latitude);
@@ -13,10 +13,15 @@ export function getRequestCoordinates(request: Request): { latitude: number | nu
     }
   }
 
-  // Local loopback mock fallback for development
-  const clientIp = request.headers.get("CF-Connecting-IP") || "";
-  if (clientIp === "127.0.0.1" || clientIp === "::1" || clientIp === "") {
-    return { latitude: 0, longitude: 0 };
+  // Fallback to Cloudflare-injected headers
+  const headerLat = request.headers.get("CF-IPLatitude");
+  const headerLon = request.headers.get("CF-IPLongitude");
+  if (headerLat && headerLon) {
+    const lat = parseFloat(headerLat);
+    const lon = parseFloat(headerLon);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      return { latitude: lat, longitude: lon };
+    }
   }
 
   return { latitude: null, longitude: null };

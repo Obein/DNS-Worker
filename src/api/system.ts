@@ -13,14 +13,21 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     const connectedProfileId = await cacheUtils.get<string>(cache, `active_dns:${clientIp}`);
     const cf = (request as any).cf;
 
+    const country = cf?.country || request.headers.get("CF-IPCountry") || "UNKNOWN";
+    const region = cf?.region || request.headers.get("CF-Region") || "UNKNOWN";
+    const city = cf?.city || request.headers.get("CF-IPCity") || "UNKNOWN";
+    const timezone = cf?.timezone || request.headers.get("CF-Timezone") || "UNKNOWN";
+    const asn = cf?.asn ? Number(cf.asn) : (request.headers.get("CF-ASN") ? Number(request.headers.get("CF-ASN")) : 0);
+    const asOrganization = cf?.asOrganization || request.headers.get("CF-AS-Org") || "UNKNOWN";
+
     return new Response(JSON.stringify({
       ip: clientIp,
-      country: cf?.country || "UNKNOWN",
-      region: cf?.region || "UNKNOWN",
-      city: cf?.city || "UNKNOWN",
-      timezone: cf?.timezone || "UNKNOWN",
-      asn: cf?.asn || 0,
-      asOrganization: cf?.asOrganization || "UNKNOWN",
+      country,
+      region,
+      city,
+      timezone,
+      asn,
+      asOrganization,
       connectedProfileId: connectedProfileId || null,
       substituteDomain: env.SUBSTITUTE_DOMAIN || "pages.dev"
     }), { headers: { 'Content-Type': 'application/json' } });
