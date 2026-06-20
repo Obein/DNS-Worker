@@ -4,7 +4,8 @@ import { Activity, RefreshCw, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { ACTION_META } from "../constants";
-import type {  ActivityEntry  } from "../types";
+import { getActivityLog } from "../../../services";
+import type { ActivityEntry } from "../../../services";
 import { UserAgentDisplay } from "./UserAgentDisplay";
 
 export const ActivityLogCard: React.FC = () => {
@@ -19,16 +20,13 @@ export const ActivityLogCard: React.FC = () => {
     try {
       const params = new URLSearchParams({ limit: "20" });
       if (before) params.set("before", String(before));
-      const res = await fetch(`/api/account/activity?${params}`);
-      if (res.ok) {
-        const data: ActivityEntry[] = await res.json();
-        if (before) {
-          setEntries((prev) => [...prev, ...data]);
-        } else {
-          setEntries(data);
-        }
-        setHasMore(data.length === 20);
+      const data = await getActivityLog(params.toString());
+      if (before) {
+        setEntries((prev) => [...prev, ...data]);
+      } else {
+        setEntries(data);
       }
+      setHasMore(data.length === 20);
     } catch {
       /* ignore */
     } finally {

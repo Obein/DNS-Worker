@@ -9,7 +9,7 @@ import { DashboardHomeView } from "./views/DashboardHomeView";
 import { MainLayout } from "./layouts/MainLayout";
 import { NotFoundView } from "./views/NotFoundView";
 import { ProfileRoutes } from "./routes/ProfileRoutes";
-import type { Profile } from "./types/auth";
+import type { Profile } from "./services";
 import { useTheme } from "./hooks/useTheme";
 import { usePageMeta } from "./hooks/usePageMeta";
 import { useAuthAndProfiles } from "./hooks/useAuthAndProfiles";

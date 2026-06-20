@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import { createProfile, updateProfileSettings, addProfileRule } from "../../services";
+
 export const useImportProfile = (onRefresh?: () => void) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,34 +24,21 @@ export const useImportProfile = (onRefresh?: () => void) => {
         return;
       }
 
-      const createRes = await fetch("/api/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: `${data.name} (Imported)` }),
-      });
-      if (!createRes.ok) throw new Error("Failed to create profile");
-      const { id: newId } = await createRes.json();
+      const created = await createProfile(`${data.name} (Imported)`);
+      const newId = created.id;
 
-      await fetch(`/api/profiles/${newId}/settings`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data.settings),
-      });
+      await updateProfileSettings(newId, data.settings);
 
       if (data.rules && Array.isArray(data.rules)) {
         await Promise.all(
           data.rules.map((rule: any) =>
-            fetch(`/api/profiles/${newId}/rules`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                type: rule.type,
-                pattern: rule.pattern,
-                v_a: rule.v_a,
-                v_aaaa: rule.v_aaaa,
-                v_cname: rule.v_cname,
-                v_txt: rule.v_txt,
-              }),
+            addProfileRule(newId, {
+              type: rule.type,
+              pattern: rule.pattern,
+              v_a: rule.v_a,
+              v_aaaa: rule.v_aaaa,
+              v_cname: rule.v_cname,
+              v_txt: rule.v_txt,
             }),
           ),
         );

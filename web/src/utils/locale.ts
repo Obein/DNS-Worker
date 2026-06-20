@@ -2,6 +2,8 @@ import i18n from "../i18n/config";
 import { loadLocale } from "../i18n/config";
 import { setSystemLocale } from "./date";
 
+import { updateMe } from "../services";
+
 /**
  * Updates the application locale and persists the change to the user account if logged in.
  *
@@ -29,12 +31,8 @@ export async function updateLocale(
 
   // Persist the preference to the server in the background.
   try {
-    const res = await fetch("/api/account/me", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ locale }),
-    });
-    return { loaded, persisted: res.ok };
+    await updateMe({ locale });
+    return { loaded, persisted: true };
   } catch (e) {
     console.error("Failed to persist locale to server:", e);
     return { loaded, persisted: false };

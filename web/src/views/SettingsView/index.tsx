@@ -9,6 +9,13 @@ import { DefaultPolicyCard } from "./components/DefaultPolicyCard";
 import { LogRetentionCard } from "./components/LogRetentionCard";
 import { AdvancedEcsCard } from "./components/AdvancedEcsCard";
 import { DnsTestCard } from "./components/DnsTestCard";
+import {
+  getProfileDetails,
+  renameProfile,
+  updateProfileSettings,
+  testResolution,
+  getProfileRules
+} from "../../services";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -31,8 +38,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`/api/profiles/${profileId}`);
-        const data = await res.json();
+        const data = await getProfileDetails(profileId) as any;
         setProfile(data);
         setEditName(data.name);
         setSettings(JSON.parse(data.settings));
@@ -52,33 +58,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
       return;
     }
     try {
-      const res = await fetch(`/api/profiles/${profileId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editName }),
+      await renameProfile(profileId, editName);
+      setProfile((prev) => (prev ? { ...prev, name: editName } : null));
+      setIsEditingName(false);
+      toasterRef?.current?.show({
+        message: t("settings.nameUpdateSuccess", "名称已更新"),
+        intent: Intent.SUCCESS,
       });
-      if (res.ok) {
-        setProfile((prev) => (prev ? { ...prev, name: editName } : null));
-        setIsEditingName(false);
-        toasterRef?.current?.show({
-          message: t("settings.nameUpdateSuccess", "名称已更新"),
-          intent: Intent.SUCCESS,
-        });
-      } else {
-        const rawErr = await res.text();
-        let errMsg = rawErr;
-        if (rawErr === "The profile name already exists") {
-          errMsg = t("common.profileNameExists", "The profile name already exists");
-        } else if (rawErr === "Invalid Profile Name format") {
-          errMsg = t("common.profileNameFormatError", "Invalid Profile Name format");
-        }
-        toasterRef?.current?.show({
-          message: errMsg || t("settings.nameUpdateFailed", "更新失败"),
-          intent: Intent.DANGER,
-        });
-      }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      const rawErr = e.message;
+      let errMsg = rawErr;
+      if (rawErr === "The profile name already exists") {
+        errMsg = t("common.profileNameExists", "The profile name already exists");
+      } else if (rawErr === "Invalid Profile Name format") {
+        errMsg = t("common.profileNameFormatError", "Invalid Profile Name format");
+      }
+      toasterRef?.current?.show({
+        message: errMsg || t("settings.nameUpdateFailed", "更新失败"),
+        intent: Intent.DANGER,
+      });
     }
   };
 
@@ -86,20 +85,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
     if (!settings) return;
     setSaving(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/settings`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+      await updateProfileSettings(profileId, settings as any);
+      toasterRef?.current?.show({
+        message: t("settings.saveSuccess"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
       });
-      if (res.ok) {
-        toasterRef?.current?.show({
-          message: t("settings.saveSuccess"),
-          intent: Intent.SUCCESS,
-          icon: "tick",
-        });
-      } else {
-        throw new Error("Failed to save");
-      }
     } catch (e) {
       console.error(e);
       toasterRef?.current?.show({
@@ -119,12 +110,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(testInput),
-      });
-      const data = await res.json();
+      const data = await testResolution(profileId, testInput);
       setTestResult(data);
     } catch (e) {
       console.error(e);
@@ -136,8 +122,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   const exportProfile = async () => {
     if (!profile || !settings) return;
     try {
-      const resRules = await fetch(`/api/profiles/${profileId}/rules`);
-      const rules = resRules.ok ? await resRules.json() : [];
+      const rules = await getProfileRules(profileId);
 
       const exportData = {
         version: 1,

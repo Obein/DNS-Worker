@@ -9,6 +9,7 @@ import { AddRuleCard } from "./components/AddRuleCard";
 import { RulesTable } from "./components/RulesTable";
 import { EditRuleDialog } from "./components/EditRuleDialog";
 import { useIsMobile } from "../../hooks/useIsMobile";
+import { getProfileRules, getProfileDetails, addProfileRule, updateProfileRule, deleteProfileRule } from "../../services";
 
 export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPrefillUsed, toasterRef }) => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [newRule, setNewRule] = useState<{
-    type: string;
+    type: Rule["type"];
     pattern: string;
     v_a: string;
     v_aaaa: string;
@@ -52,16 +53,13 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   const fetchRules = async () => {
     setLoading(true);
     try {
-      const [rulesRes, profileRes] = await Promise.all([
-        fetch(`/api/profiles/${profileId}/rules`),
-        fetch(`/api/profiles/${profileId}`),
+      const [rulesData, profileData] = await Promise.all([
+        getProfileRules(profileId),
+        getProfileDetails(profileId),
       ]);
 
-      if (rulesRes.ok) setRules(await rulesRes.json());
-      if (profileRes.ok) {
-        const profile = await profileRes.json();
-        setSettings(JSON.parse(profile.settings));
-      }
+      setRules(rulesData);
+      setSettings(JSON.parse(profileData.settings || "{}"));
     } catch (e) {
       console.error("Failed to fetch data", e);
     } finally {
@@ -102,19 +100,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       return;
     }
     try {
-      const response = await fetch(`/api/profiles/${profileId}/rules`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...newRule, pattern: trimmedPattern }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        toasterRef?.current?.show({
-          message: errorText || t("rules.addFailed", "Failed to add rule"),
-          intent: Intent.DANGER,
-        });
-        return;
-      }
+      await addProfileRule(profileId, { ...newRule, pattern: trimmedPattern });
       toasterRef?.current?.show({
         message: t("rules.addSuccess", "Rule added successfully"),
         intent: Intent.SUCCESS,
@@ -128,9 +114,9 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
         v_cname: "",
       });
       fetchRules();
-    } catch (e) {
+    } catch (e: any) {
       toasterRef?.current?.show({
-        message: t("rules.addFailed", "Failed to add rule"),
+        message: e.message || t("rules.addFailed", "Failed to add rule"),
         intent: Intent.DANGER,
       });
     }
@@ -155,28 +141,16 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       return;
     }
     try {
-      const response = await fetch(`/api/profiles/${profileId}/rules`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editRule, pattern: trimmedPattern }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        toasterRef?.current?.show({
-          message: errorText || t("rules.updateFailed", "Failed to update rule"),
-          intent: Intent.DANGER,
-        });
-        return;
-      }
+      await updateProfileRule(profileId, { ...editRule, pattern: trimmedPattern } as Rule);
       toasterRef?.current?.show({
         message: t("rules.updateSuccess", "Rule updated successfully"),
         intent: Intent.SUCCESS,
       });
       setEditRule(null);
       fetchRules();
-    } catch (e) {
+    } catch (e: any) {
       toasterRef?.current?.show({
-        message: t("rules.updateFailed", "Failed to update rule"),
+        message: e.message || t("rules.updateFailed", "Failed to update rule"),
         intent: Intent.DANGER,
       });
     }
@@ -191,11 +165,11 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   };
 
   const deleteRule = async (id: number) => {
-    await fetch(`/api/profiles/${profileId}/rules`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      await deleteProfileRule(profileId, id);
+    } catch (e) {
+      console.error(e);
+    }
     setEditRule(null);
     fetchRules();
   };

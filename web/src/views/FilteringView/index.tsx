@@ -10,6 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -25,8 +26,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/lists`);
-      const data = await res.json();
+      const data = await getProfileLists(profileId);
       setLists(data);
     } catch (e) {
       console.error("Failed to fetch filters", e);
@@ -52,27 +52,24 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 2000));
       try {
-        const res = await fetch(`/api/profiles/${profileId}/lists`);
-        if (res.ok) {
-          const data = await res.json();
-          const newLists = data as FilterList[];
-          
-          let allUpdated = true;
-          for (const list of newLists) {
-            if (oldSyncTimes.has(list.id) && list.last_synced_at === oldSyncTimes.get(list.id)) {
-              allUpdated = false;
-              break;
-            }
-            if (!oldSyncTimes.has(list.id) && !list.last_synced_at) {
-              allUpdated = false;
-              break;
-            }
+        const data = await getProfileLists(profileId);
+        const newLists = data as FilterList[];
+        
+        let allUpdated = true;
+        for (const list of newLists) {
+          if (oldSyncTimes.has(list.id) && list.last_synced_at === oldSyncTimes.get(list.id)) {
+            allUpdated = false;
+            break;
           }
-          
-          if (allUpdated && newLists.length > 0) {
-            setLists(newLists);
-            return true;
+          if (!oldSyncTimes.has(list.id) && !list.last_synced_at) {
+            allUpdated = false;
+            break;
           }
+        }
+        
+        if (allUpdated && newLists.length > 0) {
+          setLists(newLists);
+          return true;
         }
       } catch (e) {
         // Ignore fetch errors during polling
@@ -89,33 +86,27 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     if (!url) return;
     setSyncing(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/lists`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+      await addCustomProfileList(profileId, url);
+      toasterRef?.current?.show({
+        message: t("filtering.addSuccess"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
       });
-      if (res.ok) {
+      setNewUrl("");
+
+      toasterRef?.current?.show({
+        message: t("filtering.syncTaskStarted"),
+        intent: Intent.PRIMARY,
+        icon: "cloud-download",
+      });
+      
+      const completed = await waitForSyncCompletion(lists);
+      if (completed) {
         toasterRef?.current?.show({
-          message: t("filtering.addSuccess"),
+          message: t("filtering.syncCheckComplete"),
           intent: Intent.SUCCESS,
           icon: "tick",
         });
-        setNewUrl("");
-
-        toasterRef?.current?.show({
-          message: t("filtering.syncTaskStarted"),
-          intent: Intent.PRIMARY,
-          icon: "cloud-download",
-        });
-        
-        const completed = await waitForSyncCompletion(lists);
-        if (completed) {
-          toasterRef?.current?.show({
-            message: t("filtering.syncCheckComplete"),
-            intent: Intent.SUCCESS,
-            icon: "tick",
-          });
-        }
       }
     } catch (e) {
       console.error(e);
@@ -126,20 +117,14 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
 
   const deleteList = async (id: number) => {
     try {
-      const res = await fetch(`/api/profiles/${profileId}/lists`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+      await deleteCustomProfileList(profileId, id);
+      toasterRef?.current?.show({
+        message: t("filtering.deleteSuccess"),
+        intent: Intent.PRIMARY,
+        icon: "trash",
       });
-      if (res.ok) {
-        toasterRef?.current?.show({
-          message: t("filtering.deleteSuccess"),
-          intent: Intent.PRIMARY,
-          icon: "trash",
-        });
-        setSelectedList(null);
-        await fetchData();
-      }
+      setSelectedList(null);
+      await fetchData();
     } catch (e) {
       console.error(e);
     }
@@ -148,24 +133,20 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   const syncLists = async () => {
     setSyncing(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/lists/sync`, {
-        method: "POST",
+      await syncProfileLists(profileId);
+      toasterRef?.current?.show({
+        message: t("filtering.syncTaskStarted"),
+        intent: Intent.PRIMARY,
+        icon: "cloud-download",
       });
-      if (res.ok) {
+      
+      const completed = await waitForSyncCompletion(lists);
+      if (completed) {
         toasterRef?.current?.show({
-          message: t("filtering.syncTaskStarted"),
-          intent: Intent.PRIMARY,
-          icon: "cloud-download",
+          message: t("filtering.syncCheckComplete"),
+          intent: Intent.SUCCESS,
+          icon: "tick",
         });
-        
-        const completed = await waitForSyncCompletion(lists);
-        if (completed) {
-          toasterRef?.current?.show({
-            message: t("filtering.syncCheckComplete"),
-            intent: Intent.SUCCESS,
-            icon: "tick",
-          });
-        }
       }
     } catch (e) {
       console.error(e);

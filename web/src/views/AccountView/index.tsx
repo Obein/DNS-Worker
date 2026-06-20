@@ -5,6 +5,13 @@ import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
 
 import type { UserInfo } from "./types";
+import {
+  getUsers,
+  getSystemSettings,
+  getMe,
+  updateMe,
+  updatePassword
+} from "../../services";
 import { TOTPCard } from "./components/TOTPCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
 import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
@@ -50,8 +57,8 @@ export const AccountView: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("/api/admin/users");
-      if (res.ok) setUsers(await res.json());
+      const data = await getUsers() as UserInfo[];
+      setUsers(data);
     } catch (e) {
       console.error(e);
     }
@@ -59,8 +66,8 @@ export const AccountView: React.FC = () => {
 
   const fetchSystemSettings = async () => {
     try {
-      const res = await fetch("/api/admin/settings");
-      if (res.ok) setSysSettings(await res.json());
+      const settings = await getSystemSettings();
+      setSysSettings(settings);
     } catch (e) {
       console.error(e);
     }
@@ -68,24 +75,21 @@ export const AccountView: React.FC = () => {
 
   const fetchMe = useCallback(async () => {
     try {
-      const res = await fetch("/api/account/me");
-      if (res.ok) {
-        const data = await res.json();
-        setMe(data);
-        setEditUsername(data.username);
-        if (data.timezone) {
-          const { setSystemTimeZone } = await import("../../utils/date");
-          setSystemTimeZone(data.timezone);
-        }
-        if (data.locale) {
-          const { setSystemLocale } = await import("../../utils/date");
-          setSystemLocale(data.locale);
-          i18n.changeLanguage(data.locale);
-        }
-        if (data.role === "admin") {
-          fetchUsers();
-          fetchSystemSettings();
-        }
+      const data = await getMe();
+      setMe(data);
+      setEditUsername(data.username);
+      if (data.timezone) {
+        const { setSystemTimeZone } = await import("../../utils/date");
+        setSystemTimeZone(data.timezone);
+      }
+      if (data.locale) {
+        const { setSystemLocale } = await import("../../utils/date");
+        setSystemLocale(data.locale);
+        i18n.changeLanguage(data.locale);
+      }
+      if (data.role === "admin") {
+        fetchUsers();
+        fetchSystemSettings();
       }
     } catch (e) {
       console.error(e);
@@ -105,19 +109,12 @@ export const AccountView: React.FC = () => {
     }
     setUsernameLoading(true);
     try {
-      const res = await fetch("/api/account/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: editUsername })
-      });
-      if (res.ok) {
-        setMe((prev) => (prev ? { ...prev, username: editUsername } : null));
-        setIsEditingUsername(false);
-      } else {
-        alert(await res.text());
-      }
-    } catch (e) {
+      await updateMe({ username: editUsername });
+      setMe((prev) => (prev ? { ...prev, username: editUsername } : null));
+      setIsEditingUsername(false);
+    } catch (e: any) {
       console.error(e);
+      alert(e.message || t("common.errorNetwork"));
     } finally {
       setUsernameLoading(false);
     }
@@ -125,20 +122,13 @@ export const AccountView: React.FC = () => {
 
   const handleUpdateTimezone = async (newTimezone: string | null) => {
     try {
-      const res = await fetch("/api/account/me", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ timezone: newTimezone || "" })
-      });
-      if (res.ok) {
-        setMe((prev) => (prev ? { ...prev, timezone: newTimezone } : null));
-        const { setSystemTimeZone } = await import("../../utils/date");
-        setSystemTimeZone(newTimezone || "");
-      } else {
-        alert(await res.text());
-      }
-    } catch (e) {
+      await updateMe({ timezone: newTimezone || "" });
+      setMe((prev) => (prev ? { ...prev, timezone: newTimezone } : null));
+      const { setSystemTimeZone } = await import("../../utils/date");
+      setSystemTimeZone(newTimezone || "");
+    } catch (e: any) {
       console.error(e);
+      alert(e.message || t("common.errorNetwork"));
     }
   };
 
@@ -166,32 +156,24 @@ export const AccountView: React.FC = () => {
           .join("");
       }
 
-      const res = await fetch("/api/account/password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          oldPassword: useTotpForPw ? undefined : oldPassword,
-          totpTokenHash: tokenPayload,
-          totpSalt: saltPayload,
-          newPassword
-        })
+      await updatePassword({
+        oldPassword: useTotpForPw ? undefined : oldPassword,
+        totpTokenHash: tokenPayload,
+        totpSalt: saltPayload,
+        newPassword
       });
-      if (res.ok) {
-        setPwMessage({
-          text: t("account.passwordSuccess"),
-          intent: Intent.SUCCESS
-        });
-        setOldPassword("");
-        setNewPassword("");
-      } else {
-        const msg = await res.text();
-        setPwMessage({
-          text: msg || t("account.updateFailed"),
-          intent: Intent.DANGER
-        });
-      }
-    } catch (e) {
-      setPwMessage({ text: t("common.errorNetwork"), intent: Intent.DANGER });
+
+      setPwMessage({
+        text: t("account.passwordSuccess"),
+        intent: Intent.SUCCESS
+      });
+      setOldPassword("");
+      setNewPassword("");
+    } catch (e: any) {
+      setPwMessage({
+        text: e.message || t("account.updateFailed"),
+        intent: Intent.DANGER
+      });
     } finally {
       setPwLoading(false);
     }

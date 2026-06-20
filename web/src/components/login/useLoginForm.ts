@@ -6,6 +6,7 @@ import {
   hashTotpToken
 } from "../../utils/auth";
 import { setAccessToken } from "../../utils/token";
+import { prelogin, login, ApiError } from "../../services";
 
 interface AuthConfig {
   turnstile_site_key: string;
@@ -127,25 +128,18 @@ export const useLoginForm = ({
     setError("");
 
     try {
-      const res = await fetch("/api/auth/prelogin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, turnstileToken })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setRequiresPassword(data.requires_password);
-        setRequiresTotp(data.requires_totp);
-        setLoginStep(2);
+      const data = await prelogin({ username, turnstileToken });
+      setRequiresPassword(data.requires_password);
+      setRequiresTotp(data.requires_totp);
+      setLoginStep(2);
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setError(err.bodyText || t("auth.authFailed"));
       } else {
-        const msg = await res.text();
-        setError(msg || t("auth.authFailed"));
-        if (window.turnstile) window.turnstile.reset();
-        setTurnstileToken(null);
+        setError(t("auth.networkError"));
       }
-    } catch (err) {
-      setError(t("auth.networkError"));
+      if (window.turnstile) window.turnstile.reset();
+      setTurnstileToken(null);
     } finally {
       setLoading(false);
     }
@@ -175,28 +169,24 @@ export const useLoginForm = ({
         }
       }
 
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accessToken) {
-          setAccessToken(data.accessToken);
-        }
-        onSuccess();
-      } else {
-        const msg = await res.text();
-        if (isPasswordLeaked(res, msg)) {
-          setError(t("auth.passwordLeaked"));
-        } else {
-          setError(msg || t("auth.authFailed"));
-        }
+      const data = await login(body);
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
       }
-    } catch (err) {
-      setError(t("auth.networkError"));
+      onSuccess();
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        const fakeRes = { status: err.status } as Response;
+        if (isPasswordLeaked(fakeRes, err.bodyText)) {
+          setError(t("auth.passwordLeaked"));
+        } else if (err.bodyText === "geolocation_missing") {
+          setError(t("auth.geolocationRequired"));
+        } else {
+          setError(err.bodyText || t("auth.authFailed"));
+        }
+      } else {
+        setError(t("auth.networkError"));
+      }
     } finally {
       setLoading(false);
     }

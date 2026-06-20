@@ -58,14 +58,14 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
   const hashedPassword = await hashPassword(password);
   const userId = generateId(15);
   const cf = (request as any).cf;
-  const timezone = cf?.timezone || null;
+  const timezone = cf?.timezone || request.headers.get("CF-Timezone") || null;
   try {
     const role = (await userModel.isEmpty()) ? 'admin' : 'user';
     await userModel.create({ id: userId, username, passwordHash: hashedPassword, role, timezone });
     await activityLog.record(userId, 'signup', clientIp, userAgent);
     const { latitude, longitude } = getRequestCoordinates(request);
     if (latitude === null || longitude === null) {
-      return new Response("Geolocation required. Please allow location access.", { status: 400 });
+      return new Response("geolocation_missing", { status: 400 });
     }
     const { session, refreshToken } = await createSession(env, userId, clientIp, userAgent, latitude, longitude);
     const refreshCookie = createRefreshTokenCookie(refreshToken, env);

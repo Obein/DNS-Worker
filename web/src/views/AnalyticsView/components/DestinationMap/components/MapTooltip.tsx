@@ -2,6 +2,8 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
+import { getProfileAnalytics } from "../../../../../services";
+
 interface MapTooltipProps {
   name: string;
   count: number;
@@ -74,15 +76,14 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
 
     let isMounted = true;
     const timer = setTimeout(() => {
-      fetch(`/api/profiles/${profileId}/analytics/isps${queryParams}`)
-        .then((r) => r.json())
-        .then((data) => {
+      getProfileAnalytics(profileId, "isps", queryParams)
+        .then((data: any) => {
           onCacheIspRef.current(countryCode, data);
           if (isMounted) {
             setIsps(data);
           }
         })
-        .catch((e) => {
+        .catch((e: any) => {
           console.error("Failed to fetch ISPs", e);
         })
         .finally(() => {

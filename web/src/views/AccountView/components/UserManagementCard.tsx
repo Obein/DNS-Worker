@@ -4,7 +4,8 @@ import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { PASSWORD_REGEX, USERNAME_REGEX } from "../../../utils/auth";
-import type {  UserInfo  } from "../types";
+import type { UserInfo } from "../../../services";
+import { createUser, deleteUser } from "../../../services";
 
 export interface UserManagementCardProps {
   users: UserInfo[];
@@ -26,22 +27,24 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
     if (!PASSWORD_REGEX.test(newUserPassword)) { alert(t("account.formatTipPassword")); return; }
     setCreateLoading(true);
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: newUsername, password: newUserPassword, role: newUserRole }),
-      });
-      if (res.ok) { setIsDialogOpen(false); setNewUsername(""); setNewUserPassword(""); setShowNewUserPassword(false); onRefresh(); }
-      else { alert(await res.text()); }
-    } catch (e) { console.error(e); }
+      await createUser({ username: newUsername, password: newUserPassword, role: newUserRole });
+      setIsDialogOpen(false);
+      setNewUsername("");
+      setNewUserPassword("");
+      setShowNewUserPassword(false);
+      onRefresh();
+    } catch (e: any) {
+      console.error(e);
+      alert(e.message || t("common.errorNetwork"));
+    }
     finally { setCreateLoading(false); }
   };
 
   const handleDeleteUser = async (id: string) => {
     if (!confirm(t("account.confirmDeleteUser"))) return;
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-      if (res.ok) onRefresh();
+      await deleteUser(id);
+      onRefresh();
     } catch (e) { console.error(e); }
   };
 

@@ -93,6 +93,7 @@ DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS conn
 │   │   ├── i18n/         # Internationalization (i18n) configuration
 │   │   ├── layouts/      # Layout components (dashboard layout, etc.)
 │   │   ├── routes/       # Frontend routing configuration
+│   │   ├── services/     # Centralized API service wrappers (Auth, Account, Profiles, etc.)
 │   │   ├── views/        # Main pages / views (dashboard, logs, settings, setup, etc.)
 │   │   └── utils/        # Utility helpers and functions
 │   └── package.json      # Frontend dependencies configuration

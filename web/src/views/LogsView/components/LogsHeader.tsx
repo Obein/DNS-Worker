@@ -145,14 +145,18 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
       {/* Filters & Search */}
       {(!isMobile || !isCollapsed) && (
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 md:flex md:items-center gap-2">
             {hasActiveFilters && (
-              <Button
-                icon="filter-remove"
-                onClick={handleClearFilters}
-                variant="minimal"
-                title={t("logs.clearFilters")}
-              />
+              <div className="col-span-2 md:contents">
+                <Button
+                  icon="filter-remove"
+                  onClick={handleClearFilters}
+                  variant="minimal"
+                  title={t("logs.clearFilters")}
+                  text={isMobile ? t("logs.clearFilters") : undefined}
+                  fill={isMobile}
+                />
+              </div>
             )}
             <StatusFilter
               statusFilter={statusFilter}

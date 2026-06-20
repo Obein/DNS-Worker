@@ -7,6 +7,7 @@ import { ScrollingIntro } from "./ScrollingIntro";
 import { LoginForm } from "./LoginForm";
 import { SignupWizard } from "./SignupWizard";
 import { loadTurnstileScript } from "../utils/auth";
+import { getAuthConfig } from "../services";
 
 /**
  * Authentication configuration settings fetched from server.
@@ -56,11 +57,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await fetch("/api/auth/config");
-        if (res.ok) {
-          const configData = await res.json();
-          setAuthConfig(configData);
-        }
+        const configData = await getAuthConfig() as AuthConfig;
+        setAuthConfig(configData);
       } catch (e) {
         console.error("Failed to load auth config", e);
       }

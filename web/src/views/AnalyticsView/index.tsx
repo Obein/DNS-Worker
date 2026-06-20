@@ -24,7 +24,8 @@ import { processTrendData } from "./utils";
 import { getFlagEmoji } from "../../utils/getFlagEmoji";
 import { MetricCard } from "./components/MetricCard";
 import { RankTable } from "./components/RankTable";
-import type { AccessPoint } from "../../types/auth";
+import { getProfileAccessPoints, getProfileDetails, getProfileAnalytics } from "../../services";
+import type { AccessPoint } from "../../services";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 // Lazy-load chart components so that recharts and react19-simple-maps
@@ -55,19 +56,17 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
   const [logRetentionDays, setLogRetentionDays] = useState<number>(30);
 
   useEffect(() => {
-    fetch(`/api/profiles/${profileId}/access_points`)
-      .then(r => r.json())
+    getProfileAccessPoints(profileId)
       .then(data => setAccessPoints(data))
       .catch(e => console.error("Failed to load access points", e));
   }, [profileId]);
 
   // Fetch log retention days from profile settings
   useEffect(() => {
-    fetch(`/api/profiles/${profileId}`)
-      .then((r) => r.json())
+    getProfileDetails(profileId)
       .then((data) => {
         try {
-          const settings = JSON.parse(data.settings);
+          const settings = JSON.parse(data.settings || "{}");
           setLogRetentionDays(settings.log_retention_days !== undefined ? Number(settings.log_retention_days) : 30);
         } catch (e) {
           console.error("Failed to parse settings", e);
@@ -89,14 +88,13 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
         queryParams += `&access_point_id=${apIdFilter}`;
       }
       
-      const baseStatsUrl = `/api/profiles/${profileId}/analytics`;
       const [summary, trend, topAllowed, topBlocked, clients, destinations] = await Promise.all([
-        fetch(`${baseStatsUrl}/summary${queryParams}`).then((r) => r.json()),
-        fetch(`${baseStatsUrl}/trend${queryParams}`).then((r) => r.json()),
-        fetch(`${baseStatsUrl}/top_allowed${queryParams}`).then((r) => r.json()),
-        fetch(`${baseStatsUrl}/top_blocked${queryParams}`).then((r) => r.json()),
-        fetch(`${baseStatsUrl}/clients${queryParams}`).then((r) => r.json()),
-        fetch(`${baseStatsUrl}/destinations${queryParams}`).then((r) => r.json()),
+        getProfileAnalytics(profileId, "summary", queryParams),
+        getProfileAnalytics(profileId, "trend", queryParams),
+        getProfileAnalytics(profileId, "top_allowed", queryParams),
+        getProfileAnalytics(profileId, "top_blocked", queryParams),
+        getProfileAnalytics(profileId, "clients", queryParams),
+        getProfileAnalytics(profileId, "destinations", queryParams),
       ]);
 
       setData({

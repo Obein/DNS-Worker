@@ -1,7 +1,11 @@
 export interface Profile {
   id: string;
   name: string;
-  profile_key?: string; // App.tsx also references profile_key
+  profile_key?: string;
+  owner_id?: string;
+  settings?: string;
+  created_at?: number;
+  updated_at?: number;
 }
 
 export interface UserInfo {

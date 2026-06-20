@@ -4,7 +4,16 @@ import { useNavigate, useLocation } from "react-router-dom";
 import type { OverlayToaster } from "@blueprintjs/core";
 import { getAccessToken, setAccessToken } from "../utils/token";
 import { setSystemTimeZone, setSystemLocale } from "../utils/date";
-import type { Profile, UserInfo } from "../types/auth";
+import {
+  refresh,
+  getProfiles,
+  getMe,
+  createProfile,
+  deleteProfile,
+  logout,
+  ApiError
+} from "../services";
+import type { Profile, UserInfo } from "../services";
 
 interface PrefilledRule {
   domain: string;
@@ -56,11 +65,10 @@ export function useAuthAndProfiles(
 
       // 2. If we don't have an access token in memory, try to refresh first.
       if (!getAccessToken()) {
-        const refreshRes = await fetch("/api/auth/refresh", { method: "POST" });
-        if (refreshRes.ok) {
-          const data = await refreshRes.json();
+        try {
+          const data = await refresh();
           setAccessToken(data.accessToken);
-        } else {
+        } catch {
           clearCsrfToken();
           setIsLoggedIn(false);
           return;
@@ -68,20 +76,12 @@ export function useAuthAndProfiles(
       }
 
       // 3. Fetch data (uses token automatically via fetch interceptor).
-      const [profilesRes, meRes] = await Promise.all([
-        fetch("/api/profiles"),
-        fetch("/api/account/me"),
-      ]);
-
-      if (profilesRes.status === 401 || meRes.status === 401) {
-        clearCsrfToken();
-        setIsLoggedIn(false);
-        return;
-      }
-
-      if (profilesRes.ok && meRes.ok) {
-        setProfiles(await profilesRes.json());
-        const meData = await meRes.json();
+      try {
+        const [profilesData, meData] = await Promise.all([
+          getProfiles(),
+          getMe(),
+        ]);
+        setProfiles(profilesData);
         setCurrentUser(meData);
 
         if (meData.timezone) {
@@ -92,7 +92,10 @@ export function useAuthAndProfiles(
           i18n.changeLanguage(meData.locale);
         }
         setIsLoggedIn(true);
-      } else {
+      } catch (err: any) {
+        if (err instanceof ApiError && err.status === 401) {
+          clearCsrfToken();
+        }
         setIsLoggedIn(false);
       }
     } catch {
@@ -148,20 +151,16 @@ export function useAuthAndProfiles(
   const handleCreateProfile = async () => {
     if (!newProfileName) return;
     try {
-      const res = await fetch("/api/profiles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newProfileName }),
-      });
-      if (res.ok) {
-        setNewProfileName("");
-        setShowCreateDialog(false);
-        await checkAuthAndFetchData();
+      await createProfile(newProfileName);
+      setNewProfileName("");
+      setShowCreateDialog(false);
+      await checkAuthAndFetchData();
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        setCreateError(err.bodyText);
       } else {
-        setCreateError(await res.text());
+        setCreateError(t("common.errorNetwork"));
       }
-    } catch {
-      setCreateError(t("common.errorNetwork"));
     }
   };
 
@@ -169,10 +168,8 @@ export function useAuthAndProfiles(
     e.stopPropagation();
     if (!confirm(t("common.confirmDelete"))) return;
     try {
-      const res = await fetch(`/api/profiles/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        await checkAuthAndFetchData();
-      }
+      await deleteProfile(id);
+      await checkAuthAndFetchData();
     } catch (err) {
       console.error(err);
     }
@@ -180,7 +177,7 @@ export function useAuthAndProfiles(
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await logout();
     } catch (e) {
       console.error("Logout failed", e);
     } finally {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { UserInfo } from "../types";
+import { setupTotp, confirmTotp, disableTotp, updateTotpSettings } from "../../../services";
+import type { UserInfo } from "../../../services";
 import { TOTPRecoveryKeys } from "./totp/TOTPRecoveryKeys";
 import { TOTPEnabledState } from "./totp/TOTPEnabledState";
 import { TOTPSetupForm } from "./totp/TOTPSetupForm";
@@ -46,14 +47,10 @@ export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
     setSetupLoading(true);
     setSetupError("");
     try {
-      const res = await fetch("/api/account/totp/setup");
-      if (res.ok) {
-        setSetupData(await res.json());
-      } else {
-        setSetupError(await res.text());
-      }
-    } catch {
-      setSetupError(t("common.errorNetwork"));
+      const data = await setupTotp();
+      setSetupData(data);
+    } catch (e: any) {
+      setSetupError(e.message || t("common.errorNetwork"));
     } finally {
       setSetupLoading(false);
     }
@@ -73,26 +70,17 @@ export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 
-      const res = await fetch("/api/account/totp/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          secret: setupData.secret,
-          totpTokenHash: hashHex,
-          salt: salt
-        })
+      const data = await confirmTotp({
+        secret: setupData.secret,
+        totpTokenHash: hashHex,
+        salt: salt
       });
-      if (res.ok) {
-        const data = await res.json();
-        setRecoveryKeys(data.recovery_keys);
-        setSetupData(null);
-        setSetupToken("");
-        onRefresh();
-      } else {
-        setSetupError(await res.text());
-      }
-    } catch {
-      setSetupError(t("common.errorNetwork"));
+      setRecoveryKeys(data.recovery_keys);
+      setSetupData(null);
+      setSetupToken("");
+      onRefresh();
+    } catch (err: any) {
+      setSetupError(err.message || t("common.errorNetwork"));
     } finally {
       setSetupLoading(false);
     }
@@ -111,20 +99,12 @@ export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
     setDisableLoading(true);
     setDisableError("");
     try {
-      const res = await fetch("/api/account/totp", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: disablePassword })
-      });
-      if (res.ok) {
-        setDisableDialogOpen(false);
-        setDisablePassword("");
-        onRefresh();
-      } else {
-        setDisableError(await res.text());
-      }
-    } catch {
-      setDisableError(t("common.errorNetwork"));
+      await disableTotp(disablePassword);
+      setDisableDialogOpen(false);
+      setDisablePassword("");
+      onRefresh();
+    } catch (err: any) {
+      setDisableError(err.message || t("common.errorNetwork"));
     } finally {
       setDisableLoading(false);
     }
@@ -133,11 +113,7 @@ export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
   const handleToggleSkipPassword = async (val: boolean) => {
     setSettingsLoading(true);
     try {
-      await fetch("/api/account/totp/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ skip_password: val })
-      });
+      await updateTotpSettings(val);
       onRefresh();
     } catch {
       /* ignore */

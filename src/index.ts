@@ -61,7 +61,13 @@ export default {
         }
 
         // Route requests to handlers
-        if (url.pathname === '/api/clientinfo' || url.pathname === '/api/regions' || url.pathname === '/api/substitute') {
+        if (
+          url.pathname === '/api/clientinfo' ||
+          url.pathname === '/api/regions' ||
+          url.pathname === '/api/substitute' ||
+          url.pathname === '/api/presets/upstreams' ||
+          url.pathname === '/api/presets/filters'
+        ) {
           return handleSystemRequest(request, env);
         }
         if (url.pathname.startsWith('/api/profiles')) {
@@ -110,9 +116,7 @@ export default {
         if (contentType.includes('text/html')) {
           let configStr = "{}";
           try {
-             const upstreams = env.PRESET_UPSTREAMS ? JSON.parse(env.PRESET_UPSTREAMS) : null;
-             const filters = env.PRESET_EXTERNAL_FILTERS ? JSON.parse(env.PRESET_EXTERNAL_FILTERS) : null;
-             configStr = JSON.stringify({ upstreams, filters });
+             configStr = JSON.stringify({ nonce });
           } catch (e) { }
           
           return new HTMLRewriter()

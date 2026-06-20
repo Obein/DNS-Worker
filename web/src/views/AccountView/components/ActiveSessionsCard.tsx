@@ -3,7 +3,8 @@ import { Card, Elevation, H4, Tag, Button, Intent, HTMLTable, Spinner } from "@b
 import { Monitor, RefreshCw, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import type { SessionInfo } from "../types";
+import { getSessions, revokeSession } from "../../../services";
+import type { SessionInfo } from "../../../services";
 import { UserAgentDisplay } from "./UserAgentDisplay";
 
 export const ActiveSessionsCard: React.FC = () => {
@@ -15,10 +16,8 @@ export const ActiveSessionsCard: React.FC = () => {
   const fetchSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/account/sessions");
-      if (res.ok) {
-        setSessions(await res.json());
-      }
+      const data = await getSessions();
+      setSessions(data);
     } catch {
       /* ignore */
     } finally {
@@ -33,21 +32,14 @@ export const ActiveSessionsCard: React.FC = () => {
   const handleRevoke = async (id: string) => {
     setRevoking(id);
     try {
-      const res = await fetch(`/api/account/sessions/${id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.is_current) {
-          window.location.reload();
-        } else {
-          setSessions((prev) => prev.filter((s) => s.id !== id));
-        }
+      const data = await revokeSession(id);
+      if (data.is_current) {
+        window.location.reload();
       } else {
-        alert(t("account.sessions.revokeFailed", "Failed to revoke session."));
+        setSessions((prev) => prev.filter((s) => s.id !== id));
       }
-    } catch {
-      alert(t("common.errorNetwork", "Network error."));
+    } catch (e: any) {
+      alert(e.message || t("account.sessions.revokeFailed", "Failed to revoke session."));
     } finally {
       setRevoking(null);
     }

@@ -15,22 +15,22 @@
 
 // Legacy static exports — kept as empty objects so that code that
 // destructures or indexes these records does not throw at runtime.
-export const IconSvgPaths16 = {};
-export const IconSvgPaths20 = {};
+export const IconSvgPaths16: Record<string, string[]> = {};
+export const IconSvgPaths20: Record<string, string[]> = {};
 
 /**
  * Stub of the static `getIconPaths` helper.
  * Returns `undefined` when icons have not been pre-loaded statically,
  * which is correct when using the dynamic Icons loader.
  */
-export function getIconPaths(_name, _size) {
+export function getIconPaths(_name: string, _size: number): string[] | undefined {
   return undefined;
 }
 
 /**
  * @deprecated use `getIconPaths` instead
  */
-export function iconNameToPathsRecordKey(name) {
+export function iconNameToPathsRecordKey(name: string): string {
   // Inline the minimal pascalCase transform to avoid statically importing change-case.
   return name
     .replace(/-([a-z])/g, (_, c) => c.toUpperCase())

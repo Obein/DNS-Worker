@@ -1,5 +1,5 @@
-import React from "react";
-import { Section, SectionCard, Button, Spinner, Intent } from "@blueprintjs/core";
+import React, { useState } from "react";
+import { Section, SectionCard, Button, Spinner, Intent, PopoverNext } from "@blueprintjs/core";
 import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  ClientInfo  } from "../types";
@@ -12,6 +12,9 @@ export interface VerifyConnectionCardProps {
   clientInfo: ClientInfo | null;
   showIp: boolean;
   setShowIp: (show: boolean) => void;
+  showLocation: boolean;
+  setShowLocation: (show: boolean) => void;
+  traceInfo: { colo: string; raw: string } | null;
 }
 
 export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
@@ -22,8 +25,12 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
   clientInfo,
   showIp,
   setShowIp,
+  showLocation,
+  setShowLocation,
+  traceInfo,
 }) => {
   const { t } = useTranslation();
+  const [isTracePopoverOpen, setIsTracePopoverOpen] = useState(false);
 
   return (
     <Section title={t("setup.verifyConnection")} icon={<Activity size={16} />}>
@@ -63,7 +70,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
           </div>
 
           {clientInfo && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${traceInfo ? "sm:grid-cols-2 md:grid-cols-3" : "md:grid-cols-2"}`}>
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3">
                 <Globe size={18} className="text-blue-500 mt-1" />
                 <div className="flex-1 min-w-0">
@@ -80,13 +87,44 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
               </div>
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3">
                 <MapPin size={18} className="text-red-500 mt-1" />
-                <div className="min-w-0">
-                  <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.currentLocation")}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.currentLocation")}</div>
+                    <button onClick={() => setShowLocation(!showLocation)} className="text-gray-400 hover:text-red-500 transition-colors">
+                      {showLocation ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                  </div>
                   <div className="font-bold truncate">
-                    {clientInfo.city}, {clientInfo.region ? `${clientInfo.region}, ` : ""}{clientInfo.country}
+                    {showLocation ? `${clientInfo.city}, ${clientInfo.region ? `${clientInfo.region}, ` : ""}${clientInfo.country}` : "• • • • • • • • • •"}
                   </div>
                 </div>
               </div>
+              {traceInfo && (
+                <PopoverNext
+                  isOpen={isTracePopoverOpen}
+                  onInteraction={(nextOpenState) => setIsTracePopoverOpen(nextOpenState)}
+                  placement="bottom"
+                  content={
+                    <div className="p-4 max-w-sm max-h-60 overflow-auto font-mono text-xs bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-lg rounded-lg">
+                      <div className="font-bold border-b border-gray-100 dark:border-gray-800 pb-2 mb-2">/cdn-cgi/trace</div>
+                      <pre className="whitespace-pre-wrap">{traceInfo.raw}</pre>
+                    </div>
+                  }
+                >
+                  <div 
+                    className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 cursor-pointer select-none"
+                    onDoubleClick={() => setIsTracePopoverOpen(true)}
+                  >
+                    <Server size={18} className="text-purple-500 mt-1" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.edgeServer")}</div>
+                      <div className="font-bold truncate">
+                        {traceInfo.colo}
+                      </div>
+                    </div>
+                  </div>
+                </PopoverNext>
+              )}
             </div>
           )}
         </div>

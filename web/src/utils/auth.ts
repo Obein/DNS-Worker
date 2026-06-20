@@ -71,6 +71,10 @@ export function loadTurnstileScript(onLoad: () => void): void {
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback";
     script.async = true;
     script.defer = true;
+    const nonce = (window as any).OBEX_CONFIG?.nonce;
+    if (nonce) {
+      script.nonce = nonce;
+    }
     document.head.appendChild(script);
   }
 }

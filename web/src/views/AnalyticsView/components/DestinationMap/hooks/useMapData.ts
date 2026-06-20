@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import type { DestinationItem, CountryMapData } from "../types";
+import { getMapTopology } from "../../../../../services";
 
 export function useMapData(destinations: DestinationItem[]) {
   const [geographyData, setGeographyData] = useState<any>(null);
 
   useEffect(() => {
-    fetch("/world-110m.json")
-      .then((r) => r.json())
-      .then((data) => {
+    getMapTopology()
+      .then((data: any) => {
         // Ensure "countries" is the first key in data.objects because react-simple-maps
         // defaults to parsing the first key returned by Object.keys(data.objects).
         if (data && data.objects) {
@@ -32,7 +32,7 @@ export function useMapData(destinations: DestinationItem[]) {
         }
         setGeographyData(data);
       })
-      .catch((e) => console.error("Failed to load map topology", e));
+      .catch((e: any) => console.error("Failed to load map topology", e));
   }, []);
 
   const totalQueriesCount = useMemo(() => {

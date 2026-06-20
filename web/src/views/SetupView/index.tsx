@@ -12,6 +12,14 @@ import { DohUrlCard } from "./components/DohUrlCard";
 import { SetupTabs } from "./components/SetupTabs";
 import { AccessPointDrawer } from "./components/AccessPointDrawer";
 import type { AccessPoint } from "../../types/auth";
+import {
+  getClientInfo,
+  getRegions,
+  getSubstituteInfo,
+  getTraceInfo,
+  queryDnsJson,
+  getProfileAccessPoints
+} from "../../services";
 
 export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toasterRef }) => {
   const isMobile = useIsMobile();
@@ -26,10 +34,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const fetchAccessPoints = async () => {
     setLoadingAccessPoints(true);
     try {
-      const res = await fetch(`/api/profiles/${profileId}/access_points`);
-      if (res.ok) {
-        setAccessPoints(await res.json());
-      }
+      const data = await getProfileAccessPoints(profileId);
+      setAccessPoints(data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -55,6 +61,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const [substituteDomainIpv6, setSubstituteDomainIpv6] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>("CN");
   const [showIp, setShowIp] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
+  const [traceInfo, setTraceInfo] = useState<{ colo: string; raw: string } | null>(null);
   const [serverRegions, setServerRegions] = useState<Record<string, RegionConfigItem>>({});
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; profileMatch: boolean } | null>(null);
 
@@ -79,15 +87,10 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   const resolveSubstituteDomain = async (domain: string) => {
     const tryResolve = async (server: string, type: string, typeNum: number): Promise<string | null> => {
       try {
-        const res = await fetch(`https://${server}/dns-query?name=${domain}&type=${type}`, {
-          headers: { Accept: "application/dns-json" },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.Answer && data.Answer.length > 0) {
-            const record = data.Answer.find((a: any) => a.type === typeNum);
-            if (record?.data) return record.data;
-          }
+        const data = await queryDnsJson(server, domain, type);
+        if (data.Answer && data.Answer.length > 0) {
+          const record = data.Answer.find((a: any) => a.type === typeNum);
+          if (record?.data) return record.data;
         }
       } catch (e) {
         console.warn(`Client-side DNS query failed for ${domain} (${type}) via ${server}:`, e);
@@ -118,14 +121,14 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
     setIsVerifying(true);
     setVerifyResult(null);
     try {
-      const [clientRes, regionsRes] = await Promise.all([
-        fetch("/api/clientinfo"),
-        fetch("/api/regions"),
+      const [clientData, regionsData, traceResult] = await Promise.all([
+        getClientInfo(),
+        getRegions(),
+        getTraceInfo(),
       ]);
 
-      const clientData = await clientRes.json();
-      const regionsData = await regionsRes.json();
       setClientInfo(clientData);
+      setTraceInfo(traceResult);
 
       if (clientData.timezone && clientData.timezone !== "UNKNOWN") {
         setSystemTimeZone(clientData.timezone);
@@ -134,20 +137,15 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
       const domainToResolve = clientData.substituteDomain || "pages.dev";
       
       try {
-        const substituteRes = await fetch("/api/substitute");
-        if (substituteRes.ok) {
-          const substituteData = await substituteRes.json();
-          if (substituteData.ip) {
-            setSubstituteDomainIp(substituteData.ip);
-          }
-          if (substituteData.ipv6) {
-            setSubstituteDomainIpv6(substituteData.ipv6);
-          }
-          
-          if (!substituteData.ip || !substituteData.ipv6) {
-            resolveSubstituteDomain(domainToResolve);
-          }
-        } else {
+        const substituteData = await getSubstituteInfo();
+        if (substituteData.ip) {
+          setSubstituteDomainIp(substituteData.ip);
+        }
+        if (substituteData.ipv6) {
+          setSubstituteDomainIpv6(substituteData.ipv6);
+        }
+        
+        if (!substituteData.ip || !substituteData.ipv6) {
           resolveSubstituteDomain(domainToResolve);
         }
       } catch (e) {
@@ -227,6 +225,9 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         clientInfo={clientInfo}
         showIp={showIp}
         setShowIp={setShowIp}
+        showLocation={showLocation}
+        setShowLocation={setShowLocation}
+        traceInfo={traceInfo}
       />
 
       <DohUrlCard 

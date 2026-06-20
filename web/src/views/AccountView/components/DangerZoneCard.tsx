@@ -2,6 +2,7 @@ import React from "react";
 import { Card, Elevation, H4, Button, Intent, Callout } from "@blueprintjs/core";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { clearLogs, deleteMe } from "../../../services";
 
 export interface DangerZoneCardProps {
   isAdmin: boolean;
@@ -13,8 +14,8 @@ export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin }) => {
   const handleClearAllLogs = async () => {
     if (!confirm(t("account.confirmClearLogs"))) return;
     try {
-      const res = await fetch("/api/account/logs", { method: "DELETE" });
-      if (res.ok) alert(t("account.clearLogsSuccess"));
+      await clearLogs();
+      alert(t("account.clearLogsSuccess"));
     } catch (e) {
       console.error(e);
     }
@@ -23,14 +24,11 @@ export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin }) => {
   const handleDeleteMyAccount = async () => {
     if (!confirm(t("account.confirmDeleteAccount"))) return;
     try {
-      const res = await fetch("/api/account/me", { method: "DELETE" });
-      if (res.ok) {
-        window.location.href = "/";
-      } else {
-        alert(await res.text());
-      }
-    } catch (e) {
+      await deleteMe();
+      window.location.href = "/";
+    } catch (e: any) {
       console.error(e);
+      alert(e.message || t("common.errorNetwork"));
     }
   };
 

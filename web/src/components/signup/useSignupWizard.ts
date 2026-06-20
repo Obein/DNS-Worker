@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import {
   validateUsername,
   validatePassword,
-  isPasswordLeaked
+  isPasswordLeaked,
+  hashTotpToken
 } from "../../utils/auth";
 import {
-  checkUsernameDuplicateApi,
-  startSignupTotpSetupApi,
-  confirmSignupTotpApi,
-  signupSubmitApi
-} from "./signupApi";
+  checkUsernameDuplicate as checkUsernameDuplicateService,
+  signup,
+  setupTotp,
+  confirmTotp,
+  ApiError
+} from "../../services";
 import { setAccessToken } from "../../utils/token";
 
 interface AuthConfig {
@@ -133,7 +135,7 @@ export const useSignupWizard = ({
   const checkUsernameDuplicate = async (uname: string) => {
     if (!uname || !validateUsername(uname)) return;
     try {
-      const exists = await checkUsernameDuplicateApi(uname);
+      const exists = await checkUsernameDuplicateService(uname);
       if (exists) {
         setError(t("auth.usernameExists"));
       } else {
@@ -154,7 +156,7 @@ export const useSignupWizard = ({
     setLoading(true);
     setError("");
     try {
-      const exists = await checkUsernameDuplicateApi(username);
+      const exists = await checkUsernameDuplicateService(username);
       if (exists) {
         setError(t("auth.usernameExists"));
       } else {
@@ -171,7 +173,7 @@ export const useSignupWizard = ({
     setTotpSetupLoading(true);
     setTotpSetupError("");
     try {
-      const data = await startSignupTotpSetupApi();
+      const data = await setupTotp();
       setTotpSetupData(data);
       setSignupStep("totp");
     } catch (e) {
@@ -188,10 +190,15 @@ export const useSignupWizard = ({
     setTotpSetupLoading(true);
     setTotpSetupError("");
     try {
-      const data = await confirmSignupTotpApi(
-        totpSetupData.secret,
-        totpSetupToken
-      );
+      const rawToken = totpSetupToken.replace(/\s/g, "");
+      const salt = crypto.randomUUID();
+      const hashHex = await hashTotpToken(rawToken, salt);
+
+      const data = await confirmTotp({
+        secret: totpSetupData.secret,
+        totpTokenHash: hashHex,
+        salt
+      });
       setTotpRecoveryKeys(data.recovery_keys);
       setSignupStep("recovery");
     } catch (err: any) {
@@ -227,32 +234,33 @@ export const useSignupWizard = ({
     setLoading(true);
     setError("");
     try {
-      const res = await signupSubmitApi({
+      const data = await signup({
         username,
         password,
         turnstileToken
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accessToken) {
-          setAccessToken(data.accessToken);
-        }
-        await startSignupTotpSetup();
-      } else {
-        const msg = await res.text();
-        if (isPasswordLeaked(res, msg)) {
-          setError(t("auth.passwordLeaked"));
-        } else if (msg === "username_exists") {
-          setError(t("auth.usernameExists"));
-        } else {
-          setError(msg || t("auth.authFailed"));
-        }
-        if (window.turnstile) window.turnstile.reset();
-        setTurnstileToken(null);
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
       }
-    } catch (err) {
-      setError(t("auth.networkError"));
+      await startSignupTotpSetup();
+    } catch (err: any) {
+      if (err instanceof ApiError) {
+        const fakeRes = { status: err.status } as Response;
+        if (isPasswordLeaked(fakeRes, err.bodyText)) {
+          setError(t("auth.passwordLeaked"));
+        } else if (err.bodyText === "username_exists") {
+          setError(t("auth.usernameExists"));
+        } else if (err.bodyText === "geolocation_missing") {
+          setError(t("auth.geolocationRequired"));
+        } else {
+          setError(err.bodyText || t("auth.authFailed"));
+        }
+      } else {
+        setError(t("auth.networkError"));
+      }
+      if (window.turnstile) window.turnstile.reset();
+      setTurnstileToken(null);
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,8 @@ import { Card, Elevation, H4, FormGroup, InputGroup, Switch, Divider, Button, In
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { updateSystemSettings } from "../../../services";
+
 export interface SystemSettingsCardProps {
   initialSettings: Record<string, string>;
   onRefresh: () => void;
@@ -21,11 +23,7 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
   const handleSaveSysSettings = async () => {
     setSysLoading(true);
     try {
-      await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sysSettings),
-      });
+      await updateSystemSettings(sysSettings);
       alert(t("common.saveSuccess", "Settings saved"));
       onRefresh();
     } catch (e) {
