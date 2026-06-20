@@ -222,5 +222,5 @@ Whether you're protecting a single device or managing DNS for your family, Obex 
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>If Obex DNS is useful to you, please consider giving it a ⭐ — your support makes a real difference!</b>
+  <b>If Obex DNS is useful to you, please consider giving it a ⭐</b>
 </div>
