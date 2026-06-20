@@ -23,8 +23,9 @@ database_id = ""
 crons = ["0 * * * *"]
 
 [placement]
-mode = "targeted"
-region = "aws:ap-southeast-1"
+# mode = "targeted"
+# region = "aws:ap-southeast-1"
+mode = "smart"
 
 [observability]
 enabled = true
