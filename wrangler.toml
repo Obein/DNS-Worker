@@ -16,7 +16,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "obex_db"
-# This field is required!
+# This field must be filled with your database ID; otherwise the deployment will fail.
 database_id = "13d8c24f-064a-40d6-8b10-fa70bb3f79ab"
 
 [triggers]

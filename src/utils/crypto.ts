@@ -1,7 +1,15 @@
 /**
  * Simple PBKDF2 implementation using Web Crypto API for Cloudflare Workers
+ * - Uses SHA-256 with 100,000 iterations for password hashing (configurable)
+ * - Generates a random 16-byte salt for each password
+ * - Stores the salt and hash together in a base64-encoded string
+ * - Provides functions for hashing and verifying passwords
+ *
+ * Note: In a production environment, consider using a well-established library like bcrypt or argon2. 
+ * @param password - The plaintext password to hash.
+ * @param version - The hashing version to use (default 1). Version 2 uses fewer iterations for faster hashing.
+ * @returns A base64-encoded string containing the salt and hash for storage.
  */
-
 export async function hashPassword(password: string, version: number = 1): Promise<string> {
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password);
