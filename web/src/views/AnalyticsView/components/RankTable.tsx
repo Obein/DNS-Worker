@@ -8,8 +8,37 @@ export interface RankTableProps {
   intent: Intent;
 }
 
+interface ColumnConfig {
+  key: string;
+  cellClassName?: string;
+  render: (row: { domain: string; count: number }, index: number) => React.ReactNode;
+}
+
 export const RankTable: React.FC<RankTableProps> = ({ title, data, intent }) => {
   const { t } = useTranslation();
+
+  const columns: ColumnConfig[] = [
+    {
+      key: "rank",
+      cellClassName: "w-8 opacity-30 font-mono text-xs",
+      render: (_: { domain: string; count: number }, i: number): React.ReactNode => i + 1,
+    },
+    {
+      key: "domain",
+      cellClassName: "font-medium text-sm truncate max-w-50",
+      render: (d: { domain: string; count: number }): React.ReactNode => d.domain,
+    },
+    {
+      key: "count",
+      cellClassName: "text-right",
+      render: (d: { domain: string; count: number }): React.ReactNode => (
+        <Tag minimal intent={intent} className="font-bold">
+          {d.count}
+        </Tag>
+      ),
+    },
+  ];
+
   return (
     <Card elevation={Elevation.ZERO} className="dark:bg-gray-900 dark:border-gray-800 border border-gray-100 shadow-sm">
       <H5 className="mb-4 font-bold">{title}</H5>
@@ -17,18 +46,16 @@ export const RankTable: React.FC<RankTableProps> = ({ title, data, intent }) => 
         <tbody>
           {data.map((d, i) => (
             <tr key={i}>
-              <td className="w-8 opacity-30 font-mono text-xs">{i + 1}</td>
-              <td className="font-medium text-sm truncate max-w-50">{d.domain}</td>
-              <td className="text-right">
-                <Tag minimal intent={intent} className="font-bold">
-                  {d.count}
-                </Tag>
-              </td>
+              {columns.map((col) => (
+                <td key={col.key} className={col.cellClassName}>
+                  {col.render(d, i)}
+                </td>
+              ))}
             </tr>
           ))}
           {data.length === 0 && (
             <tr>
-              <td colSpan={3} className="text-center py-8 opacity-50">
+              <td colSpan={columns.length} className="text-center py-8 opacity-50">
                 {t("analytics.noData")}
               </td>
             </tr>
