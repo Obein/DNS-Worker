@@ -9,9 +9,21 @@
 export const CACHE_NAME = "obex-dns-icons-v1";
 export const DUCKDUCKGO_ICON_PREFIX = "https://icons.duckduckgo.com/ip3/";
 
+/**
+ * Number of days after which a cached icon entry is considered expired and
+ * will be purged by cleanExpiredCache(). Entries older than this are deleted;
+ * entries between half this value and this value are served stale while a
+ * background revalidation is queued (stale-while-revalidate).
+ *
+ * Reducing this value directly reduces the maximum Cache Storage footprint.
+ */
+export const ICON_ENTRIES_CACHE_DAYS = 30;
+
 export const ONE_DAY = 24 * 60 * 60 * 1000;
-export const SEVEN_DAYS = 7 * ONE_DAY;
-export const THIRTY_DAYS = 30 * ONE_DAY;
+/** Fresh threshold: icons younger than this are served directly without revalidation. */
+export const ICON_FRESH_THRESHOLD = Math.floor(ICON_ENTRIES_CACHE_DAYS / 2) * ONE_DAY;
+/** Expiry threshold: icons older than this are removed by the cleanup sweep. */
+export const ICON_EXPIRY_THRESHOLD = ICON_ENTRIES_CACHE_DAYS * ONE_DAY;
 
 // An elegant, lightweight SVG placeholder showing a generic globe icon
 export const PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>`;
@@ -90,20 +102,20 @@ export async function handleIconFetch(event: FetchEvent): Promise<Response> {
   if (cachedResponse) {
     const age = await getCacheAge(cache, event.request);
 
-    // Fresh cache (< 7 days): return immediately, no network request.
-    if (age < SEVEN_DAYS) {
+    // Fresh cache: return immediately, no network request.
+    if (age < ICON_FRESH_THRESHOLD) {
       return cachedResponse;
     }
 
-    // Stale cache (7-30 days): return immediately, fetch/update in background.
-    if (age < THIRTY_DAYS) {
+    // Stale cache (between fresh threshold and expiry): serve immediately,
+    // trigger a background revalidation — do NOT cache 404 placeholders.
+    if (age < ICON_EXPIRY_THRESHOLD) {
       fetchIcon(event.request.url)
         .then((networkResponse) => {
-          if (networkResponse.ok || networkResponse.status === 0) {
+          if (networkResponse && (networkResponse.ok || networkResponse.status === 0)) {
             putInCache(cache, event.request, networkResponse);
-          } else if (networkResponse.status === 404) {
-            putInCache(cache, event.request, getPlaceholderResponse());
           }
+          // 404 → let the stale cached entry remain until it expires naturally
         })
         .catch(() => {
           /* Ignore background update errors */
@@ -115,19 +127,15 @@ export async function handleIconFetch(event: FetchEvent): Promise<Response> {
   // Expired or not cached: fetch from network.
   try {
     const networkResponse = await fetchIcon(event.request.url);
-    if (networkResponse.ok || networkResponse.status === 0) {
+    if (networkResponse && (networkResponse.ok || networkResponse.status === 0)) {
       await putInCache(cache, event.request, networkResponse.clone());
       return networkResponse;
-    } else if (networkResponse.status === 404) {
-      const placeholder = getPlaceholderResponse();
-      await putInCache(cache, event.request, placeholder.clone());
-      return placeholder;
     }
-    return cachedResponse || getPlaceholderResponse();
-  } catch (err) {
-    const placeholder = getPlaceholderResponse();
-    await putInCache(cache, event.request, placeholder.clone());
-    return cachedResponse || placeholder;
+    // 404 or other error → return in-memory placeholder, do NOT persist to cache.
+    // This prevents accumulating timestamp+body entries for domains with no icon.
+    return cachedResponse ?? getPlaceholderResponse();
+  } catch {
+    return cachedResponse ?? getPlaceholderResponse();
   }
 }
 
@@ -144,14 +152,13 @@ export function handleIconPrefetch(domains: string[] = []): void {
         if (!res) {
           fetchIcon(url)
             .then((networkResponse) => {
-              if (networkResponse.ok || networkResponse.status === 0) {
+              // Only cache successfully retrieved icons; skip 404s and errors.
+              if (networkResponse && (networkResponse.ok || networkResponse.status === 0)) {
                 putInCache(cache, request, networkResponse);
-              } else if (networkResponse.status === 404) {
-                putInCache(cache, request, getPlaceholderResponse());
               }
             })
             .catch(() => {
-              putInCache(cache, request, getPlaceholderResponse());
+              /* Prefetch failures are silently ignored */
             });
         }
       });
@@ -176,7 +183,8 @@ export async function cleanExpiredCache(): Promise<void> {
       if (tsRes) {
         const cachedTimeText = await tsRes.text();
         const cachedTime = parseInt(cachedTimeText, 10);
-        if (!isNaN(cachedTime) && now - cachedTime > THIRTY_DAYS) {
+        // Delete entries that have exceeded the configured expiry threshold.
+        if (!isNaN(cachedTime) && now - cachedTime > ICON_EXPIRY_THRESHOLD) {
           const resourceUrl = tsReq.url.split("?")[0];
           await cache.delete(new Request(resourceUrl));
           await cache.delete(tsReq);
