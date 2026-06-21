@@ -10,13 +10,13 @@ import {
   handleIconFetch,
   handleIconPrefetch,
   cleanExpiredCache,
+  cleanOldCaches,
 } from "./sw-icon-cache.ts";
 import {
   isLogDetailRequest,
   handleLogDetailFetch,
   cleanExpiredLogCache,
 } from "./sw-log-cache.ts";
-
 // TypeScript declaration for Service Worker global scope
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: any;
@@ -28,12 +28,12 @@ void self.__WB_MANIFEST;
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
-
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     Promise.all([
       self.clients.claim(),
       cleanExpiredCache(),
+      cleanOldCaches(),
       cleanExpiredLogCache()
     ])
   );

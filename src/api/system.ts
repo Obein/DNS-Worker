@@ -113,5 +113,30 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     return new Response(JSON.stringify(filters), { headers: { 'Content-Type': 'application/json' } });
   }
 
+  if (url.pathname.startsWith('/api/icon/')) {
+    const domain = url.pathname.replace('/api/icon/', '');
+    if (!domain) {
+      return new Response("Missing domain", { status: 400 });
+    }
+    
+    // Proxy request to DuckDuckGo
+    const targetUrl = `https://icons.duckduckgo.com/ip3/${domain}`;
+    try {
+      const iconRes = await fetch(targetUrl);
+      
+      const newHeaders = new Headers(iconRes.headers);
+      newHeaders.set('Cache-Control', 'public, max-age=2592000'); // 30 days
+      newHeaders.delete('Access-Control-Allow-Origin'); // Ensure no upstream wildcard bleeds through
+      
+      return new Response(iconRes.body, {
+        status: iconRes.status,
+        statusText: iconRes.statusText,
+        headers: newHeaders
+      });
+    } catch (e) {
+      return new Response("Error fetching icon", { status: 500 });
+    }
+  }
+
   return new Response("Not Found", { status: 404 });
 }

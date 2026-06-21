@@ -88,7 +88,7 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
                   value={
                     <div className="flex items-center gap-2 justify-end font-bold">
                       <img
-                        src={`https://icons.duckduckgo.com/ip3/${selectedLog.domain.replace(/^\*\./, "")}.ico`}
+                        src={`/api/icon/${selectedLog.domain.replace(/^\*\./, "")}.ico`}
                         className="w-4 h-4 rounded-sm"
                         alt=""
                         referrerPolicy="no-referrer"

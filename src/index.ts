@@ -45,7 +45,7 @@ export default {
         const isPublicRoute = [
           '/api/auth/login', '/api/auth/signup', '/api/auth/prelogin', '/api/auth/check-username',
           '/api/clientinfo', '/api/regions'
-        ].includes(url.pathname);
+        ].includes(url.pathname) || url.pathname.startsWith('/api/icon/');
         const isMobileConfigRoute = url.pathname.endsWith('/mobileconfig');
 
         // Check authentication boundary
@@ -66,7 +66,8 @@ export default {
           url.pathname === '/api/regions' ||
           url.pathname === '/api/substitute' ||
           url.pathname === '/api/presets/upstreams' ||
-          url.pathname === '/api/presets/filters'
+          url.pathname === '/api/presets/filters' ||
+          url.pathname.startsWith('/api/icon/')
         ) {
           return handleSystemRequest(request, env);
         }

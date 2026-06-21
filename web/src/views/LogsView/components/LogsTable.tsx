@@ -74,7 +74,7 @@ export const LogsTable: React.FC<LogsTableProps> = ({
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2 truncate">
                       <img
-                        src={`https://icons.duckduckgo.com/ip3/${log.domain.replace(/^\*\./, "")}.ico`}
+                        src={`/api/icon/${log.domain.replace(/^\*\./, "")}.ico`}
                         className="w-4 h-4 rounded-sm"
                         alt=""
                         referrerPolicy="no-referrer"

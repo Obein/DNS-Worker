@@ -6,8 +6,8 @@
  * fallback to an SVG placeholder on 404 errors or network failures.
  */
 
-export const CACHE_NAME = "obex-dns-icons-v1";
-export const DUCKDUCKGO_ICON_PREFIX = "https://icons.duckduckgo.com/ip3/";
+export const CACHE_NAME = "obex-dns-icons-v2";
+export const DUCKDUCKGO_ICON_PREFIX = "/api/icon/";
 
 /**
  * Number of days after which a cached icon entry is considered expired and
@@ -193,5 +193,21 @@ export async function cleanExpiredCache(): Promise<void> {
     }
   } catch (err) {
     console.error("Failed to execute service worker cache cleanup:", err);
+  }
+}
+
+/**
+ * Cleans up old cache versions that no longer match the current CACHE_NAME.
+ */
+export async function cleanOldCaches(): Promise<void> {
+  try {
+    const keys = await caches.keys();
+    for (const key of keys) {
+      if (key.startsWith("obex-dns-icons-") && key !== CACHE_NAME) {
+        await caches.delete(key);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to clean up old caches:", err);
   }
 }

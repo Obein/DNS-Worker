@@ -41,7 +41,7 @@ export const LogsList: React.FC<LogsListProps> = ({
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2 min-w-0">
               <img
-                src={`https://icons.duckduckgo.com/ip3/${log.domain.replace(/^\*\./, "")}.ico`}
+                src={`/api/icon/${log.domain.replace(/^\*\./, "")}.ico`}
                 className="w-4 h-4 rounded-sm shrink-0"
                 alt=""
                 referrerPolicy="no-referrer"
