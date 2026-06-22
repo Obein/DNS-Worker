@@ -101,7 +101,7 @@ export const IdleSessionLock: React.FC<IdleSessionLockProps> = ({
     setLoading(true);
     setError("");
     try {
-      const pinHash = await hashPin(pinToSubmit);
+      const pinHash = await hashPin(pinToSubmit, currentUser?.id || "");
       await unlockSession(pinHash);
       
       // Success! Unlock session

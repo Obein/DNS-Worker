@@ -75,7 +75,7 @@ export const SessionLockCard: React.FC<SessionLockCardProps> = ({ user, onRefres
   };
 
   return (
-    <Card elevation={Elevation.ONE} className="mb-4">
+    <Card elevation={Elevation.ONE}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ShieldCheck size={20} className="text-indigo-600" />

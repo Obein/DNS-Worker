@@ -146,61 +146,16 @@ export async function hmacSha256(key: string | Uint8Array, data: string | Uint8A
 }
 
 /**
- * Hashes the client's PIN hash on the server using a random salt.
- * Returns a base64 string combining 16-byte salt and 32-byte SHA-256 hash.
+ * Hashes the client's PIN hash on the server reusing the server-side password hashing scheme (100,000 iterations).
  */
 export async function hashPinServer(clientPinHash: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const msgBuffer = new TextEncoder().encode(clientPinHash);
-  
-  // Combine salt and clientPinHash bytes
-  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-  const msgWithSalt = new TextEncoder().encode(clientPinHash + saltHex);
-  
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgWithSalt);
-  
-  const combined = new Uint8Array(salt.length + hashBuffer.byteLength);
-  combined.set(salt);
-  combined.set(new Uint8Array(hashBuffer), salt.length);
-  
-  return btoa(String.fromCharCode(...combined));
+  return hashPassword(clientPinHash, 2);
 }
 
 /**
  * Verifies the client's PIN hash against the stored server PIN hash.
  */
 export async function verifyPinServer(clientPinHash: string, storedPinHash: string): Promise<boolean> {
-  try {
-    const binaryString = atob(storedPinHash);
-    const combined = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      combined[i] = binaryString.charCodeAt(i);
-    }
-    
-    if (combined.length !== 48) {
-      return false;
-    }
-    
-    const salt = combined.slice(0, 16);
-    const storedHash = combined.slice(16);
-    
-    const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-    const msgWithSalt = new TextEncoder().encode(clientPinHash + saltHex);
-    
-    const computedHashBuffer = await crypto.subtle.digest('SHA-256', msgWithSalt);
-    const computedHash = new Uint8Array(computedHashBuffer);
-    
-    if (computedHash.length !== storedHash.length) {
-      return false;
-    }
-    
-    let result = 0;
-    for (let i = 0; i < computedHash.length; i++) {
-      result |= computedHash[i] ^ storedHash[i];
-    }
-    return result === 0;
-  } catch (e) {
-    return false;
-  }
+  return verifyPassword(clientPinHash, storedPinHash);
 }
 

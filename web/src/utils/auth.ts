@@ -206,12 +206,9 @@ export async function hmacSha256(key: string, data: string): Promise<string> {
 }
 
 /**
- * Computes the SHA-256 hash of a 4-digit PIN for session locking.
+ * Computes the PBKDF2 client hash of a 4-digit PIN for session locking,
+ * reusing the client-side password hashing scheme (600,000 iterations).
  */
-export async function hashPin(pin: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(pin);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+export async function hashPin(pin: string, salt: string): Promise<string> {
+  return hashPasswordClient(pin, salt);
 }

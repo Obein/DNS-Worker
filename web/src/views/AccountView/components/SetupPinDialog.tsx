@@ -55,7 +55,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
     setError("");
 
     try {
-      const pinHashValue = await hashPin(newPin);
+      const pinHashValue = await hashPin(newPin, user?.id || "");
       
       const verificationPayload: { password?: string; totpTokenHash?: string; totpSalt?: string } = {};
       if (user?.totp_enabled && useTotpForVerify) {
@@ -184,6 +184,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
                 onChange={setVerifyTotp}
                 disabled={loading}
                 onComplete={(val) => handleSetupPin(undefined, val)}
+                autoFocus
               />
             </FormGroup>
           ) : (
