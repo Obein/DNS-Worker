@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 
 interface DigitInputProps {
   length: number;
@@ -8,18 +8,30 @@ interface DigitInputProps {
   type?: "text" | "password";
   error?: boolean;
   autoFocus?: boolean;
+  onComplete?: () => void;
 }
 
-export const DigitInput: React.FC<DigitInputProps> = ({
+export interface DigitInputRef {
+  focus: () => void;
+}
+
+export const DigitInput = forwardRef<DigitInputRef, DigitInputProps>(({
   length,
   value,
   onChange,
   disabled = false,
   type = "text",
   error = false,
-  autoFocus = false
-}) => {
+  autoFocus = false,
+  onComplete
+}, ref) => {
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputsRef.current[0]?.focus();
+    }
+  }));
 
   // Initialize or update the refs array size when length changes
   useEffect(() => {
@@ -52,6 +64,8 @@ export const DigitInput: React.FC<DigitInputProps> = ({
     // Auto-focus next box
     if (index < length - 1) {
       inputsRef.current[index + 1]?.focus();
+    } else if (joined.length === length) {
+      onComplete?.();
     }
   };
 
@@ -86,6 +100,10 @@ export const DigitInput: React.FC<DigitInputProps> = ({
       // Focus the last input box or the next empty one
       const focusIndex = Math.min(cleaned.length, length - 1);
       inputsRef.current[focusIndex]?.focus();
+      
+      if (cleaned.length === length) {
+        onComplete?.();
+      }
     }
   };
 
@@ -117,4 +135,6 @@ export const DigitInput: React.FC<DigitInputProps> = ({
       ))}
     </div>
   );
-};
+});
+
+DigitInput.displayName = "DigitInput";

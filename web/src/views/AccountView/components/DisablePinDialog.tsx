@@ -35,8 +35,8 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleClearPin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleClearPin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -121,6 +121,7 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
                 value={verifyTotp}
                 onChange={setVerifyTotp}
                 disabled={loading}
+                onComplete={() => handleClearPin()}
               />
             </FormGroup>
           ) : (

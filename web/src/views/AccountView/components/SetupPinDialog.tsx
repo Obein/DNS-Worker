@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -13,7 +13,7 @@ import {
 import { hashPasswordClient, hashPin, hashTotpToken } from "../../../utils/auth";
 import { setPin } from "../../../services";
 import type { UserInfo } from "../../../services";
-import { DigitInput } from "../../../components/DigitInput";
+import { DigitInput, type DigitInputRef } from "../../../components/DigitInput";
 
 interface SetupPinDialogProps {
   isOpen: boolean;
@@ -37,8 +37,11 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSetupPin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const confirmPinRef = useRef<DigitInputRef>(null);
+  const totpRef = useRef<DigitInputRef>(null);
+
+  const handleSetupPin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
       setError(t("auth.pinFormatTip", "PIN must be exactly 4 digits"));
       return;
@@ -127,16 +130,25 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
               type="password"
               disabled={loading}
               autoFocus
+              onComplete={() => confirmPinRef.current?.focus()}
             />
           </FormGroup>
 
           <FormGroup label={t("auth.confirmPin", "Confirm New PIN")} labelFor="confirm-pin-input">
             <DigitInput
+              ref={confirmPinRef}
               length={4}
               value={confirmPin}
               onChange={setConfirmPin}
               type="password"
               disabled={loading}
+              onComplete={() => {
+                if (user?.totp_enabled && useTotpForVerify) {
+                  totpRef.current?.focus();
+                } else {
+                  document.getElementById("verify-pw-input")?.focus();
+                }
+              }}
             />
           </FormGroup>
 
@@ -159,11 +171,12 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
           {user?.totp_enabled && useTotpForVerify ? (
             <FormGroup label={t("auth.totpCode", "2FA Code")} labelFor="verify-totp-input">
               <DigitInput
+                ref={totpRef}
                 length={6}
                 value={verifyTotp}
                 onChange={setVerifyTotp}
                 disabled={loading}
-                autoFocus
+                onComplete={() => handleSetupPin()}
               />
             </FormGroup>
           ) : (
