@@ -81,24 +81,34 @@ export class LogModel {
   }
 
   /**
-   * 全局清理过期日志 (基于各 Profile 的 settings)
-   * 这是一个更重的操作，建议优化为单个 SQL
+   * 全局清理过期日志 (基于各个 Profile 的 settings)
+   * 采用 Profile 逐个清理的方式，能完美利用 idx_logs_profile_time (profile_id, timestamp) 索引，避免全表扫描。
    */
   async cleanupGlobal(): Promise<void> {
-    // 这里的逻辑比较复杂，因为每个 Profile 的保留天数不同
-    // 我们先查询出所有不同的天数配置，并使用 CAST 确保其为数字/NULL
-    const { results } = await this.db.prepare(
-      "SELECT DISTINCT CAST(json_extract(settings, '$.log_retention_days') AS INTEGER) as days FROM profiles"
-    ).all<{days: number | null}>();
+    // 获取所有 profile 以及对应的 settings
+    const { results: profiles } = await this.db.prepare(
+      "SELECT id, settings FROM profiles"
+    ).all<{id: string, settings: string}>();
     
-    for (const row of results) {
-      const days = row.days !== null ? Number(row.days) : 30;
+    // 针对每个 profile，解析出保留天数并删除过期日志
+    for (const profile of profiles) {
+      let days = 30;
+      try {
+        const settings = JSON.parse(profile.settings);
+        if (settings && settings.log_retention_days !== undefined && settings.log_retention_days !== null) {
+          days = Number(settings.log_retention_days);
+        }
+      } catch (e) {
+        // 忽略解析错误，使用默认的 30 天
+      }
+      
       const threshold = Math.floor(Date.now() / 1000 - (days * 24 * 3600));
-      // 清理所有设置为该天数的 Profile 的过期日志，并在 SQL 中使用 CAST 比较以避免 SQLite 的类型差异问题
+      
+      // 此查询完美利用了 (profile_id, timestamp) 联合索引，执行效率极高
       await this.db.prepare(
-        "DELETE FROM logs WHERE timestamp < ? AND profile_id IN (SELECT id FROM profiles WHERE CAST(json_extract(settings, '$.log_retention_days') AS INTEGER) = ? OR (? = 30 AND json_extract(settings, '$.log_retention_days') IS NULL))"
+        "DELETE FROM logs WHERE profile_id = ? AND timestamp < ?"
       )
-        .bind(threshold, days, days)
+        .bind(profile.id, threshold)
         .run();
     }
   }
