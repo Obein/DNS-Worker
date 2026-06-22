@@ -85,7 +85,13 @@ window.fetch = async function (input, init) {
     }
   }
 
-  if (isApi && response.status === 401 && !url.includes("/api/auth/")) {
+  const shouldRefresh = isApi && response.status === 401 && (
+    !url.includes("/api/auth/") || 
+    url.includes("/api/auth/unlock-session") || 
+    url.includes("/api/auth/lock-session")
+  );
+
+  if (shouldRefresh) {
     if (!isRefreshing) {
       isRefreshing = true;
       originalFetch("/api/auth/refresh", { method: "POST" }).then(async (refreshRes) => {

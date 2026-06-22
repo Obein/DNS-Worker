@@ -151,7 +151,7 @@ export const IdleSessionLock: React.FC<IdleSessionLockProps> = ({
   if (isLocked) {
     return (
       <div 
-        className="fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4"
+        className="fixed inset-0 z-9999 flex flex-col items-center justify-center p-4"
         style={{
           background: "radial-gradient(circle at center, #1b202e 0%, #0d0f14 100%)",
           fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
