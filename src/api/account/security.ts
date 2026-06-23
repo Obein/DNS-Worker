@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { hashPassword, verifyPassword, hashPinServer } from "../../utils/crypto";
+import { hashPassword, verifyPassword, hashPinServer, generateSessionHash } from "../../utils/crypto";
 import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -21,6 +21,8 @@ export async function handleSecurityRequest(
   const userAgent = request.headers.get("User-Agent");
   const action = pathParts[2];
 
+  const sessionHash = user.sessionId ? await generateSessionHash(user.sessionId, user.id) : null;
+
   // POST /api/account/password (password change)
   if (action === 'password' && request.method === 'POST') {
     const { oldPassword, totpTokenHash, totpSalt, newPassword } = await request.json() as any;
@@ -36,7 +38,7 @@ export async function handleSecurityRequest(
     if (totpTokenHash && dbUser.totp_enabled && dbUser.totp_secret) {
       authenticated = await verifyTOTP(dbUser.totp_secret, totpTokenHash, totpSalt);
       if (!authenticated) {
-        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'invalid_totp' });
+        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'invalid_totp' }, sessionHash);
         return new Response("Invalid TOTP code", { status: 400 });
       }
     } 
@@ -44,7 +46,7 @@ export async function handleSecurityRequest(
     else if (oldPassword) {
       authenticated = await verifyPassword(oldPassword, dbUser.hashed_password, dbUser.password_version ?? 1);
       if (!authenticated) {
-        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'wrong_current_password' });
+        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'wrong_current_password' }, sessionHash);
         return new Response("Current password is incorrect", { status: 400 });
       }
     } 
@@ -54,7 +56,7 @@ export async function handleSecurityRequest(
 
     const hashedPassword = await hashPassword(newPassword, 2);
     await userModel.updatePassword(user.id, hashedPassword, 2);
-    await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: totpTokenHash ? 'totp' : 'password' });
+    await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: totpTokenHash ? 'totp' : 'password' }, sessionHash);
     return new Response(JSON.stringify({ success: true }));
   }
 
@@ -70,7 +72,7 @@ export async function handleSecurityRequest(
     if ((dbUser.password_version ?? 1) === 1) {
       const hashedPassword = await hashPassword(clientHash, 2);
       await userModel.updatePassword(user.id, hashedPassword, 2);
-      await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: 'migration' });
+      await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: 'migration' }, sessionHash);
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -106,7 +108,7 @@ export async function handleSecurityRequest(
       const hashedKeys = await Promise.all(plaintextKeys.map(hashRecoveryKey));
 
       await userModel.updateTOTP(user.id, secret, hashedKeys);
-      await activityLog.record(user.id, 'totp_setup', clientIp, userAgent);
+      await activityLog.record(user.id, 'totp_setup', clientIp, userAgent, undefined, sessionHash);
 
       return new Response(JSON.stringify({ success: true, recovery_keys: plaintextKeys }), {
         headers: { 'Content-Type': 'application/json' }
@@ -138,7 +140,7 @@ export async function handleSecurityRequest(
       }
 
       await userModel.removeTOTP(user.id);
-      await activityLog.record(user.id, 'totp_removed', clientIp, userAgent);
+      await activityLog.record(user.id, 'totp_removed', clientIp, userAgent, undefined, sessionHash);
       return new Response(JSON.stringify({ success: true }));
     }
   }

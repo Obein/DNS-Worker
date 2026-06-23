@@ -1,5 +1,5 @@
 import { Env } from "../../types";
-import { getOrCreateJwtSecret } from "../../lib/auth";
+import { getOrCreateJwtSecret, generateSessionHash } from "../../lib/auth";
 import { importJwtSecret, verifyJWT } from "../../lib/jwt";
 import { verifyPinServer } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
@@ -52,6 +52,7 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       const failedAttemptsState = await cacheUtils.get<{ count: number }>(cache, cacheKey);
       const failedAttempts = failedAttemptsState?.count || 0;
 
+      const sessionHash = await generateSessionHash(session.id, payload.userId);
       const isPinValid = await verifyPinServer(pinHash, dbUser.pin_hash);
       if (!isPinValid) {
         const nextFailedCount = failedAttempts + 1;
@@ -59,14 +60,14 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
           // 超过 3 次失败，销毁 Session 强制登出
           await sessionModel.deleteSession(session.id);
           await cacheUtils.delete(cache, cacheKey);
-          await activityLog.record(payload.userId, 'pin_verify_fail', clientIp, userAgent, { reason: 'too_many_attempts' });
+          await activityLog.record(payload.userId, 'pin_verify_fail', clientIp, userAgent, { reason: 'too_many_attempts' }, sessionHash);
           return new Response(JSON.stringify({ success: false, error: "too_many_attempts" }), {
             status: 401,
             headers: { "Content-Type": "application/json" }
           });
         }
         await cacheUtils.set(cache, cacheKey, { count: nextFailedCount }, 900); // 15分钟锁定追踪
-        await activityLog.record(payload.userId, 'pin_verify_fail', clientIp, userAgent, { reason: 'incorrect_pin', attempt: nextFailedCount });
+        await activityLog.record(payload.userId, 'pin_verify_fail', clientIp, userAgent, { reason: 'incorrect_pin', attempt: nextFailedCount }, sessionHash);
         return new Response(JSON.stringify({
           success: false,
           error: "incorrect_pin",
@@ -81,7 +82,7 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       const now = Math.floor(Date.now() / 1000);
       await sessionModel.resumeSession(session.id, now);
       await cacheUtils.delete(cache, cacheKey);
-      await activityLog.record(payload.userId, 'pin_verify_success', clientIp, userAgent);
+      await activityLog.record(payload.userId, 'pin_verify_success', clientIp, userAgent, undefined, sessionHash);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" }

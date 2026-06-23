@@ -1,7 +1,8 @@
 import { Env } from "../../types";
 import {
   readRefreshTokenCookie, createBlankRefreshTokenCookie,
-  createRefreshTokenCookie, getOrCreateJwtSecret, rotateSession
+  createRefreshTokenCookie, getOrCreateJwtSecret, rotateSession,
+  parseRefreshTokenString, generateSessionHash
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -29,7 +30,9 @@ export async function handleRefreshRequest(request: Request, env: Env): Promise<
 
   if (!session || !user || !newRefreshToken) {
     if (user) {
-      await activityLog.record(user.id, 'logout', clientIp, userAgent, { reason: reason || 'unknown' });
+      const parsed = refreshToken ? parseRefreshTokenString(refreshToken) : null;
+      const sessionHash = parsed ? await generateSessionHash(parsed.sid, user.id) : null;
+      await activityLog.record(user.id, 'logout', clientIp, userAgent, { reason: reason || 'unknown' }, sessionHash);
     }
     await cacheUtils.isRateLimited(cache, `refresh_fail:${clientIp}`, 100, 60);
     return new Response(JSON.stringify({ error: "Invalid refresh token", reason: reason || "unknown" }), { 

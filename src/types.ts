@@ -1,4 +1,5 @@
 import { D1Database, ExecutionContext as CFExecutionContext } from "@cloudflare/workers-types";
+import { SystemSecretsModel } from "./models/systemSecrets";
 
 export interface Env {
   DB: D1Database;

@@ -479,10 +479,14 @@
       "copied": "已複製！",
       "done": "完成，我已保存密鑰"
     },
+    "sessions": {
+      "session": "會話"
+    },
     "activity": {
       "title": "帳號活動記錄",
       "action": "事件",
       "time": "時間",
+      "session": "會話",
       "ip": "IP 位址",
       "empty": "暫無活動記錄。",
       "loadMore": "載入更多",

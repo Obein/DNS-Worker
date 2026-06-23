@@ -21,6 +21,7 @@ export interface ActivityEntry {
   user_agent: string | null;
   timestamp: number;
   extra: string | null;
+  session_id_hash: string | null;
 }
 
 export interface SessionInfo {

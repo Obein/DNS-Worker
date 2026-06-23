@@ -4,7 +4,8 @@ import {
   createSession, createRefreshTokenCookie,
   getRequestCoordinates,
   createCsrfCookie,
-  getOrCreateJwtSecret
+  getOrCreateJwtSecret,
+  generateSessionHash
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { hashPassword } from "../../utils/crypto";
@@ -62,12 +63,13 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
   try {
     const role = (await userModel.isEmpty()) ? 'admin' : 'user';
     await userModel.create({ id: userId, username, passwordHash: hashedPassword, role, timezone, passwordVersion: 2 });
-    await activityLog.record(userId, 'signup', clientIp, userAgent);
     const { latitude, longitude } = getRequestCoordinates(request);
     if (latitude === null || longitude === null) {
       return new Response("geolocation_missing", { status: 400 });
     }
     const { session, refreshToken } = await createSession(env, userId, clientIp, userAgent, latitude, longitude, false);
+    const sessionHash = await generateSessionHash(session.id, userId);
+    await activityLog.record(userId, 'signup', clientIp, userAgent, undefined, sessionHash);
     const refreshCookie = createRefreshTokenCookie(refreshToken, env, false);
     const csrfToken = generateId(32);
     const csrfCookie = createCsrfCookie(csrfToken, env, false);

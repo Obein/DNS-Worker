@@ -1,6 +1,7 @@
 import { Env } from "../../types";
 import {
-  readRefreshTokenCookie, parseRefreshTokenString, invalidateSession, createBlankRefreshTokenCookie
+  readRefreshTokenCookie, parseRefreshTokenString, invalidateSession, createBlankRefreshTokenCookie,
+  generateSessionHash
 } from "../../lib/auth";
 import { SessionModel } from "../../models/session";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -21,7 +22,8 @@ export async function handleLogoutRequest(request: Request, env: Env): Promise<R
       const userId = await sessionModel.getSessionUserId(parsed.sid);
       await invalidateSession(env, parsed.sid);
       if (userId) {
-        await activityLog.record(userId, 'logout', clientIp, userAgent, { reason: 'user_active' });
+        const sessionHash = await generateSessionHash(parsed.sid, userId);
+        await activityLog.record(userId, 'logout', clientIp, userAgent, { reason: 'user_active' }, sessionHash);
       }
     }
   }

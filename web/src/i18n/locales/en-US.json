@@ -479,10 +479,14 @@
       "copied": "Copied!",
       "done": "Done — I've saved my keys"
     },
+    "sessions": {
+      "session": "Session"
+    },
     "activity": {
       "title": "Account Activity",
       "action": "Event",
       "time": "Time",
+      "session": "Session",
       "ip": "IP Address",
       "empty": "No activity recorded yet.",
       "loadMore": "Load More",

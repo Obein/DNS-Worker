@@ -479,10 +479,14 @@
       "copied": "已复制！",
       "done": "完成，我已保存密钥"
     },
+    "sessions": {
+      "session": "会话"
+    },
     "activity": {
       "title": "账号活动记录",
       "action": "事件",
       "time": "时间",
+      "session": "会话",
       "ip": "IP 地址",
       "empty": "暂无活动记录。",
       "loadMore": "加载更多",

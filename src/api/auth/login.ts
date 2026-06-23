@@ -9,7 +9,8 @@ import {
   getRequestCoordinates,
   createCsrfCookie,
   getOrCreateJwtSecret,
-  extractSaltHex, hmacSha256
+  extractSaltHex, hmacSha256,
+  generateSessionHash
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { verifyPassword } from "../../utils/crypto";
@@ -148,6 +149,10 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     }
 
     // 验证 TOTP 或 恢复密钥
+    let isTotpSuccess = false;
+    let isRecoverySuccess = false;
+    let recoveryRemaining = 0;
+
     if (user.totp_enabled) {
       if (recoveryKey) {
         let storedHashes: string[] = [];
@@ -163,7 +168,8 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
           }
         }
         await userModel.consumeRecoveryKey(userId, matchIndex, storedHashes);
-        await activityLog.record(userId, 'recovery_key_used', clientIp, userAgent, { remaining: storedHashes.length - 1 });
+        isRecoverySuccess = true;
+        recoveryRemaining = storedHashes.length - 1;
       } else if (totpTokenHash) {
         const isValid = await verifyTOTP(user.totp_secret || '', totpTokenHash, totpSalt);
         if (!isValid) {
@@ -175,7 +181,7 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
             return new Response(`Invalid TOTP code. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, { status: 400 });
           }
         }
-        await activityLog.record(userId, 'totp_verify_success', clientIp, userAgent);
+        isTotpSuccess = true;
       } else {
         const remaining = await recordFailedPreauthAttempt(cache, preauthToken, env);
         if (remaining <= 0) {
@@ -190,13 +196,21 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     await invalidatePreauthSession(env, preauthToken);
     await cacheUtils.delete(cache, `preauth_state:${preauthToken}`);
     await cacheUtils.delete(cache, `ratelimit:login_fail:${clientIp}`);
-    await activityLog.record(userId, 'login_success', clientIp, userAgent);
 
     const { latitude, longitude } = getRequestCoordinates(request);
     if (latitude === null || longitude === null) {
       return new Response("geolocation_missing", { status: 400 });
     }
     const { session, refreshToken } = await createSession(env, userId, clientIp, userAgent, latitude, longitude, !!keepLoggedIn);
+    const sessionHash = await generateSessionHash(session.id, userId);
+
+    if (isTotpSuccess) {
+      await activityLog.record(userId, 'totp_verify_success', clientIp, userAgent, undefined, sessionHash);
+    } else if (isRecoverySuccess) {
+      await activityLog.record(userId, 'recovery_key_used', clientIp, userAgent, { remaining: recoveryRemaining }, sessionHash);
+    }
+    await activityLog.record(userId, 'login_success', clientIp, userAgent, undefined, sessionHash);
+
     const csrfToken = generateId(32);
     const csrfCookie = createCsrfCookie(csrfToken, env, !!keepLoggedIn);
 

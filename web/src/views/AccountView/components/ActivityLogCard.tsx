@@ -8,7 +8,15 @@ import { getActivityLog } from "../../../services";
 import type { ActivityEntry } from "../../../services";
 import { UserAgentDisplay } from "./UserAgentDisplay";
 
-export const ActivityLogCard: React.FC = () => {
+interface ActivityLogCardProps {
+  hoveredSessionId?: string | null;
+  setHoveredSessionId?: (id: string | null) => void;
+}
+
+export const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
+  hoveredSessionId,
+  setHoveredSessionId
+}) => {
   const { t } = useTranslation();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,26 +111,46 @@ export const ActivityLogCard: React.FC = () => {
                   <tr>
                     <th>{t("account.activity.action", "Action")}</th>
                     <th>{t("account.activity.time", "Time")}</th>
+                    <th>{t("account.activity.session", "Session")}</th>
                     <th>{t("account.activity.ip", "IP Address")}</th>
                     <th>{t("account.activity.device", "Device")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {entries.map((entry) => {
+                   {entries.map((entry) => {
                     const meta = getActionMeta(entry.action);
                     let reasonText = "";
+                    const sessionId = entry.session_id_hash || "";
                     if (entry.extra) {
                       try {
                         const parsed = JSON.parse(entry.extra);
                         if (parsed.reason) {
-                          reasonText = t(`account.activity.reasons.${parsed.reason}`, parsed.reason) as string;
+                          const translationKey = `account.activity.reasons.${parsed.reason}`;
+                          const translated = t(translationKey);
+                          if (translated && translated !== translationKey) {
+                            reasonText = translated;
+                          } else {
+                            // Format snake_case / kebab-case string into Start Case
+                            reasonText = parsed.reason
+                              .replace(/[_-]+/g, " ")
+                              .replace(/\b\w/g, (char: string) => char.toUpperCase());
+                          }
                         }
                       } catch {
                         /* ignore */
                       }
                     }
                     return (
-                      <tr key={entry.id}>
+                      <tr 
+                        key={entry.id}
+                        onMouseEnter={() => {
+                          if (sessionId) setHoveredSessionId?.(sessionId);
+                        }}
+                        onMouseLeave={() => {
+                          if (sessionId) setHoveredSessionId?.(null);
+                        }}
+                        className={hoveredSessionId && hoveredSessionId === sessionId ? "bg-gray-100/80 dark:bg-slate-800/80" : ""}
+                      >
                         <td className="align-middle">
                           <div className="flex flex-col items-start gap-1">
                             <Tag minimal intent={meta.intent} icon={meta.icon as any}>
@@ -137,6 +165,9 @@ export const ActivityLogCard: React.FC = () => {
                         </td>
                         <td className="text-xs text-gray-500 whitespace-nowrap align-middle">
                           {formatDateTime(new Date(entry.timestamp * 1000))}
+                        </td>
+                        <td className="font-mono text-xs text-gray-500 align-middle">
+                          {sessionId ? sessionId.slice(0, 8) : "—"}
                         </td>
                         <td className="font-mono text-xs text-gray-500 align-middle">
                           {entry.ip_address || "—"}

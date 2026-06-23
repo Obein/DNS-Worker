@@ -7,7 +7,15 @@ import { getSessions, revokeSession } from "../../../services";
 import type { SessionInfo } from "../../../services";
 import { UserAgentDisplay } from "./UserAgentDisplay";
 
-export const ActiveSessionsCard: React.FC = () => {
+interface ActiveSessionsCardProps {
+  hoveredSessionId?: string | null;
+  setHoveredSessionId?: (id: string | null) => void;
+}
+
+export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
+  hoveredSessionId,
+  setHoveredSessionId
+}) => {
   const { t } = useTranslation();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +81,7 @@ export const ActiveSessionsCard: React.FC = () => {
             <thead>
               <tr>
                 <th>{t("account.sessions.device", "Device")}</th>
+                <th>{t("account.sessions.session", "Session")}</th>
                 <th>{t("account.sessions.ip", "IP Address")}</th>
                 <th>{t("account.sessions.loginTime", "Login Time")}</th>
                 <th>{t("account.sessions.expires", "Expires")}</th>
@@ -81,7 +90,12 @@ export const ActiveSessionsCard: React.FC = () => {
             </thead>
             <tbody>
               {sessions.map((session) => (
-                <tr key={session.id}>
+                <tr 
+                  key={session.id}
+                  onMouseEnter={() => setHoveredSessionId?.(session.id)}
+                  onMouseLeave={() => setHoveredSessionId?.(null)}
+                  className={hoveredSessionId === session.id ? "bg-gray-100/80 dark:bg-slate-800/80" : ""}
+                >
                   <td>
                     <div className="flex items-start gap-2">
                       <UserAgentDisplay userAgent={session.user_agent} />
@@ -91,6 +105,9 @@ export const ActiveSessionsCard: React.FC = () => {
                         </Tag>
                       )}
                     </div>
+                  </td>
+                  <td className="font-mono text-xs text-gray-500 align-middle">
+                    {session.id ? session.id.slice(0, 8) : "—"}
                   </td>
                   <td className="font-mono text-xs text-gray-500 align-middle">
                     {session.ip_address || "—"}

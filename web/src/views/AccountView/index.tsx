@@ -36,6 +36,7 @@ export const AccountView: React.FC = () => {
   const [me, setMe] = useState<UserInfo | null>(null);
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredSessionId, setHoveredSessionId] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -259,10 +260,20 @@ export const AccountView: React.FC = () => {
       {me && <SessionLockCard user={me} onRefresh={fetchMe} />}
 
       {/* Active Sessions */}
-      {me && <ActiveSessionsCard />}
+      {me && (
+        <ActiveSessionsCard
+          hoveredSessionId={hoveredSessionId}
+          setHoveredSessionId={setHoveredSessionId}
+        />
+      )}
 
       {/* Activity Log */}
-      {me && <ActivityLogCard />}
+      {me && (
+        <ActivityLogCard
+          hoveredSessionId={hoveredSessionId}
+          setHoveredSessionId={setHoveredSessionId}
+        />
+      )}
 
       {/* Admin: User Management */}
       {me?.role === "admin" && (

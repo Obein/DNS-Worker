@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../../lib/auth";
+import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString, generateSessionHash } from "../../lib/auth";
 import { ActivityLogModel } from "../../models/activityLog";
 
 /**
@@ -38,33 +38,44 @@ export async function handleSessionsRequest(
       const refreshToken = readRefreshTokenCookie(cookieHeader);
       const currentSessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
       
-      const sessionData = sessions.map(s => ({
+      const sessionData = await Promise.all(sessions.map(async s => ({
         ...s,
+        id: await generateSessionHash(s.id, user.id),
         is_current: s.id === currentSessionId
-      }));
+      })));
       
       return new Response(JSON.stringify(sessionData), { headers: { 'Content-Type': 'application/json' } });
     }
 
     // DELETE /api/account/sessions/:id (revoke session)
     if (pathParts[3] && request.method === 'DELETE') {
-      const targetSessionId = pathParts[3];
+      const targetSessionHash = pathParts[3];
       const { SessionModel } = await import("../../models/session");
       const sessionModel = new SessionModel(env.DB);
       
-      // Ensure the session belongs to the user
-      const sessionUserId = await sessionModel.getSessionUserId(targetSessionId);
-      if (sessionUserId !== user.id) {
-        return new Response("Forbidden", { status: 403 });
+      const sessions = await sessionModel.getSessionsByUser(user.id);
+      let targetSessionId: string | null = null;
+      for (const s of sessions) {
+        if (await generateSessionHash(s.id, user.id) === targetSessionHash) {
+          targetSessionId = s.id;
+          break;
+        }
+      }
+      
+      if (!targetSessionId) {
+        return new Response("Not Found", { status: 404 });
       }
       
       const { invalidateSession } = await import("../../lib/auth");
       await invalidateSession(env, targetSessionId);
-      await activityLog.record(user.id, 'session_revoked', clientIp, userAgent, { reason: 'user_revoke', target_session: targetSessionId });
       
-      // If revoking current session, clear cookie
       const refreshToken = readRefreshTokenCookie(request.headers.get("Cookie") || "");
       const currentSessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
+      const currentSessionHash = currentSessionId ? await generateSessionHash(currentSessionId, user.id) : null;
+      
+      await activityLog.record(user.id, 'session_revoked', clientIp, userAgent, { reason: 'user_revoke', target_session: targetSessionHash }, targetSessionHash);
+      
+      // If revoking current session, clear cookie
       if (targetSessionId === currentSessionId) {
         return new Response(JSON.stringify({ success: true, is_current: true }), {
           headers: { "Set-Cookie": createBlankRefreshTokenCookie(), "Content-Type": "application/json" }
