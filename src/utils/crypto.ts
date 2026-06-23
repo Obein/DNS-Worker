@@ -158,17 +158,15 @@ export async function hmacSha256(key: string | Uint8Array, data: string | Uint8A
 }
 
 /**
- * Hashes the client's PIN hash on the server reusing the server-side password hashing scheme (100,000 iterations).
+ * Hashes the PIN using PBKDF2 with 600,000 iterations.
+ * This is equivalent to the client-side hashPin/hashPasswordClient.
  */
-export async function hashPinServer(clientPinHash: string): Promise<string> {
-  return hashPassword(clientPinHash, 2);
-}
-
-/**
- * Verifies the client's PIN hash against the stored server PIN hash.
- */
-export async function verifyPinServer(clientPinHash: string, storedPinHash: string): Promise<boolean> {
-  return verifyPassword(clientPinHash, storedPinHash);
+export async function hashPin(pin: string, salt: string): Promise<string> {
+  const saltBytes = new TextEncoder().encode(salt.toLowerCase());
+  const derived = await pbkdf2(pin, saltBytes, 600000, 256);
+  return Array.from(derived)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**

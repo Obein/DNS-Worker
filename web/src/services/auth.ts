@@ -107,6 +107,12 @@ export async function refresh(): Promise<LoginResponse> {
   return res.json();
 }
 
+export async function getUnlockNonce(): Promise<{ nonce: string }> {
+  const res = await fetch("/api/auth/unlock-session", { method: "GET" });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
 export async function unlockSession(pinHash: string): Promise<void> {
   const res = await fetch("/api/auth/unlock-session", {
     method: "POST",

@@ -1,7 +1,7 @@
 import { Env } from "../../types";
 import { getOrCreateJwtSecret, generateSessionHash } from "../../lib/auth";
 import { importJwtSecret, verifyJWT } from "../../lib/jwt";
-import { verifyPinServer } from "../../utils/crypto";
+import { hashPin } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
 import { SessionModel } from "../../models/session";
@@ -17,6 +17,36 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
   const cache = (caches as any).default;
   const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
   const userAgent = request.headers.get("User-Agent");
+
+  // 获取解锁会话的 Nonce 挑战
+  if (url.pathname === '/api/auth/unlock-session' && request.method === 'GET') {
+    const authHeader = request.headers.get("Authorization") || "";
+    let accessToken = "";
+    if (authHeader.startsWith("Bearer ")) {
+      accessToken = authHeader.slice(7);
+    }
+    if (!accessToken) return new Response("Unauthorized", { status: 401 });
+
+    try {
+      const secret = await getOrCreateJwtSecret(env);
+      const jwtKey = await importJwtSecret(secret);
+      const payload = await verifyJWT<{ userId: string; role: string; sessionId: string; exp: number }>(
+        accessToken,
+        jwtKey
+      );
+      if (!payload) return new Response("Unauthorized", { status: 401 });
+
+      const nonce = generateId(32);
+      const cacheKey = `unlock_nonce:${payload.sessionId}`;
+      await cacheUtils.set(cache, cacheKey, { nonce }, 300); // 5 minutes TTL
+
+      return new Response(JSON.stringify({ nonce }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (e) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+  }
 
   // 解锁会话
   if (url.pathname === '/api/auth/unlock-session' && request.method === 'POST') {
@@ -48,12 +78,38 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       const dbUser = await userModel.getById(payload.userId);
       if (!dbUser || !dbUser.pin_hash) return new Response("PIN not configured", { status: 400 });
 
+      // 获取缓存的 Nonce 挑战
+      const cacheKeyNonce = `unlock_nonce:${payload.sessionId}`;
+      const cachedNonceState = await cacheUtils.get<{ nonce: string }>(cache, cacheKeyNonce);
+      if (!cachedNonceState?.nonce) {
+        return new Response("Challenge expired, please start over", { status: 400 });
+      }
+      const { nonce } = cachedNonceState;
+
+      // 消费掉 nonce 防止重放
+      await cacheUtils.delete(cache, cacheKeyNonce);
+
       const cacheKey = `unlock_fail:${session.id}`;
       const failedAttemptsState = await cacheUtils.get<{ count: number }>(cache, cacheKey);
       const failedAttempts = failedAttemptsState?.count || 0;
 
       const sessionHash = await generateSessionHash(session.id, payload.userId);
-      const isPinValid = await verifyPinServer(pinHash, dbUser.pin_hash);
+
+      // 验证挑战响应：hashPin(dbUser.pin_hash, nonce)
+      const expectedChallengedHash = await hashPin(dbUser.pin_hash, nonce);
+      
+      // Constant-time comparison
+      let isPinValid = true;
+      if (pinHash.length !== expectedChallengedHash.length) {
+        isPinValid = false;
+      } else {
+        let result = 0;
+        for (let i = 0; i < pinHash.length; i++) {
+          result |= pinHash.charCodeAt(i) ^ expectedChallengedHash.charCodeAt(i);
+        }
+        isPinValid = result === 0;
+      }
+
       if (!isPinValid) {
         const nextFailedCount = failedAttempts + 1;
         if (nextFailedCount >= 3) {

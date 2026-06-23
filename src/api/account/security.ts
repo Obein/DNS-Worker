@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { hashPassword, verifyPassword, hashPinServer, generateSessionHash } from "../../utils/crypto";
+import { hashPassword, verifyPassword, generateSessionHash } from "../../utils/crypto";
 import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -176,8 +176,8 @@ export async function handleSecurityRequest(
         return new Response("Invalid PIN hash format", { status: 400 });
       }
 
-      const serverPinHash = await hashPinServer(pinHash);
-      await userModel.updatePinHash(user.id, serverPinHash);
+      // Store the client-side PIN hash directly to support challenge-response unlock verification
+      await userModel.updatePinHash(user.id, pinHash);
       return new Response(JSON.stringify({ success: true }));
     }
 

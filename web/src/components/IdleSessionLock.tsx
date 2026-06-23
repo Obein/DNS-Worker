@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Spinner, Card, Elevation, Callout, Intent } from "@blueprintjs/core";
 import { LogOut } from "lucide-react";
 import { hashPin } from "../utils/auth";
-import { unlockSession, lockSession, ApiError } from "../services";
+import { unlockSession, lockSession, getUnlockNonce, ApiError } from "../services";
 import type { UserInfo } from "../services";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { DigitInput, type DigitInputRef } from "./DigitInput";
@@ -109,8 +109,16 @@ export const IdleSessionLock: React.FC<IdleSessionLockProps> = ({
         }, 1500);
         return;
       }
+      // Get challenge nonce from server
+      const { nonce } = await getUnlockNonce();
+
+      // Compute pinHash = hashPin(pinToSubmit, userId)
       const pinHash = await hashPin(pinToSubmit, userId);
-      await unlockSession(pinHash);
+
+      // Compute challengedHash = hashPin(pinHash, nonce)
+      const challengedHash = await hashPin(pinHash, nonce);
+
+      await unlockSession(challengedHash);
       
       // Success! Unlock session
       setIsLocked(false);
