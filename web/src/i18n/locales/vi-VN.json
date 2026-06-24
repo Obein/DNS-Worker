@@ -365,6 +365,7 @@
     "retentionDuration": "Thời gian lưu giữ",
     "retentionDesc": "Các nhật ký hết hạn sẽ tự động bị xóa khỏi cơ sở dữ liệu.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "ECS-подсеть, отправляемая на upstream-сервер",
     "sendEcs": "Gửi ECS",
     "customSubnet": "Mạng con tùy chỉnh",
     "customIpv4": "Mạng con IPv4 tùy chỉnh",

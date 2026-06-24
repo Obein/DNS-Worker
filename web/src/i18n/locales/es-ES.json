@@ -365,6 +365,7 @@
     "retentionDuration": "Periodo de retención",
     "retentionDesc": "Los registros caducados se eliminarán de forma automática de la base de datos.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "No todos los servidores DNS admiten ECS. En resolvers recursivos como ControlD, ECS solo afecta el enrutamiento interno y no se reenvía al servidor autoritativo.",
     "sendEcs": "Enviar ECS",
     "customSubnet": "Subred personalizada",
     "customIpv4": "Subred IPv4 personalizada",

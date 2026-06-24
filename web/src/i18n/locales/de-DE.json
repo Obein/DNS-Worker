@@ -365,6 +365,7 @@
     "retentionDuration": "Aufbewahrungsdauer",
     "retentionDesc": "Abgelaufene Protokolle werden automatisch aus der Datenbank gelöscht.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "Nicht alle vorgelagerten DNS-Server unterstützen ECS. Bei rekursiven Resolvern wie ControlD beeinflusst ECS nur das interne Routing und wird nicht an den autoritativen Server weitergegeben.",
     "sendEcs": "ECS mitsenden",
     "customSubnet": "Benutzerdefiniertes Subnetz",
     "customIpv4": "Benutzerdefiniertes IPv4-Subnetz",

@@ -365,6 +365,7 @@
     "retentionDuration": "Durée de rétention",
     "retentionDesc": "Les journaux expirés seront automatiquement supprimés de la base de données.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "Tous les serveurs DNS en amont ne prennent pas en charge l'ECS. Pour les résolveurs récursifs comme ControlD, l'ECS n'affecte que le routage interne et n'est pas transmis au serveur faisant autorité.",
     "sendEcs": "Transmettre ECS",
     "customSubnet": "Sous-réseau personnalisé",
     "customIpv4": "Sous-réseau IPv4 personnalisé",

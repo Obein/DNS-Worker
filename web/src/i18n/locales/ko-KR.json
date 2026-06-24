@@ -365,6 +365,7 @@
     "retentionDuration": "보존 기간",
     "retentionDesc": "만료된 로그는 데이터베이스에서 자동으로 지워집니다.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "상류 서버로 전송되는 ECS 서브넷",
     "sendEcs": "ECS 제공",
     "customSubnet": "사용자 지정 서브넷",
     "customIpv4": "사용자 지정 IPv4 서브넷",

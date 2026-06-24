@@ -366,6 +366,7 @@
     "retentionDuration": "留存时长",
     "retentionDesc": "过期的日志届时将自动从数据库中清除。",
     "ecsTitle": "EDNS 客户端子网 (ECS)",
+    "ecsUpstreamHint": "并非所有上游 DNS 都支持 ECS。对于 ControlD 等递归解析器，ECS 仅影响其内部路由，不会传递给上游权威服务器。",
     "sendEcs": "呈递 ECS",
     "customSubnet": "自定义子网",
     "customIpv4": "自定义 IPv4 子网",

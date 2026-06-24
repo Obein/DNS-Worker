@@ -366,6 +366,7 @@
     "retentionDuration": "留存時長",
     "retentionDesc": "過期的日誌屆时將自動從資料庫中清除。",
     "ecsTitle": "EDNS 客戶端子網 (ECS)",
+    "ecsUpstreamHint": "並非所有上游 DNS 都支援 ECS。對於 ControlD 等遞迴解析器，ECS 僅影響其內部路由，不會傳遞給上游權威伺服器。",
     "sendEcs": "呈遞 ECS",
     "customSubnet": "自訂子網",
     "customIpv4": "自訂 IPv4 子網",

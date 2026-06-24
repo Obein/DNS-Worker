@@ -365,6 +365,7 @@
     "retentionDuration": "Срок хранения",
     "retentionDesc": "Старые логи будут удалены.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "ECS-подсеть, отправляемая на upstream-сервер",
     "sendEcs": "Использовать ECS",
     "customSubnet": "Пользовательская подсеть",
     "customIpv4": "IPv4",

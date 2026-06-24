@@ -366,6 +366,7 @@
     "retentionDuration": "Duration",
     "retentionDesc": "Expired logs will be cleared automatically from D1.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
+    "ecsUpstreamHint": "Not all upstream DNS servers support ECS. For recursive resolvers like ControlD, ECS affects internal routing only.",
     "sendEcs": "Send ECS",
     "customSubnet": "Custom Subnet",
     "customIpv4": "Custom IPv4 Subnet",
