@@ -142,7 +142,9 @@ export async function rotateSession(
   const user: User = {
     id: result.u_id,
     username: result.username,
-    role: result.role as 'admin' | 'user'
+    role: result.role as 'admin' | 'user',
+    pin_hash: result.pin_hash,
+    session_lock_timeout: result.session_lock_timeout
   };
 
   // Anti-reuse mechanism
@@ -175,6 +177,16 @@ export async function rotateSession(
   if (distance > maxDistance) {
     await invalidateSession(env, session.id);
     return { session: null, user, newRefreshToken: null, reason: "geolocation_mismatch" };
+  }
+
+  // Inactivity timeout check during refresh rotation
+  const lastActive = session.last_active_at || session.created_at;
+  if (user.pin_hash && !session.is_paused) {
+    const timeoutSeconds = (user.session_lock_timeout || 15) * 60;
+    if (now - lastActive > timeoutSeconds) {
+      await sessionModel.pauseSession(session.id);
+      session.is_paused = 1;
+    }
   }
 
   // Session extension (if close to expiration)
