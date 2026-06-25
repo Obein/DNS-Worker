@@ -55,6 +55,13 @@ export function useProfiles(isLoggedIn: boolean | null) {
     }
   }, [isLoggedIn]);
 
+  // 每次导航回 /dash（包括从 Account 页面返回）时重新拉取列表
+  useEffect(() => {
+    if (isLoggedIn === true && location.pathname === "/dash") {
+      fetchProfiles();
+    }
+  }, [location.pathname]);
+
   const handleCreateProfile = async () => {
     if (!newProfileName) return;
     try {
