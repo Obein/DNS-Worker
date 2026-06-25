@@ -2,6 +2,7 @@
   <img src="web/src/assets/obex_cat_eye_logo-256.webp" alt="Obex DNS Logo" width="128">
   <h1>Obex DNS</h1>
   <p>Protective DNS resolver based on Cloudflare Workers & D1</p>
+  <p>Protect your first hop on the internet</p>
   <p align="center">
     English | <a href="README_zh-CN.md">简体中文</a> | <a href="README_zh-TW.md">正體中文</a>
   </p>
