@@ -31,9 +31,7 @@ export const useLogRetentionOptions = () => {
       { label: t("settings.retention24h"), value: 1 },
       { label: t("settings.retention7d"), value: 7 },
       { label: t("settings.retention30d"), value: 30 },
-      { label: t("settings.retention180d"), value: 180 },
-      { label: t("settings.retention360d"), value: 360 },
-      { label: t("settings.retention720d"), value: 720 },
+      { label: t("settings.retention90d"), value: 90 },
     ],
     [t]
   );

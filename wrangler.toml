@@ -176,3 +176,11 @@ MAX_SYNC_DOMAINS=500000
 # Maximum domains processed from a single list per cron trigger.
 # Each trigger: ~150k × 13 hashes = ~1.95M hash ops — well within CPU budget.
 MAX_LIST_DOMAINS=150000
+
+# Hard cap on log retention days (overrides per-profile user setting).
+# Prevents high-retention profiles (e.g. 360 days) from filling up D1's 500 MB limit.
+MAX_LOG_RETENTION_DAYS=90
+
+# Hard cap on log row count per profile. Acts as a circuit-breaker when write
+# rate temporarily exceeds cleanup rate (e.g. high-traffic profiles).
+MAX_LOGS_PER_PROFILE=500000

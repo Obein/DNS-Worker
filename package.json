@@ -31,7 +31,7 @@
     "@cloudflare/workers-types": "^4.20260621.1",
     "concurrently": "^10.0.3",
     "typescript": "^6.0.3",
-    "wrangler": "^4.103.0"
+    "wrangler": "^4.105.0"
   },
   "overrides": {
     "esbuild": "^0.28.1"
