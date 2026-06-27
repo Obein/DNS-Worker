@@ -2,7 +2,7 @@ import { useState, useRef, Suspense } from "react";
 import { Spinner, OverlayToaster } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from "react-router-dom";
 import { GitHubCorner } from "./components/GithubCorner";
 import { lazyWithPreload } from "./utils/lazyWithPreload";
 import { DashboardHomeView } from "./views/DashboardHomeView";
@@ -23,6 +23,31 @@ const AuthView = lazyWithPreload(() =>
 const AccountView = lazyWithPreload(() =>
   import("./views/AccountView").then((m) => ({ default: m.AccountView })),
 );
+
+interface ProfileGuardProps {
+  loaded: boolean;
+  profiles: Profile[];
+  children: React.ReactNode;
+}
+
+const ProfileGuard: React.FC<ProfileGuardProps> = ({ loaded, profiles, children }) => {
+  const { profileId } = useParams();
+
+  if (!loaded) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <Spinner size={50} />
+      </div>
+    );
+  }
+
+  const hasAccess = profiles.some((p) => p.id === profileId);
+  if (!hasAccess) {
+    return <NotFoundView />;
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -56,6 +81,7 @@ function App() {
     handleCreateProfile,
     handleDeleteProfile,
     handleQuickAction,
+    loaded,
   } = useProfiles(isLoggedIn);
 
   if (isLoggedIn === null) {
@@ -131,28 +157,30 @@ function App() {
           <Route
             path="/dash/:profileId/*"
             element={
-              <MainLayout
-                isSidebarOpen={isSidebarOpen}
-                setIsSidebarOpen={setIsSidebarOpen}
-                theme={theme}
-                setTheme={setTheme}
-                selectedProfile={selectedProfile}
-                profiles={profiles}
-                setSelectedProfile={setSelectedProfile}
-                location={location}
-                navigate={navigate}
-                handleLogout={handleLogout}
-                currentUser={currentUser}
-              >
-                <ProfileRoutes
+              <ProfileGuard loaded={loaded} profiles={profiles}>
+                <MainLayout
+                  isSidebarOpen={isSidebarOpen}
+                  setIsSidebarOpen={setIsSidebarOpen}
+                  theme={theme}
+                  setTheme={setTheme}
                   selectedProfile={selectedProfile}
-                  prefilledRule={prefilledRule}
-                  setPrefilledRule={setPrefilledRule}
-                  handleQuickAction={handleQuickAction}
-                  toasterRef={toasterRef}
+                  profiles={profiles}
+                  setSelectedProfile={setSelectedProfile}
+                  location={location}
+                  navigate={navigate}
+                  handleLogout={handleLogout}
                   currentUser={currentUser}
-                />
-              </MainLayout>
+                >
+                  <ProfileRoutes
+                    selectedProfile={selectedProfile}
+                    prefilledRule={prefilledRule}
+                    setPrefilledRule={setPrefilledRule}
+                    handleQuickAction={handleQuickAction}
+                    toasterRef={toasterRef}
+                    currentUser={currentUser}
+                  />
+                </MainLayout>
+              </ProfileGuard>
             }
           />
           <Route

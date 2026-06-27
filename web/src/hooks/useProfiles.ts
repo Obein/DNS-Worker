@@ -24,6 +24,7 @@ interface PrefilledRule {
 export function useProfiles(isLoggedIn: boolean | null) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   // Profile creation states
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -43,6 +44,8 @@ export function useProfiles(isLoggedIn: boolean | null) {
       setProfiles(profilesData);
     } catch (err) {
       console.error("Failed to fetch profiles", err);
+    } finally {
+      setLoaded(true);
     }
   };
 
@@ -52,6 +55,7 @@ export function useProfiles(isLoggedIn: boolean | null) {
     } else {
       setProfiles([]);
       setSelectedProfile(null);
+      setLoaded(false);
     }
   }, [isLoggedIn]);
 
@@ -120,5 +124,6 @@ export function useProfiles(isLoggedIn: boolean | null) {
     handleCreateProfile,
     handleDeleteProfile,
     handleQuickAction,
+    loaded,
   };
 }
