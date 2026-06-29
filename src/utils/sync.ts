@@ -16,16 +16,13 @@ const MAX_LIST_BYTES = 5 * 1024 * 1024;
 
 /**
  * 汇总并合并所有已启用列表的 Bloom Filter，并将其原子更新为 Profile 的 active Bloom。
- *
- * 在同步周期结束（或手动同步结束）时调用：
- *   1. 载入该 Profile 下所有已启用列表的 list-level Bloom Filter（来自 `list_blooms`）。
- *   2. 若包含有效的列表 Bloom，通过按位或 (OR) 操作合并它们，存入 `profile_blooms` 作为 DNS 解析的单一主 filter。
- *   3. 如果没有已同步的列表，则直接清空该 Profile 的 active Bloom。
- *   4. 更新 `profile.list_updated_at` 为当前时间，退出同步队列。
- *   5. 异步清空 DNS 解析层内存缓存，使更新立即对后续解析生效。
+ * 
+ * 性能优化：不再一次性通过 JOIN 从 D1 加载所有列表的所有 Chunks（极大降低单次 D1 payload 导致的 OOM 或反序列化卡顿），
+ * 而是依次（分步）单独加载每个列表的完整 Bloom Filter，并在内存中进行按位或合并。
  */
 async function combineAndPromote(
   profileId: string,
+  listModel: ListModel,
   listBloomModel: ListBloomModel,
   profileBloomModel: ProfileBloomModel,
   profileModel: ProfileModel,
@@ -34,27 +31,40 @@ async function combineAndPromote(
   maxDomains: number,
   falsePositiveRate: number
 ): Promise<void> {
-  const listBlooms = await listBloomModel.getActiveListBloomsForProfile(profileId);
+  const lists = await listModel.getLists(profileId);
+  const activeLists = lists.filter((l) => !!l.enabled);
 
-  if (listBlooms.length === 0) {
+  if (activeLists.length === 0) {
     // 若没有已同步的列表，清空 profile_blooms
     await profileBloomModel.clearProfileBlooms(profileId);
   } else {
     // 重建并按位或 (OR) 合并所有列表级布隆过滤器
     const merged = BloomFilter.create(maxDomains, falsePositiveRate);
-    for (const buf of listBlooms) {
+    let hasMergedAny = false;
+
+    for (const list of activeLists) {
       try {
-        const filter = BloomFilter.fromUint8Array(new Uint8Array(buf));
-        merged.merge(filter);
+        // 单个列表的 Bloom Filter 反序列化，内存开销上限恒定为 ~2.4MB
+        const buf = await listBloomModel.getListBloom(list.id);
+        if (buf) {
+          const filter = BloomFilter.fromUint8Array(new Uint8Array(buf));
+          merged.merge(filter);
+          hasMergedAny = true;
+        }
       } catch (err) {
-        console.error(`[Sync] Failed to merge list bloom for Profile ${profileId}:`, err);
+        console.error(`[Sync] Failed to load/merge list bloom for list #${list.id}:`, err);
       }
     }
-    const binary = merged.toUint8Array();
-    await profileBloomModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
+
+    if (hasMergedAny) {
+      const binary = merged.toUint8Array();
+      await profileBloomModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
+    } else {
+      await profileBloomModel.clearProfileBlooms(profileId);
+    }
   }
 
-  // 更新 Profile 主表的更新时间，完成同步周期
+  // 二次确认更新 Profile 主表的时间戳（即使前置步骤已防范性地写入过）
   await profileModel.updateListUpdatedAt(profileId, now);
 
   if (ctx && typeof ctx.waitUntil === "function") {
@@ -120,8 +130,14 @@ export async function syncNextListForProfile(
       // 逻辑重入边际情况：所有列表已完成，进行合并
       const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
       const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
+
+      // 【熔断器】在进入高能 CPU 运算前，抢先将时间戳标记为当前时间。
+      // 避免万一合并阶段超时崩掉，导致该 Profile 下次仍处于 stale 态，从而陷入每分钟无限重试超时的死循环。
+      await profileModel.updateListUpdatedAt(profileId, now);
+
       await combineAndPromote(
         profileId,
+        listModel,
         listBloomModel,
         profileBloomModel,
         profileModel,
@@ -185,8 +201,12 @@ export async function syncNextListForProfile(
     const allDone = activeUpdatedLists.every((l) => (l.last_synced_at ?? 0) > lastFullSync);
 
     if (allDone) {
+      // 【熔断器】先标记该 Profile 为 Fresh 态，以防 combineAndPromote 超时 crash 造成死循环重试
+      await profileModel.updateListUpdatedAt(profileId, now);
+
       await combineAndPromote(
         profileId,
+        listModel,
         listBloomModel,
         profileBloomModel,
         profileModel,
@@ -288,9 +308,13 @@ export async function syncAllListsForProfile(
       await listModel.updateListSyncStatus(list.id, now, 1, syncError);
     }
 
+    // 【熔断器】先更新主表时间，以防合并过程中崩溃导致无限重试
+    await profileModel.updateListUpdatedAt(profileId, now);
+
     // 全部同步完毕后，执行合并和晋升操作
     await combineAndPromote(
       profileId,
+      listModel,
       listBloomModel,
       profileBloomModel,
       profileModel,
