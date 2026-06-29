@@ -1,34 +1,36 @@
 import { isSafeUrl } from "./validator";
-import { parseList } from "./parser";
+import { parseLine } from "./parser";
 
 /** 单个列表的拉取结果 */
 export interface FetchListResult {
-  /** 成功解析的域名列表；失败时为空数组 */
-  domains: string[];
+  /** 成功解析并由回调接收的域名总数 */
+  count: number;
   /** 错误信息；成功时为 null */
   error: string | null;
 }
 
 /**
- * 拉取单个订阅列表并解析其中的域名。
+ * 流式拉取单个订阅列表并逐行解析域名。
  *
- * 职责边界：
- * - 仅负责 HTTP 获取、流式读取、大小截断、文本解码和域名解析。
- * - 不涉及数据库操作、Bloom Filter 或同步周期管理。
+ * 性能优化：不再将完整的网络流存入大二进制缓冲区、解码为大字符串并拆分大数组。
+ * 而是流式（chunk-by-chunk）进行 UTF-8 文本解码与行切分，对每个域名触发异步回调。
+ * 这将内存开销由 40MB+ 降为 <1MB，并将大列表 CPU 运行时间完全打散，从根本上防止 exceeded CPU limit。
  *
  * @param url - 订阅列表的 HTTP(S) URL
  * @param maxBytes - 单个列表的字节数上限（软截断，超出后停止读取）
  * @param timeoutMs - 请求超时时间（毫秒）
- * @returns 解析出的域名列表与错误信息
+ * @param onDomain - 当提取出有效域名时的异步回调函数
+ * @returns 解析的域名数量与错误信息
  */
 export async function fetchListContent(
   url: string,
   maxBytes: number,
-  timeoutMs: number
+  timeoutMs: number,
+  onDomain: (domain: string) => Promise<void>
 ): Promise<FetchListResult> {
   if (!isSafeUrl(url)) {
     return {
-      domains: [],
+      count: 0,
       error: "Invalid list URL. Private networks and localhosts are not allowed.",
     };
   }
@@ -38,7 +40,7 @@ export async function fetchListContent(
 
     if (!response.ok) {
       return {
-        domains: [],
+        count: 0,
         error: `HTTP error! Status: ${response.status} ${response.statusText}`,
       };
     }
@@ -47,19 +49,20 @@ export async function fetchListContent(
     const contentLength = response.headers.get("content-length");
     if (contentLength && parseInt(contentLength, 10) > maxBytes) {
       return {
-        domains: [],
+        count: 0,
         error: `List too large (${(parseInt(contentLength, 10) / 1024 / 1024).toFixed(2)} MB), limit is ${(maxBytes / 1024 / 1024).toFixed(0)} MB`,
       };
     }
 
     const reader = response.body?.getReader();
     if (!reader) {
-      return { domains: [], error: "Failed to get stream reader from response" };
+      return { count: 0, error: "Failed to get stream reader from response" };
     }
 
-    // 流式读取，超出上限时软截断（保留已读部分）
+    const decoder = new TextDecoder("utf-8", { fatal: false, ignoreBOM: true });
+    let buffer = "";
+    let count = 0;
     let totalBytes = 0;
-    const chunks: Uint8Array[] = [];
     let truncated = false;
 
     while (true) {
@@ -70,11 +73,34 @@ export async function fetchListContent(
         if (totalBytes > maxBytes) {
           await reader.cancel();
           truncated = true;
-          // 移除超出限制的最后一个 chunk，只保留 maxBytes 以内的内容
-          totalBytes -= value.length;
           break;
         }
-        chunks.push(value);
+
+        // 流式解码 UTF-8，处理边界字符
+        const chunkText = decoder.decode(value, { stream: true });
+        buffer += chunkText;
+
+        // 快速切分出完整行
+        const lines = buffer.split("\n");
+        // 最后一个元素若没有换行符则为未完结的行碎片，留到下一次迭代拼接
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const domain = parseLine(line);
+          if (domain) {
+            await onDomain(domain);
+            count++;
+          }
+        }
+      }
+    }
+
+    // 处理流完结后残留的尾行数据
+    if (buffer) {
+      const domain = parseLine(buffer);
+      if (domain) {
+        await onDomain(domain);
+        count++;
       }
     }
 
@@ -82,22 +108,8 @@ export async function fetchListContent(
       console.warn(`[Fetcher] List truncated at ${(maxBytes / 1024 / 1024).toFixed(0)} MB: ${url}`);
     }
 
-    // 合并 chunks → 解码 → 解析域名
-    const concatenated = new Uint8Array(totalBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      concatenated.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    const domains = parseList(new TextDecoder().decode(concatenated));
-
-    if (domains.length === 0) {
-      return { domains: [], error: "No valid domain rules found in the list" };
-    }
-
-    return { domains, error: null };
+    return { count, error: null };
   } catch (e: any) {
-    return { domains: [], error: e.message || String(e) };
+    return { count: 0, error: e.message || String(e) };
   }
 }

@@ -172,8 +172,7 @@ BLOOM_FALSE_POSITIVE_RATE=0.0001
 MAX_SYNC_DOMAINS=1000000
 
 # Maximum domains processed from a single list per cron trigger.
-# Each trigger: ~150k × 13 hashes = ~1.95M hash ops — well within CPU budget.
-MAX_LIST_DOMAINS=150000
+MAX_LIST_DOMAINS=500000
 
 # Hard cap on log retention days (overrides per-profile user setting).
 # Prevents high-retention profiles (e.g. 360 days) from filling up D1's 500 MB limit.
