@@ -23,17 +23,21 @@ export class UserModel {
           updatedFields.totp_secret_dek = rotatedDek;
           shouldUpdateDb = true;
         }
-      } catch (e) {
-        console.error(`[Envelope Encryption] Failed to decrypt/rotate totp_secret for user ${user.id}:`, e);
+      } catch (e: any) {
+        console.error(`[Envelope Encryption] Failed to decrypt/rotate totp_secret for user ${user.id}:`, e.stack || e.message || e);
       }
     } else if (user.totp_secret) {
       // Legacy plain-text secret found. If KEK is active, migrate to envelope encryption!
-      const encrypted = await encryptEnvelope(user.totp_secret, this.env);
-      if (encrypted) {
-        updatedFields.totp_secret_encrypted = encrypted.dataEncrypted;
-        updatedFields.totp_secret_dek = encrypted.dekEncrypted;
-        updatedFields.totp_secret = null; // Clear plain-text column
-        shouldUpdateDb = true;
+      try {
+        const encrypted = await encryptEnvelope(user.totp_secret, this.env);
+        if (encrypted) {
+          updatedFields.totp_secret_encrypted = encrypted.dataEncrypted;
+          updatedFields.totp_secret_dek = encrypted.dekEncrypted;
+          updatedFields.totp_secret = null; // Clear plain-text column
+          shouldUpdateDb = true;
+        }
+      } catch (e) {
+        console.error(`[Envelope Encryption] Migration failed for totp_secret of user ${user.id}:`, e);
       }
     }
 
@@ -49,17 +53,21 @@ export class UserModel {
           updatedFields.totp_recovery_keys_dek = rotatedDek;
           shouldUpdateDb = true;
         }
-      } catch (e) {
-        console.error(`[Envelope Encryption] Failed to decrypt/rotate totp_recovery_keys for user ${user.id}:`, e);
+      } catch (e: any) {
+        console.error(`[Envelope Encryption] Failed to decrypt/rotate totp_recovery_keys for user ${user.id}:`, e.stack || e.message || e);
       }
     } else if (user.totp_recovery_keys) {
       // Legacy plain-text recovery keys found. If KEK is active, migrate to envelope encryption!
-      const encrypted = await encryptEnvelope(user.totp_recovery_keys, this.env);
-      if (encrypted) {
-        updatedFields.totp_recovery_keys_encrypted = encrypted.dataEncrypted;
-        updatedFields.totp_recovery_keys_dek = encrypted.dekEncrypted;
-        updatedFields.totp_recovery_keys = null; // Clear plain-text column
-        shouldUpdateDb = true;
+      try {
+        const encrypted = await encryptEnvelope(user.totp_recovery_keys, this.env);
+        if (encrypted) {
+          updatedFields.totp_recovery_keys_encrypted = encrypted.dataEncrypted;
+          updatedFields.totp_recovery_keys_dek = encrypted.dekEncrypted;
+          updatedFields.totp_recovery_keys = null; // Clear plain-text column
+          shouldUpdateDb = true;
+        }
+      } catch (e) {
+        console.error(`[Envelope Encryption] Migration failed for totp_recovery_keys of user ${user.id}:`, e);
       }
     }
 

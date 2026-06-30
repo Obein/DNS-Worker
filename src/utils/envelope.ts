@@ -1,10 +1,9 @@
 export function getActiveKekVersion(env: any): string | null {
   if (!env) return null;
   let maxVer = 0;
-  for (const key of Object.keys(env)) {
-    const match = key.match(/^KEK_v(\d+)$/);
-    if (match) {
-      const ver = parseInt(match[1], 10);
+  for (let ver = 1; ver <= 100; ver++) {
+    const val = env[`KEK_v${ver}`] || env[`KEK_V${ver}`];
+    if (val !== undefined && val !== null && val !== "") {
       if (ver > maxVer) {
         maxVer = ver;
       }
@@ -34,7 +33,7 @@ function fromBase64(base64: string): Uint8Array {
 
 async function importKek(secret: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
-  const secretData = encoder.encode(secret);
+  const secretData = encoder.encode(secret.trim());
   const hashBuffer = await crypto.subtle.digest("SHA-256", secretData);
   return await crypto.subtle.importKey(
     "raw",
@@ -80,9 +79,9 @@ export async function encryptEnvelope(
     return null;
   }
 
-  const kekSecret = env[`KEK_${activeVersion}`];
-  if (!kekSecret) {
-    throw new Error(`KEK version ${activeVersion} is missing from environment variables`);
+  const kekSecret = env[`KEK_${activeVersion}`] || env[`KEK_${activeVersion.toUpperCase()}`];
+  if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
+    throw new Error(`KEK version ${activeVersion} is missing or invalid in environment variables`);
   }
 
   const kekKey = await importKek(kekSecret);
@@ -140,9 +139,9 @@ export async function decryptEnvelope(
   const dataEncrypted: EnvelopeEncryptedData = JSON.parse(dataEncryptedStr);
   const dekEncrypted: EnvelopeEncryptedDek = JSON.parse(dekEncryptedStr);
 
-  const kekSecret = env[`KEK_${dekEncrypted.kek_version}`];
-  if (!kekSecret) {
-    throw new Error(`Required KEK version ${dekEncrypted.kek_version} is missing from environment variables`);
+  const kekSecret = env[`KEK_${dekEncrypted.kek_version}`] || env[`KEK_${dekEncrypted.kek_version.toUpperCase()}`];
+  if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
+    throw new Error(`Required KEK version ${dekEncrypted.kek_version} is missing or invalid in environment variables`);
   }
 
   const kekKey = await importKek(kekSecret);
@@ -192,17 +191,17 @@ export async function rotateEnvelopeDek(
 
   const nextVersionNumber = currentVersionNumber + 1;
   const nextKekVersion = `v${nextVersionNumber}`;
-  const nextKekSecret = env[`KEK_${nextKekVersion}`];
+  const nextKekSecret = env[`KEK_${nextKekVersion}`] || env[`KEK_${nextKekVersion.toUpperCase()}`];
 
-  if (!nextKekSecret) {
+  if (!nextKekSecret || typeof nextKekSecret !== "string" || nextKekSecret.trim() === "") {
     // Next version not configured/available yet
     return null;
   }
 
   // 1. Decrypt the DEK with current KEK
-  const currentKekSecret = env[`KEK_${currentKekVersion}`];
-  if (!currentKekSecret) {
-    throw new Error(`Current KEK version ${currentKekVersion} required for rotation is missing from environment`);
+  const currentKekSecret = env[`KEK_${currentKekVersion}`] || env[`KEK_${currentKekVersion.toUpperCase()}`];
+  if (!currentKekSecret || typeof currentKekSecret !== "string" || currentKekSecret.trim() === "") {
+    throw new Error(`Current KEK version ${currentKekVersion} required for rotation is missing or invalid in environment`);
   }
 
   const currentKekKey = await importKek(currentKekSecret);
