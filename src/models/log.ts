@@ -28,13 +28,22 @@ export class LogModel {
     return result.success;
   }
 
-  async getLogs(profileId: string, options: { since: number, until: number, status?: string, search?: string, before?: number, limit?: number, access_point_id?: string, dest_country?: string, isp?: string }): Promise<ResolutionLog[]> {
-    let queryStr = `
-      SELECT l.id, l.timestamp, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, ap.name as access_point_name 
-      FROM logs l
-      LEFT JOIN access_points ap ON l.access_point_id = ap.id
-      WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
-    `;
+  async getLogs(profileId: string, options: { since: number, until: number, status?: string, search?: string, before?: number, limit?: number, access_point_id?: string, dest_country?: string, isp?: string, export?: boolean }): Promise<ResolutionLog[]> {
+    let queryStr = "";
+    if (options.export) {
+      queryStr = `
+        SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency
+        FROM logs l
+        WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
+      `;
+    } else {
+      queryStr = `
+        SELECT l.id, l.timestamp, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, ap.name as access_point_name 
+        FROM logs l
+        LEFT JOIN access_points ap ON l.access_point_id = ap.id
+        WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
+      `;
+    }
     let params: any[] = [profileId, options.since, options.until];
     
     if (options.status) { queryStr += " AND l.action = ?"; params.push(options.status); }
@@ -44,11 +53,15 @@ export class LogModel {
     if (options.dest_country) { queryStr += " AND json_extract(l.dest_geoip, '$.country_code') = ?"; params.push(options.dest_country.toUpperCase()); }
     if (options.isp) { queryStr += " AND json_extract(l.dest_geoip, '$.isp') = ?"; params.push(options.isp); }
     
-    let limit = options.limit !== undefined && !isNaN(options.limit) && options.limit > 0 ? options.limit : 50;
-    if (limit > 100) {
-      limit = 100;
+    if (options.export) {
+      queryStr += " ORDER BY l.timestamp DESC LIMIT 50000";
+    } else {
+      let limit = options.limit !== undefined && !isNaN(options.limit) && options.limit > 0 ? options.limit : 50;
+      if (limit > 100) {
+        limit = 100;
+      }
+      queryStr += ` ORDER BY l.timestamp DESC LIMIT ${limit}`;
     }
-    queryStr += ` ORDER BY l.timestamp DESC LIMIT ${limit}`;
     
     const { results } = await this.db.prepare(queryStr).bind(...params).all<ResolutionLog>();
     return results;

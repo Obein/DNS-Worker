@@ -307,7 +307,8 @@
     "actionRedirect": "Chuyển hướng",
     "statusPass": "Đã cho phép",
     "statusBlock": "Đã chặn",
-    "statusRedirect": "Đã chuyển hướng"
+    "statusRedirect": "Đã chuyển hướng",
+    "export": "Xuất nhật ký"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",

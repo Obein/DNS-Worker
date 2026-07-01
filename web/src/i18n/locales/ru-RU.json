@@ -307,7 +307,8 @@
     "actionRedirect": "Перенаправить",
     "statusPass": "Разрешено",
     "statusBlock": "Блок",
-    "statusRedirect": "Перенаправлено"
+    "statusRedirect": "Перенаправлено",
+    "export": "Экспорт журналов"
   },
   "filtering": {
     "title": "Внешние списки фильтрации",

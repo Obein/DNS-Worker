@@ -175,6 +175,13 @@ export async function getProfileLogs(profileId: string, queryParams: string, opt
   return res.json();
 }
 
+export async function exportProfileLogs(profileId: string, queryParams: string): Promise<any[]> {
+  const query = queryParams.startsWith("?") ? queryParams.slice(1) : queryParams;
+  const res = await profileFetch(`/api/profiles/${profileId}/logs/export?${query}`);
+  if (!res.ok) throw new Error("Failed to export logs");
+  return res.json();
+}
+
 export async function getProfileLogDetails(profileId: string, logId: number, options?: { signal?: AbortSignal }): Promise<LogEntry> {
   const res = await profileFetch(`/api/profiles/${profileId}/logs/${logId}`, { signal: options?.signal });
   if (!res.ok) throw new Error("Failed to fetch log details");

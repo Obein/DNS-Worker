@@ -21,18 +21,6 @@ export async function handleProfileLogsAndAnalyticsRequest(
       return new Response("Method Not Allowed", { status: 405 });
     }
 
-    if (pathParts.length > 4) {
-      const logId = parseInt(pathParts[4], 10);
-      if (isNaN(logId)) {
-        return new Response("Invalid Log ID", { status: 400 });
-      }
-      const logDetail = await logModel.getLog(profileId, logId);
-      if (!logDetail) {
-        return new Response("Log Not Found", { status: 404 });
-      }
-      return new Response(JSON.stringify(logDetail), { headers: { 'Content-Type': 'application/json' } });
-    }
-
     const urlParams = new URL(request.url).searchParams;
     const range = urlParams.get('range') || '24h';
     const before = urlParams.get('before');
@@ -64,6 +52,32 @@ export async function handleProfileLogsAndAnalyticsRequest(
         default: since -= 86400; break;
       }
       since = Math.max(since, retentionThreshold);
+    }
+
+    if (pathParts.length > 4) {
+      if (pathParts[4] === 'export') {
+        const results = await logModel.getLogs(profileId, {
+          since,
+          until,
+          status: status || undefined,
+          search: search || undefined,
+          access_point_id: accessPointId || undefined,
+          dest_country: destCountry || undefined,
+          isp: isp || undefined,
+          export: true
+        });
+        return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      const logId = parseInt(pathParts[4], 10);
+      if (isNaN(logId)) {
+        return new Response("Invalid Log ID", { status: 400 });
+      }
+      const logDetail = await logModel.getLog(profileId, logId);
+      if (!logDetail) {
+        return new Response("Log Not Found", { status: 404 });
+      }
+      return new Response(JSON.stringify(logDetail), { headers: { 'Content-Type': 'application/json' } });
     }
 
     let limit = parseInt(urlParams.get('limit') || '50', 10);

@@ -307,7 +307,8 @@
     "actionRedirect": "Redirigir",
     "statusPass": "Permitido",
     "statusBlock": "Bloqueado",
-    "statusRedirect": "Redirigido"
+    "statusRedirect": "Redirigido",
+    "export": "Exportar registros"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",

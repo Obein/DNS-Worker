@@ -307,7 +307,8 @@
     "actionRedirect": "리다이렉트",
     "statusPass": "허용됨",
     "statusBlock": "차단됨",
-    "statusRedirect": "리다이렉트됨"
+    "statusRedirect": "리다이렉트됨",
+    "export": "로그 내보내기"
   },
   "filtering": {
     "title": "외부 차단 리스트",

@@ -1,3 +1,5 @@
+import { OverlayToaster } from "@blueprintjs/core";
+
 export interface LogEntry {
   id: number;
   timestamp: number;
@@ -24,6 +26,7 @@ export interface LogsViewProps {
     type: "ALLOW" | "BLOCK" | "REDIRECT",
     recordType?: string
   ) => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
 export type TimeRange = "10m" | "1h" | "24h" | "7d" | "30d" | "custom";

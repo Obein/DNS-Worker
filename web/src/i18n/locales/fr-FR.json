@@ -307,7 +307,8 @@
     "actionRedirect": "Rediriger",
     "statusPass": "Autorisé",
     "statusBlock": "Bloqué",
-    "statusRedirect": "Redirigé"
+    "statusRedirect": "Redirigé",
+    "export": "Exporter les journaux"
   },
   "filtering": {
     "title": "Listes de blocage externes",

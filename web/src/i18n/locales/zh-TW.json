@@ -308,7 +308,8 @@
     "actionRedirect": "重新導向",
     "statusPass": "放行",
     "statusBlock": "攔截",
-    "statusRedirect": "重新導向"
+    "statusRedirect": "重新導向",
+    "export": "匯出日誌"
   },
   "filtering": {
     "title": "外部攔截清單",

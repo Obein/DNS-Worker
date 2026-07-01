@@ -95,7 +95,7 @@ export const ProfileRoutes = ({
         <Route
           path="logs"
           element={
-            <LogsView profileId={id} onQuickAction={handleQuickAction} />
+            <LogsView profileId={id} onQuickAction={handleQuickAction} toasterRef={toasterRef} />
           }
         />
         <Route path="*" element={<NotFoundView />} />

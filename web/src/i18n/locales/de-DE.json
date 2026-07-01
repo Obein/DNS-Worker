@@ -307,7 +307,8 @@
     "actionRedirect": "Umleiten",
     "statusPass": "Zugelassen",
     "statusBlock": "Blockiert",
-    "statusRedirect": "Umgeleitet"
+    "statusRedirect": "Umgeleitet",
+    "export": "Protokolle exportieren"
   },
   "filtering": {
     "title": "Externe Blockierlisten",

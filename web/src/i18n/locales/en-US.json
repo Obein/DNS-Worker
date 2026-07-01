@@ -308,7 +308,8 @@
     "actionRedirect": "Redirect",
     "statusPass": "PASS",
     "statusBlock": "BLOCK",
-    "statusRedirect": "REDIRECT"
+    "statusRedirect": "REDIRECT",
+    "export": "Export Logs"
   },
   "filtering": {
     "title": "External Filters",

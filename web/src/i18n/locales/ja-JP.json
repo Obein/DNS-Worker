@@ -307,7 +307,8 @@
     "actionRedirect": "リダイレクトする",
     "statusPass": "許可済み",
     "statusBlock": "ブロック済み",
-    "statusRedirect": "リダイレクト済み"
+    "statusRedirect": "リダイレクト済み",
+    "export": "ログをエクスポート"
   },
   "filtering": {
     "title": "外部ブロックリスト",
