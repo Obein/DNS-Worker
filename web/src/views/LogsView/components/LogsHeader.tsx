@@ -133,7 +133,14 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
               logRetentionDays={logRetentionDays}
             />
             {/* Real-time Refresh Toggle */}
-            <div className="flex items-center justify-between md:justify-end gap-4">
+            <div className="flex items-center justify-end gap-4">
+              <Button
+                icon="download"
+                onClick={onExport}
+                loading={exporting}
+                title={t("logs.export", "Export Logs")}
+                text={isMobile ? undefined : t("logs.export", "Export Logs")}
+              />
               <Switch
                 label={t("logs.realtime")}
                 checked={realtimeRefresh}
@@ -203,13 +210,6 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
                 fill
               />
             </div>
-            <Button
-              icon="download"
-              onClick={onExport}
-              loading={exporting}
-              title={t("logs.export", "Export Logs")}
-              text={isMobile ? undefined : t("logs.export", "Export Logs")}
-            />
           </div>
         </div>
       )}
