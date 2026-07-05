@@ -39,7 +39,7 @@ export function generateMobileConfig(profileKey: string, profileName: string, or
 				</dict>
 			</array>
 			<key>PayloadDescription</key>
-			<string>Obex DNS protects your network traffic</string>
+			<string>DNS Worker protects your network traffic</string>
 			<key>PayloadDisplayName</key>
 			<string>Obex DoH (${profileName})</string>
 			<key>PayloadIdentifier</key>
@@ -55,7 +55,7 @@ export function generateMobileConfig(profileKey: string, profileName: string, or
 		</dict>
 	</array>
 	<key>PayloadDescription</key>
-	<string>Obex DNS protects your network traffic</string>
+	<string>DNS Worker protects your network traffic</string>
 	<key>PayloadDisplayName</key>
 	<string>Obex - ${profileName}</string>
 	<key>PayloadIdentifier</key>

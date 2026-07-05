@@ -98,7 +98,7 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
         )}
         <img
           src={LogoIcon}
-          alt="Obex DNS Logo"
+          alt="DNS Worker Logo"
           className="w-20 h-20 object-contain"
         />
         <H3 className="font-bold tracking-tight text-2xl mt-4">

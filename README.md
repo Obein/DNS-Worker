@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="web/src/assets/obex_cat_eye_logo-256.webp" alt="Obex DNS Logo" width="128">
-  <h1>Obex DNS</h1>
+  <img src="web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <h1>DNS Worker</h1>
   <p>Protective DNS resolver based on Cloudflare Workers & D1</p>
   <p>Protect your first hop on the internet</p>
   <p align="center">
@@ -15,13 +15,13 @@
 
 ## 📖 Introduction
 
-**Obex DNS** is a lightweight, scalable, and privacy-focused DNS resolution system. It runs entirely on Cloudflare's edge network, leveraging the ultra-fast response of Workers and the efficient storage of D1 database to provide users with a granular DNS (over HTTPS) control experience.
+**DNS Worker** is a lightweight, scalable, and privacy-focused DNS resolution system. It runs entirely on Cloudflare's edge network, leveraging the ultra-fast response of Workers and the efficient storage of D1 database to provide users with a granular DNS (over HTTPS) control experience.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/ObexDNS)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
-### Why Obex DNS?
+### Why DNS Worker?
 
-| | Traditional DNS Services | Obex DNS |
+| | Traditional DNS Services | DNS Worker |
 |---|---|---|
 | **Hosting** | Requires a VPS or home server | Runs on Cloudflare's free tier — no server needed |
 | **Latency** | Depends on server location | Edge-computed in 300+ cities worldwide |
@@ -219,7 +219,7 @@ This project is licensed under the [AGPLv3](LICENSE) License.
 
 ## 📝 Summary
 
-Obex DNS gives you full control over your DNS resolution — with no servers to rent, no infrastructure to manage, and no compromises on privacy. By leveraging Cloudflare Workers' global edge network and D1 database, it delivers a production-ready Protective DNS service that is:
+DNS Worker gives you full control over your DNS resolution — with no servers to rent, no infrastructure to manage, and no compromises on privacy. By leveraging Cloudflare Workers' global edge network and D1 database, it delivers a production-ready Protective DNS service that is:
 
 -   **Free to run** on Cloudflare's generous free tier
 -   **Fast everywhere** thanks to 300+ edge locations worldwide
@@ -227,13 +227,13 @@ Obex DNS gives you full control over your DNS resolution — with no servers to 
 -   **Privacy-first** with encrypted DoH and flexible ECS controls
 -   **Easy to deploy** in minutes via one-click deploy or a simple `npm run deploy`
 
-Whether you're protecting a single device or managing DNS for your family, Obex DNS offers an elegant, self-hosted alternative to commercial DNS filtering services — without the cost or complexity.
+Whether you're protecting a single device or managing DNS for your family, DNS Worker offers an elegant, self-hosted alternative to commercial DNS filtering services — without the cost or complexity.
 
 <div align="center">
   <br>
-  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/ObexDNS">
+  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker">
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>If Obex DNS is useful to you, please consider giving it a ⭐</b>
+  <b>If DNS Worker is useful to you, please consider giving it a ⭐</b>
 </div>

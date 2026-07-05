@@ -49,7 +49,7 @@
     "system": "Système"
   },
   "auth": {
-    "login": "Se connecter à Obex DNS",
+    "login": "Se connecter à DNS Worker",
     "signup": "Créer un compte pour commencer",
     "welcomeBack": "Bon retour ! Veuillez saisir vos identifiants",
     "protectInternet": "Protégez votre premier pas sur Internet",
@@ -115,7 +115,7 @@
   },
   "setup": {
     "title": "Guide d'installation",
-    "subtitle": "Configurez vos appareils pour gérer votre sécurité Internet avec Obex DNS.",
+    "subtitle": "Configurez vos appareils pour gérer votre sécurité Internet avec DNS Worker.",
     "regionOptimization": "Optimisation de la région de connexion (Windows)",
     "otherRegion": "Autres régions",
     "copied": "Copié dans le presse-papiers",
@@ -513,7 +513,7 @@
     }
   },
   "intro": {
-    "item1Title": "Obex DNS de protection",
+    "item1Title": "DNS Worker de protection",
     "item1Desc": "Un résolveur DNS basé sur Cloudflare Workers & D1, optimisé pour la vitesse et la sécurité.",
     "item2Title": "Confidentialité DoH",
     "item2Desc": "Évite l'interception DNS et protège votre confidentialité via des tunnels chiffrés DNS over HTTPS (RFC 8484).",
@@ -533,8 +533,8 @@
     "item9Desc": "Configurez des points d'accès dédiés pour différents appareils afin d'analyser les journaux et les statistiques séparément."
   },
   "deploymentGuide": {
-    "title": "Guide de Configuration et Déploiement d'ObexDNS",
-    "subtitle": "Votre instance n'est pas encore entièrement configurée. Veuillez suivre les étapes ci-dessous pour activer ObexDNS.",
+    "title": "Guide de Configuration et Déploiement d'DNS Worker",
+    "subtitle": "Votre instance n'est pas encore entièrement configurée. Veuillez suivre les étapes ci-dessous pour activer DNS Worker.",
     "dbStatus": "Liaison de Base de Données D1 (env.DB)",
     "jwtStatus": "Clé Secrète JWT (env.JWT_SECRET)",
     "configured": "Configuré",
@@ -551,7 +551,7 @@
     "stepDbCommand2": "[[d1_databases]]\nbinding = \"DB\"\ndatabase_name = \"obex_db\"\ndatabase_id = \"<VOTRE_D1_DATABASE_ID>\"\nmigrations_dir = \"migrations\"",
     "stepDbDashDesc": "1. Allez sur le Tableau de Bord Cloudflare -> Workers & Pages -> D1 -> Créer une base de données -> Nommez-la 'obex_db'.\n2. Allez dans votre Worker -> Paramètres -> Variables -> Liaisons de base de données D1 -> Ajouter une liaison.\n3. Définissez le nom de la liaison sur 'DB' et sélectionnez 'obex_db'. Enregistrez.\n4. Allez dans votre base de données D1 -> Console, copiez et exécutez le script SQL du dossier migrations pour créer la structure des tables.",
     "stepJwtTitle": "2. Définir la Clé Secrète JWT",
-    "stepJwtDesc": "ObexDNS nécessite un secret JWT pour signer les jetons de session. Configurez-le en tant que Secret Cloudflare :",
+    "stepJwtDesc": "DNS Worker nécessite un secret JWT pour signer les jetons de session. Configurez-le en tant que Secret Cloudflare :",
     "stepJwtCommand1": "wrangler secret put JWT_SECRET",
     "stepJwtDashDesc": "1. Allez dans votre Worker -> Paramètres -> Variables -> Variables d'environnement -> Ajouter une variable.\n2. Définissez le nom sur 'JWT_SECRET', choisissez le type 'Secret' et entrez une chaîne aléatoire sécurisée.\n3. Enregistrez et déployez.",
     "stepJwtDesc2": "Tableau de Bord Cloudflare",

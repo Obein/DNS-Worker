@@ -4,7 +4,7 @@ sudo curl -L 'https://github.com/cloudflare/cloudflared/releases/latest/download
 sudo chmod +x /usr/local/bin/cloudflared
 sudo tee /etc/systemd/system/cloudflared-dns.service > /dev/null <<EOF
 [Unit]
-Description=ObexDNS DoH Proxy
+Description=DNS Worker DoH Proxy
 After=network.target
 
 [Service]
@@ -17,7 +17,7 @@ WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
 sudo systemctl enable --now cloudflared-dns
-echo "ObexDNS DoH Proxy installed successfully."
+echo "DNS Worker DoH Proxy installed successfully."
 echo "Please change your system DNS to 127.0.0.1"
 `;
 }

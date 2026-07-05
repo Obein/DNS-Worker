@@ -19,11 +19,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
       <div className="flex items-center gap-2">
         <img
           src={LogoIcon}
-          alt="Obex DNS"
+          alt="DNS Worker"
           className="w-8 h-8 object-contain"
         />
         <span className="font-bold text-lg tracking-tight dark:text-white">
-          Obex DNS
+          DNS Worker
         </span>
       </div>
       <div className="flex items-center gap-3">

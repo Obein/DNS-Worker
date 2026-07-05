@@ -72,12 +72,12 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       <div className="h-14 flex items-center px-4 shrink-0">
         <img
           src={LogoIcon}
-          alt="Obex DNS"
+          alt="DNS Worker"
           className="w-8 h-8 object-contain shrink-0"
         />
         {isSidebarOpen && (
           <span className="ml-3 font-bold text-lg dark:text-white">
-            Obex DNS
+            DNS Worker
           </span>
         )}
       </div>

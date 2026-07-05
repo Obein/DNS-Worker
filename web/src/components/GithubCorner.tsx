@@ -1,6 +1,6 @@
 export const GitHubCorner = () => (
   <a
-    href="https://github.com/Obein/ObexDNS"
+    href="https://github.com/Obein/DNS-Worker"
     target="_blank"
     rel="noopener noreferrer"
     className="github-corner fixed bottom-0 right-0 z-1000 hidden md:block transition-all duration-300 hover:scale-125 origin-bottom-right opacity-40 hover:opacity-100"

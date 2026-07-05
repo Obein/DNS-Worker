@@ -52,7 +52,7 @@ export default {
             error: "configuration_error",
             isDbMissing,
             isJwtSecretMissing,
-            message: "ObexDNS is not fully configured. Please configure the D1 database binding and JWT_SECRET secret variable."
+            message: "DNS Worker is not fully configured. Please configure the D1 database binding and JWT_SECRET secret variable."
           }), {
             status: 503,
             headers: {

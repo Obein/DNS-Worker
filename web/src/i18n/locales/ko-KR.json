@@ -49,7 +49,7 @@
     "system": "시스템 설정 적용"
   },
   "auth": {
-    "login": "Obex DNS 로그인",
+    "login": "DNS Worker 로그인",
     "signup": "계정을 생성하여 시작하기",
     "welcomeBack": "다시 오신 것을 환영합니다, 자격 증명을 입력하세요",
     "protectInternet": "인터넷의 첫 번째 단계를 보호합니다",
@@ -533,7 +533,7 @@
     "item9Desc": "기기마다 전용 DNS 액세스 포인트를 구성하여 로그 및 통계 데이터의 정밀한 격리 분석이 가능합니다."
   },
   "deploymentGuide": {
-    "title": "ObexDNS 설정 및 배포 가이드",
+    "title": "DNS Worker 설정 및 배포 가이드",
     "subtitle": "인스턴스가 아직 완전히 구성되지 않았습니다. ObexDNS를 활성화하려면 아래 단계를 완료하세요.",
     "dbStatus": "D1 데이터베이스 바인딩 (env.DB)",
     "jwtStatus": "JWT 비밀 키 (env.JWT_SECRET)",

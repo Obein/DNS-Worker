@@ -49,7 +49,7 @@
     "system": "Theo hệ thống"
   },
   "auth": {
-    "login": "Đăng nhập Obex DNS",
+    "login": "Đăng nhập DNS Worker",
     "signup": "Tạo tài khoản để bắt đầu",
     "welcomeBack": "Chào mừng trở lại, vui lòng nhập thông tin đăng nhập",
     "protectInternet": "Bảo vệ bước nhảy internet đầu tiên của bạn",
@@ -115,7 +115,7 @@
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
-    "subtitle": "Cấu hình thiết bị của bạn để sử dụng Obex DNS và làm chủ an ninh internet.",
+    "subtitle": "Cấu hình thiết bị của bạn để sử dụng DNS Worker và làm chủ an ninh internet.",
     "regionOptimization": "Tối ưu hóa vùng truy cập (Windows)",
     "otherRegion": "Các khu vực khác",
     "copied": "Đã sao chép vào bộ nhớ tạm",
@@ -533,8 +533,8 @@
     "item9Desc": "Cấu hình các điểm truy cập DNS riêng cho các thiết bị khác nhau, thực hiện cách ly và phân tích tinh vi dữ liệu nhật ký và thống kê."
   },
   "deploymentGuide": {
-    "title": "Hướng dẫn Thiết lập & Triển khai ObexDNS",
-    "subtitle": "Phiên bản của bạn chưa được cấu hình đầy đủ. Vui lòng hoàn thành các bước bên dưới để kích hoạt ObexDNS.",
+    "title": "Hướng dẫn Thiết lập & Triển khai DNS Worker",
+    "subtitle": "Phiên bản của bạn chưa được cấu hình đầy đủ. Vui lòng hoàn thành các bước bên dưới để kích hoạt DNS Worker.",
     "dbStatus": "Liên kết Cơ sở Dữ liệu D1 (env.DB)",
     "jwtStatus": "Khóa Bí mật JWT (env.JWT_SECRET)",
     "configured": "Đã cấu hình",
@@ -551,7 +551,7 @@
     "stepDbCommand2": "[[d1_databases]]\nbinding = \"DB\"\ndatabase_name = \"obex_db\"\ndatabase_id = \"<D1_DATABASE_ID_CỦA_BẠN>\"\nmigrations_dir = \"migrations\"",
     "stepDbDashDesc": "1. Truy cập Bảng điều khiển Cloudflare -> Workers & Pages -> D1 -> Tạo Cơ sở dữ liệu -> Đặt tên là 'obex_db'.\n2. Truy cập Worker của bạn -> Cài đặt -> Biến -> Liên kết Cơ sở Dữ liệu D1 -> Thêm liên kết.\n3. Đặt tên liên kết là 'DB', và chọn cơ sở dữ liệu 'obex_db'. Lưu.\n4. Truy cập Cơ sở dữ liệu D1 -> Bảng điều khiển, sao chép và chạy script SQL trong thư mục migrations để cấu trúc các bảng dữ liệu.",
     "stepJwtTitle": "2. Thiết lập Khóa Bí mật JWT",
-    "stepJwtDesc": "ObexDNS yêu cầu mã bí mật JWT để ký mã xác thực phiên làm việc. Hãy cấu hình nó làm Cloudflare Secret:",
+    "stepJwtDesc": "DNS Worker yêu cầu mã bí mật JWT để ký mã xác thực phiên làm việc. Hãy cấu hình nó làm Cloudflare Secret:",
     "stepJwtCommand1": "wrangler secret put JWT_SECRET",
     "stepJwtDashDesc": "1. Truy cập Worker của bạn -> Cài đặt -> Biến -> Biến Môi trường -> Thêm biến.\n2. Đặt tên là 'JWT_SECRET', chọn kiểu 'Secret', và điền một chuỗi ký tự ngẫu nhiên an toàn.\n3. Lưu và triển khai.",
     "stepJwtDesc2": "Bảng điều khiển Cloudflare",

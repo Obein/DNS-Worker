@@ -49,7 +49,7 @@
     "system": "システムに従う"
   },
   "auth": {
-    "login": "Obex DNS にログイン",
+    "login": "DNS Worker にログイン",
     "signup": "アカウント作成して開始",
     "welcomeBack": "おかえりなさい、認証情報を入力してください",
     "protectInternet": "インターネットの最初の一歩を保護します",
@@ -115,7 +115,7 @@
   },
   "setup": {
     "title": "インストールガイド",
-    "subtitle": "デバイスを設定し、Obex DNS でインターネットセキュリティを管理します。",
+    "subtitle": "デバイスを設定し、DNS Worker でインターネットセキュリティを管理します。",
     "regionOptimization": "接続地域の最適化 (Windows)",
     "otherRegion": "その他の地域",
     "copied": "クリップボードにコピーしました",
@@ -533,8 +533,8 @@
     "item9Desc": "異なるデバイスに対して専用のDNSアクセスポイントを設定し、ログや統計データの詳細な隔離と分析を実現します。"
   },
   "deploymentGuide": {
-    "title": "ObexDNS セットアップ＆デプロイガイド",
-    "subtitle": "インスタンスがまだ完全に構成されていません。以下の手順に従って、ObexDNS を有効にして下さい。",
+    "title": "DNS Worker セットアップ＆デプロイガイド",
+    "subtitle": "インスタンスがまだ完全に構成されていません。以下の手順に従って、DNS Worker を有効にして下さい。",
     "dbStatus": "D1 データベースバインディング (env.DB)",
     "jwtStatus": "JWT シークレットキー (env.JWT_SECRET)",
     "configured": "構成済み",
@@ -551,7 +551,7 @@
     "stepDbCommand2": "[[d1_databases]]\nbinding = \"DB\"\ndatabase_name = \"obex_db\"\ndatabase_id = \"<あなたの_D1_DATABASE_ID>\"\nmigrations_dir = \"migrations\"",
     "stepDbDashDesc": "1. Cloudflare ダッシュボード -> Workers & Pages -> D1 -> データベースの作成 -> 名前を 'obex_db' に設定します。\n2. 該当する Worker -> 設定 -> 変数 -> D1 データベースバインディング -> バインディングの追加 をクリックします。\n3. バインディング名を 'DB' に設定し、D1 データベースで 'obex_db' を選択して保存します。\n4. D1 データベース -> コンソール に進み、migrations フォルダ内の SQL マイグレーションスクリプトを貼り付けて実行し、テーブルを構築します。",
     "stepJwtTitle": "2. JWT シークレットキーの設定",
-    "stepJwtDesc": "ObexDNS はセッショントークンの署名用に JWT シークレットを必要とします。Cloudflare シークレットとして設定します：",
+    "stepJwtDesc": "DNS Worker はセッショントークンの署名用に JWT シークレットを必要とします。Cloudflare シークレットとして設定します：",
     "stepJwtCommand1": "wrangler secret put JWT_SECRET",
     "stepJwtDashDesc": "1. Worker -> 設定 -> 変数 -> 环境変数 -> 変数の追加 をクリックします。\n2. 変数名を 'JWT_SECRET'、タイプを 'シークレット (Secret)' に設定し、ランダムな安全な文字列を入力します。\n3. 保存してデプロイします。",
     "stepJwtDesc2": "Cloudflare ダッシュボード",

@@ -15,7 +15,7 @@ export async function handleMapDataRequest(request: Request, env: Env, ctx: Exec
       const url = 'https://openlayers.org/en/latest/examples/data/topojson/world-110m.json';
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'ObexDNS/1.0 (Cloudflare Worker Map Proxy)'
+          'User-Agent': 'DNS Worker/1.0 (Cloudflare Worker Map Proxy)'
         }
       });
       if (!res.ok) {

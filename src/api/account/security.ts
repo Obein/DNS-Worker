@@ -91,7 +91,7 @@ export async function handleSecurityRequest(
         return new Response("TOTP is already enabled", { status: 409 });
       }
       const secret = generateTOTPSecret();
-      const uri = getTOTPUri(secret, dbUser?.username || 'user', 'ObexDNS');
+      const uri = getTOTPUri(secret, dbUser?.username || 'user', 'DNS Worker');
       return new Response(JSON.stringify({ secret, uri }), { headers: { 'Content-Type': 'application/json' } });
     }
 

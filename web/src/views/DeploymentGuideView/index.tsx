@@ -76,9 +76,9 @@ export const DeploymentGuideView: React.FC = () => {
           >
             {/* Brand Header (Fixed Top) */}
             <div className="flex items-center gap-4 mb-6 shrink-0">
-              <img src={LogoIcon} alt="ObexDNS Logo" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
+              <img src={LogoIcon} alt="DNS Worker Logo" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-blue-500/10" />
               <div>
-                <h1 className="text-xl font-extrabold text-gray-900 dark:text-zinc-50 tracking-tight m-0">ObexDNS</h1>
+                <h1 className="text-xl font-extrabold text-gray-900 dark:text-zinc-50 tracking-tight m-0">DNS Worker</h1>
                 <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium m-0 mt-0.5">Advanced Agentic DNS Server</p>
               </div>
             </div>

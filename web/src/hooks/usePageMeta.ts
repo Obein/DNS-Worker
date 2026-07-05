@@ -21,7 +21,7 @@ export function usePageMeta() {
       moduleName = t("common.account");
     } else if (path.endsWith("/setup")) {
       moduleName = t("nav.setup");
-      description = t("meta.setupDesc", "Configure your devices to use Obex DNS.");
+      description = t("meta.setupDesc", "Configure your devices to use DNS Worker.");
     } else if (path.endsWith("/filter")) {
       moduleName = t("nav.filter");
     } else if (path.endsWith("/rules")) {
@@ -34,7 +34,7 @@ export function usePageMeta() {
       moduleName = t("nav.logs");
     }
 
-    const title = moduleName ? `${moduleName} | Obex DNS` : "Obex DNS";
+    const title = moduleName ? `${moduleName} | DNS Worker` : "DNS Worker";
     return { title, description };
   };
 

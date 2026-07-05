@@ -193,7 +193,7 @@ export const IdleSessionLock: React.FC<IdleSessionLockProps> = ({
             <div className="flex flex-col items-center mb-8">
               <img
                 src={LogoIcon}
-                alt="Obex DNS Logo"
+                alt="DNS Worker Logo"
                 className="w-20 h-20 object-contain"
               />
               {(() => {

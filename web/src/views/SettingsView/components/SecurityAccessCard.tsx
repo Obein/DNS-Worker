@@ -47,7 +47,7 @@ export const SecurityAccessCard: React.FC<SecurityAccessCardProps> = ({
           <p className="text-xs opacity-60">
             {t(
               "settings.rotateKeyDesc",
-              "Generate a new access URL for this profile. Any devices currently using the old URL will immediately lose their connection to Obex DNS and will need to be reconfigured with the new URL."
+              "Generate a new access URL for this profile. Any devices currently using the old URL will immediately lose their connection to DNS Worker and will need to be reconfigured with the new URL."
             )}
           </p>
         </div>

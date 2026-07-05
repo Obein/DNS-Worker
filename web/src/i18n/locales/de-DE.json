@@ -49,7 +49,7 @@
     "system": "System"
   },
   "auth": {
-    "login": "Bei Obex DNS anmelden",
+    "login": "Bei DNS Worker anmelden",
     "signup": "Konto erstellen, um zu beginnen",
     "welcomeBack": "Willkommen zurück! Bitte geben Sie Ihre Anmeldedaten ein",
     "protectInternet": "Schützen Sie Ihren ersten Schritt ins Internet",
@@ -115,7 +115,7 @@
   },
   "setup": {
     "title": "Installationsanleitung",
-    "subtitle": "Konfigurieren Sie Ihre Geräte, um Ihre Internet-Sicherheit mit Obex DNS zu verwalten.",
+    "subtitle": "Konfigurieren Sie Ihre Geräte, um Ihre Internet-Sicherheit mit DNS Worker zu verwalten.",
     "regionOptimization": "Optimierung der Verbindungsregion (Windows)",
     "otherRegion": "Andere Regionen",
     "copied": "In die Zwischenablage kopiert",
@@ -533,8 +533,8 @@
     "item9Desc": "Konfigurieren Sie dedizierte Zugangspunkte für verschiedene Geräte, um Protokolle und Statistiken getrennt zu analysieren."
   },
   "deploymentGuide": {
-    "title": "ObexDNS Einrichtungs- und Bereitstellungshandbuch",
-    "subtitle": "Ihre Instanz ist noch nicht vollständig konfiguriert. Bitte führen Sie die folgenden Schritte aus, um ObexDNS zu aktivieren.",
+    "title": "DNS Worker Einrichtungs- und Bereitstellungshandbuch",
+    "subtitle": "Ihre Instanz ist noch nicht vollständig konfiguriert. Bitte führen Sie die folgenden Schritte aus, um DNS Worker zu aktivieren.",
     "dbStatus": "D1-Datenbankbindung (env.DB)",
     "jwtStatus": "JWT-Geheimschlüssel (env.JWT_SECRET)",
     "configured": "Konfiguriert",
@@ -551,7 +551,7 @@
     "stepDbCommand2": "[[d1_databases]]\nbinding = \"DB\"\ndatabase_name = \"obex_db\"\ndatabase_id = \"<IHRE_D1_DATABASE_ID>\"\nmigrations_dir = \"migrations\"",
     "stepDbDashDesc": "1. Gehen Sie zu Cloudflare Dashboard -> Workers & Pages -> D1 -> Datenbank erstellen -> Nennen Sie sie 'obex_db'.\n2. Gehen Sie zu Ihrem Worker -> Einstellungen -> Variablen -> D1-Datenbankbindungen -> Bindung hinzufügen.\n3. Setzen Sie den Bindungsnamen auf 'DB' und wählen Sie 'obex_db' als D1-Datenbank aus. Speichern.\n4. Gehen Sie zu Ihrer D1-Datenbank -> Konsole, kopieren Sie das SQL-Tabellenschema-Skript aus dem Migrationsordner und führen Sie es aus.",
     "stepJwtTitle": "2. JWT-Geheimschlüssel festlegen",
-    "stepJwtDesc": "ObexDNS erfordert ein JWT-Geheimnis zum Signieren von Sitzungstoken. Konfigurieren Sie es als Cloudflare Secret:",
+    "stepJwtDesc": "DNS Worker erfordert ein JWT-Geheimnis zum Signieren von Sitzungstoken. Konfigurieren Sie es als Cloudflare Secret:",
     "stepJwtCommand1": "wrangler secret put JWT_SECRET",
     "stepJwtDashDesc": "1. Gehen Sie zu Ihrem Worker -> Einstellungen -> Variablen -> Umgebungsvariablen -> Variable hinzufügen.\n2. Setzen Sie den Namen auf 'JWT_SECRET', wählen Sie den Typ 'Secret' und geben Sie eine sichere Zufallszeichenkette ein.\n3. Speichern und bereitstellen.",
     "stepJwtDesc2": "Cloudflare Dashboard",

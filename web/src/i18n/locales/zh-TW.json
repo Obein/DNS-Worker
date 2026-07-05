@@ -50,7 +50,7 @@
   },
   "auth": {
     "keepLoggedIn": "保持登入 {{days}} 天",
-    "login": "登入 Obex DNS",
+    "login": "登入 DNS Worker",
     "signup": "創建帳戶以開始",
     "welcomeBack": "歡迎回來，請輸入憑據",
     "protectInternet": "保護您的網際網路第一跳",
@@ -116,7 +116,7 @@
   },
   "setup": {
     "title": "安裝指南",
-    "subtitle": "配置裝置以使用 Obex DNS 主掌您的網際網路安全。",
+    "subtitle": "配置裝置以使用 DNS Worker 主掌您的網際網路安全。",
     "regionOptimization": "接入地區優化 (Windows)",
     "otherRegion": "其他地區",
     "copied": "已複製到剪貼簿",
@@ -537,8 +537,8 @@
     "item9Desc": "為不同裝置配置專屬的 DNS 存取點，實現日誌和統計數據的精细化隔離與分析。"
   },
   "deploymentGuide": {
-    "title": "ObexDNS 部署與配置指南",
-    "subtitle": "您的系統實例尚未完全配置。請按照以下步驟完成部署以啟用 ObexDNS。",
+    "title": "DNS Worker 部署與配置指南",
+    "subtitle": "您的系統實例尚未完全配置。請按照以下步驟完成部署以啟用 DNS Worker。",
     "dbStatus": "D1 資料庫綁定 (env.DB)",
     "jwtStatus": "JWT 金鑰 Secrets (env.JWT_SECRET)",
     "configured": "已配置",
