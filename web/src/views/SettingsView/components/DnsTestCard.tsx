@@ -32,7 +32,7 @@ export const DnsTestCard: React.FC<DnsTestCardProps> = ({ testInput, setTestInpu
             onKeyDown={(e) => e.key === "Enter" && handleDnsTest()}
           />
         </FormGroup>
-        <div className="flex gap-4 items-end">
+        <div className="flex justify-end gap-4 items-end">
           <FormGroup label={t("settings.recordType")} className="w-32 mb-0">
             <HTMLSelect
               fill
