@@ -23,8 +23,8 @@ export interface UseScrollingIntroResult {
 }
 
 /**
- * A custom hook to manage auto-scrolling, touch-free scrolling resets,
- * and mouse wheel-snapping behavior for a scrolling intro list.
+ * A custom hook to manage smooth auto-scrolling, mouse drag-to-scroll,
+ * touch drag-to-scroll, and natural wheel scrolling for the intro list.
  *
  * @param {UseScrollingIntroParams} params The parameters specifying the base list item count.
  * @returns {UseScrollingIntroResult} An object containing state and refs for container scrolling.
@@ -33,132 +33,165 @@ export const useScrollingIntro = ({ itemCount }: UseScrollingIntroParams): UseSc
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const isAnimatingRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  const isDraggingRef = useRef<boolean>(false);
+  const startYRef = useRef<number>(0);
+  const startScrollTopRef = useRef<number>(0);
+  const wheelTimeoutRef = useRef<number | null>(null);
 
-    const handleWheel = (e: WheelEvent): void => {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-
-      if (isAnimatingRef.current) return;
-
-      const bubbles = Array.from(container.children) as HTMLElement[];
-      if (bubbles.length === 0) return;
-
-      const rect = container.getBoundingClientRect();
-      const hotZone = rect.top + rect.height / 3;
-
-      let closestIdx = 0;
-      let minDistance = Infinity;
-      for (let i = 0; i < bubbles.length; i++) {
-        const bubbleRect = bubbles[i].getBoundingClientRect();
-        const distance = Math.abs(bubbleRect.top - hotZone);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestIdx = i;
+  // Helper to maintain infinite looping without sudden visual jumps
+  const checkLoopBoundary = (container: HTMLElement): void => {
+    const bubbles = Array.from(container.children) as HTMLElement[];
+    if (bubbles.length >= itemCount * 3) {
+      const y0 = bubbles[0].offsetTop;
+      const yN = bubbles[itemCount].offsetTop;
+      const loopHeight = yN - y0;
+      if (loopHeight > 0) {
+        if (container.scrollTop >= loopHeight * 2) {
+          container.scrollTop -= loopHeight;
+        } else if (container.scrollTop < loopHeight) {
+          container.scrollTop += loopHeight;
         }
       }
+    }
+  };
 
-      const direction = e.deltaY > 0 ? 1 : -1;
-      let targetIdx = closestIdx + direction;
-
-      if (targetIdx < 0) targetIdx = 0;
-      if (targetIdx >= bubbles.length) targetIdx = bubbles.length - 1;
-
-      const targetElement = bubbles[targetIdx];
-      const targetScrollTop = targetElement.offsetTop - rect.height / 3;
-
-      isAnimatingRef.current = true;
-
-      const start = container.scrollTop;
-      const change = targetScrollTop - start;
-      const startTime = performance.now();
-      const duration = 400; // ms
-
-      const animate = (currentTime: number): void => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Ease in out quad
-        const ease = progress < 0.5
-          ? 2 * progress * progress
-          : -1 + (4 - 2 * progress) * progress;
-
-        container.scrollTop = start + change * ease;
-
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          // Animation finished: perform loop boundary check
-          if (bubbles.length >= itemCount * 3) {
-            const y0 = bubbles[0].offsetTop;
-            const yN = bubbles[itemCount].offsetTop;
-            const loopHeight = yN - y0;
-            if (loopHeight > 0) {
-              if (container.scrollTop >= loopHeight * 2) {
-                container.scrollTop -= loopHeight;
-              } else if (container.scrollTop < loopHeight) {
-                container.scrollTop += loopHeight;
-              }
-            }
-          }
-          isAnimatingRef.current = false;
-        }
-      };
-
-      requestAnimationFrame(animate);
-    };
-
-    container.addEventListener("wheel", handleWheel, { passive: false });
-    return () => {
-      container.removeEventListener("wheel", handleWheel);
-    };
-  }, [itemCount]);
-
+  // Mouse & Touch drag handling + Wheel smoothing
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let requestId: number;
-    const scrollSpeed = 0.6;
-    const scroll = (): void => {
+
+    // Center scroll on initial mount so user is in middle set
+    requestAnimationFrame(() => {
       const bubbles = Array.from(container.children) as HTMLElement[];
       if (bubbles.length >= itemCount * 3) {
         const y0 = bubbles[0].offsetTop;
         const yN = bubbles[itemCount].offsetTop;
         const loopHeight = yN - y0;
-
-        if (loopHeight > 0) {
-          if (!isPaused) {
-            container.scrollTop += scrollSpeed;
-          }
-
-          if (!isAnimatingRef.current) {
-            if (container.scrollTop >= loopHeight * 2) {
-              container.scrollTop -= loopHeight;
-            } else if (container.scrollTop < loopHeight) {
-              container.scrollTop += loopHeight;
-            }
-          }
+        if (loopHeight > 0 && container.scrollTop === 0) {
+          container.scrollTop = loopHeight;
         }
+      }
+    });
+
+    const handleMouseDown = (e: MouseEvent): void => {
+      if (e.button !== 0) return; // Main button only
+      isDraggingRef.current = true;
+      startYRef.current = e.clientY;
+      startScrollTopRef.current = container.scrollTop;
+      setIsPaused(true);
+    };
+
+    const handleMouseMove = (e: MouseEvent): void => {
+      if (!isDraggingRef.current) return;
+      e.preventDefault();
+      const deltaY = e.clientY - startYRef.current;
+      container.scrollTop = startScrollTopRef.current - deltaY;
+      checkLoopBoundary(container);
+    };
+
+    const handleMouseUp = (): void => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsPaused(false);
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent): void => {
+      if (e.touches.length !== 1) return;
+      isDraggingRef.current = true;
+      startYRef.current = e.touches[0].clientY;
+      startScrollTopRef.current = container.scrollTop;
+      setIsPaused(true);
+    };
+
+    const handleTouchMove = (e: TouchEvent): void => {
+      if (!isDraggingRef.current || e.touches.length !== 1) return;
+      e.preventDefault();
+      const deltaY = e.touches[0].clientY - startYRef.current;
+      container.scrollTop = startScrollTopRef.current - deltaY;
+      checkLoopBoundary(container);
+    };
+
+    const handleTouchEnd = (): void => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        setIsPaused(false);
+      }
+    };
+
+    const handleWheel = (): void => {
+      // Natural wheel scrolling - pause auto-scroll temporarily
+      setIsPaused(true);
+      if (wheelTimeoutRef.current) {
+        window.clearTimeout(wheelTimeoutRef.current);
+      }
+      wheelTimeoutRef.current = window.setTimeout(() => {
+        setIsPaused(false);
+      }, 1200);
+      checkLoopBoundary(container);
+    };
+
+    container.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    container.addEventListener("touchmove", handleTouchMove, { passive: false });
+    container.addEventListener("touchend", handleTouchEnd);
+    container.addEventListener("touchcancel", handleTouchEnd);
+
+    container.addEventListener("wheel", handleWheel, { passive: true });
+
+    return () => {
+      container.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("touchend", handleTouchEnd);
+      container.removeEventListener("touchcancel", handleTouchEnd);
+
+      container.removeEventListener("wheel", handleWheel);
+
+      if (wheelTimeoutRef.current) {
+        window.clearTimeout(wheelTimeoutRef.current);
+      }
+    };
+  }, [itemCount]);
+
+  // Continuous background auto-drift animation
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let requestId: number;
+    const scrollSpeed = 0.5;
+
+    const scroll = (): void => {
+      if (!isPaused && !isDraggingRef.current) {
+        container.scrollTop += scrollSpeed;
+        checkLoopBoundary(container);
       }
 
       const rect = container.getBoundingClientRect();
       const hotZone = rect.top + rect.height / 3;
-      const bubblesForFocus = Array.from(container.children);
+      const bubbles = Array.from(container.children) as HTMLElement[];
       let foundIdx = -1;
-      for (let i = 0; i < bubblesForFocus.length; i++) {
-        const bubbleRect = bubblesForFocus[i].getBoundingClientRect();
+
+      for (let i = 0; i < bubbles.length; i++) {
+        const bubbleRect = bubbles[i].getBoundingClientRect();
         if (bubbleRect.top <= hotZone && bubbleRect.bottom >= hotZone) {
           foundIdx = i % itemCount;
           break;
         }
       }
       setActiveIdx(foundIdx);
+
       requestId = requestAnimationFrame(scroll);
     };
+
     requestId = requestAnimationFrame(scroll);
     return () => cancelAnimationFrame(requestId);
   }, [isPaused, itemCount]);

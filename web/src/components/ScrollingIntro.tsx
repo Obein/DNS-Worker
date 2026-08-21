@@ -51,8 +51,6 @@ export const ScrollingIntro: React.FC = (): React.ReactElement => {
       ref={containerRef}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      onMouseDown={() => setIsPaused(true)}
-      onMouseUp={() => setIsPaused(false)}
       style={{ scrollbarWidth: "none" }}
     >
       {displayItems.map((item, idx) => {
@@ -62,23 +60,23 @@ export const ScrollingIntro: React.FC = (): React.ReactElement => {
         return (
           <div
             key={idx}
-            className={`transition-all duration-700 ease-in-out shrink-0 border-l-4 mb-8 ${
+            className={`transition-[opacity,transform,border-color,filter] duration-300 ease-out shrink-0 border-l-4 mb-8 pl-6 transform-gpu ${
               isActive
-                ? "border-blue-600 pl-8 scale-105 opacity-100"
-                : "border-gray-200 dark:border-gray-800 pl-6 opacity-30 grayscale"
+                ? "border-blue-600 scale-[1.03] opacity-100 grayscale-0"
+                : "border-gray-200 dark:border-gray-800 scale-100 opacity-30 grayscale"
             }`}
           >
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span
-                  className={`font-mono text-xs font-bold tracking-widest ${
+                  className={`font-mono text-xs font-bold tracking-widest transition-colors duration-300 ${
                     isActive ? "text-blue-600" : "text-gray-400"
                   }`}
                 >
                   /{displayIdx}
                 </span>
                 <div
-                  className={`transition-transform duration-700 ${
+                  className={`transition-transform duration-300 ${
                     isActive ? "rotate-0 scale-110" : "rotate-12 opacity-50"
                   }`}
                 >
@@ -87,14 +85,14 @@ export const ScrollingIntro: React.FC = (): React.ReactElement => {
               </div>
               <div className="space-y-2">
                 <h2
-                  className={`text-4xl font-black leading-none tracking-tighter uppercase transition-colors duration-500 ${
+                  className={`text-4xl font-black leading-none tracking-tighter uppercase transition-colors duration-300 ${
                     isActive ? "text-gray-900 dark:text-white" : "text-gray-300 dark:text-gray-700"
                   }`}
                 >
                   {t(item.titleKey)}
                 </h2>
                 <p
-                  className={`max-w-md text-lg font-medium leading-snug transition-colors duration-500 ${
+                  className={`max-w-md text-lg font-medium leading-snug transition-colors duration-300 ${
                     isActive ? "text-gray-600 dark:text-gray-400" : "text-transparent"
                   }`}
                 >
@@ -102,7 +100,7 @@ export const ScrollingIntro: React.FC = (): React.ReactElement => {
                 </p>
               </div>
               {isActive && (
-                <div className="flex gap-1 mt-2 transition-all duration-500">
+                <div className="flex gap-1 mt-2 transition-all duration-300">
                   <div className="h-1 w-2 bg-gray-200 dark:bg-gray-800" />
                 </div>
               )}
