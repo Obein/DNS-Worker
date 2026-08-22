@@ -414,13 +414,17 @@
     "exportError": "Xuất cấu hình thất bại, vui lòng thử lại sau",
     "nameUpdateSuccess": "Tên cấu hình đã được cập nhật",
     "saving": "Đang lưu...",
-    "echTitle": "ECH nỗ lực tối đa (Best-effort ECH)",
-    "enableEch": "Bật ECH nỗ lực tối đa",
-    "echDesc": "Đối với các miền được ủy quyền qua Cloudflare, tự động viết lại truy vấn HTTPS (Type 65) và SVCB (Type 64) để chèn tham số ECH nhằm bảo vệ quyền riêng tư SNI.",
+    "echTitle": "Ghi đè ECH",
+    "enableEch": "Bật ghi đè ECH",
+    "echDesc": "Đối với các miền qua Cloudflare, tự động ghi đè tham số ECH và SNI bên ngoài khi truy vấn HTTPS (Type 65) / SVCB (Type 64) để bảo vệ quyền riêng tư.",
     "echFrontingTitle": "SNI bên ngoài (ECH Fronting)",
     "echFrontingDesc": "Tên miền hiển thị ở dạng văn bản thuần trong bắt tay TLS bên ngoài",
     "echFrontingCustomPlaceholder": "Nhập miền fronting tùy chỉnh, ví dụ: crypto.cloudflare.com",
-    "echPreferred": "Ưu tiên"
+    "echPreferred": "Ưu tiên",
+    "whatIsEch": "ECH (Encrypted Client Hello) là gì?",
+    "echHelpDesc": "ECH là tiện ích mở rộng quyền riêng tư của TLS 1.3 giúp mã hóa hoàn toàn tên miền thực (Inner SNI), chỉ để lộ tên miền ngụy trang (Outer SNI) cho bên trung gian.",
+    "echHelpBenefit1": "Ngăn chặn nhà mạng và bên trung gian theo dõi miền phụ bạn đang truy cập",
+    "echHelpBenefit2": "Kết hợp với DoH để loại bỏ rò rỉ SNI dạng văn bản thuần"
   },
   "account": {
     "title": "Cài đặt tài khoản",

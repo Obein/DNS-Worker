@@ -414,13 +414,17 @@
     "exportError": "Échec de l'exportation. Veuillez réessayer plus tard",
     "nameUpdateSuccess": "Nom du profil mis à jour",
     "saving": "Enregistrement en cours...",
-    "echTitle": "ECH au mieux (Best-effort ECH)",
-    "enableEch": "Activer ECH au mieux",
-    "echDesc": "Pour les domaines relayés par Cloudflare, réécrit automatiquement les requêtes HTTPS (Type 65) et SVCB (Type 64) pour injecter les paramètres ECH afin de protéger la confidentialité SNI.",
+    "echTitle": "Réécrire ECH",
+    "enableEch": "Activer la réécriture ECH",
+    "echDesc": "Pour les domaines gérés par Cloudflare, réécrit automatiquement les paramètres ECH et le SNI de façade lors des requêtes HTTPS (Type 65) / SVCB (Type 64).",
     "echFrontingTitle": "SNI externe (ECH Fronting)",
     "echFrontingDesc": "Nom de domaine visible en clair dans le handshake TLS externe",
     "echFrontingCustomPlaceholder": "Entrez un domaine de fronting personnalisé, ex. crypto.cloudflare.com",
-    "echPreferred": "Recommandé"
+    "echPreferred": "Recommandé",
+    "whatIsEch": "Qu'est-ce que l'ECH (Encrypted Client Hello) ?",
+    "echHelpDesc": "L'ECH est une extension de confidentialité essentielle de TLS 1.3 qui chiffre intégralement le nom de domaine réel (Inner SNI), n'exposant qu'un domaine de façade (Outer SNI).",
+    "echHelpBenefit1": "Empêche les FAI et les intermédiaires d'intercepter le sous-domaine exact visité",
+    "echHelpBenefit2": "Associé au DoH, élimine les fuites de SNI en clair"
   },
   "account": {
     "title": "Paramètres du compte",

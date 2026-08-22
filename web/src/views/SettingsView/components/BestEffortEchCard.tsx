@@ -13,7 +13,7 @@ import {
   Tag,
   Intent,
 } from "@blueprintjs/core";
-import { Lock } from "lucide-react";
+import { Lock, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ProfileSettings } from "../types";
 
@@ -83,13 +83,43 @@ export const BestEffortEchCard: React.FC<BestEffortEchCardProps> = ({ settings, 
 
   return (
     <Card elevation={Elevation.ONE} className="dark:bg-gray-900 dark:border-gray-800">
-      <H5 className="flex items-center gap-2 mb-3 font-bold text-purple-600 dark:text-purple-400">
-        <Lock size={18} /> {t("settings.echTitle", "尽力 ECH (Best-effort ECH)")}
-      </H5>
+      <div className="flex items-center justify-between mb-3">
+        <H5 className="flex items-center gap-2 m-0 font-bold text-purple-600 dark:text-purple-400">
+          <Lock size={18} /> {t("settings.echTitle")}
+        </H5>
+        <PopoverNext
+          placement="bottom-end"
+          usePortal={true}
+          content={
+            <div className="p-4 max-w-sm">
+              <H5>{t("settings.whatIsEch", "何为 ECH (Encrypted Client Hello)？")}</H5>
+              <p className="text-sm mb-2">
+                {t("settings.echHelpDesc")}
+              </p>
+              <ul className="list-disc list-inside text-sm opacity-80 mb-3 space-y-1">
+                <li>{t("settings.echHelpBenefit1")}</li>
+                <li>{t("settings.echHelpBenefit2")}</li>
+              </ul>
+              <div className="text-xs border-t border-gray-100 dark:border-gray-700 pt-2">
+                <a
+                  href="https://en.wikipedia.org/wiki/Encrypted_Client_Hello"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-blue-500 hover:underline"
+                >
+                  <ExternalLink size={10} /> {t("setup.learnMore", "了解更多")}
+                </a>
+              </div>
+            </div>
+          }
+        >
+          <Button icon="help" variant="minimal" intent={Intent.NONE} />
+        </PopoverNext>
+      </div>
 
       <div className="space-y-4">
         <Switch
-          label={t("settings.enableEch", "启用尽力 ECH")}
+          label={t("settings.enableEch", "启用重写 ECH")}
           checked={isEnabled}
           onChange={(e) => handleToggle(e.currentTarget.checked)}
         />
