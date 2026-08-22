@@ -44,7 +44,8 @@ export async function handleProfilesCoreCollectionRequest(
       upstream: ["https://security.cloudflare-dns.com/dns-query"],
       ecs: { enabled: true, use_client_ip: true },
       log_retention_days: user?.role !== 'admin' ? Number(env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS) : Number(env.DEFAULT_LOG_RETENTION_DAYS) || 30,
-      default_policy: 'ALLOW'
+      default_policy: 'ALLOW',
+      best_effort_ech: { enabled: false, fronting_domain: "crypto.cloudflare.com" }
     };
     await profileModel.create({ id: newId, owner_id: user.id, name: body.name || "Unnamed Profile", settings: defaultSettings });
     return new Response(JSON.stringify({ id: newId }), { status: 201 });

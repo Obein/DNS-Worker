@@ -308,7 +308,8 @@
     "statusPass": "Autorisé",
     "statusBlock": "Bloqué",
     "statusRedirect": "Redirigé",
-    "export": "Exporter les journaux"
+    "export": "Exporter les journaux",
+    "rewritten": "Réécrit"
   },
   "filtering": {
     "title": "Listes de blocage externes",
@@ -412,7 +413,14 @@
     "exportSuccess": "Configuration exportée avec succès",
     "exportError": "Échec de l'exportation. Veuillez réessayer plus tard",
     "nameUpdateSuccess": "Nom du profil mis à jour",
-    "saving": "Enregistrement en cours..."
+    "saving": "Enregistrement en cours...",
+    "echTitle": "ECH au mieux (Best-effort ECH)",
+    "enableEch": "Activer ECH au mieux",
+    "echDesc": "Pour les domaines relayés par Cloudflare, réécrit automatiquement les requêtes HTTPS (Type 65) et SVCB (Type 64) pour injecter les paramètres ECH afin de protéger la confidentialité SNI.",
+    "echFrontingTitle": "SNI externe (ECH Fronting)",
+    "echFrontingDesc": "Nom de domaine visible en clair dans le handshake TLS externe",
+    "echFrontingCustomPlaceholder": "Entrez un domaine de fronting personnalisé, ex. crypto.cloudflare.com",
+    "echPreferred": "Recommandé"
   },
   "account": {
     "title": "Paramètres du compte",

@@ -8,6 +8,7 @@ import { UpstreamCard } from "./components/UpstreamCard";
 import { DefaultPolicyCard } from "./components/DefaultPolicyCard";
 import { LogRetentionCard } from "./components/LogRetentionCard";
 import { AdvancedEcsCard } from "./components/AdvancedEcsCard";
+import { BestEffortEchCard } from "./components/BestEffortEchCard";
 import { DnsTestCard } from "./components/DnsTestCard";
 import {
   getProfileDetails,
@@ -215,6 +216,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         <DefaultPolicyCard settings={settings} setSettings={handleSettingsChange} />
         <LogRetentionCard settings={settings} setSettings={handleSettingsChange} isAdmin={currentUser?.role === "admin"} maxRetentionDays={currentUser?.max_log_retention_days ?? 7} />
         <AdvancedEcsCard settings={settings} setSettings={handleSettingsChange} />
+        <BestEffortEchCard settings={settings} setSettings={handleSettingsChange} />
       </div>
 
       <DnsTestCard

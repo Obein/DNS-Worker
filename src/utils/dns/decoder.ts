@@ -214,9 +214,62 @@ export function parseDNSAnswer(
     } else if (type === "HTTPS" || type === "SVCB") {
       // HTTPS/SVCB format: priority (2 bytes) + target name (variable) + parameters (variable)
       const priority = (raw[offset] << 8) | raw[offset + 1];
-      const { name: target } = decodeName(raw, offset + 2);
-      data = `priority: ${priority}, target: ${target || "."}`;
-      if (rdLength > 2) data += ` [params: ${rdLength - 2} bytes]`;
+      const { name: target, read: targetRead } = decodeName(raw, offset + 2);
+      let curr = offset + 2 + targetRead;
+      const end = offset + rdLength;
+      const params: string[] = [];
+
+      while (curr + 4 <= end) {
+        const key = (raw[curr] << 8) | raw[curr + 1];
+        const valLen = (raw[curr + 2] << 8) | raw[curr + 3];
+        curr += 4;
+
+        if (curr + valLen > end) break;
+
+        if (key === 1) { // alpn
+          let pCurr = curr;
+          const pEnd = curr + valLen;
+          const alpns: string[] = [];
+          while (pCurr < pEnd) {
+            const aLen = raw[pCurr];
+            let aStr = "";
+            for (let k = 0; k < aLen; k++) {
+              aStr += String.fromCharCode(raw[pCurr + 1 + k]);
+            }
+            alpns.push(aStr);
+            pCurr += aLen + 1;
+          }
+          params.push(`alpn=${alpns.join(",")}`);
+        } else if (key === 4) { // ipv4hint
+          const ips: string[] = [];
+          for (let k = 0; k < valLen; k += 4) {
+            ips.push(`${raw[curr + k]}.${raw[curr + k + 1]}.${raw[curr + k + 2]}.${raw[curr + k + 3]}`);
+          }
+          params.push(`ipv4hint=${ips.join(",")}`);
+        } else if (key === 5) { // ech
+          let binStr = "";
+          for (let k = 0; k < valLen; k++) {
+            binStr += String.fromCharCode(raw[curr + k]);
+          }
+          params.push(`ech=${btoa(binStr)}`);
+        } else if (key === 6) { // ipv6hint
+          const ips: string[] = [];
+          for (let k = 0; k < valLen; k += 16) {
+            const parts: string[] = [];
+            for (let j = 0; j < 16; j += 2) {
+              parts.push(((raw[curr + k + j] << 8) | raw[curr + k + j + 1]).toString(16));
+            }
+            ips.push(parts.join(":"));
+          }
+          params.push(`ipv6hint=${ips.join(",")}`);
+        } else {
+          params.push(`key${key}=[${valLen}B]`);
+        }
+
+        curr += valLen;
+      }
+
+      data = `${priority} ${target || "."}${params.length > 0 ? " " + params.join(" ") : ""}`.trim();
     } else {
       data = `[Raw: ${rdLength} bytes]`;
     }

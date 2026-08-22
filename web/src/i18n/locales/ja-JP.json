@@ -308,7 +308,8 @@
     "statusPass": "許可済み",
     "statusBlock": "ブロック済み",
     "statusRedirect": "リダイレクト済み",
-    "export": "ログをエクスポート"
+    "export": "ログをエクスポート",
+    "rewritten": "書き換え済み"
   },
   "filtering": {
     "title": "外部ブロックリスト",
@@ -412,7 +413,14 @@
     "exportSuccess": "設定をエクスポートしました",
     "exportError": "設定のエクスポートに失敗しました。しばらくしてからもう一度お試しください",
     "nameUpdateSuccess": "設定名を更新しました",
-    "saving": "保存中..."
+    "saving": "保存中...",
+    "echTitle": "ベストエフォート ECH",
+    "enableEch": "ベストエフォート ECH を有効化",
+    "echDesc": "Cloudflare 経由のドメインに対し、HTTPS (Type 65) または SVCB (Type 64) クエリで上流に ECH がない場合、自動的に ECH パラメータを注入して SNI プライバシーを保護します。",
+    "echFrontingTitle": "外層 SNI (ECH Fronting)",
+    "echFrontingDesc": "TLS ハンドシェイク外層で可視となるカモフラージュドメイン",
+    "echFrontingCustomPlaceholder": "カスタムフロンティングドメインを入力（例: crypto.cloudflare.com）",
+    "echPreferred": "推奨"
   },
   "account": {
     "title": "アカウント設定",

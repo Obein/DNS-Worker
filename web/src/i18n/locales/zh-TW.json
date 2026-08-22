@@ -309,7 +309,8 @@
     "statusPass": "放行",
     "statusBlock": "攔截",
     "statusRedirect": "重新導向",
-    "export": "匯出日誌"
+    "export": "匯出日誌",
+    "rewritten": "已重寫"
   },
   "filtering": {
     "title": "外部攔截清單",
@@ -413,7 +414,14 @@
     "exportSuccess": "配置成功匯出",
     "exportError": "配置匯出失敗，請稍後再試",
     "nameUpdateSuccess": "配置名稱已更新",
-    "saving": "正在儲存..."
+    "saving": "正在儲存...",
+    "echTitle": "盡力 ECH (Best-effort ECH)",
+    "enableEch": "啟用盡力 ECH",
+    "echDesc": "針對由 Cloudflare 代理的網域，當查詢 HTTPS (Type 65) 或 SVCB (Type 64) 記錄且上游未配置 ECH 時，自動重寫注入 ECH 參數以保護 SNI 隱私。",
+    "echFrontingTitle": "表層 SNI (ECH Fronting)",
+    "echFrontingDesc": "TLS 握手外層可見的偽裝網域",
+    "echFrontingCustomPlaceholder": "輸入自訂表層網域，例如 crypto.cloudflare.com",
+    "echPreferred": "首選"
   },
   "account": {
     "title": "帳號設定",
