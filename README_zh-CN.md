@@ -52,6 +52,7 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
   - **自定义重定向**：支持 A/AAAA/TXT/CNAME 记录的自定义覆盖。
 - 📊 **实时统计与日志**：可视化仪表盘，记录每一次请求的命中原因、地理位置及上游延迟。
 - 🔐 **隐私增强**：支持 ECS (EDNS Client Subnet) 灵活配置（透传、自定义或隐藏）。
+- 🔒 **重写 ECH & ECH Fronting**：针对 HTTPS (Type 65) / SVCB (Type 64) 查询，自动重写/注入 ECH (Encrypted Client Hello) 参数与自定义表层伪装域名（Outer SNI / ECH Fronting），全程加密真实目标域名以防中间人窥探与阻断。（*注：重写注入功能仅支持由 Cloudflare 代理的域名*）。
 - 🌗 **现代 UI**：支持暗黑模式，基于 React + BlueprintJS 构建的高密度管理面板。
 
 ---

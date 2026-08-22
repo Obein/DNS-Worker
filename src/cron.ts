@@ -39,9 +39,20 @@ export async function handleScheduled(
       const maxRetentionDays = Number(env.MAX_LOG_RETENTION_DAYS) || 90;
       const maxLogsPerProfile = Number(env.MAX_LOGS_PER_PROFILE) || 500_000;
       await logModel.cleanupGlobal(maxRetentionDays, maxLogsPerProfile);
-      console.log("[Cron] Cleanup phase completed at", new Date().toISOString());
     } catch (e) {
       console.error("[Cron] Global log cleanup failed:", e);
+    }
+
+    try {
+      const { SessionModel } = await import('./models/session');
+      const sessionModel = new SessionModel(env.DB);
+      const { deletedSessions, deletedPending } = await sessionModel.deleteExpiredSessions(now);
+      if (deletedSessions > 0 || deletedPending > 0) {
+        console.log(`[Cron] Purged ${deletedSessions} expired session(s) and ${deletedPending} pending token(s).`);
+      }
+      console.log("[Cron] Cleanup phase completed at", new Date().toISOString());
+    } catch (e) {
+      console.error("[Cron] Session cleanup failed:", e);
     }
 
     // ── CLOUDFLARE IPS SYNC ───────────────────────────────────────────────────
