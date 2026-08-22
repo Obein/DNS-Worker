@@ -35,7 +35,9 @@ export const TrendChart: React.FC<TrendChartProps> = ({ chartData, range }) => {
               tickLine={false}
               tick={{ fontSize: 10, fill: "#888" }}
               tickFormatter={(ts) => {
-                const d = new Date(ts * 1000);
+                const num = Number(ts);
+                if (isNaN(num)) return "";
+                const d = new Date(num * 1000);
                 if (range === "10m" || range === "1h") return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                 if (range === "24h") return d.getHours() + ":00";
                 return d.toLocaleDateString([], { month: "short", day: "numeric" });
@@ -54,7 +56,9 @@ export const TrendChart: React.FC<TrendChartProps> = ({ chartData, range }) => {
               isAnimationActive={true}
               shared={true}
               labelFormatter={(ts) => {
-                const d = new Date(ts * 1000);
+                const num = Number(ts);
+                if (isNaN(num)) return "";
+                const d = new Date(num * 1000);
                 return formatDateTime(d, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
               }}
               contentStyle={{
