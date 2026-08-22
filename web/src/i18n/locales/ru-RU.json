@@ -308,7 +308,8 @@
     "statusPass": "Разрешено",
     "statusBlock": "Блок",
     "statusRedirect": "Перенаправлено",
-    "export": "Экспорт журналов"
+    "export": "Экспорт журналов",
+    "rewritten": "Перезаписано"
   },
   "filtering": {
     "title": "Внешние списки фильтрации",
@@ -412,7 +413,14 @@
     "exportSuccess": "Успешно",
     "exportError": "Ошибка экспорта",
     "nameUpdateSuccess": "Имя обновлено",
-    "saving": "Сохранение..."
+    "saving": "Сохранение...",
+    "echTitle": "Best-effort ECH",
+    "enableEch": "Включить Best-effort ECH",
+    "echDesc": "Для доменов, проксируемых Cloudflare, автоматически перезаписывает запросы HTTPS (тип 65) и SVCB (тип 64), внедряя параметры ECH для защиты конфиденциальности SNI.",
+    "echFrontingTitle": "Внешний SNI (ECH Fronting)",
+    "echFrontingDesc": "Доменное имя, видимое в открытом виде во внешнем рукопожатии TLS",
+    "echFrontingCustomPlaceholder": "Введите пользовательский домен fronting, например crypto.cloudflare.com",
+    "echPreferred": "Рекомендуется"
   },
   "account": {
     "title": "Настройки аккаунта",

@@ -2,6 +2,7 @@ import { Context, DNSQuery, ResolutionResult, ProfileSettings } from "../types";
 import { LogModel } from "../models/log";
 import { fetchGeoIP } from "../utils/geoip";
 import { buildResponse, buildResponseMulti, buildDNSQuery, parseDNSAnswer, injectEcsIntoQuery, DNSRecord } from "../utils/dns";
+import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, ensureCloudflareIpRangesLoaded } from "../utils/ech";
 import { dnsCache } from "./cache";
 import { connect } from 'cloudflare:sockets';
 import { isSafeUrl } from "../utils/validator";
@@ -42,7 +43,7 @@ export const pipelineResolver = {
     }
 
     try {
-      // \u89e3\u6790\u7ecf\u5178 DNS \u7684 host \u548c port\uff0c\u63d0\u5347\u5230\u5916\u5c42\u4f9b diagnostics \u4f7f\u7528
+      // 经典 DNS 的 host 和 port，提升到外层供 diagnostics 使用
       let tcpHost = '';
       let tcpPort = 53;
 
@@ -105,7 +106,82 @@ export const pipelineResolver = {
         upstreamLatency = Date.now() - startFetch;
       }
 
-      const parsedAnswers = parseDNSAnswer(answer);
+      let parsedAnswers = parseDNSAnswer(answer);
+      let effectiveReason = reason;
+
+      // ── 尽力 ECH (Best-effort ECH) 处理 ──────────────────────────────────────
+      // 仅支持由 Cloudflare 代理的地址。针对 Type 65 (HTTPS) 或 Type 64 (SVCB)：
+      // 若上游未返回 ECH 配置或无应答，检查目标是否为 CF 代理 IP，若是则自动注入 ECH 重写。
+      const isHttpsOrSvcb = query.type === 'HTTPS' || query.type === 'SVCB' || query.type === 'TYPE65' || query.type === 'TYPE64';
+      const echEnabled = typeof settings.best_effort_ech === 'boolean'
+        ? settings.best_effort_ech
+        : !!settings.best_effort_ech?.enabled;
+
+      if (isHttpsOrSvcb && echEnabled) {
+        await ensureCloudflareIpRangesLoaded(context.env.DB);
+        const hasEch = parsedAnswers.some(a => a.data.includes("ech="));
+        if (!hasEch) {
+          const existingIpv4s: string[] = [];
+          const existingIpv6s: string[] = [];
+          for (const a of parsedAnswers) {
+            const v4Match = a.data.match(/ipv4hint=([^\s]+)/);
+            if (v4Match) existingIpv4s.push(...v4Match[1].split(","));
+            const v6Match = a.data.match(/ipv6hint=([^\s]+)/);
+            if (v6Match) existingIpv6s.push(...v6Match[1].split(","));
+          }
+
+          let isCf = existingIpv4s.some(isCloudflareIp) || existingIpv6s.some(isCloudflareIp);
+
+          // 若现有 hint 中未发现或无 answer，快速解析 A 记录验证是否为 CF 代理
+          if (!isCf) {
+            try {
+              const aQueryRaw = buildDNSQuery(query.name, 'A');
+              const aRes = await pipelineResolver.resolve(
+                request,
+                { name: query.name, type: 'A', raw: aQueryRaw },
+                context,
+                settings,
+                'PASS'
+              );
+              if (aRes.answer && aRes.answer.length > 0) {
+                const aAnswers = parseDNSAnswer(aRes.answer);
+                for (const ans of aAnswers) {
+                  if (ans.type === 'A') {
+                    existingIpv4s.push(ans.data);
+                    if (isCloudflareIp(ans.data)) isCf = true;
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn("Failed to probe A records for ECH check:", e);
+            }
+          }
+
+          if (isCf) {
+            const frontingDomain = (typeof settings.best_effort_ech === 'object' && settings.best_effort_ech?.fronting_domain)
+              ? settings.best_effort_ech.fronting_domain
+              : DEFAULT_ECH_FRONTING_DOMAIN;
+
+            const echConfigBase64 = buildCloudflareEchConfig(frontingDomain);
+            const targetType = (query.type === 'SVCB' || query.type === 'TYPE64') ? 'SVCB' : 'HTTPS';
+
+            const params: string[] = ["alpn=h3,h2"];
+            if (existingIpv4s.length > 0) {
+              params.push(`ipv4hint=${Array.from(new Set(existingIpv4s)).join(",")}`);
+            }
+            params.push(`ech=${echConfigBase64}`);
+            if (existingIpv6s.length > 0) {
+              params.push(`ipv6hint=${Array.from(new Set(existingIpv6s)).join(",")}`);
+            }
+
+            const rdataValue = `1 . ${params.join(" ")}`;
+            answer = buildResponse(query.raw, targetType, rdataValue, 300, 0);
+            parsedAnswers = parseDNSAnswer(answer);
+            effectiveReason = "ECH Rewritten";
+          }
+        }
+      }
+
       const minTTL = parsedAnswers.length > 0 ? Math.max(10, Math.min(...parsedAnswers.map(a => a.ttl))) : 60;
 
       context.ctx.waitUntil((async () => {
@@ -127,7 +203,7 @@ export const pipelineResolver = {
           domain: query.name,
           record_type: query.type,
           action,
-          reason,
+          reason: effectiveReason,
           answer: parsedAnswers.map(a => a.data).join(", "),
           dest_geoip: destGeoJson,
           upstream: upstreamUrl,
@@ -137,7 +213,7 @@ export const pipelineResolver = {
 
         if (answer.length > 0) {
           dnsCache.set(`${context.profileId}:${query.name}:${query.type}`, {
-            answer, ttl: minTTL, action, reason, expiresAt: Date.now() + (minTTL * 1000)
+            answer, ttl: minTTL, action, reason: effectiveReason, expiresAt: Date.now() + (minTTL * 1000)
           });
         }
       })());
@@ -146,7 +222,7 @@ export const pipelineResolver = {
         answer, 
         ttl: minTTL, 
         action, 
-        reason, 
+        reason: effectiveReason, 
         latency: Date.now() - context.startTime, 
         timings: { upstream_fetch: upstreamLatency },
         diagnostics: {

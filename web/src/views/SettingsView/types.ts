@@ -15,6 +15,10 @@ export interface ProfileSettings {
   block_mode?: "NULL_IP" | "NXDOMAIN" | "NODATA" | "CUSTOM_IP";
   custom_block_ipv4?: string;
   custom_block_ipv6?: string;
+  best_effort_ech?: {
+    enabled: boolean;
+    fronting_domain?: string;
+  };
 }
 
 export interface Profile {

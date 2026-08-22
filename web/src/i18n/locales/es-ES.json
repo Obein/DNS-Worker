@@ -308,7 +308,8 @@
     "statusPass": "Permitido",
     "statusBlock": "Bloqueado",
     "statusRedirect": "Redirigido",
-    "export": "Exportar registros"
+    "export": "Exportar registros",
+    "rewritten": "Reescrito"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",
@@ -412,7 +413,14 @@
     "exportSuccess": "Configuración exportada con éxito",
     "exportError": "Error al exportar la configuración. Por favor, inténtalo de nuevo más tarde",
     "nameUpdateSuccess": "Nombre de perfil actualizado",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "echTitle": "ECH de mejor esfuerzo",
+    "enableEch": "Habilitar ECH de mejor esfuerzo",
+    "echDesc": "Para dominios proxy de Cloudflare, reescribe automáticamente las consultas HTTPS (Tipo 65) y SVCB (Tipo 64) para inyectar parámetros ECH y proteger la privacidad de SNI.",
+    "echFrontingTitle": "SNI externo (ECH Fronting)",
+    "echFrontingDesc": "Nombre de dominio visible en texto claro en el handshake TLS exterior",
+    "echFrontingCustomPlaceholder": "Ingrese un dominio de fronting personalizado, ej. crypto.cloudflare.com",
+    "echPreferred": "Recomendado"
   },
   "account": {
     "title": "Ajustes de cuenta",
