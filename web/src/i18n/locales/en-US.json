@@ -310,7 +310,8 @@
     "statusBlock": "BLOCK",
     "statusRedirect": "REDIRECT",
     "export": "Export Logs",
-    "rewritten": "Rewritten"
+    "rewritten": "Rewritten",
+    "logDetails": "Log Details"
   },
   "filtering": {
     "title": "External Filters",

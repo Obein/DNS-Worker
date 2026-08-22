@@ -23,8 +23,8 @@ export interface BestEffortEchCardProps {
 }
 
 const PRESET_FRONTING_DOMAINS = [
-  { domain: "crypto.cloudflare.com", isPreferred: true },
-  { domain: "cloudflare-ech.com", isPreferred: false },
+  { domain: "cloudflare-ech.com", isPreferred: true },
+  { domain: "crypto.cloudflare.com", isPreferred: false },
   { domain: "one.one.one.one", isPreferred: false },
   { domain: "www.cloudflare.com", isPreferred: false },
   { domain: "encryptedsni.com", isPreferred: false },
@@ -40,14 +40,14 @@ export const BestEffortEchCard: React.FC<BestEffortEchCardProps> = ({ settings, 
 
   const currentFronting = (typeof settings.best_effort_ech === "object" && settings.best_effort_ech?.fronting_domain)
     ? settings.best_effort_ech.fronting_domain
-    : "crypto.cloudflare.com";
+    : "cloudflare-ech.com";
 
   const handleToggle = (checked: boolean) => {
     setSettings({
       ...settings,
       best_effort_ech: {
         enabled: checked,
-        fronting_domain: currentFronting || "crypto.cloudflare.com",
+        fronting_domain: currentFronting || "cloudflare-ech.com",
       },
     });
   };

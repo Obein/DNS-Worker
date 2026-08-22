@@ -309,7 +309,8 @@
     "statusBlock": "Bloqueado",
     "statusRedirect": "Redirigido",
     "export": "Exportar registros",
-    "rewritten": "Reescrito"
+    "rewritten": "Reescrito",
+    "logDetails": "Detalles del registro"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",

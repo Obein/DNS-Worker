@@ -309,7 +309,8 @@
     "statusBlock": "ブロック済み",
     "statusRedirect": "リダイレクト済み",
     "export": "ログをエクスポート",
-    "rewritten": "書き換え済み"
+    "rewritten": "書き換え済み",
+    "logDetails": "ログの詳細"
   },
   "filtering": {
     "title": "外部ブロックリスト",

@@ -309,7 +309,8 @@
     "statusBlock": "Đã chặn",
     "statusRedirect": "Đã chuyển hướng",
     "export": "Xuất nhật ký",
-    "rewritten": "Đã viết lại"
+    "rewritten": "Đã viết lại",
+    "logDetails": "Chi tiết nhật ký"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",

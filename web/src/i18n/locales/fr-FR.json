@@ -309,7 +309,8 @@
     "statusBlock": "Bloqué",
     "statusRedirect": "Redirigé",
     "export": "Exporter les journaux",
-    "rewritten": "Réécrit"
+    "rewritten": "Réécrit",
+    "logDetails": "Détails du journal"
   },
   "filtering": {
     "title": "Listes de blocage externes",
