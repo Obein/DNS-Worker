@@ -50,6 +50,7 @@ DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS conn
     -   **Custom Redirection**: Supports custom overrides for A, AAAA, TXT, and CNAME records.
 -   📊 **Real-time Stats & Logs**: Visual dashboard recording every request's hit reason, geo-location, and upstream latency.
 -   🔐 **Privacy Enhancement**: Flexible ECS (EDNS Client Subnet) configuration (Forward, Custom, or Hidden).
+-   🔒 **Rewrite ECH & ECH Fronting**: Automatically injects/rewrites ECH (Encrypted Client Hello) parameters and customizable Outer SNI (ECH Fronting) for HTTPS (Type 65) / SVCB (Type 64) queries to eliminate plaintext SNI leakage. *(Note: ECH rewriting is exclusively supported for domains proxied by Cloudflare)*.
 -   🌗 **Modern UI**: Dark mode support, high-density management panel built with React + BlueprintJS.
 
 ---

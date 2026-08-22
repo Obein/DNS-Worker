@@ -52,6 +52,7 @@ DoH (RFC 8484) 是一種透過加密的 HTTPS 連線進行 DNS 查詢的協定�
   - **自訂重新導向**：支援 A/AAAA/TXT/CNAME 紀錄的自訂覆蓋。
 - 📊 **即時統計與日誌**：視覺化儀表板，紀錄每一次請求的命中原因、地理位置及上游延遲。
 - 🔐 **隱私增強**：支援 ECS (EDNS Client Subnet) 靈活配置（透傳、自訂或隱藏）。
+- 🔒 **重寫 ECH & ECH Fronting**：針對 HTTPS (Type 65) / SVCB (Type 64) 查詢，自動重寫/注入 ECH (Encrypted Client Hello) 參數與自訂表層偽裝網域名稱（Outer SNI / ECH Fronting），全程加密真實目標網域名稱以防中間人窺探與阻斷。（*註：重寫注入功能僅支援由 Cloudflare 代理的網域名稱*）。
 - 🌗 **現代 UI**：支援暗黑模式，基於 React + BlueprintJS 建構的高密度管理面板。
 
 ---
