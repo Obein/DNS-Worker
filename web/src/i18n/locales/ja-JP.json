@@ -414,13 +414,17 @@
     "exportError": "設定のエクスポートに失敗しました。しばらくしてからもう一度お試しください",
     "nameUpdateSuccess": "設定名を更新しました",
     "saving": "保存中...",
-    "echTitle": "ベストエフォート ECH",
-    "enableEch": "ベストエフォート ECH を有効化",
-    "echDesc": "Cloudflare 経由のドメインに対し、HTTPS (Type 65) または SVCB (Type 64) クエリで上流に ECH がない場合、自動的に ECH パラメータを注入して SNI プライバシーを保護します。",
+    "echTitle": "ECH 書き換え",
+    "enableEch": "ECH 書き換えを有効化",
+    "echDesc": "Cloudflare 経由のドメインに対し、HTTPS (Type 65) / SVCB (Type 64) クエリ時に ECH パラメータと表層 SNI を自動注入・書き換えてプライバシーを保護します。",
     "echFrontingTitle": "外層 SNI (ECH Fronting)",
     "echFrontingDesc": "TLS ハンドシェイク外層で可視となるカモフラージュドメイン",
     "echFrontingCustomPlaceholder": "カスタムフロンティングドメインを入力（例: crypto.cloudflare.com）",
-    "echPreferred": "推奨"
+    "echPreferred": "推奨",
+    "whatIsEch": "ECH (Encrypted Client Hello) とは？",
+    "echHelpDesc": "ECH は TLS 1.3 の重要なプライバシー拡張機能であり、実際の接続先ドメイン (Inner SNI) を完全暗号化し、ネットワーク監視者にはダミードメイン (Outer SNI) のみを表示します。",
+    "echHelpBenefit1": "プロバイダや中間者による閲覧先ドメインの盗聴を防止",
+    "echHelpBenefit2": "DoH と連携して平文 SNI の漏洩や検閲を回避"
   },
   "account": {
     "title": "アカウント設定",

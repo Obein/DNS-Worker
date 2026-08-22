@@ -414,13 +414,17 @@
     "exportError": "설정 내보내기 실패, 나중에 다시 시도하세요",
     "nameUpdateSuccess": "설정 이름이 업데이트되었습니다",
     "saving": "저장 중...",
-    "echTitle": "최선 노력 ECH (Best-effort ECH)",
-    "enableEch": "최선 노력 ECH 활성화",
-    "echDesc": "Cloudflare 프록시 도메인에 대해 HTTPS(Type 65) 또는 SVCB(Type 64) 쿼리 시 업스트림에 ECH가 없는 경우, ECH 매개변수를 자동으로 삽입하여 SNI 프라이버시를 보호합니다.",
+    "echTitle": "ECH 재작성",
+    "enableEch": "ECH 재작성 활성화",
+    "echDesc": "Cloudflare 프록시 도메인에 대해 HTTPS(Type 65) / SVCB(Type 64) 쿼리 시 ECH 매개변수와 외부 SNI를 자동으로 재작성하여 프라이버시를 보호합니다.",
     "echFrontingTitle": "외부 SNI (ECH Fronting)",
     "echFrontingDesc": "TLS 핸드셰이크 외부에 표시되는 위장 도메인",
     "echFrontingCustomPlaceholder": "사용자 지정 프론팅 도메인 입력 (예: crypto.cloudflare.com)",
-    "echPreferred": "권장"
+    "echPreferred": "권장",
+    "whatIsEch": "ECH (Encrypted Client Hello)란 무엇인가요?",
+    "echHelpDesc": "ECH는 실제 목적지 도메인(Inner SNI)을 완전히 암호화하고 네트워크 중간자에게는 위장 도메인(Outer SNI)만 노출하는 TLS 1.3의 핵심 보안 확장 기능입니다.",
+    "echHelpBenefit1": "ISP나 중간자가 방문 중인 세부 하위 도메인을 감청하는 것을 방지",
+    "echHelpBenefit2": "DoH와 결합하여 평문 SNI 노출 및 차단 위험 제거"
   },
   "account": {
     "title": "계정 설정",
