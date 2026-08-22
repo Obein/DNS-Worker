@@ -310,7 +310,8 @@
     "statusBlock": "已拦截",
     "statusRedirect": "已重定向",
     "export": "导出日志",
-    "rewritten": "已重写"
+    "rewritten": "已重写",
+    "logDetails": "查询详情"
   },
   "filtering": {
     "title": "外部拦截列表",

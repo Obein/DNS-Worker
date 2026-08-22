@@ -309,7 +309,8 @@
     "statusBlock": "차단됨",
     "statusRedirect": "리다이렉트됨",
     "export": "로그 내보내기",
-    "rewritten": "재작성됨"
+    "rewritten": "재작성됨",
+    "logDetails": "로그 상세 정보"
   },
   "filtering": {
     "title": "외부 차단 리스트",

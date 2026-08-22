@@ -310,7 +310,8 @@
     "statusBlock": "攔截",
     "statusRedirect": "重新導向",
     "export": "匯出日誌",
-    "rewritten": "已重寫"
+    "rewritten": "已重寫",
+    "logDetails": "查詢詳情"
   },
   "filtering": {
     "title": "外部攔截清單",

@@ -92,11 +92,10 @@ export const ResolutionResultSection: React.FC<ResolutionResultSectionProps> = (
                                     key={pIdx}
                                     minimal
                                     intent={Intent.SUCCESS}
-                                    className="font-mono break-all max-w-full select-all"
+                                    className="font-mono break-all max-w-full select-all text-left whitespace-normal h-auto py-1 inline-block"
                                     title={v}
                                   >
-                                    <span className="font-bold">ech:</span>{" "}
-                                    {v.length > 24 ? `${v.substring(0, 20)}...` : v}
+                                    <span className="font-bold">ech:</span> {v}
                                   </Tag>
                                 );
                               }

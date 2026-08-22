@@ -309,7 +309,8 @@
     "statusBlock": "Blockiert",
     "statusRedirect": "Umgeleitet",
     "export": "Protokolle exportieren",
-    "rewritten": "Umgeschrieben"
+    "rewritten": "Umgeschrieben",
+    "logDetails": "Protokolldetails"
   },
   "filtering": {
     "title": "Externe Blockierlisten",

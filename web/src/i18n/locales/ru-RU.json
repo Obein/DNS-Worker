@@ -309,7 +309,8 @@
     "statusBlock": "Блок",
     "statusRedirect": "Перенаправлено",
     "export": "Экспорт журналов",
-    "rewritten": "Перезаписано"
+    "rewritten": "Перезаписано",
+    "logDetails": "Подробности журнала"
   },
   "filtering": {
     "title": "Внешние списки фильтрации",
