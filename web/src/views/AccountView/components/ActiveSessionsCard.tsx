@@ -25,7 +25,9 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
     setLoading(true);
     try {
       const data = await getSessions();
-      setSessions(data);
+      const now = Date.now();
+      const activeOnly = (data || []).filter((s) => s.expires_at * 1000 > now);
+      setSessions(activeOnly);
     } catch {
       /* ignore */
     } finally {
