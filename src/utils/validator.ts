@@ -11,32 +11,41 @@
  * - Common URL parsing bypass techniques (user info in URLs)
  */
 
+import { isIPv4, isIPv6, createCidrMatcher } from "./cidr";
+
+export { isIPv4, isIPv6 } from "./cidr";
+
 /**
  * Password validation regular expression.
  * Requirements: 12-100 characters containing letters, numbers, and special characters.
  * Allowed special characters: ~`!@#$%^&*()_-+={[}]|\:;"'<,>.?/
  */
 export const PASSWORD_REGEX = /^[a-zA-Z\d~`!@#$%^&*()_\-+={[}\]|\\:;"'<,>.?\/]{12,100}$/;
+
 /**
  * Username validation regular expression.
  * Requirements: 5-32 characters, starting with a letter or underscore, followed by letters, numbers, underscores, or hyphens.
  */
 export const USERNAME_REGEX = /^[a-z_][a-z0-9_-]{4,31}$/;
+
 /**
  * Access point name validation regular expression.
  * Requirements: 1-30 characters, containing letters, numbers, underscores, or hyphens.
  */
 export const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
+
 /**
  * Profile name validation regular expression.
  * Requirements: 1-30 characters, containing letters, numbers, underscores, or hyphens.
  */
 export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+
 /**
  * Access key validation regular expression.
  * Requirements: 6-12 characters, containing only letters and numbers.
  */
 export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
+
 /**
  * TOTP token validation regular expression.
  * Requirements: exactly 6 digits.
@@ -50,6 +59,71 @@ const FORBIDDEN_HOSTNAMES = [
 ];
 
 /**
+ * Hardcoded standard private, loopback, link-local, multicast, and reserved CIDR ranges
+ * for IPv4 and IPv6 according to RFC 6890, RFC 1918, RFC 6598, RFC 4291, RFC 4193, etc.
+ */
+export const PRIVATE_AND_RESERVED_CIDRS: readonly string[] = [
+  // IPv4 Special/Private Ranges
+  "0.0.0.0/8",         // "This host on this network" (RFC 1122)
+  "10.0.0.0/8",        // Private-Use (RFC 1918)
+  "100.64.0.0/10",     // Shared Address Space / CGNAT (RFC 6598)
+  "127.0.0.0/8",       // Loopback (RFC 1122)
+  "169.254.0.0/16",    // Link-Local (RFC 3927)
+  "172.16.0.0/12",     // Private-Use (RFC 1918)
+  "192.0.0.0/24",      // IETF Protocol Assignments (RFC 6890)
+  "192.0.2.0/24",      // TEST-NET-1 (RFC 5737)
+  "192.88.99.0/24",    // 6to4 Relay Anycast (RFC 3068)
+  "192.168.0.0/16",    // Private-Use (RFC 1918)
+  "198.18.0.0/15",     // Benchmarking (RFC 2544)
+  "198.51.100.0/24",   // TEST-NET-2 (RFC 5737)
+  "203.0.113.0/24",    // TEST-NET-3 (RFC 5737)
+  "224.0.0.0/4",       // Multicast (RFC 5771)
+  "240.0.0.0/4",       // Reserved (RFC 1112)
+  "255.255.255.255/32",// Limited Broadcast (RFC 919)
+
+  // IPv6 Special/Private Ranges
+  "::/128",            // Unspecified (RFC 4291)
+  "::1/128",           // Loopback (RFC 4291)
+  "64:ff9b::/96",      // IPv4-IPv6 Translation (RFC 6052)
+  "100::/64",          // Discard Prefix (RFC 6666)
+  "2001:db8::/32",     // Documentation (RFC 3849)
+  "fc00::/7",          // Unique Local (RFC 4193)
+  "fe80::/10",         // Link-Local (RFC 4291)
+  "ff00::/8"           // Multicast (RFC 4291)
+];
+
+const isPrivateOrReservedIp: (ip: string) => boolean = createCidrMatcher(PRIVATE_AND_RESERVED_CIDRS);
+
+/**
+ * Checks whether an IP address is a publicly routable Internet IP.
+ * Uses CIDR matching against standard private and reserved IP blocks.
+ * Handles IPv4, IPv6, and IPv4-mapped IPv6 (::ffff:x.x.x.x).
+ *
+ * @param ip - The IP string to validate.
+ * @returns True if public Internet IP, false if private, reserved, or invalid.
+ */
+export function isPublicInternetIP(ip: string): boolean {
+  if (!ip || typeof ip !== "string") return false;
+
+  const cleanIp = ip.trim();
+
+  // If IPv4-mapped IPv6 (e.g. ::ffff:192.168.1.1)
+  if (cleanIp.includes(":") && cleanIp.includes(".")) {
+    const lastColon = cleanIp.lastIndexOf(":");
+    const ipv4Part = cleanIp.substring(lastColon + 1);
+    if (!isIPv4(ipv4Part)) return false;
+    return !isPrivateOrReservedIp(ipv4Part);
+  }
+
+  // Validate that it's a valid IPv4 or IPv6
+  if (!isIPv4(cleanIp) && !isIPv6(cleanIp)) {
+    return false;
+  }
+
+  return !isPrivateOrReservedIp(cleanIp);
+}
+
+/**
  * Checks whether the given URL is safe to fetch (prevents SSRF).
  * - Restricts to HTTP/HTTPS/TCP protocols.
  * - Blocks local, loopback, and private IP ranges.
@@ -59,16 +133,12 @@ const FORBIDDEN_HOSTNAMES = [
  */
 export function isSafeUrl(urlString: string): boolean {
   try {
-    // \u5bf9\u88f8 host[:port] \u683c\u5f0f\uff08\u5982 "8.8.8.8"\u3001"8.8.8.8:5353"\u3001"[2001:db8::1]:53"\uff09
-    // \u7edf\u4e00\u5168\u90e8\u89c4\u8303\u5316\u4e3a tcp:// \u518d\u7531 URL \u89e3\u6790\u5668\u5904\u7406\uff0c\u907f\u514d\u6279\u5904\u7406\u4e24\u5957\u903b\u8f91
     let parseableUrl: string;
     if (urlString.startsWith('tcp://')) {
       parseableUrl = urlString.replace('tcp://', 'http://');
     } else if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
       parseableUrl = urlString;
     } else {
-      // \u88f8 host \u6216 host:port\uff08\u4e0d\u542b scheme \u4e14\u4e0d\u542b /\uff09
-      // IPv6 \u88f8\u5730\u5740\u9700\u8981\u62ec\u53f7\u624d\u80fd\u88ab URL \u6b63\u786e\u89e3\u6790\uff0c\u4f46\u7528\u6237\u53ef\u80fd\u8f93\u5165\u4e0d\u5e26\u62ec\u53f7\u7684\u5f62\u5f0f
       parseableUrl = `http://${urlString}`;
     }
 
@@ -92,154 +162,4 @@ export function isSafeUrl(urlString: string): boolean {
   } catch (e) {
     return false; // Invalid URL
   }
-}
-
-
-export function isIPv4(ip: string): boolean {
-  return ipv4ToNumeric(ip) !== null;
-}
-
-export function isIPv6(ip: string): boolean {
-  return ipv6ToBigInt(ip) !== null;
-}
-
-export function ipv4ToNumeric(ip: string): number | null {
-  const parts = ip.split('.');
-  if (parts.length !== 4) return null;
-
-  let hasError = false;
-  const val = parts.reduce((ipInt, octet) => {
-    const num = Number(octet);
-    if (octet === '' || isNaN(num) || num < 0 || num > 255 || String(num) !== octet) {
-      hasError = true;
-    }
-    return (ipInt << 8) + num;
-  }, 0) >>> 0;
-
-  return hasError ? null : val;
-}
-
-export function ipv6ToBigInt(ip: string): bigint | null {
-  let cleanIp = ip.trim().toLowerCase();
-
-  // Extract mapped IPv4 part if present
-  let ipv4Part = "";
-  if (cleanIp.includes('.')) {
-    const lastColon = cleanIp.lastIndexOf(':');
-    if (lastColon === -1) return null;
-    ipv4Part = cleanIp.substring(lastColon + 1);
-    cleanIp = cleanIp.substring(0, lastColon) + ":0:0";
-  }
-
-  // A valid IPv6 can only have at most one "::"
-  const doubleColonParts = cleanIp.split('::');
-  if (doubleColonParts.length > 2) return null;
-
-  let fullIp = cleanIp;
-  if (doubleColonParts.length === 2) {
-    const leftParts = doubleColonParts[0] ? doubleColonParts[0].split(':') : [];
-    const rightParts = doubleColonParts[1] ? doubleColonParts[1].split(':') : [];
-    // Ensure we don't have empty strings in left/right parts (consecutive colons)
-    if (leftParts.includes('') || rightParts.includes('')) return null;
-
-    const missingLength = 8 - (leftParts.length + rightParts.length);
-    if (missingLength < 0) return null;
-
-    const middle = new Array(missingLength).fill('0').join(':');
-    fullIp = [...leftParts, middle, ...rightParts].filter(Boolean).join(':');
-  }
-
-  const parts = fullIp.split(':');
-  if (parts.length !== 8) return null;
-
-  if (ipv4Part) {
-    const ipv4Val = ipv4ToNumeric(ipv4Part);
-    if (ipv4Val === null) return null;
-    parts[6] = (ipv4Val >>> 16).toString(16);
-    parts[7] = (ipv4Val & 0xFFFF).toString(16);
-  }
-
-  // Validate and pad hex parts
-  let hexString = "";
-  for (const part of parts) {
-    if (part === '' || part.length > 4) return null;
-    const parsed = parseInt(part, 16);
-    if (
-      isNaN(parsed) ||
-      parsed < 0 ||
-      parsed > 0xFFFF ||
-      part.toLowerCase() !== parsed.toString(16).padStart(part.length, '0')
-    ) {
-      return null;
-    }
-    hexString += part.padStart(4, '0');
-  }
-
-  try {
-    return BigInt('0x' + hexString);
-  } catch {
-    return null;
-  }
-}
-
-export function isPublicIPv4Val(ipVal: number): boolean {
-  // Check private and non-routable ranges using numeric values
-  if (ipVal >>> 24 === 0) return false; // 0.0.0.0/8
-  if (ipVal >>> 24 === 10) return false; // 10.0.0.0/8
-  if (ipVal >= 0x64400000 && ipVal <= 0x647FFFFF) return false; // 100.64.0.0/10
-  if (ipVal >>> 24 === 127) return false; // 127.0.0.0/8
-  if (ipVal >= 0xA9FE0000 && ipVal <= 0xA9FEFFFF) return false; // 169.254.0.0/16
-  if (ipVal >= 0xAC100000 && ipVal <= 0xAC1FFFFF) return false; // 172.16.0.0/12
-  if (ipVal >= 0xC0000000 && ipVal <= 0xC00000FF) return false; // 192.0.0.0/24
-  if (ipVal >= 0xC0000200 && ipVal <= 0xC00002FF) return false; // 192.0.2.0/24
-  if (ipVal >= 0xC0586300 && ipVal <= 0xC05863FF) return false; // 192.88.99.0/24
-  if (ipVal >= 0xC0A80000 && ipVal <= 0xC0A8FFFF) return false; // 192.168.0.0/16
-  if (ipVal >= 0xC6120000 && ipVal <= 0xC613FFFF) return false; // 198.18.0.0/15
-  if (ipVal >= 0xC6336400 && ipVal <= 0xC63367FF) return false; // 198.51.100.0/22
-  if (ipVal >= 0xCB007100 && ipVal <= 0xCB0071FF) return false; // 203.0.113.0/24
-  if (ipVal >= 0xE0000000) return false; // 224.0.0.0/4 (Multicast) & 240.0.0.0/4 (Reserved)
-
-  return true;
-}
-
-export function isPublicInternetIP(ip: string): boolean {
-  if (!ip) return false;
-
-  if (ip.includes('.')) {
-    // Could be IPv4 or IPv4-mapped IPv6
-    if (ip.includes(':')) {
-      const ipv6Val = ipv6ToBigInt(ip);
-      if (ipv6Val === null) return false;
-      // Check if it's IPv4-mapped IPv6 (::ffff:0:0/96)
-      if (ipv6Val >> 32n === 0xffffn) {
-        const ipv4Val = Number(ipv6Val & 0xffffffffn);
-        return isPublicIPv4Val(ipv4Val);
-      }
-      return false; // Other IPv4-mapped forms or invalid
-    } else {
-      const ipv4Val = ipv4ToNumeric(ip);
-      if (ipv4Val === null) return false;
-      return isPublicIPv4Val(ipv4Val);
-    }
-  }
-
-  if (ip.includes(':')) {
-    const ipv6Val = ipv6ToBigInt(ip);
-    if (ipv6Val === null) return false;
-
-    // Unspecified (::)
-    if (ipv6Val === 0n) return false;
-    // Loopback (::1)
-    if (ipv6Val === 1n) return false;
-    // fc00::/7 (Unique Local Address)
-    if (ipv6Val >> 121n === 0x7en) return false;
-    // fe80::/10 (Link-Local)
-    if (ipv6Val >> 118n === 0x3fan) return false;
-    // ff00::/8 (Multicast)
-    if (ipv6Val >> 120n === 0xffn) return false;
-
-    return true;
-  }
-
-  return false;
 }

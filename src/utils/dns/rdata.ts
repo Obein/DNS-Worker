@@ -1,5 +1,7 @@
+import { encodeHttpsRDataFromString } from "../ech";
+
 /**
- * Encodes string record values (like IPs, domains, texts) into standard DNS RDATA byte segments.
+ * Encodes string record values (like IPs, domains, texts, HTTPS/SVCB) into standard DNS RDATA byte segments.
  *
  * @param type - The DNS record type.
  * @param value - The payload value to encode.
@@ -54,6 +56,8 @@ export function encodeRData(type: string, value: string): number[] {
         data.push(chunk.charCodeAt(j));
       }
     }
+  } else if (type === "HTTPS" || type === "SVCB") {
+    data = encodeHttpsRDataFromString(value);
   }
   return data;
 }

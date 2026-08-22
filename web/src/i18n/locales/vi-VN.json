@@ -308,7 +308,8 @@
     "statusPass": "Đã cho phép",
     "statusBlock": "Đã chặn",
     "statusRedirect": "Đã chuyển hướng",
-    "export": "Xuất nhật ký"
+    "export": "Xuất nhật ký",
+    "rewritten": "Đã viết lại"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",
@@ -412,7 +413,14 @@
     "exportSuccess": "Xuất cấu hình thành công",
     "exportError": "Xuất cấu hình thất bại, vui lòng thử lại sau",
     "nameUpdateSuccess": "Tên cấu hình đã được cập nhật",
-    "saving": "Đang lưu..."
+    "saving": "Đang lưu...",
+    "echTitle": "ECH nỗ lực tối đa (Best-effort ECH)",
+    "enableEch": "Bật ECH nỗ lực tối đa",
+    "echDesc": "Đối với các miền được ủy quyền qua Cloudflare, tự động viết lại truy vấn HTTPS (Type 65) và SVCB (Type 64) để chèn tham số ECH nhằm bảo vệ quyền riêng tư SNI.",
+    "echFrontingTitle": "SNI bên ngoài (ECH Fronting)",
+    "echFrontingDesc": "Tên miền hiển thị ở dạng văn bản thuần trong bắt tay TLS bên ngoài",
+    "echFrontingCustomPlaceholder": "Nhập miền fronting tùy chỉnh, ví dụ: crypto.cloudflare.com",
+    "echPreferred": "Ưu tiên"
   },
   "account": {
     "title": "Cài đặt tài khoản",

@@ -137,17 +137,44 @@ export const LogDetailsDrawer: React.FC<LogDetailsDrawerProps> = ({
             </SectionCard>
           </Section>
  
-          <Section title={t("logs.resolutionResult")} icon={<Globe size={16} />} className="shadow-none! rounded-lg!">
-            <SectionCard>
-              <div className="bg-gray-50 dark:bg-gray-800 p-3 font-mono text-xs break-all leading-relaxed rounded-lg">
-                {selectedLog.answer?.split(/[(,\s)|\n]/).map((ans, idx) => (
-                  <div key={idx} className="mb-1 last:mb-0 oklch(30.2% 0.056 229.695) dark:oklch(60.9% 0.126 221.723)">
-                    {ans}
+          {(() => {
+            const isType65Or64 =
+              selectedLog.record_type === "HTTPS" ||
+              selectedLog.record_type === "SVCB" ||
+              selectedLog.record_type === "TYPE65" ||
+              selectedLog.record_type === "TYPE64";
+            const isRewritten =
+              isType65Or64 &&
+              (selectedLog.reason === "ECH Rewritten" ||
+                (selectedLog.reason?.toLowerCase().includes("rewritten") ?? false));
+
+            return (
+              <Section
+                title={
+                  <div className="flex items-center justify-between w-full pr-2">
+                    <span>{t("logs.resolutionResult")}</span>
+                    {isRewritten && (
+                      <Tag minimal intent={Intent.PRIMARY} className="text-xs">
+                        {t("logs.rewritten", "已重写")}
+                      </Tag>
+                    )}
                   </div>
-                )) || t("logs.noResult")}
-              </div>
-            </SectionCard>
-          </Section>
+                }
+                icon={<Globe size={16} />}
+                className="shadow-none! rounded-lg!"
+              >
+                <SectionCard>
+                  <div className="bg-gray-50 dark:bg-gray-800 p-3 font-mono text-xs break-all leading-relaxed rounded-lg">
+                    {selectedLog.answer?.split(/[(,\s)|\n]/).map((ans, idx) => (
+                      <div key={idx} className="mb-1 last:mb-0 oklch(30.2% 0.056 229.695) dark:oklch(60.9% 0.126 221.723)">
+                        {ans}
+                      </div>
+                    )) || t("logs.noResult")}
+                  </div>
+                </SectionCard>
+              </Section>
+            );
+          })()}
  
           <Section title={t("logs.networkDetails")} icon={<User size={16} />} className="shadow-none! rounded-lg!">
             <SectionCard>

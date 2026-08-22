@@ -4,17 +4,15 @@ import { LogModel } from './models/log';
 import { UserModel } from './models/user';
 import { ProfileModel } from './models/profile';
 import { syncNextListForProfile } from './utils/sync';
+import { syncCloudflareIpRanges } from './utils/ech';
 
 /**
  * Handles cron-scheduled events to run background cleanup and list synchronization.
  *
- * Each trigger performs TWO tasks in sequence:
- *   1. Cleanup  — delete stale logs and inactive users (lightweight, D1-bound)
- *   2. Sync     — process ONE pending list for a profile (CPU-bound, incremental)
- *
- * Separating into two phases per trigger (rather than alternating odd/even minutes)
- * avoids the coverage gap where domains could slip through during the off-phase.
- * The incremental per-list sync keeps per-trigger CPU well within Worker limits.
+ * Each trigger performs tasks in sequence:
+ *   1. Cleanup         — delete stale logs and inactive users (lightweight, D1-bound)
+ *   2. Cloudflare IPs  — sync official Cloudflare IP ranges once daily
+ *   3. Sync            — process ONE pending list for a profile (CPU-bound, incremental)
  */
 export async function handleScheduled(
   _event: ScheduledEvent,
@@ -44,6 +42,14 @@ export async function handleScheduled(
       console.log("[Cron] Cleanup phase completed at", new Date().toISOString());
     } catch (e) {
       console.error("[Cron] Global log cleanup failed:", e);
+    }
+
+    // ── CLOUDFLARE IPS SYNC ───────────────────────────────────────────────────
+    // Syncs official Cloudflare IP ranges daily from https://www.cloudflare.com/ips-v4 / v6
+    try {
+      await syncCloudflareIpRanges(env.DB);
+    } catch (e) {
+      console.error("[Cron] Cloudflare IP range sync failed:", e);
     }
 
     // ── SYNC ──────────────────────────────────────────────────────────────────

@@ -309,7 +309,8 @@
     "statusPass": "PASS",
     "statusBlock": "BLOCK",
     "statusRedirect": "REDIRECT",
-    "export": "Export Logs"
+    "export": "Export Logs",
+    "rewritten": "Rewritten"
   },
   "filtering": {
     "title": "External Filters",
@@ -413,7 +414,14 @@
     "exportSuccess": "Config exported successfully",
     "exportError": "Export failed",
     "nameUpdateSuccess": "Profile name updated",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "echTitle": "Best-effort ECH",
+    "enableEch": "Enable Best-effort ECH",
+    "echDesc": "For domains proxied by Cloudflare, automatically rewrite HTTPS (Type 65) and SVCB (Type 64) queries to inject ECH parameters if the upstream does not provide them, protecting SNI privacy.",
+    "echFrontingTitle": "Outer SNI (ECH Fronting)",
+    "echFrontingDesc": "Domain name visible in plaintext on the outer TLS handshake",
+    "echFrontingCustomPlaceholder": "Enter custom fronting domain, e.g. crypto.cloudflare.com",
+    "echPreferred": "Recommended"
   },
   "account": {
     "title": "Account Settings",
