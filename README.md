@@ -206,6 +206,9 @@ If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
 ## 💪 Powered by
 
 * [Cloudflare Workers](https://workers.cloudflare.com/)
+
+## 🚚 Dependencies
+
 * [Blueprint](https://github.com/palantir/blueprint) (at Palantir)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
 * [React](https://github.com/facebook/react)
