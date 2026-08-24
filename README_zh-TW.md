@@ -214,6 +214,9 @@ npm run deploy
 ## 💪 感謝
 
 * [Cloudflare Workers](https://workers.cloudflare.com/)
+
+## 🚚 依賴
+
 * [Blueprint](https://github.com/palantir/blueprint) (at Palantir)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
 * [React](https://github.com/facebook/react)
