@@ -6,6 +6,7 @@ import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, 
 import { dnsCache } from "./cache";
 import { connect } from 'cloudflare:sockets';
 import { isSafeUrl } from "../utils/validator";
+import { enqueueLog } from "./logBatcher";
 
 export const pipelineResolver = {
   async resolve(request: Request, query: DNSQuery, context: Context, settings: ProfileSettings, action: 'PASS', reason?: string): Promise<ResolutionResult> {
@@ -199,7 +200,7 @@ export const pipelineResolver = {
           }
 
           const latency = Date.now() - context.startTime;
-          await logModel.insert({
+          enqueueLog({
             profile_id: context.profileId,
             access_point_id: context.accessPointId,
             timestamp: Math.floor(Date.now() / 1000),
@@ -214,7 +215,7 @@ export const pipelineResolver = {
             upstream: upstreamUrl,
             latency,
             ecs
-          });
+          }, settings, context.env, context.ctx);
 
           if (answer.length > 0) {
             dnsCache.set(`${context.profileId}:${query.name}:${query.type}`, {
@@ -222,7 +223,7 @@ export const pipelineResolver = {
             });
           }
         } catch {
-          // Ignore D1 write quota errors in background logging
+          // Ignore non-critical background caching errors
         }
       })());
 
@@ -312,7 +313,7 @@ export const pipelineResolver = {
     const latency = Date.now() - context.startTime;
     context.ctx.waitUntil((async () => {
       try {
-        await logModel.insert({
+        enqueueLog({
           profile_id: context.profileId,
           access_point_id: context.accessPointId,
           timestamp: Math.floor(Date.now() / 1000),
@@ -324,9 +325,9 @@ export const pipelineResolver = {
           reason,
           answer: displayAnswer,
           latency
-        });
+        }, settings, context.env, context.ctx);
       } catch {
-        // Ignore D1 write quota errors during block logging
+        // Ignore non-critical background logging errors
       }
     })());
 

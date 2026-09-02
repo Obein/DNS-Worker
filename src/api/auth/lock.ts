@@ -6,6 +6,7 @@ import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
 import { SessionModel } from "../../models/session";
 import { cacheUtils } from "../../utils/cache";
+import { invalidateAuthUserCache } from "../../lib/middleware";
 
 /**
  * Verifies client PIN hash against stored legacy base64 PIN hash using pre-challenge methods.
@@ -202,6 +203,7 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       // 验证成功：恢复会话状态
       const now = Math.floor(Date.now() / 1000);
       await sessionModel.resumeSession(session.id, now);
+      invalidateAuthUserCache(session.id);
       await cacheUtils.delete(cache, cacheKey);
       await activityLog.record(payload.userId, 'pin_verify_success', clientIp, userAgent, undefined, sessionHash);
 
@@ -237,6 +239,7 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       if (!session) return new Response("Session not found", { status: 401 });
 
       await sessionModel.pauseSession(session.id);
+      invalidateAuthUserCache(session.id);
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" }
       });

@@ -4,8 +4,8 @@ import { ResolutionLog } from "../types";
 export class LogModel {
   constructor(private db: D1Database) {}
 
-  async insert(log: ResolutionLog): Promise<boolean> {
-    const result = await this.db.prepare(
+  createInsertStatement(log: ResolutionLog) {
+    return this.db.prepare(
       "INSERT INTO logs (profile_id, access_point_id, timestamp, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
       .bind(
@@ -23,8 +23,11 @@ export class LogModel {
         log.ecs || null,
         log.upstream || null,
         log.latency || null,
-      )
-      .run();
+      );
+  }
+
+  async insert(log: ResolutionLog): Promise<boolean> {
+    const result = await this.createInsertStatement(log).run();
     return result.success;
   }
 
@@ -54,7 +57,7 @@ export class LogModel {
     if (options.isp) { queryStr += " AND json_extract(l.dest_geoip, '$.isp') = ?"; params.push(options.isp); }
     
     if (options.export) {
-      queryStr += " ORDER BY l.timestamp DESC LIMIT 50000";
+      queryStr += " ORDER BY l.timestamp DESC LIMIT 5000";
     } else {
       let limit = options.limit !== undefined && !isNaN(options.limit) && options.limit > 0 ? options.limit : 50;
       if (limit > 100) {
