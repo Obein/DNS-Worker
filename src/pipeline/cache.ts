@@ -42,11 +42,15 @@ export const configCache = new SizeCappedMap<string, ConfigCacheEntry>(10);
 // DNS 缓存限制最多 500 条记录，防止遭受海量随机子域名查询（DNS Tunnel / Random Query Attack）时导致 Isolate 内存耗尽
 export const dnsCache = new SizeCappedMap<string, any>(500);
 
+// Profile Key 到 Profile 元数据映射缓存 (L1 内存缓存，限制最多 100 个 Key)
+export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(100);
+
 export const pipelineCache = {
   async clear(profileId: string) {
     // 清理 L1 (内存)
     configCache.delete(profileId);
     bloomMemoryMap.delete(profileId);
+    profileKeyMemoryMap.clear();
     for (const key of dnsCache.keys()) {
       if (key.startsWith(`${profileId}:`)) {
         dnsCache.delete(key);

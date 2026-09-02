@@ -1,9 +1,60 @@
 import { Context, Env, ExecutionContext } from '../types';
 import { parseDNSQuery } from '../utils/dns';
 import { pipeline } from '../pipeline';
-import { ProfileModel } from '../models/profile';
+import { ProfileModel, ProfileWithBloom } from '../models/profile';
 import { UserModel } from '../models/user';
 import { cacheUtils } from '../utils/cache';
+import { profileKeyMemoryMap } from '../pipeline/cache';
+
+/**
+ * Resolves profile and access point metadata with multi-tier caching (L1 Memory -> L2 Cache API -> D1 DB).
+ */
+async function resolveProfileByKey(
+  profileKey: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<(ProfileWithBloom & { access_point_id?: string; access_point_name?: string }) | null> {
+  const cache = (caches as any).default;
+  const now = Date.now();
+
+  // 1. Check L1 Memory Cache (Isolate Global) - 5 minutes
+  const inMem = profileKeyMemoryMap.get(profileKey);
+  if (inMem && now - inMem.ts < 300_000) {
+    return inMem.data;
+  }
+
+  // 2. Check L2 Cloudflare Cache API - 1 hour
+  const cacheKey = `doh_key_v1:${profileKey}`;
+  try {
+    const cached = await cacheUtils.get<any>(cache, cacheKey);
+    if (cached) {
+      profileKeyMemoryMap.set(profileKey, { data: cached, ts: now });
+      return cached;
+    }
+  } catch {
+    /* ignore Cache API match error */
+  }
+
+  // 3. Fallback to D1 (only executed on cache miss)
+  try {
+    const profileModel = new ProfileModel(env.DB);
+    const profile = await profileModel.findByKey(profileKey);
+
+    if (profile) {
+      profileKeyMemoryMap.set(profileKey, { data: profile, ts: now });
+      ctx.waitUntil(cacheUtils.set(cache, cacheKey, profile, 3600));
+      return profile;
+    }
+  } catch (e: any) {
+    console.warn(`[DoH] D1 profile lookup failed for key ${profileKey}:`, e.message || e);
+    // If D1 is exhausted, attempt to return stale in-memory data if available
+    if (inMem?.data) {
+      return inMem.data;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Handles DNS-over-HTTPS (DoH) requests, coordinates parsing, pipeline resolution, 
@@ -18,8 +69,7 @@ export async function handleDoHRequest(
   const cache = (caches as any).default;
 
   try {
-    const profileModel = new ProfileModel(env.DB);
-    const profile = await profileModel.findByKey(profileKey);
+    const profile = await resolveProfileByKey(profileKey, env, ctx);
     if (!profile) {
       return new Response('Invalid Profile Key', { status: 404 });
     }
@@ -55,14 +105,16 @@ export async function handleDoHRequest(
 
         const throttleSec = Number(env.THROTTLE_ACTIVE_SEC) || 3600;
         if (!lastActiveThrottled || nowSec - lastActiveThrottled > throttleSec) {
-          // Update profile active timestamp
-          await profileModel.updateLastActive(profileId, nowSec);
+          try {
+            const profileModel = new ProfileModel(env.DB);
+            await profileModel.updateLastActive(profileId, nowSec);
+            
+            const userModel = new UserModel(env.DB, env);
+            await userModel.updateLastActiveByProfile(profileId, nowSec);
+          } catch {
+            /* ignore D1 write quota errors */
+          }
           
-          // Cascading update to profile owner active timestamp
-          const userModel = new UserModel(env.DB, env);
-          await userModel.updateLastActiveByProfile(profileId, nowSec);
-          
-          // Store throttle marker
           await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
         }
       } catch (e) {
