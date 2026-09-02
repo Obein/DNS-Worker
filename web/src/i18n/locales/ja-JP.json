@@ -115,7 +115,9 @@
     "cfErrorWithDetails": "Cloudflare Edge エラー (エラー {{code}}: {{desc}})。サービスは一時的に利用できません。しばらくしてからもう一度お試しください。{{rayId}}",
     "cfErrorCodeOnly": "Cloudflare Edge エラー (エラー {{code}})。サービスは一時的に利用できません。{{rayId}}",
     "cfErrorGeneric": "Cloudflare Edge エラーが発生しました。しばらくしてからもう一度お試しください。{{rayId}}",
-    "htmlErrorGeneric": "サーバーが異常なレスポンスを返しました (HTTP {{status}})。しばらくしてからもう一度お試しください。"
+    "htmlErrorGeneric": "サーバーが異常なレスポンスを返しました (HTTP {{status}})。しばらくしてからもう一度お試しください。",
+    "tooManyAttempts": "リクエストまたは試行回数が多すぎます。しばらくしてからもう一度お試しください。",
+    "dbQuotaExceeded": "データベースの1日の読み取りクォータを超過しました。毎日のリセットをお待ちください。"
   },
   "setup": {
     "title": "インストールガイド",

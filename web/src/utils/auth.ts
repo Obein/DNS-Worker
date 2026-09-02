@@ -167,6 +167,22 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
   }
 
   // Handle specific backend error strings
+  if (
+    err?.status === 429 ||
+    bodyText.toLowerCase().includes("too many") ||
+    bodyText === "rate_limited"
+  ) {
+    return t("auth.tooManyAttempts", {
+      defaultValue: "请求过于频繁或尝试次数过多，已被临时限制，请稍后再试。"
+    });
+  }
+
+  if (bodyText.includes("row read limit") || bodyText.includes("exceeded D1") || bodyText === "database_unavailable") {
+    return t("auth.dbQuotaExceeded", {
+      defaultValue: "数据库每日免费读取配额已用尽，请等待每日重置（北京时间 08:00）或升级配额。"
+    });
+  }
+
   if (bodyText === "invalid_credentials" || bodyText === "user_not_found") {
     return t("auth.authFailed", "Authentication failed, please check your username or password.");
   }
