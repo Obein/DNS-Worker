@@ -118,7 +118,7 @@
     "cfErrorGeneric": "Cloudflare 边缘服务异常，服务暂时不可用，请稍后重试。{{rayId}}",
     "htmlErrorGeneric": "服务器返回异常网页响应 (HTTP {{status}})，请稍后重试。",
     "tooManyAttempts": "请求过于频繁或尝试次数过多，已被临时限制，请稍后再试。",
-    "dbQuotaExceeded": "数据库每日免费读取配额已用尽，请等待每日重置（北京时间 08:00）或升级配额。"
+    "dbQuotaExceeded": "数据库每日免费读取配额已用尽，请等待次日自动重置或升级配额。"
   },
   "setup": {
     "title": "安装指南",

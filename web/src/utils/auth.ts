@@ -179,7 +179,7 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
 
   if (bodyText.includes("row read limit") || bodyText.includes("exceeded D1") || bodyText === "database_unavailable") {
     return t("auth.dbQuotaExceeded", {
-      defaultValue: "数据库每日免费读取配额已用尽，请等待每日重置（北京时间 08:00）或升级配额。"
+      defaultValue: "数据库每日免费读取配额已用尽，请等待次日自动重置或升级配额。"
     });
   }
 
