@@ -111,7 +111,11 @@
     "pinIncorrect": "PINが正しくありません",
     "attemptsRemaining": "残り試行回数: {{count}}回",
     "logoutAndReturn": "セッションからログアウト",
-    "lockNow": "今すぐロック"
+    "lockNow": "今すぐロック",
+    "cfErrorWithDetails": "Cloudflare Edge エラー (エラー {{code}}: {{desc}})。サービスは一時的に利用できません。しばらくしてからもう一度お試しください。{{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare Edge エラー (エラー {{code}})。サービスは一時的に利用できません。{{rayId}}",
+    "cfErrorGeneric": "Cloudflare Edge エラーが発生しました。しばらくしてからもう一度お試しください。{{rayId}}",
+    "htmlErrorGeneric": "サーバーが異常なレスポンスを返しました (HTTP {{status}})。しばらくしてからもう一度お試しください。"
   },
   "setup": {
     "title": "インストールガイド",

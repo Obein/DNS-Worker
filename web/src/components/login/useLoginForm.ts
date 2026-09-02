@@ -6,7 +6,8 @@ import {
   hashTotpToken,
   hashPasswordClient,
   deriveStoredHashClient,
-  hmacSha256
+  hmacSha256,
+  formatApiErrorMessage
 } from "../../utils/auth";
 import { setAccessToken } from "../../utils/token";
 import { prelogin, login, ApiError, migratePassword } from "../../services";
@@ -144,11 +145,7 @@ export const useLoginForm = ({
       setServerSalt(data.serverSalt);
       setLoginStep(2);
     } catch (err: any) {
-      if (err instanceof ApiError) {
-        setError(err.bodyText || t("auth.authFailed"));
-      } else {
-        setError(t("auth.networkError"));
-      }
+      setError(formatApiErrorMessage(err, t));
       if (window.turnstile) window.turnstile.reset();
       setTurnstileToken(null);
     } finally {
@@ -208,13 +205,11 @@ export const useLoginForm = ({
         const fakeRes = { status: err.status } as Response;
         if (isPasswordLeaked(fakeRes, err.bodyText)) {
           setError(t("auth.passwordLeaked"));
-        } else if (err.bodyText === "geolocation_missing") {
-          setError(t("auth.geolocationRequired"));
         } else {
-          setError(err.bodyText || t("auth.authFailed"));
+          setError(formatApiErrorMessage(err, t));
         }
       } else {
-        setError(t("auth.networkError"));
+        setError(formatApiErrorMessage(err, t));
       }
     } finally {
       setLoading(false);

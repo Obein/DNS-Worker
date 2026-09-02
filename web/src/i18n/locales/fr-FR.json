@@ -111,7 +111,11 @@
     "pinIncorrect": "Code PIN incorrect",
     "attemptsRemaining": "{{count}} tentatives restantes",
     "logoutAndReturn": "Déconnecter la session",
-    "lockNow": "Verrouiller maintenant"
+    "lockNow": "Verrouiller maintenant",
+    "cfErrorWithDetails": "Erreur Cloudflare Edge (Erreur {{code}} : {{desc}}). Le service est temporairement indisponible, veuillez réessayer plus tard. {{rayId}}",
+    "cfErrorCodeOnly": "Erreur Cloudflare Edge (Erreur {{code}}). Le service est temporairement indisponible. {{rayId}}",
+    "cfErrorGeneric": "Erreur Cloudflare Edge, le service est temporairement indisponible. Veuillez réessayer plus tard. {{rayId}}",
+    "htmlErrorGeneric": "Le serveur a renvoyé une réponse inattendue (HTTP {{status}}). Veuillez réessayer plus tard."
   },
   "setup": {
     "title": "Guide d'installation",

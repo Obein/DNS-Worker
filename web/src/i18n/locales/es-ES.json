@@ -111,7 +111,11 @@
     "pinIncorrect": "PIN incorrecto",
     "attemptsRemaining": "{{count}} intentos restantes",
     "logoutAndReturn": "Cerrar sesión",
-    "lockNow": "Bloquear ahora"
+    "lockNow": "Bloquear ahora",
+    "cfErrorWithDetails": "Error de Cloudflare Edge (Error {{code}}: {{desc}}). El servicio no está disponible temporalmente, inténtelo de nuevo más tarde. {{rayId}}",
+    "cfErrorCodeOnly": "Error de Cloudflare Edge (Error {{code}}). El servicio no está disponible temporalmente. {{rayId}}",
+    "cfErrorGeneric": "Error de Cloudflare Edge, servicio no disponible temporalmente. Inténtelo de nuevo más tarde. {{rayId}}",
+    "htmlErrorGeneric": "El servidor devolvió una respuesta inesperada (HTTP {{status}}). Inténtelo de nuevo más tarde."
   },
   "setup": {
     "title": "Guía de instalación",

@@ -4,9 +4,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   getProfiles,
   createProfile,
-  deleteProfile,
-  ApiError
+  deleteProfile
 } from "../services";
+import { formatApiErrorMessage } from "../utils/auth";
 import type { Profile } from "../services";
 
 interface PrefilledRule {
@@ -74,11 +74,7 @@ export function useProfiles(isLoggedIn: boolean | null) {
       setShowCreateDialog(false);
       await fetchProfiles();
     } catch (err: any) {
-      if (err instanceof ApiError) {
-        setCreateError(err.bodyText);
-      } else {
-        setCreateError(t("common.errorNetwork"));
-      }
+      setCreateError(formatApiErrorMessage(err, t));
     }
   };
 

@@ -112,7 +112,11 @@
     "pinIncorrect": "Incorrect PIN",
     "attemptsRemaining": "{{count}} attempts remaining",
     "logoutAndReturn": "Log Out Session",
-    "lockNow": "Lock Now"
+    "lockNow": "Lock Now",
+    "cfErrorWithDetails": "Cloudflare Edge error (Error {{code}}: {{desc}}). Service is temporarily unavailable, please try again later. {{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare Edge error (Error {{code}}). Service is temporarily unavailable, please try again later. {{rayId}}",
+    "cfErrorGeneric": "Cloudflare Edge error, service is temporarily unavailable. Please try again later. {{rayId}}",
+    "htmlErrorGeneric": "Server returned an unexpected page response (HTTP {{status}}). Please try again later."
   },
   "setup": {
     "title": "Setup Guide",

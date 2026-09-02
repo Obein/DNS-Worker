@@ -112,7 +112,11 @@
     "pinIncorrect": "PIN 码错误",
     "attemptsRemaining": "还剩 {{count}} 次尝试机会",
     "logoutAndReturn": "登出会话",
-    "lockNow": "立即锁定"
+    "lockNow": "立即锁定",
+    "cfErrorWithDetails": "Cloudflare 边缘节点异常 (错误代码 {{code}}: {{desc}})。服务暂时不可用，请稍后重试。{{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare 边缘服务异常 (错误代码 {{code}})。服务暂时不可用，请稍后重试。{{rayId}}",
+    "cfErrorGeneric": "Cloudflare 边缘服务异常，服务暂时不可用，请稍后重试。{{rayId}}",
+    "htmlErrorGeneric": "服务器返回异常网页响应 (HTTP {{status}})，请稍后重试。"
   },
   "setup": {
     "title": "安装指南",

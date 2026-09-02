@@ -5,7 +5,8 @@ import {
   validatePassword,
   isPasswordLeaked,
   hashTotpToken,
-  hashPasswordClient
+  hashPasswordClient,
+  formatApiErrorMessage
 } from "../../utils/auth";
 import {
   checkUsernameDuplicate as checkUsernameDuplicateService,
@@ -251,15 +252,11 @@ export const useSignupWizard = ({
         const fakeRes = { status: err.status } as Response;
         if (isPasswordLeaked(fakeRes, err.bodyText)) {
           setError(t("auth.passwordLeaked"));
-        } else if (err.bodyText === "username_exists") {
-          setError(t("auth.usernameExists"));
-        } else if (err.bodyText === "geolocation_missing") {
-          setError(t("auth.geolocationRequired"));
         } else {
-          setError(err.bodyText || t("auth.authFailed"));
+          setError(formatApiErrorMessage(err, t));
         }
       } else {
-        setError(t("auth.networkError"));
+        setError(formatApiErrorMessage(err, t));
       }
       if (window.turnstile) window.turnstile.reset();
       setTurnstileToken(null);
