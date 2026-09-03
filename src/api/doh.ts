@@ -51,6 +51,25 @@ async function resolveProfileByKey(
     if (inMem?.data) {
       return inMem.data;
     }
+
+    // Emergency fail-open fallback if D1 has exceeded its read quota:
+    // Generate a temporary fallback profile so DNS resolution doesn't return 404 or 500
+    if (String(e?.message || e).includes("exceeded D1's free tier daily row read limit")) {
+      console.warn(`[DoH] D1 read quota exhausted. Providing emergency fallback profile for key ${profileKey}`);
+      return {
+        id: profileKey,
+        name: "Emergency Fallback",
+        settings: JSON.stringify({
+          upstream: ["https://security.cloudflare-dns.com/dns-query"],
+          default_policy: "PASS",
+          log_retention_days: 0,
+          ecs: false
+        }),
+        owner_id: "system",
+        created_at: Math.floor(now / 1000),
+        updated_at: Math.floor(now / 1000)
+      } as any;
+    }
   }
 
   return null;
@@ -130,6 +149,24 @@ export async function handleDoHRequest(
     });
   } catch (e: any) {
     console.error(`[DoH Pipeline] Internal Error:`, e);
-    return new Response(`Internal Server Error`, { status: 500 });
+    try {
+      // Emergency fail-open: proxy the DoH request directly to Cloudflare Security DNS
+      // Ensures user devices NEVER experience 500 or internet blackout during D1/Worker anomalies
+      const fallbackUrl = new URL("https://security.cloudflare-dns.com/dns-query");
+      const reqUrl = new URL(request.url);
+      fallbackUrl.search = reqUrl.search;
+      const fallbackRes = await fetch(fallbackUrl.toString(), {
+        method: request.method,
+        headers: {
+          "Accept": request.headers.get("Accept") || "application/dns-message",
+          "Content-Type": request.headers.get("Content-Type") || "application/dns-message"
+        },
+        body: request.method === "POST" ? request.body : undefined
+      });
+      return fallbackRes;
+    } catch (proxyErr) {
+      console.error(`[DoH Pipeline] Emergency fallback proxy failed:`, proxyErr);
+      return new Response(`Internal Server Error`, { status: 500 });
+    }
   }
 }

@@ -103,16 +103,11 @@ export class LogModel {
    *   1. Time-based: deletes logs older than min(user_setting, MAX_LOG_RETENTION_DAYS).
    *      The global cap prevents users from setting arbitrarily long retention periods
    *      (e.g. 360 days) that would cause D1 to overflow.
-   *   2. Row-based: if the profile still has more than MAX_LOGS_PER_PROFILE rows after
-   *      the time-based cleanup, the oldest excess rows are deleted. This acts as a
-   *      circuit-breaker when write rate temporarily exceeds cleanup rate.
    *
    * @param maxRetentionDays - Hard cap on log retention days (default 90).
-   * @param maxLogsPerProfile - Hard cap on row count per profile (default 500_000).
    */
   async cleanupGlobal(
-    maxRetentionDays = 90,
-    maxLogsPerProfile = 500_000,
+    maxRetentionDays = 90
   ): Promise<void> {
     try {
       const { results: profiles } = await this.db.prepare(
@@ -142,32 +137,13 @@ export class LogModel {
             "DELETE FROM logs WHERE profile_id = ? AND timestamp < ?"
           ).bind(profile.id, threshold)
         );
-
-        // ── 2. Row-count cap (circuit-breaker) ──────────────────────────────────
-        // Check if rows exceed maxLogsPerProfile using index seek (OFFSET),
-        // reading only 1 row instead of scanning 1,000,000+ rows.
-        try {
-          const overflowRow = await this.db.prepare(
-            "SELECT timestamp FROM logs WHERE profile_id = ? ORDER BY timestamp DESC LIMIT 1 OFFSET ?"
-          ).bind(profile.id, maxLogsPerProfile).first<{ timestamp: number }>();
-
-          if (overflowRow && overflowRow.timestamp) {
-            statements.push(
-              this.db.prepare(
-                "DELETE FROM logs WHERE profile_id = ? AND timestamp <= ?"
-              ).bind(profile.id, overflowRow.timestamp)
-            );
-          }
-        } catch {
-          // Non-critical circuit breaker
-        }
       }
 
       if (statements.length > 0) {
         await this.db.batch(statements);
       }
 
-      console.log(`[LogModel] cleanupGlobal: processed ${profiles.length} profile(s), cap=${maxRetentionDays}d/${maxLogsPerProfile}rows`);
+      console.log(`[LogModel] cleanupGlobal: processed ${profiles.length} profile(s), maxRetentionDays=${maxRetentionDays}d`);
     } catch (e: any) {
       console.error("[LogModel] cleanupGlobal failed:", e.message || e);
     }
