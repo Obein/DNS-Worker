@@ -111,7 +111,13 @@
     "pinIncorrect": "올바르지 않은 PIN",
     "attemptsRemaining": "남은 시도 횟수: {{count}}회",
     "logoutAndReturn": "세션 로그아웃",
-    "lockNow": "지금 잠금"
+    "lockNow": "지금 잠금",
+    "cfErrorWithDetails": "Cloudflare Edge 오류 (오류 {{code}}: {{desc}}). 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요. {{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare Edge 오류 (오류 {{code}}). 서비스를 일시적으로 사용할 수 없습니다. {{rayId}}",
+    "cfErrorGeneric": "Cloudflare Edge 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. {{rayId}}",
+    "htmlErrorGeneric": "서버에서 비정상적인 응답을 반환했습니다 (HTTP {{status}}). 잠시 후 다시 시도해 주세요.",
+    "tooManyAttempts": "요청 또는 시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+    "dbQuotaExceeded": "데이터베이스 일일 읽기 할당량이 초과되었습니다. 일일 재설정을 기다려 주세요."
   },
   "setup": {
     "title": "설치 가이드",

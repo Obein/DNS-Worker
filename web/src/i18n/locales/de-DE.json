@@ -111,7 +111,13 @@
     "pinIncorrect": "Falsche PIN",
     "attemptsRemaining": "{{count}} verbleibende Versuche",
     "logoutAndReturn": "Sitzung abmelden",
-    "lockNow": "Jetzt sperren"
+    "lockNow": "Jetzt sperren",
+    "cfErrorWithDetails": "Cloudflare-Edge-Fehler (Fehler {{code}}: {{desc}}). Der Dienst ist vorübergehend nicht verfügbar, bitte versuchen Sie es später erneut. {{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare-Edge-Fehler (Fehler {{code}}). Der Dienst ist vorübergehend nicht verfügbar. {{rayId}}",
+    "cfErrorGeneric": "Cloudflare-Edge-Fehler. Der Dienst ist vorübergehend nicht verfügbar, bitte versuchen Sie es später erneut. {{rayId}}",
+    "htmlErrorGeneric": "Der Server hat eine unerwartete Antwort zurückgegeben (HTTP {{status}}). Bitte versuchen Sie es später erneut.",
+    "tooManyAttempts": "Zu viele Anfragen oder Versuche. Bitte versuchen Sie es später erneut.",
+    "dbQuotaExceeded": "Das tägliche Lesekontingent der Datenbank wurde überschritten. Bitte warten Sie auf den täglichen Reset."
   },
   "setup": {
     "title": "Installationsanleitung",

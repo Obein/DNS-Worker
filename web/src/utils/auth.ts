@@ -70,12 +70,144 @@ export function validatePassword(password: string): boolean {
  * @returns True if a password leak warning is detected.
  */
 export function isPasswordLeaked(res: Response, bodyText: string): boolean {
-  return bodyText === "password_leaked" || 
-    (res.status === 403 && (
-      bodyText.toLowerCase().includes("ray id") || 
-      bodyText.includes("blocked") || 
-      bodyText.includes("security service")
-    ));
+  if (bodyText === "password_leaked") return true;
+  if (res.status === 403 && (bodyText.includes("password_leaked") || bodyText.includes("password breached"))) {
+    return true;
+  }
+  return false;
+}
+
+export interface CloudflareErrorInfo {
+  isCf: boolean;
+  isHtml: boolean;
+  errorCode: string | null;
+  errorDesc: string | null;
+  rayId: string | null;
+}
+
+/**
+ * Detects and parses Cloudflare error pages or HTML error responses.
+ */
+export function parseCloudflareError(bodyText?: string | null): CloudflareErrorInfo | null {
+  if (!bodyText || typeof bodyText !== "string") return null;
+
+  const trimmed = bodyText.trim();
+  const isHtml = trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html") || /<[a-z][\s\S]*>/i.test(trimmed);
+  const isCf = trimmed.includes("cf-error-details") || 
+               trimmed.includes("cf-wrapper") || 
+               trimmed.includes("cf.errors.css") || 
+               trimmed.includes("Cloudflare Ray ID") || 
+               /Worker threw exception/i.test(trimmed);
+
+  if (!isHtml && !isCf) return null;
+
+  // Extract Code (e.g. 1101, 1020, 520, etc.)
+  const codeMatch = trimmed.match(/class=["']cf-error-code["'][^>]*>([^<]+)</i) || 
+                    trimmed.match(/Error\s+([0-9]{3,4})/i);
+  const errorCode = codeMatch ? codeMatch[1].trim() : null;
+
+  // Extract Description / Headline
+  const descMatch = trimmed.match(/data-translate=["']error_desc["'][^>]*>([^<]+)</i) ||
+                    trimmed.match(/class=["']cf-subheadline["'][^>]*>([^<]+)</i) ||
+                    trimmed.match(/<title>([^<|]+)/i);
+  const errorDesc = descMatch ? descMatch[1].trim() : null;
+
+  // Extract Ray ID
+  const rayMatch = trimmed.match(/Ray ID:\s*<strong[^>]*>([a-f0-9]+)<\/strong>/i) ||
+                   trimmed.match(/Ray ID:\s*([a-f0-9]+)/i) ||
+                   trimmed.match(/Cloudflare Ray ID:\s*<strong[^>]*>([a-f0-9]+)<\/strong>/i);
+  const rayId = rayMatch ? rayMatch[1].trim() : null;
+
+  return {
+    isCf,
+    isHtml,
+    errorCode,
+    errorDesc,
+    rayId
+  };
+}
+
+/**
+ * Formats API errors into concise, user-friendly messages.
+ * Automatically intercepts Cloudflare error pages and converts them to 1-2 sentence prompts.
+ */
+export function formatApiErrorMessage(err: any, t: (key: string, options?: any) => string): string {
+  if (!err) return t("auth.authFailed", "Authentication failed");
+
+  const bodyText = typeof err === "string" ? err : err.bodyText || err.message || "";
+  const cfError = parseCloudflareError(bodyText);
+
+  if (cfError) {
+    const rayIdSuffix = cfError.rayId ? ` (Ray ID: ${cfError.rayId})` : "";
+    if (cfError.errorCode && cfError.errorDesc) {
+      return t("auth.cfErrorWithDetails", {
+        defaultValue: `Cloudflare 边缘节点异常 (错误代码 ${cfError.errorCode}: ${cfError.errorDesc})。服务暂时不可用，请稍后重试。${rayIdSuffix}`,
+        code: cfError.errorCode,
+        desc: cfError.errorDesc,
+        rayId: rayIdSuffix
+      });
+    }
+    if (cfError.errorCode) {
+      return t("auth.cfErrorCodeOnly", {
+        defaultValue: `Cloudflare 边缘服务异常 (错误代码 ${cfError.errorCode})。服务暂时不可用，请稍后重试。${rayIdSuffix}`,
+        code: cfError.errorCode,
+        rayId: rayIdSuffix
+      });
+    }
+    if (cfError.isCf) {
+      return t("auth.cfErrorGeneric", {
+        defaultValue: `Cloudflare 边缘服务异常，服务暂时不可用，请稍后重试。${rayIdSuffix}`,
+        rayId: rayIdSuffix
+      });
+    }
+    return t("auth.htmlErrorGeneric", {
+      defaultValue: `服务器返回异常网页响应 (HTTP ${err.status || 500})，请稍后重试。`,
+      status: err.status || 500
+    });
+  }
+
+  // Handle specific backend error strings
+  if (
+    err?.status === 429 ||
+    bodyText.toLowerCase().includes("too many") ||
+    bodyText === "rate_limited"
+  ) {
+    return t("auth.tooManyAttempts", {
+      defaultValue: "请求过于频繁或尝试次数过多，已被临时限制，请稍后再试。"
+    });
+  }
+
+  if (bodyText.includes("row read limit") || bodyText.includes("exceeded D1") || bodyText === "database_unavailable") {
+    return t("auth.dbQuotaExceeded", {
+      defaultValue: "数据库每日免费读取配额已用尽，请等待次日自动重置或升级配额。"
+    });
+  }
+
+  if (bodyText === "invalid_credentials" || bodyText === "user_not_found") {
+    return t("auth.authFailed", "Authentication failed, please check your username or password.");
+  }
+  if (bodyText === "invalid_totp") {
+    return t("auth.invalidTotp", "Invalid TOTP verification code.");
+  }
+  if (bodyText === "invalid_turnstile" || bodyText === "turnstile_failed") {
+    return t("auth.turnstileRequired", "Please complete Turnstile verification.");
+  }
+  if (bodyText === "geolocation_missing") {
+    return t("auth.geolocationRequired", "Geolocation retrieval failed, please re-enter.");
+  }
+  if (bodyText === "username_exists") {
+    return t("auth.usernameExists", "Username already exists.");
+  }
+  if (bodyText === "password_leaked") {
+    return t("auth.passwordLeaked", "Your password has been leaked.");
+  }
+
+  // If bodyText is short and doesn't contain HTML markup, return it directly
+  if (bodyText && bodyText.length < 200 && !bodyText.includes("<") && !bodyText.includes(">")) {
+    return bodyText;
+  }
+
+  return t("auth.authFailed", "Authentication failed, please check your username or password.");
 }
 
 /**

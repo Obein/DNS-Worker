@@ -1,5 +1,6 @@
 import { Env, User, Profile, ProfileSettings, ExecutionContext } from "../../types";
 import { LogModel } from "../../models/log";
+import { cacheUtils } from "../../utils/cache";
 
 /**
  * Handle logs and analytics requests to /api/profiles/:id/logs and /api/profiles/:id/analytics
@@ -165,8 +166,29 @@ export async function handleProfileLogsAndAnalyticsRequest(
       return new Response("Not Found", { status: 404 });
     }
     
+    const cache = (caches as any).default;
+    const cacheKey = `analytics:${profileId}:${since}:${until}:${interval}:${accessPointId || 'all'}`;
+    const cached = await cacheUtils.get<any>(cache, cacheKey);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cache': 'HIT',
+          'Cache-Control': 'public, max-age=60'
+        }
+      });
+    }
+
     const analytics = await logModel.getAnalytics(profileId, since, until, interval, accessPointId);
-    return new Response(JSON.stringify(analytics), { headers: { 'Content-Type': 'application/json' } });
+    await cacheUtils.set(cache, cacheKey, analytics, 60);
+
+    return new Response(JSON.stringify(analytics), {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Cache': 'MISS',
+        'Cache-Control': 'public, max-age=60'
+      }
+    });
   }
 
   return new Response("Not Found", { status: 404 });

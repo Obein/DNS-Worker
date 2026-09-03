@@ -111,7 +111,13 @@
     "pinIncorrect": "Неверный PIN-код",
     "attemptsRemaining": "Осталось попыток: {{count}}",
     "logoutAndReturn": "Выйти из сессии",
-    "lockNow": "Заблокировать сейчас"
+    "lockNow": "Заблокировать сейчас",
+    "cfErrorWithDetails": "Ошибка Cloudflare Edge (Ошибка {{code}}: {{desc}}). Сервис временно недоступен, повторите попытку позже. {{rayId}}",
+    "cfErrorCodeOnly": "Ошибка Cloudflare Edge (Ошибка {{code}}). Сервис временно недоступен. {{rayId}}",
+    "cfErrorGeneric": "Ошибка Cloudflare Edge, сервис временно недоступен. Повторите попытку позже. {{rayId}}",
+    "htmlErrorGeneric": "Сервер вернул непредвиденный ответ (HTTP {{status}}). Повторите попытку позже.",
+    "tooManyAttempts": "Слишком много запросов или попыток. Пожалуйста, повторите попытку позже.",
+    "dbQuotaExceeded": "Превышена дневная квота чтения базы данных. Дождитесь ежедневного сброса."
   },
   "setup": {
     "title": "Руководство по установке",

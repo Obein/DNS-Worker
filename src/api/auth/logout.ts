@@ -5,6 +5,7 @@ import {
 } from "../../lib/auth";
 import { SessionModel } from "../../models/session";
 import { ActivityLogModel } from "../../models/activityLog";
+import { invalidateAuthUserCache } from "../../lib/middleware";
 
 /**
  * Handle session logout requests
@@ -21,6 +22,7 @@ export async function handleLogoutRequest(request: Request, env: Env): Promise<R
       const sessionModel = new SessionModel(env.DB);
       const userId = await sessionModel.getSessionUserId(parsed.sid);
       await invalidateSession(env, parsed.sid);
+      invalidateAuthUserCache(parsed.sid);
       if (userId) {
         const sessionHash = await generateSessionHash(parsed.sid, userId);
         await activityLog.record(userId, 'logout', clientIp, userAgent, { reason: 'user_active' }, sessionHash);

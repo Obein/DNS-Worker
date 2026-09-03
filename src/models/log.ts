@@ -4,8 +4,8 @@ import { ResolutionLog } from "../types";
 export class LogModel {
   constructor(private db: D1Database) {}
 
-  async insert(log: ResolutionLog): Promise<boolean> {
-    const result = await this.db.prepare(
+  createInsertStatement(log: ResolutionLog) {
+    return this.db.prepare(
       "INSERT INTO logs (profile_id, access_point_id, timestamp, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
       .bind(
@@ -23,8 +23,11 @@ export class LogModel {
         log.ecs || null,
         log.upstream || null,
         log.latency || null,
-      )
-      .run();
+      );
+  }
+
+  async insert(log: ResolutionLog): Promise<boolean> {
+    const result = await this.createInsertStatement(log).run();
     return result.success;
   }
 
@@ -54,7 +57,7 @@ export class LogModel {
     if (options.isp) { queryStr += " AND json_extract(l.dest_geoip, '$.isp') = ?"; params.push(options.isp); }
     
     if (options.export) {
-      queryStr += " ORDER BY l.timestamp DESC LIMIT 50000";
+      queryStr += " ORDER BY l.timestamp DESC LIMIT 5000";
     } else {
       let limit = options.limit !== undefined && !isNaN(options.limit) && options.limit > 0 ? options.limit : 50;
       if (limit > 100) {
@@ -111,56 +114,63 @@ export class LogModel {
     maxRetentionDays = 90,
     maxLogsPerProfile = 500_000,
   ): Promise<void> {
-    const { results: profiles } = await this.db.prepare(
-      "SELECT id, settings FROM profiles"
-    ).all<{id: string, settings: string}>();
+    try {
+      const { results: profiles } = await this.db.prepare(
+        "SELECT id, settings FROM profiles"
+      ).all<{id: string, settings: string}>();
 
-    const statements = [];
+      const statements = [];
 
-    for (const profile of profiles) {
-      // ── 1. Time-based cleanup ────────────────────────────────────────────────
-      let days = 30;
-      try {
-        const settings = JSON.parse(profile.settings);
-        if (settings?.log_retention_days != null) {
-          days = Number(settings.log_retention_days);
+      for (const profile of profiles) {
+        // ── 1. Time-based cleanup ────────────────────────────────────────────────
+        let days = 30;
+        try {
+          const settings = JSON.parse(profile.settings);
+          if (settings?.log_retention_days != null) {
+            days = Number(settings.log_retention_days);
+          }
+        } catch {
+          // Use default on parse error
         }
-      } catch {
-        // Use default on parse error
+
+        // Enforce global hard cap: user setting cannot exceed maxRetentionDays
+        const effectiveDays = Math.min(days, maxRetentionDays);
+        const threshold = Math.floor(Date.now() / 1000 - (effectiveDays * 24 * 3600));
+
+        statements.push(
+          this.db.prepare(
+            "DELETE FROM logs WHERE profile_id = ? AND timestamp < ?"
+          ).bind(profile.id, threshold)
+        );
+
+        // ── 2. Row-count cap (circuit-breaker) ──────────────────────────────────
+        // Check if rows exceed maxLogsPerProfile using index seek (OFFSET),
+        // reading only 1 row instead of scanning 1,000,000+ rows.
+        try {
+          const overflowRow = await this.db.prepare(
+            "SELECT timestamp FROM logs WHERE profile_id = ? ORDER BY timestamp DESC LIMIT 1 OFFSET ?"
+          ).bind(profile.id, maxLogsPerProfile).first<{ timestamp: number }>();
+
+          if (overflowRow && overflowRow.timestamp) {
+            statements.push(
+              this.db.prepare(
+                "DELETE FROM logs WHERE profile_id = ? AND timestamp <= ?"
+              ).bind(profile.id, overflowRow.timestamp)
+            );
+          }
+        } catch {
+          // Non-critical circuit breaker
+        }
       }
 
-      // Enforce global hard cap: user setting cannot exceed maxRetentionDays
-      const effectiveDays = Math.min(days, maxRetentionDays);
-      const threshold = Math.floor(Date.now() / 1000 - (effectiveDays * 24 * 3600));
+      if (statements.length > 0) {
+        await this.db.batch(statements);
+      }
 
-      statements.push(
-        this.db.prepare(
-          "DELETE FROM logs WHERE profile_id = ? AND timestamp < ?"
-        ).bind(profile.id, threshold)
-      );
-
-      // ── 2. Row-count cap (circuit-breaker) ──────────────────────────────────
-      // Delete oldest rows that exceed maxLogsPerProfile, using the
-      // (profile_id, timestamp) composite index for efficiency.
-      statements.push(
-        this.db.prepare(`
-          DELETE FROM logs
-          WHERE profile_id = ?
-            AND id IN (
-              SELECT id FROM logs
-              WHERE profile_id = ?
-              ORDER BY timestamp ASC
-              LIMIT MAX(0, (SELECT COUNT(*) FROM logs WHERE profile_id = ?) - ?)
-            )
-        `).bind(profile.id, profile.id, profile.id, maxLogsPerProfile)
-      );
+      console.log(`[LogModel] cleanupGlobal: processed ${profiles.length} profile(s), cap=${maxRetentionDays}d/${maxLogsPerProfile}rows`);
+    } catch (e: any) {
+      console.error("[LogModel] cleanupGlobal failed:", e.message || e);
     }
-
-    if (statements.length > 0) {
-      await this.db.batch(statements);
-    }
-
-    console.log(`[LogModel] cleanupGlobal: processed ${profiles.length} profile(s), cap=${maxRetentionDays}d/${maxLogsPerProfile}rows`);
   }
 
   async getSummary(profileId: string, since: number, until: number, search?: string, accessPointId?: string) {

@@ -31,6 +31,16 @@ export function applySecurityHeaders(response: Response, nonce: string): Respons
 /**
  * Parses authorization header and verifies JWT to get the current authenticated user.
  */
+interface CachedAuthUser {
+  user: User;
+  expiresAt: number;
+}
+const authUserMemoryCache = new Map<string, CachedAuthUser>();
+
+export function invalidateAuthUserCache(sessionId: string): void {
+  authUserMemoryCache.delete(sessionId);
+}
+
 export async function getCurrentUser(request: Request, env: Env): Promise<User | null> {
   const authHeader = request.headers.get("Authorization") || "";
   let accessToken = "";
@@ -50,10 +60,17 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
       jwtKey
     );
     if (payload) {
+      // Check 10-second micro-cache to collapse parallel dashboard requests into 1 D1 read
+      const cached = authUserMemoryCache.get(payload.sessionId);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.user;
+      }
+
       // Validate session in database (enforce statefulness and idle timeout)
       const sessionModel = new SessionModel(env.DB);
       const session = await sessionModel.getSession(payload.sessionId);
       if (!session) {
+        authUserMemoryCache.delete(payload.sessionId);
         return null;
       }
 
@@ -73,7 +90,8 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
       }
 
       if (session.is_paused) {
-        return { id: payload.userId, username: "", role: payload.role as any, isPaused: true, sessionId: payload.sessionId };
+        const pausedUser: User = { id: payload.userId, username: "", role: payload.role as any, isPaused: true, sessionId: payload.sessionId };
+        return pausedUser;
       }
 
       // Throttle DB updates: only update if at least 10 seconds have elapsed since last active time
@@ -81,7 +99,19 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
         await sessionModel.updateLastActive(session.id, now);
       }
 
-      return { id: payload.userId, username: "", role: payload.role as any, sessionId: payload.sessionId };
+      const validatedUser: User = { id: payload.userId, username: "", role: payload.role as any, sessionId: payload.sessionId };
+
+      // Cache for 10 seconds (cap size at 100)
+      if (authUserMemoryCache.size > 100) {
+        const oldestKey = authUserMemoryCache.keys().next().value;
+        if (oldestKey) authUserMemoryCache.delete(oldestKey);
+      }
+      authUserMemoryCache.set(payload.sessionId, {
+        user: validatedUser,
+        expiresAt: Date.now() + 10_000
+      });
+
+      return validatedUser;
     }
   } catch (e) {
     // Ignore verification errors and return null

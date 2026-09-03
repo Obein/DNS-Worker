@@ -112,7 +112,13 @@
     "pinIncorrect": "PIN 碼錯誤",
     "attemptsRemaining": "還剩 {{count}} 次嘗試機會",
     "logoutAndReturn": "登出會話",
-    "lockNow": "立即鎖定"
+    "lockNow": "立即鎖定",
+    "cfErrorWithDetails": "Cloudflare 邊緣節點異常 (錯誤代碼 {{code}}: {{desc}})。服務暫時不可用，請稍後重試。{{rayId}}",
+    "cfErrorCodeOnly": "Cloudflare 邊緣服務異常 (錯誤代碼 {{code}})。服務暫時不可用，請稍後重試。{{rayId}}",
+    "cfErrorGeneric": "Cloudflare 邊緣服務異常，服務暫時不可用，請稍後重試。{{rayId}}",
+    "htmlErrorGeneric": "伺服器傳回異常網頁回應 (HTTP {{status}})，請稍後重試。",
+    "tooManyAttempts": "請求過於頻繁或嘗試次數過多，已被臨時限制，請稍後再試。",
+    "dbQuotaExceeded": "資料庫每日免費讀取配額已用盡，請等待次日自動重置或升級配額。"
   },
   "setup": {
     "title": "安裝指南",

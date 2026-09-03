@@ -6,6 +6,7 @@ import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, 
 import { dnsCache } from "./cache";
 import { connect } from 'cloudflare:sockets';
 import { isSafeUrl } from "../utils/validator";
+import { enqueueLog } from "./logBatcher";
 
 export const pipelineResolver = {
   async resolve(request: Request, query: DNSQuery, context: Context, settings: ProfileSettings, action: 'PASS', reason?: string): Promise<ResolutionResult> {
@@ -189,36 +190,40 @@ export const pipelineResolver = {
       const minTTL = parsedAnswers.length > 0 ? Math.max(10, Math.min(...parsedAnswers.map(a => a.ttl))) : 60;
 
       context.ctx.waitUntil((async () => {
-        const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
-        const firstIp = parsedAnswers.find(a => a.type === 'A' || a.type === 'AAAA')?.data;
-        let destGeoJson = "";
-        if (firstIp) {
-          const geo = await fetchGeoIP(firstIp);
-          if (geo) destGeoJson = JSON.stringify(geo);
-        }
+        try {
+          const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+          const firstIp = parsedAnswers.find(a => a.type === 'A' || a.type === 'AAAA')?.data;
+          let destGeoJson = "";
+          if (firstIp) {
+            const geo = await fetchGeoIP(firstIp);
+            if (geo) destGeoJson = JSON.stringify(geo);
+          }
 
-        const latency = Date.now() - context.startTime;
-        await logModel.insert({
-          profile_id: context.profileId,
-          access_point_id: context.accessPointId,
-          timestamp: Math.floor(Date.now() / 1000),
-          client_ip: clientIp,
-          geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
-          domain: query.name,
-          record_type: query.type,
-          action,
-          reason: effectiveReason,
-          answer: parsedAnswers.map(a => a.data).join(", "),
-          dest_geoip: destGeoJson,
-          upstream: upstreamUrl,
-          latency,
-          ecs
-        });
+          const latency = Date.now() - context.startTime;
+          enqueueLog({
+            profile_id: context.profileId,
+            access_point_id: context.accessPointId,
+            timestamp: Math.floor(Date.now() / 1000),
+            client_ip: clientIp,
+            geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
+            domain: query.name,
+            record_type: query.type,
+            action,
+            reason: effectiveReason,
+            answer: parsedAnswers.map(a => a.data).join(", "),
+            dest_geoip: destGeoJson,
+            upstream: upstreamUrl,
+            latency,
+            ecs
+          }, settings, context.env, context.ctx);
 
-        if (answer.length > 0) {
-          dnsCache.set(`${context.profileId}:${query.name}:${query.type}`, {
-            answer, ttl: minTTL, action, reason: effectiveReason, expiresAt: Date.now() + (minTTL * 1000)
-          });
+          if (answer.length > 0) {
+            dnsCache.set(`${context.profileId}:${query.name}:${query.type}`, {
+              answer, ttl: minTTL, action, reason: effectiveReason, expiresAt: Date.now() + (minTTL * 1000)
+            });
+          }
+        } catch {
+          // Ignore non-critical background caching errors
         }
       })());
 
@@ -306,19 +311,25 @@ export const pipelineResolver = {
     }
 
     const latency = Date.now() - context.startTime;
-    context.ctx.waitUntil(logModel.insert({
-      profile_id: context.profileId,
-      access_point_id: context.accessPointId,
-      timestamp: Math.floor(Date.now() / 1000),
-      client_ip: clientIp,
-      geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
-      domain: query.name,
-      record_type: query.type,
-      action,
-      reason,
-      answer: displayAnswer,
-      latency
-    }));
+    context.ctx.waitUntil((async () => {
+      try {
+        enqueueLog({
+          profile_id: context.profileId,
+          access_point_id: context.accessPointId,
+          timestamp: Math.floor(Date.now() / 1000),
+          client_ip: clientIp,
+          geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
+          domain: query.name,
+          record_type: query.type,
+          action,
+          reason,
+          answer: displayAnswer,
+          latency
+        }, settings, context.env, context.ctx);
+      } catch {
+        // Ignore non-critical background logging errors
+      }
+    })());
 
     return { answer, ttl: 3600, action, reason, latency };
   }
