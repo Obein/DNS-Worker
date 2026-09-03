@@ -55,15 +55,16 @@ async function resolveProfileByKey(
     // Emergency fail-open fallback if D1 has exceeded its read quota:
     // Generate a temporary fallback profile so DNS resolution doesn't return 404 or 500
     if (String(e?.message || e).includes("exceeded D1's free tier daily row read limit")) {
-      console.warn(`[DoH] D1 read quota exhausted. Providing emergency fallback profile for key ${profileKey}`);
+      const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
+      console.warn(`[DoH] D1 read quota exhausted. Providing emergency fallback profile for key ${profileKey} -> ${failOpenUpstream}`);
       return {
         id: profileKey,
         name: "Emergency Fallback",
         settings: JSON.stringify({
-          upstream: ["https://security.cloudflare-dns.com/dns-query"],
-          default_policy: "PASS",
+          upstream: [failOpenUpstream],
+          default_policy: "ALLOW",
           log_retention_days: 0,
-          ecs: false
+          ecs: { enabled: true, use_client_ip: true }
         }),
         owner_id: "system",
         created_at: Math.floor(now / 1000),
@@ -150,9 +151,9 @@ export async function handleDoHRequest(
   } catch (e: any) {
     console.error(`[DoH Pipeline] Internal Error:`, e);
     try {
-      // Emergency fail-open: proxy the DoH request directly to Cloudflare Security DNS
+      // Emergency fail-open: proxy the DoH request directly to fallback Security DNS
       // Ensures user devices NEVER experience 500 or internet blackout during D1/Worker anomalies
-      const fallbackUrl = new URL("https://security.cloudflare-dns.com/dns-query");
+      const fallbackUrl = new URL(env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo");
       const reqUrl = new URL(request.url);
       fallbackUrl.search = reqUrl.search;
       const fallbackRes = await fetch(fallbackUrl.toString(), {

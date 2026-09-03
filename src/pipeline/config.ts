@@ -112,11 +112,12 @@ export const pipelineConfig = {
       // 容灾模式 2: Emergency Safe Default Fallback
       // 当 D1 读额度耗尽且无缓存时，使用内置安全上游兜底，保证 DNS 绝不报 500 断网
       console.warn(`[Config] Serving emergency fail-open safe fallback for profile ${profileId}`);
+      const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
       const fallbackSettings: ProfileSettings = {
-        upstream: ["https://security.cloudflare-dns.com/dns-query"],
+        upstream: [failOpenUpstream],
         default_policy: "ALLOW",
         log_retention_days: 0,
-        ecs: { enabled: false, use_client_ip: false }
+        ecs: { enabled: true, use_client_ip: true }
       };
       return { settings: fallbackSettings, rules: [], bloom: undefined };
     }
