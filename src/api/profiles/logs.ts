@@ -30,6 +30,10 @@ export async function handleProfileLogsAndAnalyticsRequest(
     const accessPointId = urlParams.get('access_point_id');
     const destCountry = urlParams.get('dest_country');
     const isp = urlParams.get('isp');
+    const domain = urlParams.get('domain') || undefined;
+    const recordType = urlParams.get('record_type') || undefined;
+    const geoCountry = urlParams.get('geo_country') || undefined;
+    const reason = urlParams.get('reason') || undefined;
     const startParam = urlParams.get('start');
     const endParam = urlParams.get('end');
     
@@ -65,6 +69,10 @@ export async function handleProfileLogsAndAnalyticsRequest(
           access_point_id: accessPointId || undefined,
           dest_country: destCountry || undefined,
           isp: isp || undefined,
+          domain,
+          record_type: recordType,
+          geo_country: geoCountry,
+          reason,
           export: true
         });
         return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
@@ -74,6 +82,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
       if (isNaN(logId)) {
         return new Response("Invalid Log ID", { status: 400 });
       }
+
       const logDetail = await logModel.getLog(profileId, logId);
       if (!logDetail) {
         return new Response("Log Not Found", { status: 404 });
@@ -97,7 +106,11 @@ export async function handleProfileLogsAndAnalyticsRequest(
       limit,
       access_point_id: accessPointId || undefined,
       dest_country: destCountry || undefined,
-      isp: isp || undefined
+      isp: isp || undefined,
+      domain,
+      record_type: recordType,
+      geo_country: geoCountry,
+      reason
     });
     return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
   }
@@ -129,41 +142,52 @@ export async function handleProfileLogsAndAnalyticsRequest(
 
     const subResource = pathParts[4];
     if (subResource) {
+      const cache = (caches as any).default;
+      const subCacheKey = `analytics_sub:${profileId}:${subResource}:${urlParams.toString()}`;
+      const cached = await cacheUtils.get<any>(cache, subCacheKey);
+      if (cached) {
+        return new Response(JSON.stringify(cached), {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Cache': 'HIT',
+            'Cache-Control': 'public, max-age=300'
+          }
+        });
+      }
+
+      let data: any = null;
       if (subResource === 'summary') {
         const search = urlParams.get('search') || undefined;
-        const summary = await logModel.getSummary(profileId, since, until, search, accessPointId);
-        return new Response(JSON.stringify(summary), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'trend') {
-        const trend = await logModel.getTrend(profileId, since, until, interval, accessPointId);
-        return new Response(JSON.stringify(trend), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'top_allowed') {
-        const topAllowed = await logModel.getTopAllowed(profileId, since, until, accessPointId);
-        return new Response(JSON.stringify(topAllowed), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'top_blocked') {
-        const topBlocked = await logModel.getTopBlocked(profileId, since, until, accessPointId);
-        return new Response(JSON.stringify(topBlocked), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'clients') {
-        const clients = await logModel.getClients(profileId, since, until, accessPointId);
-        return new Response(JSON.stringify(clients), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'destinations') {
+        data = await logModel.getSummary(profileId, since, until, search, accessPointId);
+      } else if (subResource === 'trend') {
+        data = await logModel.getTrend(profileId, since, until, interval, accessPointId);
+      } else if (subResource === 'top_allowed') {
+        data = await logModel.getTopAllowed(profileId, since, until, accessPointId);
+      } else if (subResource === 'top_blocked') {
+        data = await logModel.getTopBlocked(profileId, since, until, accessPointId);
+      } else if (subResource === 'clients') {
+        data = await logModel.getClients(profileId, since, until, accessPointId);
+      } else if (subResource === 'destinations') {
         const limitParam = urlParams.get('limit');
         const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-        const destinations = await logModel.getDestinations(profileId, since, until, accessPointId, limit !== undefined && !isNaN(limit) ? limit : undefined);
-        return new Response(JSON.stringify(destinations), { headers: { 'Content-Type': 'application/json' } });
-      }
-      if (subResource === 'isps') {
+        data = await logModel.getDestinations(profileId, since, until, accessPointId, limit !== undefined && !isNaN(limit) ? limit : undefined);
+      } else if (subResource === 'isps') {
         const countryCode = urlParams.get('country_code') || undefined;
         const limitParam = urlParams.get('limit');
         const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-        const isps = await logModel.getISPByCountry(profileId, countryCode, since, until, accessPointId, limit !== undefined && !isNaN(limit) ? limit : undefined);
-        return new Response(JSON.stringify(isps), { headers: { 'Content-Type': 'application/json' } });
+        data = await logModel.getISPByCountry(profileId, countryCode, since, until, accessPointId, limit !== undefined && !isNaN(limit) ? limit : undefined);
+      } else {
+        return new Response("Not Found", { status: 404 });
       }
-      return new Response("Not Found", { status: 404 });
+
+      await cacheUtils.set(cache, subCacheKey, data, 300);
+      return new Response(JSON.stringify(data), {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Cache': 'MISS',
+          'Cache-Control': 'public, max-age=300'
+        }
+      });
     }
     
     const cache = (caches as any).default;

@@ -29,9 +29,11 @@ export function useLogAutoRefresh({
   fetchLogs,
 }: AutoRefreshParams) {
   useEffect(() => {
-    const autoRefreshTimer = setInterval(() => {
+    if (!realtimeRefresh) return;
+
+    const triggerRefresh = () => {
       if (
-        realtimeRefresh &&
+        document.visibilityState === "visible" &&
         scrollContainerRef.current &&
         scrollContainerRef.current.scrollTop < 50 &&
         !isFetchingRef.current &&
@@ -40,8 +42,23 @@ export function useLogAutoRefresh({
       ) {
         fetchLogs(range, true, true);
       }
-    }, 2000);
-    return () => clearInterval(autoRefreshTimer);
+    };
+
+    // 6-second interval (reasonable real-time refresh rate preventing DB quota burn)
+    const autoRefreshTimer = setInterval(triggerRefresh, 6000);
+
+    // When user returns to the tab, trigger an immediate refresh
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        triggerRefresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(autoRefreshTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [
     profileId,
     range,
