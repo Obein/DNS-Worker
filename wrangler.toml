@@ -45,6 +45,8 @@ enabled = true
 head_sampling_rate = 0.01
 
 [vars]
+# Default upstream for fail-open emergency fallback
+FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
 MAX_ACCESS_POINTS_PER_PROFILE = 100
 # Maximum number of profiles allowed per user

@@ -25,6 +25,7 @@ export interface Env {
   MAX_LOG_RETENTION_DAYS?: string | number;
   MAX_LOGS_PER_PROFILE?: string | number;
   NORMAL_USER_MAX_LOG_RETENTION_DAYS?: string | number;
+  FAIL_OPEN_UPSTREAM?: string;
   [key: string]: any;
 }
 

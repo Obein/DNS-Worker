@@ -51,6 +51,26 @@ async function resolveProfileByKey(
     if (inMem?.data) {
       return inMem.data;
     }
+
+    // Emergency fail-open fallback if D1 has exceeded its read quota:
+    // Generate a temporary fallback profile so DNS resolution doesn't return 404 or 500
+    if (String(e?.message || e).includes("exceeded D1's free tier daily row read limit")) {
+      const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
+      console.warn(`[DoH] D1 read quota exhausted. Providing emergency fallback profile for key ${profileKey} -> ${failOpenUpstream}`);
+      return {
+        id: profileKey,
+        name: "Emergency Fallback",
+        settings: JSON.stringify({
+          upstream: [failOpenUpstream],
+          default_policy: "ALLOW",
+          log_retention_days: 0,
+          ecs: { enabled: true, use_client_ip: true }
+        }),
+        owner_id: "system",
+        created_at: Math.floor(now / 1000),
+        updated_at: Math.floor(now / 1000)
+      } as any;
+    }
   }
 
   return null;
@@ -130,6 +150,24 @@ export async function handleDoHRequest(
     });
   } catch (e: any) {
     console.error(`[DoH Pipeline] Internal Error:`, e);
-    return new Response(`Internal Server Error`, { status: 500 });
+    try {
+      // Emergency fail-open: proxy the DoH request directly to fallback Security DNS
+      // Ensures user devices NEVER experience 500 or internet blackout during D1/Worker anomalies
+      const fallbackUrl = new URL(env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo");
+      const reqUrl = new URL(request.url);
+      fallbackUrl.search = reqUrl.search;
+      const fallbackRes = await fetch(fallbackUrl.toString(), {
+        method: request.method,
+        headers: {
+          "Accept": request.headers.get("Accept") || "application/dns-message",
+          "Content-Type": request.headers.get("Content-Type") || "application/dns-message"
+        },
+        body: request.method === "POST" ? request.body : undefined
+      });
+      return fallbackRes;
+    } catch (proxyErr) {
+      console.error(`[DoH Pipeline] Emergency fallback proxy failed:`, proxyErr);
+      return new Response(`Internal Server Error`, { status: 500 });
+    }
   }
 }
