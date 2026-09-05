@@ -31,30 +31,88 @@ export class LogModel {
     return result.success;
   }
 
-  async getLogs(profileId: string, options: { since: number, until: number, status?: string, search?: string, before?: number, limit?: number, access_point_id?: string, dest_country?: string, isp?: string, export?: boolean }): Promise<ResolutionLog[]> {
-    let queryStr = "";
+  async getLogs(profileId: string, options: {
+    since: number;
+    until: number;
+    status?: string;
+    search?: string;
+    before?: number;
+    limit?: number;
+    access_point_id?: string;
+    dest_country?: string;
+    isp?: string;
+    export?: boolean;
+    domain?: string;
+    geo_country?: string;
+    reason?: string;
+    record_type?: string;
+  }): Promise<ResolutionLog[]> {
+    let baseSelect = "";
     if (options.export) {
-      queryStr = `
+      baseSelect = `
         SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency
         FROM logs l
-        WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
       `;
     } else {
-      queryStr = `
+      baseSelect = `
         SELECT l.id, l.timestamp, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, ap.name as access_point_name 
         FROM logs l
         LEFT JOIN access_points ap ON l.access_point_id = ap.id
-        WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
       `;
     }
-    let params: any[] = [profileId, options.since, options.until];
-    
-    if (options.status) { queryStr += " AND l.action = ?"; params.push(options.status); }
-    if (options.search) { queryStr += " AND l.domain LIKE ?"; params.push(`%${options.search}%`); }
-    if (options.before) { queryStr += " AND l.timestamp < ?"; params.push(options.before); }
-    if (options.access_point_id) { queryStr += " AND l.access_point_id = ?"; params.push(options.access_point_id); }
-    if (options.dest_country) { queryStr += " AND json_extract(l.dest_geoip, '$.country_code') = ?"; params.push(options.dest_country.toUpperCase()); }
-    if (options.isp) { queryStr += " AND json_extract(l.dest_geoip, '$.isp') = ?"; params.push(options.isp); }
+
+    const whereClauses: string[] = ["l.profile_id = ?"];
+    const params: any[] = [profileId];
+
+    // Place equality filters first so SQLite query planner matches composite indexes prefix
+    if (options.access_point_id) {
+      whereClauses.push("l.access_point_id = ?");
+      params.push(options.access_point_id);
+    }
+    if (options.status) {
+      whereClauses.push("l.action = ?");
+      params.push(options.status);
+    }
+    if (options.geo_country) {
+      whereClauses.push("l.geo_country = ?");
+      params.push(options.geo_country);
+    }
+    if (options.reason) {
+      whereClauses.push("l.reason = ?");
+      params.push(options.reason);
+    }
+    if (options.domain) {
+      whereClauses.push("l.domain = ?");
+      params.push(options.domain);
+    }
+    if (options.record_type) {
+      whereClauses.push("l.record_type = ?");
+      params.push(options.record_type);
+    }
+    if (options.search) {
+      whereClauses.push("l.domain LIKE ?");
+      params.push(`%${options.search}%`);
+    }
+    if (options.before) {
+      whereClauses.push("l.timestamp < ?");
+      params.push(options.before);
+    }
+
+    whereClauses.push("l.timestamp >= ?");
+    params.push(options.since);
+    whereClauses.push("l.timestamp <= ?");
+    params.push(options.until);
+
+    if (options.dest_country) {
+      whereClauses.push("json_extract(l.dest_geoip, '$.country_code') = ?");
+      params.push(options.dest_country.toUpperCase());
+    }
+    if (options.isp) {
+      whereClauses.push("json_extract(l.dest_geoip, '$.isp') = ?");
+      params.push(options.isp);
+    }
+
+    let queryStr = baseSelect + " WHERE " + whereClauses.join(" AND ");
     
     if (options.export) {
       queryStr += " ORDER BY l.timestamp DESC LIMIT 5000";
