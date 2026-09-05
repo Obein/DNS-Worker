@@ -86,13 +86,19 @@ export class ProfileModel {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.db.prepare("DELETE FROM profiles WHERE id = ?").bind(id).run();
-    return result.success;
+    const results = await this.db.batch([
+      this.db.prepare("DELETE FROM logs WHERE profile_id = ?").bind(id),
+      this.db.prepare("DELETE FROM profiles WHERE id = ?").bind(id)
+    ]);
+    return results.every(r => r.success);
   }
 
   async deleteByOwner(ownerId: string): Promise<boolean> {
-    const result = await this.db.prepare("DELETE FROM profiles WHERE owner_id = ?").bind(ownerId).run();
-    return result.success;
+    const results = await this.db.batch([
+      this.db.prepare("DELETE FROM logs WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
+      this.db.prepare("DELETE FROM profiles WHERE owner_id = ?").bind(ownerId)
+    ]);
+    return results.every(r => r.success);
   }
 
   async updateName(id: string, name: string): Promise<boolean> {
