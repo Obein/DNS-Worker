@@ -117,7 +117,11 @@
     "cfErrorGeneric": "Lỗi Cloudflare Edge, dịch vụ tạm thời không khả dụng. Vui lòng thử lại sau. {{rayId}}",
     "htmlErrorGeneric": "Máy chủ đã trả về phản hồi không mong muốn (HTTP {{status}}). Vui lòng thử lại sau.",
     "tooManyAttempts": "Quá nhiều yêu cầu hoặc lần thử. Vui lòng thử lại sau.",
-    "dbQuotaExceeded": "Đã vượt quá hạn mức đọc cơ sở dữ liệu hàng ngày. Vui lòng đợi thiết lập lại hàng ngày."
+    "dbQuotaExceeded": "Đã vượt quá hạn mức đọc cơ sở dữ liệu hàng ngày. Vui lòng đợi thiết lập lại hàng ngày.",
+    "noUsersRegistered": "Chưa có tài khoản nào được đăng ký. Vui lòng đăng ký làm quản trị viên.",
+    "registerAdminTitle": "Đăng ký tài khoản quản trị viên",
+    "registerAdminDesc": "Hệ thống chưa có tài khoản. Người dùng đầu tiên sẽ trở thành quản trị viên hệ thống.",
+    "goToRegisterAdmin": "Đăng ký quản trị"
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",

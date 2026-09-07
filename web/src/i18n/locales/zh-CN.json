@@ -118,7 +118,11 @@
     "cfErrorGeneric": "Cloudflare 边缘服务异常，服务暂时不可用，请稍后重试。{{rayId}}",
     "htmlErrorGeneric": "服务器返回异常网页响应 (HTTP {{status}})，请稍后重试。",
     "tooManyAttempts": "请求过于频繁或尝试次数过多，已被临时限制，请稍后再试。",
-    "dbQuotaExceeded": "数据库每日免费读取配额已用尽，请等待次日自动重置或升级配额。"
+    "dbQuotaExceeded": "数据库每日免费读取配额已用尽，请等待次日自动重置或升级配额。",
+    "noUsersRegistered": "系统尚无账号，请注册成为管理员。",
+    "registerAdminTitle": "注册管理员账号",
+    "registerAdminDesc": "系统尚无账号，首位注册用户将自动成为系统管理员。",
+    "goToRegisterAdmin": "注册管理员"
   },
   "setup": {
     "title": "安装指南",

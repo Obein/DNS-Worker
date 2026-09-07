@@ -26,19 +26,41 @@ export class SystemSettingsModel {
   }
 
   /**
+   * Defensively creates system_settings table if it does not already exist.
+   */
+  private async ensureTable(): Promise<void> {
+    try {
+      await this.db.prepare(
+        "CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL)"
+      ).run();
+    } catch (e) {
+      console.warn("[SystemSettingsModel] Failed to ensure system_settings table:", e);
+    }
+  }
+
+  /**
    * Retrieves all system settings from D1 and populates the in-memory cache.
    *
    * @returns Record containing all setting key-value pairs.
    */
   async getAll(): Promise<Record<string, string>> {
-    const { results } = await this.db.prepare("SELECT key, value FROM system_settings").all<{ key: string; value: string }>();
-    const settings: Record<string, string> = {};
-    const expiresAt = Date.now() + CACHE_TTL_MS;
-    for (const row of results) {
-      settings[row.key] = row.value;
-      MEMORY_CACHE.set(row.key, { value: row.value, expiresAt });
+    try {
+      const { results } = await this.db.prepare("SELECT key, value FROM system_settings").all<{ key: string; value: string }>();
+      const settings: Record<string, string> = {};
+      const expiresAt = Date.now() + CACHE_TTL_MS;
+      for (const row of results) {
+        settings[row.key] = row.value;
+        MEMORY_CACHE.set(row.key, { value: row.value, expiresAt });
+      }
+      return settings;
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      if (errorMsg.includes("no such table")) {
+        await this.ensureTable();
+        return {};
+      }
+      throw e;
     }
-    return settings;
   }
 
   /**
@@ -53,10 +75,19 @@ export class SystemSettingsModel {
       return cached.value;
     }
 
-    const res = await this.db.prepare("SELECT value FROM system_settings WHERE key = ?").bind(key).first<{ value: string }>();
-    const val = res ? res.value : null;
-    MEMORY_CACHE.set(key, { value: val, expiresAt: Date.now() + CACHE_TTL_MS });
-    return val;
+    try {
+      const res = await this.db.prepare("SELECT value FROM system_settings WHERE key = ?").bind(key).first<{ value: string }>();
+      const val = res ? res.value : null;
+      MEMORY_CACHE.set(key, { value: val, expiresAt: Date.now() + CACHE_TTL_MS });
+      return val;
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      if (errorMsg.includes("no such table")) {
+        await this.ensureTable();
+        return null;
+      }
+      throw e;
+    }
   }
 
   /**
@@ -68,14 +99,29 @@ export class SystemSettingsModel {
    */
   async set(key: string, value: string): Promise<boolean> {
     const now = Math.floor(Date.now() / 1000);
-    const result = await this.db.prepare(
-      "INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at"
-    ).bind(key, value, now).run();
+    try {
+      const result = await this.db.prepare(
+        "INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at"
+      ).bind(key, value, now).run();
 
-    if (result.success) {
-      MEMORY_CACHE.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+      if (result.success) {
+        MEMORY_CACHE.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+      }
+      return result.success;
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      if (errorMsg.includes("no such table")) {
+        await this.ensureTable();
+        const retryResult = await this.db.prepare(
+          "INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at"
+        ).bind(key, value, now).run();
+        if (retryResult.success) {
+          MEMORY_CACHE.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+        }
+        return retryResult.success;
+      }
+      throw e;
     }
-    return result.success;
   }
 
   /**
@@ -89,8 +135,20 @@ export class SystemSettingsModel {
     const stmts = Object.entries(settings).map(([key, value]) =>
       this.db.prepare("INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at").bind(key, String(value), now)
     );
-    if (stmts.length > 0) {
-      await this.db.batch(stmts);
+    try {
+      if (stmts.length > 0) {
+        await this.db.batch(stmts);
+      }
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      if (errorMsg.includes("no such table")) {
+        await this.ensureTable();
+        if (stmts.length > 0) {
+          await this.db.batch(stmts);
+        }
+      } else {
+        throw e;
+      }
     }
     const expiresAt = Date.now() + CACHE_TTL_MS;
     for (const [key, value] of Object.entries(settings)) {

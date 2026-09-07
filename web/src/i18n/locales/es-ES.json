@@ -117,7 +117,11 @@
     "cfErrorGeneric": "Error de Cloudflare Edge, servicio no disponible temporalmente. Inténtelo de nuevo más tarde. {{rayId}}",
     "htmlErrorGeneric": "El servidor devolvió una respuesta inesperada (HTTP {{status}}). Inténtelo de nuevo más tarde.",
     "tooManyAttempts": "Demasiadas solicitudes o intentos. Por favor, inténtelo de nuevo más tarde.",
-    "dbQuotaExceeded": "Se ha superado la cuota diaria de lectura de la base de datos. Espere al reinicio diario."
+    "dbQuotaExceeded": "Se ha superado la cuota diaria de lectura de la base de datos. Espere al reinicio diario.",
+    "noUsersRegistered": "No hay cuentas registradas. Por favor, regístrese como administrador.",
+    "registerAdminTitle": "Registrar cuenta de administrador",
+    "registerAdminDesc": "No hay cuentas en el sistema. El primer usuario será el administrador del sistema.",
+    "goToRegisterAdmin": "Registrar admin"
   },
   "setup": {
     "title": "Guía de instalación",

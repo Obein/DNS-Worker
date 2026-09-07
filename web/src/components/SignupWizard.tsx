@@ -16,6 +16,7 @@ interface AuthConfig {
   turnstile_site_key: string;
   turnstile_enabled_signup: boolean;
   turnstile_enabled_login: boolean;
+  has_users?: boolean;
 }
 
 /**
@@ -103,7 +104,9 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
         />
         <H3 className="font-bold tracking-tight text-2xl mt-4">
           {signupStep === "username" || signupStep === "password"
-            ? t("auth.signup")
+            ? authConfig?.has_users === false
+              ? t("auth.registerAdminTitle", "注册管理员账号")
+              : t("auth.signup")
             : signupStep === "totp"
             ? t("account.totp.title", "Two-Factor Authentication (2FA)")
             : t("account.totp.recoveryKeysTitle", "Save Recovery Keys")}
@@ -112,6 +115,8 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
           {signupStep === "username" || signupStep === "password"
             ? signupStep === "password"
               ? username
+              : authConfig?.has_users === false
+              ? t("auth.registerAdminDesc", "系统尚无账号，首位注册用户将自动成为系统管理员。")
               : t("auth.protectInternet")
             : signupStep === "totp"
             ? t("account.totp.setupDesc", "Add an extra layer of security.")

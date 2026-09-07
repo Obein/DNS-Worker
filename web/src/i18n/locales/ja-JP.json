@@ -117,7 +117,11 @@
     "cfErrorGeneric": "Cloudflare Edge エラーが発生しました。しばらくしてからもう一度お試しください。{{rayId}}",
     "htmlErrorGeneric": "サーバーが異常なレスポンスを返しました (HTTP {{status}})。しばらくしてからもう一度お試しください。",
     "tooManyAttempts": "リクエストまたは試行回数が多すぎます。しばらくしてからもう一度お試しください。",
-    "dbQuotaExceeded": "データベースの1日の読み取りクォータを超過しました。毎日のリセットをお待ちください。"
+    "dbQuotaExceeded": "データベースの1日の読み取りクォータを超過しました。毎日のリセットをお待ちください。",
+    "noUsersRegistered": "アカウントが登録されていません。管理者として登録してください。",
+    "registerAdminTitle": "管理者アカウントの登録",
+    "registerAdminDesc": "システムにアカウントがありません。最初に登録されたユーザーがシステム管理者になります。",
+    "goToRegisterAdmin": "管理者登録"
   },
   "setup": {
     "title": "インストールガイド",

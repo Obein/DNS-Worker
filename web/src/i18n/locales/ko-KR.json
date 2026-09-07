@@ -117,7 +117,11 @@
     "cfErrorGeneric": "Cloudflare Edge 오류가 발생했습니다. 잠시 후 다시 시도해 주세요. {{rayId}}",
     "htmlErrorGeneric": "서버에서 비정상적인 응답을 반환했습니다 (HTTP {{status}}). 잠시 후 다시 시도해 주세요.",
     "tooManyAttempts": "요청 또는 시도 횟수가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
-    "dbQuotaExceeded": "데이터베이스 일일 읽기 할당량이 초과되었습니다. 일일 재설정을 기다려 주세요."
+    "dbQuotaExceeded": "데이터베이스 일일 읽기 할당량이 초과되었습니다. 일일 재설정을 기다려 주세요.",
+    "noUsersRegistered": "등록된 계정이 없습니다. 관리자로 가입해 주세요.",
+    "registerAdminTitle": "관리자 계정 등록",
+    "registerAdminDesc": "시스템에 계정이 없습니다. 첫 번째 가입자가 시스템 관리자가 됩니다.",
+    "goToRegisterAdmin": "관리자 등록"
   },
   "setup": {
     "title": "설치 가이드",

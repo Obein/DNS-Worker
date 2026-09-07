@@ -118,7 +118,11 @@
     "cfErrorGeneric": "Cloudflare 邊緣服務異常，服務暫時不可用，請稍後重試。{{rayId}}",
     "htmlErrorGeneric": "伺服器傳回異常網頁回應 (HTTP {{status}})，請稍後重試。",
     "tooManyAttempts": "請求過於頻繁或嘗試次數過多，已被臨時限制，請稍後再試。",
-    "dbQuotaExceeded": "資料庫每日免費讀取配額已用盡，請等待次日自動重置或升級配額。"
+    "dbQuotaExceeded": "資料庫每日免費讀取配額已用盡，請等待次日自動重置或升級配額。",
+    "noUsersRegistered": "系統尚無帳號，請註冊成為管理員。",
+    "registerAdminTitle": "註冊管理員帳號",
+    "registerAdminDesc": "系統尚無帳號，首位註冊用戶將自動成為系統管理員。",
+    "goToRegisterAdmin": "註冊管理員"
   },
   "setup": {
     "title": "安裝指南",
