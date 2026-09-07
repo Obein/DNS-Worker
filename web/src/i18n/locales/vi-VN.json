@@ -121,7 +121,8 @@
     "noUsersRegistered": "Chưa có tài khoản nào được đăng ký. Vui lòng đăng ký làm quản trị viên.",
     "registerAdminTitle": "Đăng ký tài khoản quản trị viên",
     "registerAdminDesc": "Hệ thống chưa có tài khoản. Người dùng đầu tiên sẽ trở thành quản trị viên hệ thống.",
-    "goToRegisterAdmin": "Đăng ký quản trị"
+    "goToRegisterAdmin": "Đăng ký quản trị",
+    "dbNotInitialized": "Cơ sở dữ liệu chưa được khởi tạo hoặc thiếu bảng. Vui lòng chạy npm run db:migrate:prod trong terminal."
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",

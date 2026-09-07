@@ -122,7 +122,8 @@
     "noUsersRegistered": "系統尚無帳號，請註冊成為管理員。",
     "registerAdminTitle": "註冊管理員帳號",
     "registerAdminDesc": "系統尚無帳號，首位註冊用戶將自動成為系統管理員。",
-    "goToRegisterAdmin": "註冊管理員"
+    "goToRegisterAdmin": "註冊管理員",
+    "dbNotInitialized": "資料庫未初始化或缺少資料表，請在終端執行 npm run db:migrate:prod 套用資料庫遷移。"
   },
   "setup": {
     "title": "安裝指南",

@@ -121,7 +121,8 @@
     "noUsersRegistered": "등록된 계정이 없습니다. 관리자로 가입해 주세요.",
     "registerAdminTitle": "관리자 계정 등록",
     "registerAdminDesc": "시스템에 계정이 없습니다. 첫 번째 가입자가 시스템 관리자가 됩니다.",
-    "goToRegisterAdmin": "관리자 등록"
+    "goToRegisterAdmin": "관리자 등록",
+    "dbNotInitialized": "데이터베이스가 초기화되지 않았거나 테이블이 없습니다. npm run db:migrate:prod 를 실행하세요."
   },
   "setup": {
     "title": "설치 가이드",
