@@ -13,7 +13,6 @@ import {
 } from "@blueprintjs/core";
 import { Key, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import clsx from "clsx";
 import { DigitInput } from "../../../components/DigitInput";
 import type { UserInfo } from "../types";
 
@@ -131,16 +130,11 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({
           <FormGroup label={t("account.currentPassword")}>
             <InputGroup
               leftIcon="lock"
-              type="text"
-              inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showOldPassword && oldPassword && "blur-secret")}
+              type={showOldPassword ? "text" : "password"}
               value={oldPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setOldPassword(e.target.value)
               }
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck={false}
-              autoComplete="current-password"
               rightElement={
                 <Button
                   minimal={true}
@@ -164,18 +158,13 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({
             <div className="w-full block">
               <InputGroup
                 leftIcon="lock"
-                type="text"
-                inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showNewPassword && newPassword && "blur-secret")}
+                type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setNewPassword(e.target.value)
                 }
                 onFocus={() => setNewPasswordFocused(true)}
                 onBlur={() => setNewPasswordFocused(false)}
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                autoComplete="new-password"
                 rightElement={
                   <Button
                     minimal={true}

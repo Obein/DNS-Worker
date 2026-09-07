@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import clsx from "clsx";
 import {
   Button,
   FormGroup,
@@ -132,16 +131,11 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
             <FormGroup label={t("auth.currentPassword", "Current Password")} labelFor="disable-pw-input">
               <InputGroup
                 id="disable-pw-input"
-                type="text"
-                inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showVerifyPassword && verifyPassword && "blur-secret")}
+                type={showVerifyPassword ? "text" : "password"}
                 placeholder={t("auth.passwordPlaceholder", "Enter current password")}
                 value={verifyPassword}
                 onChange={(e) => setVerifyPassword(e.target.value)}
                 leftIcon="lock"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                autoComplete="current-password"
                 rightElement={
                   <Button
                     minimal={true}

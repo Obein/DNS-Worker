@@ -74,20 +74,3 @@
 .animate-row-glow {
   animation: rowGlow 2.5s ease-out;
 }
-
-/* Privacy blur effect for secrets, passwords, and PIN inputs */
-.blur-secret {
-  color: transparent !important;
-  text-shadow: 0 0 7px var(--text-color, #111827) !important;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.dark .blur-secret,
-.bp6-dark .blur-secret {
-  text-shadow: 0 0 7px var(--text-color, #f3f4f6) !important;
-}
-
-.blur-secret::selection {
-  background-color: transparent;
-}
