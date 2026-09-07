@@ -138,13 +138,28 @@ DoH (RFC 8484) 是一種透過加密的 HTTPS 連線進行 DNS 查詢的協定�
 
 ## 🚀 部署指南
 
-### 開發環境參考
+### 線上部署 (Cloudflare Dashboard)
+
+1.  **Fork 本專案**：點擊頁面右上角的 `Fork` 按鈕，將倉庫複製到你的 GitHub 帳號下。
+2.  **建立 D1 資料庫**：登入 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，建立一個新的資料庫（例如命名為 `dns_worker_db`），並複製所建立的資料庫 ID。
+3.  **配置資料庫 ID**：在你的 Fork 倉庫中，修改 `wrangler.toml` 檔案，將 `database_id` 替換為你剛才建立的資料庫 ID。
+4.  **建立 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
+5.  **從 GitHub 匯入**：在部署頁面選擇 `Deploy from GitHub`，關聯你 Fork 的專案並完成授權。在建構與部署設定 (Build & Deploy settings) 中如此填寫：
+    *   **建構命令**: `npm run build`
+    *   **部署命令**: `npm run deploy`
+    *   **路徑**: `/`
+6.  **配置 JWT 金鑰**：登入 Cloudflare 控制台，前往 `Workers & Pages` > 點擊您的 Worker > `設定` > `變數` > 在 `環境變數` 下點擊 `新增變數`。將名稱設定為 `JWT_SECRET`，類型選擇 `機密 (Secret)`，值中輸入一個隨機安全字串，然後點擊 `儲存並部署`。
+7.  **配置 KEK 啟用信封加密（選填）**：若要對 D1 資料庫中的敏感憑證（如 TOTP 金鑰和復原金鑰）啟用伺服器端信封加密，請新增一個名為 `KEK_v1`、類型為 `機密 (Secret)` 的變數，並輸入您的安全金鑰。在需要輪換 KEK 金鑰時，請按順序新增新的機密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
+
+### 本地開發與手動部署
+
+#### 開發環境參考
 
 - **Node.js**: v18.x 或更高版本
 - **Package Manager**: npm
 - **Cloudflare Account**: 需要開啟 Workers 和 D1 權限
 
-### 本地開發
+#### 本地運行與部署步驟
 
 1.  複製倉庫並安裝依賴：
 
@@ -175,21 +190,11 @@ npm run db:migrate:dev
 npm run dev
 ```
 
-5.  部署上線
+5.  手動部署上線：
 
 ```bash
 npm run deploy
 ```
-
-### 線上部署 (Cloudflare Dashboard)
-
-1.  **Fork 本專案**：點擊頁面右上角的 `Fork` 按鈕，將倉庫複製到你的 GitHub 帳號下。
-2.  **建立 D1 資料庫**：登入 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，建立一個新的資料庫（例如命名为 `dns_worker_db`），並複製所建立的資料庫 ID。
-3.  **配置資料庫 ID**：在你的 Fork 倉庫中，修改 `wrangler.toml` 檔案，將 `database_id` 替換為你剛才建立的資料庫 ID。
-4.  **建立 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
-5.  **從 GitHub 匯入**：在部署頁面選擇 `Deploy from GitHub`，關聯你 Fork 的專案並完成授權部署。
-6.  **配置 JWT 金鑰**：登入 Cloudflare 控制台，前往 `Workers & Pages` > 點擊您的 Worker > `設定` > `變數` > 在 `環境變數` 下點擊 `新增變數`。將名稱設定為 `JWT_SECRET`，類型選擇 `機密 (Secret)`，值中輸入一個隨機安全字串，然後點擊 `儲存並部署`。
-7.  **配置 KEK 啟用信封加密（選填）**：若要對 D1 資料庫中的敏感憑證（如 TOTP 金鑰和復原金鑰）啟用伺服器端信封加密，請新增一個名為 `KEK_v1`、類型為 `機密 (Secret)` 的變數，並輸入您的安全金鑰。在需要輪換 KEK 金鑰時，請按順序新增新的機密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
 
 ### 線上部署到 Cloudflare Pages (⚠️ 不推薦)
 
