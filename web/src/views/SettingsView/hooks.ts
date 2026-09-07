@@ -22,7 +22,7 @@ export const usePresetUpstreams = () => {
   return presets;
 };
 
-export const useLogRetentionOptions = (isAdmin: boolean, maxRetentionDays: number) => {
+export const useLogRetentionOptions = (_isAdmin: boolean, maxRetentionDays: number) => {
   const { t } = useTranslation();
   return useMemo(() => {
     const allOptions = [
@@ -33,7 +33,8 @@ export const useLogRetentionOptions = (isAdmin: boolean, maxRetentionDays: numbe
       { label: t("settings.retention30d"), value: 30 },
       { label: t("settings.retention90d"), value: 90 },
     ];
-    if (isAdmin) return allOptions;
-    return allOptions.filter((opt) => opt.value <= maxRetentionDays);
-  }, [t, isAdmin, maxRetentionDays]);
+    const effectiveMax = maxRetentionDays > 0 ? maxRetentionDays : 30;
+    const filtered = allOptions.filter((opt) => opt.value <= effectiveMax);
+    return filtered.length > 0 ? filtered : [allOptions[0]];
+  }, [t, maxRetentionDays]);
 };

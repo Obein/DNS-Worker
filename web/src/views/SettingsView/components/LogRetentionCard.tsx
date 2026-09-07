@@ -16,6 +16,15 @@ export const LogRetentionCard: React.FC<LogRetentionCardProps> = ({ settings, se
   const { t } = useTranslation();
   const LOG_RETENTION_OPTIONS = useLogRetentionOptions(isAdmin, maxRetentionDays);
 
+  React.useEffect(() => {
+    if (maxRetentionDays > 0 && settings.log_retention_days > maxRetentionDays && LOG_RETENTION_OPTIONS.length > 0) {
+      const highestOption = LOG_RETENTION_OPTIONS[LOG_RETENTION_OPTIONS.length - 1];
+      if (highestOption && settings.log_retention_days !== highestOption.value) {
+        setSettings({ ...settings, log_retention_days: highestOption.value });
+      }
+    }
+  }, [maxRetentionDays, settings.log_retention_days, LOG_RETENTION_OPTIONS, setSettings]);
+
   return (
     <Card elevation={Elevation.ONE} className="dark:bg-gray-900 dark:border-gray-800">
       <H5 className="flex items-center gap-2 mb-4 font-bold">

@@ -43,7 +43,9 @@ export async function handleScheduled(
 
       try {
         const logModel = new LogModel(env.DB);
-        const maxRetentionDays = Number(env.MAX_LOG_RETENTION_DAYS) || 90;
+        const maxRetentionDays = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
+          ? Number(env.MAX_LOG_RETENTION_DAYS)
+          : 30;
         await logModel.cleanupGlobal(maxRetentionDays);
       } catch (e) {
         console.error("[Cron] Global log cleanup failed:", e);

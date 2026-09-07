@@ -39,8 +39,13 @@ export async function handleProfileLogsAndAnalyticsRequest(
     
     let since: number;
     let until = Math.floor(Date.now() / 1000);
+    const globalMaxRetention = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
+      ? Number(env.MAX_LOG_RETENTION_DAYS)
+      : 30;
     const settings: ProfileSettings = JSON.parse(profile.settings);
-    const logRetentionDays = settings.log_retention_days !== undefined ? Number(settings.log_retention_days) : 30;
+    const logRetentionDays = settings.log_retention_days !== undefined
+      ? Math.min(Number(settings.log_retention_days), globalMaxRetention)
+      : globalMaxRetention;
     const retentionThreshold = Math.floor(until - (logRetentionDays * 24 * 3600));
 
     if (startParam && endParam) {
