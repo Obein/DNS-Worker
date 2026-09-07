@@ -138,13 +138,28 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 
 ## 🚀 部署指南
 
-### 开发环境参考
+### 线上部署 (Cloudflare Dashboard)
+
+1.  **Fork 本项目**：点击页面右上角的 `Fork` 按钮，将仓库克隆到你的 GitHub 账号下。
+2.  **创建 D1 数据库**：登录 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，创建一个新的数据库（例如命名为 `dns_worker_db`），并复制所创建的数据库 ID。
+3.  **配置数据库 ID**：在你的 Fork 仓库中，修改 `wrangler.toml` 文件，将 `database_id` 替换为你刚才创建的数据库 ID。
+4.  **创建 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
+5.  **从 GitHub 导入**：在部署页面选择 `Deploy from GitHub`，关联你 Fork 的项目并完成授权。在构建与部署设置 (Build & Deploy settings) 中如此填写：
+    *   **构建命令**: `npm run build`
+    *   **部署命令**: `npm run deploy`
+    *   **路径**: `/`
+6.  **配置 JWT 密钥**：登录 Cloudflare 控制台，前往 `Workers & Pages` > 点击您的 Worker > `设置` > `变量` > 在 `环境变量` 下点击 `添加变量`。将名称设置为 `JWT_SECRET`，类型选择 `机密 (Secret)`，值中输入一个随机安全字符串，然后点击 `保存并部署`。
+7.  **配置 KEK 启用信封加密（可选）**：若要对 D1 数据库中的敏感凭据（如 TOTP 密钥和恢复密钥）启用服务端信封加密，请添加一个名为 `KEK_v1`、类型为 `机密 (Secret)` 的变量，并输入您的安全密钥。在需要轮换 KEK 密钥时，请按顺序添加新的机密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
+
+### 本地开发与手动部署
+
+#### 开发环境参考
 
 - **Node.js**: v18.x 或更高版本
 - **Package Manager**: npm
 - **Cloudflare Account**: 需要开启 Workers 和 D1 权限
 
-### 本地开发
+#### 本地运行与部署步骤
 
 1.  克隆仓库并安装依赖：
 
@@ -175,21 +190,11 @@ npm run db:migrate:dev
 npm run dev
 ```
 
-5.  部署上线
+5.  手动部署上线：
 
 ```bash
 npm run deploy
 ```
-
-### 线上部署 (Cloudflare Dashboard)
-
-1.  **Fork 本项目**：点击页面右上角的 `Fork` 按钮，将仓库克隆到你的 GitHub 账号下。
-2.  **创建 D1 数据库**：登录 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，创建一个新的数据库（例如命名为 `dns_worker_db`），并复制所创建的数据库 ID。
-3.  **配置数据库 ID**：在你的 Fork 仓库中，修改 `wrangler.toml` 文件，将 `database_id` 替换为你刚才创建的数据库 ID。
-4.  **创建 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
-5.  **从 GitHub 导入**：在部署页面选择 `Deploy from GitHub`，关联你 Fork 的项目并完成授权部署。
-6.  **配置 JWT 密钥**：登录 Cloudflare 控制台，前往 `Workers & Pages` > 点击您的 Worker > `设置` > `变量` > 在 `环境变量` 下点击 `添加变量`。将名称设置为 `JWT_SECRET`，类型选择 `机密 (Secret)`，值中输入一个随机安全字符串，然后点击 `保存并部署`。
-7.  **配置 KEK 启用信封加密（可选）**：若要对 D1 数据库中的敏感凭据（如 TOTP 密钥和恢复密钥）启用服务端信封加密，请添加一个名为 `KEK_v1`、类型为 `机密 (Secret)` 的变量，并输入您的安全密钥。在需要轮换 KEK 密钥时，请按顺序添加新的机密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
 
 ### 线上部署到 Cloudflare Pages (⚠️ 不推荐)
 
