@@ -22,6 +22,16 @@ export async function handleMeRequest(
   if (action === 'me') {
     if (request.method === 'GET') {
       const dbUser = await userModel.getById(user.id);
+      const globalMaxRetention = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
+        ? Number(env.MAX_LOG_RETENTION_DAYS)
+        : 30;
+      const adminMaxRetention = env.ADMIN_USER_MAX_LOG_RETENTION_DAYS !== undefined && env.ADMIN_USER_MAX_LOG_RETENTION_DAYS !== ''
+        ? Math.min(Number(env.ADMIN_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
+        : globalMaxRetention;
+      const normalUserMax = env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== undefined && env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== ''
+        ? Math.min(Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
+        : Math.min(7, globalMaxRetention);
+
       return new Response(JSON.stringify({
         id: user.id,
         username: dbUser?.username || "",
@@ -33,7 +43,7 @@ export async function handleMeRequest(
         password_version: dbUser?.password_version ?? 1,
         pin_enabled: !!(dbUser?.pin_hash),
         session_lock_timeout: dbUser?.session_lock_timeout ?? 15,
-        max_log_retention_days: user.role === 'admin' ? Number(env.ADMIN_USER_MAX_LOG_RETENTION_DAYS) || 30 : Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS) || 7,
+        max_log_retention_days: user.role === 'admin' ? adminMaxRetention : normalUserMax,
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 

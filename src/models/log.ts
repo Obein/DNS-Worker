@@ -174,10 +174,10 @@ export class LogModel {
    *   2. Batch limiting: deletes at most 10,000 rows per profile per run to avoid
    *      exhausting daily D1 write quotas or causing CPU execution timeouts.
    *
-   * @param maxRetentionDays - Hard cap on log retention days (default 90).
+   * @param maxRetentionDays - Hard cap on log retention days (default 30).
    */
   async cleanupGlobal(
-    maxRetentionDays = 90
+    maxRetentionDays = 30
   ): Promise<void> {
     try {
       const { results: profiles } = await this.db.prepare(

@@ -40,10 +40,24 @@ export async function handleProfilesCoreCollectionRequest(
     if (existing) return new Response("The profile name already exists", { status: 400 });
 
     const newId = generateId(6);
+    const globalMaxRetention = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
+      ? Number(env.MAX_LOG_RETENTION_DAYS)
+      : 30;
+    const adminDefaultRetention = env.DEFAULT_LOG_RETENTION_DAYS !== undefined && env.DEFAULT_LOG_RETENTION_DAYS !== ''
+      ? Math.min(Number(env.DEFAULT_LOG_RETENTION_DAYS), globalMaxRetention)
+      : Math.min(7, globalMaxRetention);
+    const normalUserMaxRetention = env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== undefined && env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== ''
+      ? Math.min(Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
+      : Math.min(7, globalMaxRetention);
+    const normalUserDefaultRetention = env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS !== undefined && env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS !== ''
+      ? Math.min(Number(env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS), normalUserMaxRetention)
+      : Math.min(1, normalUserMaxRetention);
+
+    const defaultRetentionDays = user?.role === 'admin' ? adminDefaultRetention : normalUserDefaultRetention;
     const defaultSettings: ProfileSettings = {
       upstream: ["https://security.cloudflare-dns.com/dns-query"],
       ecs: { enabled: true, use_client_ip: true },
-      log_retention_days: user?.role !== 'admin' ? Number(env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS) : Number(env.DEFAULT_LOG_RETENTION_DAYS) || 7,
+      log_retention_days: defaultRetentionDays,
       default_policy: 'ALLOW',
       best_effort_ech: { enabled: false, fronting_domain: "cloudflare-ech.com" }
     };
@@ -108,9 +122,20 @@ export async function handleProfilesCoreRequest(
   if (pathParts[3] === 'settings' && request.method === 'PATCH') {
     const newSettings = await request.json() as ProfileSettings;
     
-    // Enforce log retention limit for non-admin users
-    if (user?.role !== 'admin' && newSettings.log_retention_days != null) {
-      newSettings.log_retention_days = Math.min(newSettings.log_retention_days, Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS) || 7);
+    // Enforce log retention limit
+    const globalMaxRetention = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
+      ? Number(env.MAX_LOG_RETENTION_DAYS)
+      : 30;
+    const adminMaxRetention = env.ADMIN_USER_MAX_LOG_RETENTION_DAYS !== undefined && env.ADMIN_USER_MAX_LOG_RETENTION_DAYS !== ''
+      ? Math.min(Number(env.ADMIN_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
+      : globalMaxRetention;
+    const normalUserMax = env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== undefined && env.NORMAL_USER_MAX_LOG_RETENTION_DAYS !== ''
+      ? Math.min(Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
+      : Math.min(7, globalMaxRetention);
+    const userMaxRetention = user?.role === 'admin' ? adminMaxRetention : normalUserMax;
+
+    if (newSettings.log_retention_days != null) {
+      newSettings.log_retention_days = Math.min(Number(newSettings.log_retention_days), userMaxRetention);
     }
     
     if (newSettings.upstream && Array.isArray(newSettings.upstream)) {
