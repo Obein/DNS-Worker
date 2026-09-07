@@ -184,7 +184,7 @@ npm run deploy
 ### 線上部署 (Cloudflare Dashboard)
 
 1.  **Fork 本專案**：點擊頁面右上角的 `Fork` 按鈕，將倉庫複製到你的 GitHub 帳號下。
-2.  **建立 D1 資料庫**：登入 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，建立一個新的資料庫（例如命名为 `obex_db`），並複製所建立的資料庫 ID。
+2.  **建立 D1 資料庫**：登入 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，建立一個新的資料庫（例如命名为 `dns_worker_db`），並複製所建立的資料庫 ID。
 3.  **配置資料庫 ID**：在你的 Fork 倉庫中，修改 `wrangler.toml` 檔案，將 `database_id` 替換為你剛才建立的資料庫 ID。
 4.  **建立 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
 5.  **從 GitHub 匯入**：在部署頁面選擇 `Deploy from GitHub`，關聯你 Fork 的專案並完成授權部署。
@@ -206,7 +206,7 @@ npm run deploy
     *   **輸出目錄 (Build output directory)**: `static`
 4.  建構完成後，前往 Pages 專案的 **設定 (Settings)** > **函數 (Functions)** > **D1 資料庫綁定 (D1 database bindings)**，新增一個綁定：
     *   **變數名稱 (Variable name)**: `DB`
-    *   **D1 資料庫**: 選擇您剛剛建立的 `obex_db` 資料庫。
+    *   **D1 資料庫**: 選擇您剛剛建立的 `dns_worker_db` 資料庫。
 5.  重新部署該 Pages 專案以使綁定生效。
 
 ---

@@ -6,7 +6,7 @@
  * fallback to an SVG placeholder on 404 errors or network failures.
  */
 
-export const CACHE_NAME = "obex-dns-icons-v2";
+export const CACHE_NAME = "dns-worker-icons-v2";
 export const DUCKDUCKGO_ICON_PREFIX = "/api/icon/";
 
 /**
@@ -203,7 +203,7 @@ export async function cleanOldCaches(): Promise<void> {
   try {
     const keys = await caches.keys();
     for (const key of keys) {
-      if (key.startsWith("obex-dns-icons-") && key !== CACHE_NAME) {
+      if (key.startsWith("dns-worker-icons-") && key !== CACHE_NAME) {
         await caches.delete(key);
       }
     }

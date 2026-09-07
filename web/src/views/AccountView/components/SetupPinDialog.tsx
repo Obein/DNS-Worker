@@ -55,7 +55,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
     setError("");
 
     try {
-      const userId = user?.id || sessionStorage.getItem("obex_user_id");
+      const userId = user?.id || sessionStorage.getItem("dns_worker_user_id");
       if (!userId) {
         setError(t("auth.sessionExpired", "Session expired. Logging out..."));
         setTimeout(() => {

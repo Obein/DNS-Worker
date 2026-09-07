@@ -41,11 +41,11 @@ export function generateMobileConfig(profileKey: string, profileName: string, or
 			<key>PayloadDescription</key>
 			<string>DNS Worker protects your network traffic</string>
 			<key>PayloadDisplayName</key>
-			<string>Obex DoH (${profileName})</string>
+			<string>DNS Worker DoH (${profileName})</string>
 			<key>PayloadIdentifier</key>
 			<string>com.apple.dnsSettings.managed.${payloadUUID}</string>
 			<key>PayloadName</key>
-			<string>Obex DoH (${profileName})</string>
+			<string>DNS Worker DoH (${profileName})</string>
 			<key>PayloadType</key>
 			<string>com.apple.dnsSettings.managed</string>
 			<key>PayloadUUID</key>
@@ -57,11 +57,11 @@ export function generateMobileConfig(profileKey: string, profileName: string, or
 	<key>PayloadDescription</key>
 	<string>DNS Worker protects your network traffic</string>
 	<key>PayloadDisplayName</key>
-	<string>Obex - ${profileName}</string>
+	<string>DNS Worker - ${profileName}</string>
 	<key>PayloadIdentifier</key>
-	<string>obex.dns.profile</string>
+	<string>DNSWorker.profile</string>
 	<key>PayloadName</key>
-	<string>Obex - ${profileName}</string>
+	<string>DNS Worker - ${profileName}</string>
 	<key>PayloadRemovalDisallowed</key>
 	<false/>
 	<key>PayloadType</key>

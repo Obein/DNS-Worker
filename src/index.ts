@@ -170,7 +170,7 @@ export default {
           return new HTMLRewriter()
             .on('head', {
               element(element) {
-                element.prepend(`<script nonce="${nonce}">window.OBEX_CONFIG = ${configStr};</script>`, { html: true });
+                element.prepend(`<script nonce="${nonce}">window.DNS_WORKER_CONFIG = ${configStr};</script>`, { html: true });
               }
             })
             .transform(response);

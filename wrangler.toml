@@ -1,4 +1,4 @@
-name = "obex-dns"
+name = "dns-worker"
 main = "src/index.ts"
 compatibility_date = "2026-02-28"
 compatibility_flags = ["nodejs_compat"]
@@ -17,7 +17,7 @@ binding = "ASSETS"
 # D1 Database for Profiles, Rules and Logs
 [[d1_databases]]
 binding = "DB"
-database_name = "obex_db"
+database_name = "dns_worker_db"
 # This field must be filled with your database ID; otherwise the deployment will fail.
 database_id = "13d8c24f-064a-40d6-8b10-fa70bb3f79ab"
 

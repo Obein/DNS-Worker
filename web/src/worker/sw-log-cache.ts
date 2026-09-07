@@ -7,7 +7,7 @@
 
 import { putInCache } from "./sw-icon-cache.ts";
 
-export const LOGS_CACHE_NAME = "obex-dns-logs-v1";
+export const LOGS_CACHE_NAME = "dns-worker-logs-v1";
 export const ONE_DAY = 24 * 60 * 60 * 1000;
 export const SEVEN_DAYS = 7 * ONE_DAY;
 
