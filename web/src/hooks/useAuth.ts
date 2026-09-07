@@ -137,11 +137,11 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
     } finally {
       if (typeof window !== "undefined" && "caches" in window) {
         try {
-          await caches.delete("obex-dns-logs-v1");
+          await caches.delete("dns-worker-logs-v1");
         } catch {}
       }
       try {
-        sessionStorage.removeItem("obex_session_active");
+        sessionStorage.removeItem("dns_worker_session_active");
       } catch {}
       clearCsrfToken();
       setIsLoggedIn(false);

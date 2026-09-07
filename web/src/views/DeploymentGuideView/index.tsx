@@ -15,8 +15,8 @@ export const DeploymentGuideView: React.FC = () => {
   const [isPanelVisible, setIsPanelVisible] = useState(true);
 
   // Read status injected from HTMLRewriter
-  const isDbMissing = (window as any).OBEX_CONFIG?.isDbMissing ?? true;
-  const isJwtSecretMissing = (window as any).OBEX_CONFIG?.isJwtSecretMissing ?? true;
+  const isDbMissing = (window as any).DNS_WORKER_CONFIG?.isDbMissing ?? true;
+  const isJwtSecretMissing = (window as any).DNS_WORKER_CONFIG?.isJwtSecretMissing ?? true;
 
   const handleRefresh = () => {
     window.location.reload();

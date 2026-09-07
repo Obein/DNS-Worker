@@ -176,7 +176,7 @@ npm run deploy
 
 ### Online Deployment (Cloudflare Dashboard)
 1.  **Fork this repo**: Click the `Fork` button at the top right to clone the repository to your own GitHub account.
-2.  **Create D1 Database**: Log in to the Cloudflare dashboard, go to `Workers & Pages` > `D1`, and create a new database (e.g., named `obex_db`), and copy the created database ID.
+2.  **Create D1 Database**: Log in to the Cloudflare dashboard, go to `Workers & Pages` > `D1`, and create a new database (e.g., named `dns_worker_db`), and copy the created database ID.
 3.  **Configure Database ID**: In your forked repository, edit the `wrangler.toml` file and replace `database_id` with the ID of the database you just created.
 4.  **Create Worker**: Go to Cloudflare dashboard `Workers & Pages` > `Create application` > `Create Worker`.
 5.  **Import from GitHub**: On the deployment page, select `Deploy from GitHub`, connect your forked project, and complete the authorized deployment.
@@ -198,7 +198,7 @@ If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
     *   **Build output directory**: `static`
 4.  After the initial deployment, go to the Pages project's **Settings** > **Functions** > **D1 database bindings**, and add a binding:
     *   **Variable name**: `DB`
-    *   **D1 database**: Select your `obex_db` database.
+    *   **D1 database**: Select your `dns_worker_db` database.
 5.  Redeploy the Pages project for the bindings to take effect.
 
 ---

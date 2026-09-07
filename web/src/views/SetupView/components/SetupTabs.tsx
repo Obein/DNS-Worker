@@ -83,12 +83,12 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                 text={t("setup.downloadConfig")}
                 icon="download"
                 onClick={() => {
-                  const xml = generateMobileConfig(profileKey, "Obex", window.location.origin);
+                  const xml = generateMobileConfig(profileKey, "DNS Worker", window.location.origin);
                   const blob = new Blob([xml], { type: "application/x-apple-aspen-config" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `obex-${profileKey}.mobileconfig`;
+                  a.download = `dns_worker-${profileKey}.mobileconfig`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}

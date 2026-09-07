@@ -170,7 +170,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `obex-dns-${profile.name || profileId}.json`;
+      a.download = `dns-worker-${profile.name || profileId}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

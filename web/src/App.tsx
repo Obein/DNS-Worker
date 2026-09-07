@@ -77,8 +77,8 @@ function App() {
   }
 
   // Check for configuration errors (missing DB or JWT_SECRET)
-  const isDbMissing = (window as any).OBEX_CONFIG?.isDbMissing;
-  const isJwtSecretMissing = (window as any).OBEX_CONFIG?.isJwtSecretMissing;
+  const isDbMissing = (window as any).DNS_WORKER_CONFIG?.isDbMissing;
+  const isJwtSecretMissing = (window as any).DNS_WORKER_CONFIG?.isJwtSecretMissing;
   if (isDbMissing || isJwtSecretMissing) {
     return <DeploymentGuideView />;
   }
