@@ -143,13 +143,14 @@ DoH (RFC 8484) 是一種透過加密的 HTTPS 連線進行 DNS 查詢的協定�
 1.  **Fork 本專案**：點擊頁面右上角的 `Fork` 按鈕，將倉庫複製到你的 GitHub 帳號下。
 2.  **建立 D1 資料庫**：登入 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，建立一個新的資料庫（例如命名為 `dns_worker_db`），並複製所建立的資料庫 ID。
 3.  **配置資料庫 ID**：在你的 Fork 倉庫中，修改 `wrangler.toml` 檔案，將 `database_id` 替換為你剛才建立的資料庫 ID。
-4.  **建立 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application` > `Create Worker`。
-5.  **從 GitHub 匯入**：在部署頁面選擇 `Deploy from GitHub`，關聯你 Fork 的專案並完成授權。在建構與部署設定 (Build & Deploy settings) 中如此填寫：
+4.  **建立 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application`。
+5.  **從 GitHub 匯入並完成首次部署**：在部署頁面選擇 `Continue with GitHub`，關聯你 Fork 的專案並完成授權。在建構與部署設定 (Build & Deploy settings) 中如此填寫：
     *   **建構命令**: `npm run build`
     *   **部署命令**: `npm run deploy`
     *   **路徑**: `/`
-6.  **配置 JWT 金鑰**：登入 Cloudflare 控制台，前往 `Workers & Pages` > 點擊您的 Worker > `設定` > `變數` > 在 `環境變數` 下點擊 `新增變數`。將名稱設定為 `JWT_SECRET`，類型選擇 `機密 (Secret)`，值中輸入一個隨機安全字串，然後點擊 `儲存並部署`。
-7.  **配置 KEK 啟用信封加密（選填）**：若要對 D1 資料庫中的敏感憑證（如 TOTP 金鑰和復原金鑰）啟用伺服器端信封加密，請新增一個名為 `KEK_v1`、類型為 `機密 (Secret)` 的變數，並輸入您的安全金鑰。在需要輪換 KEK 金鑰時，請按順序新增新的機密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
+    > ⚠️ **注意**：專案初始化精靈中的環境變數僅注入建構容器，執行階段的機密變數在初始化精靈中填寫無效。請直接點擊「部署」，待首次部署完成後，按後續步驟在 Worker 設定中填寫。
+6.  **配置 JWT 金鑰**：首次部署完成後，登入 Cloudflare 控制台，前往 `Workers & Pages` > 點擊剛才建立的 Worker > `Settings` > `Runtime variables and secrets`（或 `Variables and secrets`） > 點擊 `Add`。將變數名稱設定為 `JWT_SECRET`，類型選擇 `機密 (Secret)`，值中輸入一個隨機安全字串，然後點擊 `Deploy`（或 `Save and Deploy`）儲存。
+7.  **配置 KEK 啟用信封加密（選填）**：同樣在首次部署完成後的 `Settings` > `Runtime variables and secrets` 中，若要對 D1 資料庫中的敏感憑證（如 TOTP 金鑰和復原金鑰）啟用伺服器端信封加密，請新增一個名為 `KEK_v1`、類型為 `機密 (Secret)` 的變數，並輸入您的安全金鑰。在需要輪換 KEK 金鑰時，請按順序新增新的機密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
 
 ### 本地開發與手動部署
 
