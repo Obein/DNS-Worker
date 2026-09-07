@@ -23,7 +23,12 @@ export async function handleAuthConfigRequest(request: Request, env: Env): Promi
       turnstile_enabled_signup: signupEnabled === 'true',
       turnstile_enabled_login: loginEnabled === 'true',
       optional_session_expiration_days: Number(env.OPTIONAL_SESSION_EXPIRATION_DAYS) || 7
-    }), { headers: { 'Content-Type': 'application/json' } });
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=300, s-maxage=300'
+      }
+    });
   }
 
   // 检查用户名是否存在接口

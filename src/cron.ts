@@ -76,29 +76,46 @@ export async function handleScheduled(
     // Processes ONE list for a single stale profile per trigger.
     // The profile's active Bloom Filter is NOT updated until all its lists are
     // done (A/B pattern): staging accumulates incrementally, active stays intact.
+    // Idle periods are throttled to every 10 minutes (600s) to eliminate redundant D1 polls.
     try {
-      const syncIntervalSec = Number(env.SYNC_PROFILE_INTERVAL_SEC) || 86400;
-      const cutoffTime = now - syncIntervalSec;
-      const profileModel = new ProfileModel(env.DB);
-      const batchSize = Number(env.SYNC_BATCH_SIZE) || 1;
-      const syncTargets = await profileModel.getSyncTargets(cutoffTime, batchSize);
+      const lastIdleSyncKey = "cron:last_idle_sync_check";
+      const IDLE_SYNC_INTERVAL_SEC = 600;
+      const lastIdleCheck = await cacheUtils.get<number>(cache, lastIdleSyncKey);
+      const isIdleThrottled = Boolean(lastIdleCheck && (now - lastIdleCheck < IDLE_SYNC_INTERVAL_SEC));
 
-      if (syncTargets.length > 0) {
-        for (const target of syncTargets) {
-          try {
-            // Each call processes ONE list; the profile stays in getSyncTargets
-            // until its full cycle completes (list_updated_at gets refreshed).
-            await syncNextListForProfile(target.id, env, ctx);
-          } catch (err: any) {
-            console.error(`[Cron] Sync failed for profile ${target.id}:`, err.message || err);
+      if (!isIdleThrottled) {
+        const syncIntervalSec = Number(env.SYNC_PROFILE_INTERVAL_SEC) || 86400;
+        const cutoffTime = now - syncIntervalSec;
+        const profileModel = new ProfileModel(env.DB);
+        const batchSize = Number(env.SYNC_BATCH_SIZE) || 1;
+        const syncTargets = await profileModel.getSyncTargets(cutoffTime, batchSize);
+
+        if (syncTargets.length > 0) {
+          // Active targets found: clear idle throttle so next minute immediately processes the next list
+          await cacheUtils.delete(cache, lastIdleSyncKey);
+
+          for (const target of syncTargets) {
+            try {
+              // Each call processes ONE list; the profile stays in getSyncTargets
+              // until its full cycle completes (list_updated_at gets refreshed).
+              await syncNextListForProfile(target.id, env, ctx);
+            } catch (err: unknown) {
+              const errorMsg = err instanceof Error ? err.message : String(err);
+              console.error(`[Cron] Sync failed for profile ${target.id}:`, errorMsg);
+            }
           }
+          console.log(`[Cron] Sync: processed ${syncTargets.length} profile(s).`);
+        } else {
+          // No profiles pending sync: enter 10-minute idle throttle
+          await cacheUtils.set(cache, lastIdleSyncKey, now, IDLE_SYNC_INTERVAL_SEC);
         }
-        console.log(`[Cron] Sync: processed ${syncTargets.length} profile(s).`);
       }
-    } catch (e) {
-      console.error("[Cron] Sync phase failed:", e);
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error("[Cron] Sync phase failed:", errorMsg);
     }
-  } catch (e: any) {
-    console.error("[Cron] Critical Failure:", e.message);
+  } catch (e: unknown) {
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    console.error("[Cron] Critical Failure:", errorMsg);
   }
 }
