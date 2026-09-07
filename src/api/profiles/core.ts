@@ -100,7 +100,7 @@ export async function handleProfilesCoreRequest(
   if (pathParts[3] === 'rotate_key' && request.method === 'POST') {
     const newKey = generateId(12);
     await profileModel.rotateKey(profileId, newKey);
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, false));
     return new Response(JSON.stringify({ profile_key: newKey }), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -134,11 +134,27 @@ export async function handleProfilesCoreRequest(
       }
     }
 
+    // 检查旧配置中的 log_retention_days
+    const oldProfile = await profileModel.getById(profileId);
+    let oldDays = 30;
+    try {
+      const oldSettings = JSON.parse(oldProfile?.settings || "{}");
+      if (oldSettings?.log_retention_days != null) {
+        oldDays = Number(oldSettings.log_retention_days);
+      }
+    } catch {}
+
     await profileModel.updateSettings(profileId, newSettings);
-    const days = newSettings.log_retention_days;
-    const threshold = Math.floor(Date.now() / 1000 - (days * 24 * 3600));
-    ctx.waitUntil(logModel.cleanup(profileId, threshold));
-    await pipeline.clearCache(profileId);
+
+    // 仅在显式缩短日志留存期时触发主动清理，避免每次保存设置无谓执行 DELETE
+    const newDays = newSettings.log_retention_days;
+    if (newDays != null && Number(newDays) < oldDays) {
+      const threshold = Math.floor(Date.now() / 1000 - (Number(newDays) * 24 * 3600));
+      ctx.waitUntil(logModel.cleanup(profileId, threshold));
+    }
+
+    // 设置变更仅清除配置缓存，保留 2.5MB 布隆过滤器缓存
+    await pipeline.clearCache(profileId, false);
     return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
   }
 

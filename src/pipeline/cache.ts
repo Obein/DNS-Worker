@@ -46,10 +46,12 @@ export const dnsCache = new SizeCappedMap<string, any>(500);
 export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(100);
 
 export const pipelineCache = {
-  async clear(profileId: string) {
+  async clear(profileId: string, clearBloom: boolean = true) {
     // 清理 L1 (内存)
     configCache.delete(profileId);
-    bloomMemoryMap.delete(profileId);
+    if (clearBloom) {
+      bloomMemoryMap.delete(profileId);
+    }
     profileKeyMemoryMap.clear();
     for (const key of dnsCache.keys()) {
       if (key.startsWith(`${profileId}:`)) {
@@ -60,10 +62,13 @@ export const pipelineCache = {
     // 清理 L2 (Cache API)
     try {
       const cache = (caches as any).default;
-      await Promise.all([
-        cacheUtils.delete(cache, `profile_v6:${profileId}`),
-        cache.delete(`https://obex.local/bloom-bin/${profileId}`)
-      ]);
+      const tasks: Promise<any>[] = [
+        cacheUtils.delete(cache, `profile_v6:${profileId}`)
+      ];
+      if (clearBloom) {
+        tasks.push(cache.delete(`https://obex.local/bloom-bin/${profileId}`));
+      }
+      await Promise.all(tasks);
     } catch (e) {
       console.error("Failed to clear cache API:", e);
     }
