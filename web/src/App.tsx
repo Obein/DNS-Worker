@@ -60,6 +60,7 @@ function App() {
     handleQuickAction,
   } = useProfiles(isLoggedIn);
 
+  const [isSaving, setIsSaving] = useState(false);
   const [localeReady, setLocaleReady] = useState(false);
 
   useEffect(() => {
@@ -168,6 +169,7 @@ function App() {
                 navigate={navigate}
                 handleLogout={handleLogout}
                 currentUser={currentUser}
+                isSaving={isSaving}
               >
                 <ProfileRoutes
                   selectedProfile={selectedProfile}
@@ -176,6 +178,7 @@ function App() {
                   handleQuickAction={handleQuickAction}
                   toasterRef={toasterRef}
                   currentUser={currentUser}
+                  onSavingChange={setIsSaving}
                 />
               </MainLayout>
             }

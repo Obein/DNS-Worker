@@ -42,6 +42,8 @@ interface MainLayoutProps {
   handleLogout: () => void;
   /** Current logged in user info. */
   currentUser: UserInfo | null;
+  /** True if a background saving operation is active. */
+  isSaving?: boolean;
 }
 
 /**
@@ -64,6 +66,7 @@ export const MainLayout = ({
   navigate,
   handleLogout,
   currentUser,
+  isSaving,
 }: MainLayoutProps) => {
   const { profileId: urlProfileId } = useParams();
   const isMobile = useIsMobile();
@@ -137,6 +140,7 @@ export const MainLayout = ({
           isProfileActive={isProfileActive}
           location={location}
           navigate={navigate}
+          isSaving={isSaving}
         />
 
         {/* Page Content */}

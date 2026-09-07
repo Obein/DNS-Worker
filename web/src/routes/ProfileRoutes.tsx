@@ -41,6 +41,7 @@ interface ProfileRoutesProps {
   handleQuickAction: any;
   toasterRef: any;
   currentUser: any;
+  onSavingChange?: (saving: boolean) => void;
 }
 
 export const ProfileRoutes = ({
@@ -50,6 +51,7 @@ export const ProfileRoutes = ({
   handleQuickAction,
   toasterRef,
   currentUser,
+  onSavingChange,
 }: ProfileRoutesProps) => {
   const { profileId } = useParams();
   const id = profileId || selectedProfile?.id || "";
@@ -89,7 +91,14 @@ export const ProfileRoutes = ({
         />
         <Route
           path="settings"
-          element={<SettingsView profileId={id} toasterRef={toasterRef} currentUser={currentUser} />}
+          element={
+            <SettingsView
+              profileId={id}
+              toasterRef={toasterRef}
+              currentUser={currentUser}
+              onSavingChange={onSavingChange}
+            />
+          }
         />
         <Route path="stats" element={<AnalyticsView profileId={id} />} />
         <Route

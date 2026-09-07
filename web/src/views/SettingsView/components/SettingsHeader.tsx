@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, InputGroup, Intent, Tooltip, Position, Spinner } from "@blueprintjs/core";
+import { Button, InputGroup, Intent, Tooltip, Position } from "@blueprintjs/core";
 import { Download, Edit2, Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  Profile  } from "../types";
@@ -13,7 +13,6 @@ export interface SettingsHeaderProps {
   setEditName: (val: string) => void;
   updateProfileName: () => void;
   exportProfile: () => void;
-  saving: boolean;
 }
 
 export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
@@ -24,7 +23,6 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
   setEditName,
   updateProfileName,
   exportProfile,
-  saving,
 }) => {
   const { t } = useTranslation();
   const [nameFocused, setNameFocused] = useState(false);
@@ -83,12 +81,6 @@ export const SettingsHeader: React.FC<SettingsHeaderProps> = ({
         <p className="bp6-text-muted">{t("settings.subtitle")}</p>
       </div>
       <div className="flex gap-2 items-center">
-        {saving && (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <Spinner size={14} />
-            {t("settings.saving")}
-          </span>
-        )}
         <Button size="large" icon={<Download size={18} />} text={t("settings.export", "导出配置")} onClick={exportProfile} />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Navbar, Alignment, Icon } from "@blueprintjs/core";
+import { Button, Navbar, Alignment, Icon, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { Sun, Moon, Monitor, Settings } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
@@ -22,6 +22,8 @@ interface HeaderNavbarProps {
   location: any;
   /** Router navigation function. */
   navigate: (path: string) => void;
+  /** True if a background saving operation is active. */
+  isSaving?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   isProfileActive,
   location,
   navigate,
+  isSaving,
 }) => {
   const { t } = useTranslation();
 
@@ -79,6 +82,12 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
       </Navbar.Group>
       <Navbar.Group align={Alignment.RIGHT}>
         <div className="flex items-center gap-2">
+          {isSaving && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/50 border border-blue-200/50 dark:border-blue-800/50 rounded-full animate-pulse mr-1">
+              <Spinner size={12} />
+              <span>{t("settings.saving")}</span>
+            </div>
+          )}
           <LanguageSwitcher />
           <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-lg">
             <Button
