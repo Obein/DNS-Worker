@@ -116,7 +116,7 @@ export const DigitInput = forwardRef<DigitInputRef, DigitInputProps>(({
         <input
           key={index}
           ref={(el) => { inputsRef.current[index] = el; }}
-          type={type === "password" ? "password" : "text"}
+          type="text"
           pattern="\d*"
           inputMode="numeric"
           maxLength={1}
@@ -126,7 +126,12 @@ export const DigitInput = forwardRef<DigitInputRef, DigitInputProps>(({
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
           autoComplete="one-time-code"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           className={`w-10 h-12 text-center text-xl font-bold rounded-lg border-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
+            type === "password" && digit ? "blur-secret" : ""
+          } ${
             error
               ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
               : "border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-400"

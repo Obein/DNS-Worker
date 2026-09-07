@@ -15,6 +15,7 @@ import {
 } from "@blueprintjs/core";
 import { Shield, ShieldOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import type { UserInfo } from "../../types";
 
 /**
@@ -125,12 +126,17 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
             <form onSubmit={onDisable} className="space-y-4">
               <FormGroup label={t("account.currentPassword")}>
                 <InputGroup
-                  type={showDisablePassword ? "text" : "password"}
+                  type="text"
+                  inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showDisablePassword && disablePassword && "blur-secret")}
                   leftIcon="lock"
                   value={disablePassword}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setDisablePassword(e.target.value)
                   }
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  autoComplete="current-password"
                   rightElement={
                     <Button
                       minimal={true}

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card, Elevation, H4, FormGroup, InputGroup, Switch, Divider, Button, Intent } from "@blueprintjs/core";
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 
 import { updateSystemSettings } from "../../../services";
 
@@ -52,10 +53,15 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
             </FormGroup>
             <FormGroup label="Secret Key">
               <InputGroup
-                type={showTurnstileSecretKey ? "text" : "password"}
+                type="text"
+                inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showTurnstileSecretKey && sysSettings.turnstile_secret_key && "blur-secret")}
                 value={sysSettings.turnstile_secret_key || ""}
                 onChange={(e) => setSysSettings({ ...sysSettings, turnstile_secret_key: e.target.value })}
                 placeholder="0x000..."
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                autoComplete="off"
                 rightElement={
                   <Button
                     minimal={true}

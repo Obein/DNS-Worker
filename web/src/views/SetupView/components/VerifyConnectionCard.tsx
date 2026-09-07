@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Section, SectionCard, Button, Spinner, Intent, PopoverNext } from "@blueprintjs/core";
 import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import type {  ClientInfo  } from "../types";
 
 export interface VerifyConnectionCardProps {
@@ -81,7 +82,9 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                     </button>
                   </div>
                   <div className="font-mono font-bold text-blue-600 dark:text-blue-400 truncate">
-                    {showIp ? clientInfo.ip : "• • • • • • • • • •"}
+                    <span className={clsx("transition-[filter] duration-200 inline-block", !showIp && "filter blur-[6px] select-none")}>
+                      {clientInfo.ip}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -95,7 +98,9 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                     </button>
                   </div>
                   <div className="font-bold truncate">
-                    {showLocation ? `${clientInfo.city}, ${clientInfo.region ? `${clientInfo.region}, ` : ""}${clientInfo.country}` : "• • • • • • • • • •"}
+                    <span className={clsx("transition-[filter] duration-200 inline-block", !showLocation && "filter blur-[6px] select-none")}>
+                      {clientInfo.city}, {clientInfo.region ? `${clientInfo.region}, ` : ""}{clientInfo.country}
+                    </span>
                   </div>
                 </div>
               </div>

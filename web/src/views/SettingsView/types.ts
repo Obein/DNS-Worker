@@ -35,6 +35,7 @@ export interface SettingsViewProps {
   profileId: string;
   toasterRef?: React.RefObject<OverlayToaster | null>;
   currentUser: UserInfo | null;
+  onSavingChange?: (saving: boolean) => void;
 }
 
 export interface ResolutionResult {

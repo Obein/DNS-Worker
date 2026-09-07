@@ -432,7 +432,7 @@
     "exportError": "Export failed",
     "nameUpdateSuccess": "Profile name updated",
     "saving": "Saving...",
-    "echTitle": "Rewrite ECH (ECH Rewrite)",
+    "echTitle": "Rewrite ECH",
     "enableEch": "Enable ECH Rewrite",
     "echDesc": "For Cloudflare-proxied domains, automatically injects and rewrites ECH parameters and outer SNI on HTTPS (Type 65) / SVCB (Type 64) queries to protect domain privacy.",
     "echFrontingTitle": "Outer SNI (ECH Fronting)",

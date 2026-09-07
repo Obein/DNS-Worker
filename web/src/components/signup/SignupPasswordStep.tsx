@@ -8,6 +8,7 @@ import {
   Intent
 } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 
 /**
  * Properties for the SignupPasswordStep component.
@@ -94,15 +95,20 @@ export const SignupPasswordStep: React.FC<SignupPasswordStepProps> = ({
               id="password"
               leftIcon="lock"
               placeholder={t("auth.passwordPlaceholder")}
-              type={showPassword ? "text" : "password"}
+              type="text"
               size="large"
               className="rounded-xl w-full"
+              inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showPassword && password && "blur-secret")}
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setPassword(e.target.value)
               }
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              autoComplete="new-password"
               rightElement={renderPasswordRightElement()}
               required
               autoFocus

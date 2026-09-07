@@ -18,12 +18,19 @@ import {
   getProfileRules
 } from "../../services";
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef, currentUser }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef, currentUser, onSavingChange }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settings, setSettings] = useState<ProfileSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    onSavingChange?.(saving);
+    return () => {
+      onSavingChange?.(false);
+    };
+  }, [saving, onSavingChange]);
 
   const isInitialLoad = useRef(true);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -208,7 +215,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         setEditName={setEditName}
         updateProfileName={updateProfileName}
         exportProfile={exportProfile}
-        saving={saving}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
