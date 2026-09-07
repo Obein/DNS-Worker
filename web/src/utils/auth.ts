@@ -183,6 +183,15 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
     });
   }
 
+  if (
+    bodyText === "no_users_registered" ||
+    bodyText.includes("no_users_registered") ||
+    bodyText.includes("no such table: system_settings") ||
+    bodyText.includes("no such table: users")
+  ) {
+    return t("auth.noUsersRegistered", "系统尚无账号，请注册成为管理员。");
+  }
+
   if (bodyText === "invalid_credentials" || bodyText === "user_not_found") {
     return t("auth.authFailed", "Authentication failed, please check your username or password.");
   }

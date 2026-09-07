@@ -17,6 +17,7 @@ export interface AuthConfig {
   turnstile_enabled_signup: boolean;
   turnstile_enabled_login: boolean;
   optional_session_expiration_days?: number;
+  has_users?: boolean;
 }
 
 /**
@@ -60,6 +61,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       try {
         const configData = await getAuthConfig() as AuthConfig;
         setAuthConfig(configData);
+        if (configData && configData.has_users === false) {
+          setIsLogin(false);
+        }
       } catch (e) {
         console.error("Failed to load auth config", e);
       }

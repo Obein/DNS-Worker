@@ -15,6 +15,7 @@ interface AuthConfig {
   turnstile_enabled_signup: boolean;
   turnstile_enabled_login: boolean;
   optional_session_expiration_days?: number;
+  has_users?: boolean;
 }
 
 /**
@@ -98,6 +99,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {loginStep === 2 ? username : t("auth.welcomeBack")}
         </p>
       </div>
+
+      {authConfig?.has_users === false && (
+        <Callout
+          intent={Intent.PRIMARY}
+          icon="info-sign"
+          className="mb-6 rounded-xl"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <span className="text-sm font-medium">
+              {t("auth.noUsersRegistered", "系统尚无账号，请注册成为管理员。")}
+            </span>
+            <button
+              type="button"
+              onClick={onToggleMode}
+              className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded-lg border-none cursor-pointer whitespace-nowrap transition-colors"
+            >
+              {t("auth.goToRegisterAdmin", "注册管理员")}
+            </button>
+          </div>
+        </Callout>
+      )}
 
       {error && (
         <Callout

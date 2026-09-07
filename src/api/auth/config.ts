@@ -13,20 +13,22 @@ export async function handleAuthConfigRequest(request: Request, env: Env): Promi
   // 公开配置接口
   if (url.pathname === '/api/auth/config' && request.method === 'GET') {
     const settingsModel = new SystemSettingsModel(env.DB);
-    const [siteKey, signupEnabled, loginEnabled] = await Promise.all([
+    const [siteKey, signupEnabled, loginEnabled, hasUsers] = await Promise.all([
       settingsModel.get('turnstile_site_key'),
       settingsModel.get('turnstile_enabled_signup'),
-      settingsModel.get('turnstile_enabled_login')
+      settingsModel.get('turnstile_enabled_login'),
+      userModel.isEmpty().then((empty) => !empty).catch(() => false)
     ]);
     return new Response(JSON.stringify({
       turnstile_site_key: siteKey,
       turnstile_enabled_signup: signupEnabled === 'true',
       turnstile_enabled_login: loginEnabled === 'true',
-      optional_session_expiration_days: Number(env.OPTIONAL_SESSION_EXPIRATION_DAYS) || 7
+      optional_session_expiration_days: Number(env.OPTIONAL_SESSION_EXPIRATION_DAYS) || 7,
+      has_users: hasUsers
     }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=300, s-maxage=300'
+        'Cache-Control': hasUsers ? 'public, max-age=300, s-maxage=300' : 'no-store, no-cache'
       }
     });
   }

@@ -117,7 +117,11 @@
     "cfErrorGeneric": "Erreur Cloudflare Edge, le service est temporairement indisponible. Veuillez réessayer plus tard. {{rayId}}",
     "htmlErrorGeneric": "Le serveur a renvoyé une réponse inattendue (HTTP {{status}}). Veuillez réessayer plus tard.",
     "tooManyAttempts": "Trop de requêtes ou de tentatives. Veuillez réessayer plus tard.",
-    "dbQuotaExceeded": "Le quota quotidien de lecture de la base de données a été dépassé. Veuillez attendre la réinitialisation quotidienne."
+    "dbQuotaExceeded": "Le quota quotidien de lecture de la base de données a été dépassé. Veuillez attendre la réinitialisation quotidienne.",
+    "noUsersRegistered": "Aucun compte enregistré. Veuillez vous inscrire en tant qu'administrateur.",
+    "registerAdminTitle": "Enregistrer un compte administrateur",
+    "registerAdminDesc": "Aucun compte dans le système. Le premier utilisateur deviendra administrateur système.",
+    "goToRegisterAdmin": "Créer l'admin"
   },
   "setup": {
     "title": "Guide d'installation",

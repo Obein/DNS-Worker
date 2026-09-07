@@ -52,6 +52,10 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
 
     const user = await userModel.getByUsername(username);
     if (!user) {
+      const isEmpty = await userModel.isEmpty().catch(() => false);
+      if (isEmpty) {
+        return new Response("no_users_registered", { status: 404 });
+      }
       await cacheUtils.isRateLimited(cache, `login_fail:${clientIp}`, 100, 900); // penalty
       return new Response("User not found", { status: 404 });
     }

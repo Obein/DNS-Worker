@@ -108,8 +108,16 @@ export class UserModel {
   }
 
   async getByUsername(username: string): Promise<any | null> {
-    const user = await this.db.prepare("SELECT * FROM users WHERE username = ?").bind(username).first();
-    return await this.processUserSecrets(user);
+    try {
+      const user = await this.db.prepare("SELECT * FROM users WHERE username = ?").bind(username).first();
+      return await this.processUserSecrets(user);
+    } catch (e: unknown) {
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      if (errorMsg.includes("no such table")) {
+        return null;
+      }
+      throw e;
+    }
   }
 
   async listAll(): Promise<User[]> {
@@ -175,8 +183,12 @@ export class UserModel {
   }
 
   async isEmpty(): Promise<boolean> {
-    const count = await this.db.prepare("SELECT COUNT(*) as count FROM users").first<number>('count');
-    return count === 0;
+    try {
+      const count = await this.db.prepare("SELECT COUNT(*) as count FROM users").first<number>('count');
+      return (count ?? 0) === 0;
+    } catch {
+      return true;
+    }
   }
 
   /**

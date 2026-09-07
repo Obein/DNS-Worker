@@ -118,7 +118,11 @@
     "cfErrorGeneric": "Cloudflare Edge error, service is temporarily unavailable. Please try again later. {{rayId}}",
     "htmlErrorGeneric": "Server returned an unexpected page response (HTTP {{status}}). Please try again later.",
     "tooManyAttempts": "Too many requests or attempts, temporarily rate limited. Please try again later.",
-    "dbQuotaExceeded": "Database daily read quota has been exceeded. Please wait for the daily reset or upgrade."
+    "dbQuotaExceeded": "Database daily read quota has been exceeded. Please wait for the daily reset or upgrade.",
+    "noUsersRegistered": "No accounts registered yet. Please sign up to become an administrator.",
+    "registerAdminTitle": "Register Administrator Account",
+    "registerAdminDesc": "No accounts in the system. The first user will become the system administrator.",
+    "goToRegisterAdmin": "Register Admin"
   },
   "setup": {
     "title": "Setup Guide",
