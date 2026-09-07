@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import {
   Button,
   FormGroup,
@@ -32,6 +33,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [verifyPassword, setVerifyPassword] = useState("");
+  const [showVerifyPassword, setShowVerifyPassword] = useState(false);
   const [verifyTotp, setVerifyTotp] = useState("");
   const [useTotpForVerify, setUseTotpForVerify] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -104,6 +106,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
     setNewPin("");
     setConfirmPin("");
     setVerifyPassword("");
+    setShowVerifyPassword(false);
     setVerifyTotp("");
     onClose();
   };
@@ -193,11 +196,24 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
             <FormGroup label={t("auth.currentPassword", "Current Password")} labelFor="verify-pw-input">
               <InputGroup
                 id="verify-pw-input"
-                type="password"
+                type="text"
+                inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showVerifyPassword && verifyPassword && "blur-secret")}
                 placeholder={t("auth.passwordPlaceholder", "Enter current password")}
                 value={verifyPassword}
                 onChange={(e) => setVerifyPassword(e.target.value)}
                 leftIcon="lock"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                autoComplete="current-password"
+                rightElement={
+                  <Button
+                    minimal={true}
+                    icon={showVerifyPassword ? "eye-open" : "eye-off"}
+                    onClick={() => setShowVerifyPassword(!showVerifyPassword)}
+                    title={showVerifyPassword ? t("auth.hidePassword", "Hide password") : t("auth.showPassword", "Show password")}
+                  />
+                }
                 required
               />
             </FormGroup>

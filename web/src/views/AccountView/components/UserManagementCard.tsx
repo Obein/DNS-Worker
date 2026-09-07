@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Card, Elevation, H4, Button, Intent, HTMLTable, Dialog, FormGroup, InputGroup, HTMLSelect, Tag } from "@blueprintjs/core";
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import { formatDateTime } from "../../../utils/date";
 import { PASSWORD_REGEX, USERNAME_REGEX, hashPasswordClient } from "../../../utils/auth";
 import type { UserInfo } from "../../../services";
@@ -100,10 +101,15 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
           <FormGroup label={t("account.username")}><InputGroup value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder={t("auth.usernamePlaceholder")} /></FormGroup>
           <FormGroup label={t("account.initialPassword")}>
             <InputGroup
-              type={showNewUserPassword ? "text" : "password"}
+              type="text"
+              inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showNewUserPassword && newUserPassword && "blur-secret")}
               value={newUserPassword}
               onChange={e => setNewUserPassword(e.target.value)}
               placeholder={t("auth.passwordPlaceholder")}
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              autoComplete="new-password"
               rightElement={
                 <Button
                   minimal={true}

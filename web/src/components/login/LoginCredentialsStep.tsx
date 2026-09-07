@@ -1,6 +1,7 @@
 import React from "react";
 import { FormGroup, InputGroup, Button, Intent, Checkbox } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
+import clsx from "clsx";
 import { DigitInput } from "../DigitInput";
 
 /**
@@ -102,13 +103,18 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
             id="password"
             leftIcon="lock"
             placeholder={t("auth.passwordPlaceholder")}
-            type={showPassword ? "text" : "password"}
+            type="text"
             size="large"
             className="rounded-xl"
+            inputClassName={clsx("transition-[filter,text-shadow] duration-200", !showPassword && password && "blur-secret")}
             value={password}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setPassword(e.target.value)
             }
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            autoComplete="current-password"
             rightElement={renderPasswordRightElement()}
             autoFocus
             required
