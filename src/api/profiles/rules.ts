@@ -31,7 +31,7 @@ export async function handleProfileRulesRequest(
       return new Response("Rule for this domain already exists", { status: 400 });
     }
     await ruleModel.addRule(profileId, rule);
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, false));
     return new Response(null, { status: 201 });
   }
 
@@ -46,14 +46,14 @@ export async function handleProfileRulesRequest(
       return new Response("Rule for this domain already exists", { status: 400 });
     }
     await ruleModel.updateRule(rule.id, profileId, rule);
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, false));
     return new Response(null, { status: 200 });
   }
 
   if (request.method === 'DELETE') {
     const { id } = await request.json() as any;
     await ruleModel.deleteRule(id, profileId);
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, false));
     return new Response(null, { status: 204 });
   }
 

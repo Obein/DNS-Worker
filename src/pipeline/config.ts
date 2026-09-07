@@ -59,7 +59,16 @@ export const pipelineConfig = {
       const ruleModel = new RuleModel(env.DB);
       const bloomModel = new ProfileBloomModel(env.DB);
 
-      const profile = await profileModel.getById(profileId);
+      // 并发从 D1 读取配置、规则及布隆过滤器，消除串行网络往返等待
+      const [profile, rules, buffer] = await Promise.all([
+        profileModel.getById(profileId),
+        ruleModel.getRules(profileId),
+        bloomModel.getProfileBloom(profileId).catch((e) => {
+          console.error("[Config] D1 Bloom loading failed:", e);
+          return null;
+        }),
+      ]);
+
       if (!profile) {
         if (cachedConfig) {
           console.warn(`[Config] Profile ${profileId} not in D1, using stale memory config.`);
@@ -69,34 +78,28 @@ export const pipelineConfig = {
       }
       
       const settings = JSON.parse(profile.settings);
-      const rules = await ruleModel.getRules(profileId);
       
-      // 从 D1 直接加载布隆过滤器
-      try {
-        const buffer = await bloomModel.getProfileBloom(profileId);
-          
-        if (buffer) {
-          track('load_bloom_l3_d1');
-          const uint8 = new Uint8Array(buffer);
-          bloom = BloomFilter.fromUint8Array(uint8);
+      // 处理布隆过滤器并写入 L2 Cache API
+      if (buffer) {
+        track('load_bloom_l3_d1');
+        const uint8 = new Uint8Array(buffer);
+        bloom = BloomFilter.fromUint8Array(uint8);
 
-          // 写入 L2 Cache API 供下次使用
-          ctx.waitUntil(cache.put(bloomInternalUrl, new Response(uint8, {
-            headers: { 
-              'Content-Type': 'application/octet-stream',
-              'Cache-Control': 'public, max-age=3600' 
-            }
-          })));
-        }
-      } catch (e) {
-        console.error("[Config] D1 Bloom loading failed:", e);
+        // 写入 L2 Cache API 供下次使用 (7 天长效缓存，列表变更时有主动淘汰)
+        ctx.waitUntil(cache.put(bloomInternalUrl, new Response(uint8, {
+          headers: { 
+            'Content-Type': 'application/octet-stream',
+            'Cache-Control': 'public, max-age=604800' 
+          }
+        })));
       }
 
       const config = { settings, rules };
       if (bloom) bloomMemoryMap.set(profileId, { bloom, ts: Date.now() });
       
       configCache.set(profileId, { ...config, timestamp: Date.now() });
-      ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 1800));
+      // 写入 L2 Cache API 配置缓存 (24 小时长效缓存，配置变更时有主动淘汰)
+      ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400));
       
       track('load_config_full_sync');
       return { ...config, bloom };
