@@ -122,7 +122,8 @@
     "noUsersRegistered": "系统尚无账号，请注册成为管理员。",
     "registerAdminTitle": "注册管理员账号",
     "registerAdminDesc": "系统尚无账号，首位注册用户将自动成为系统管理员。",
-    "goToRegisterAdmin": "注册管理员"
+    "goToRegisterAdmin": "注册管理员",
+    "dbNotInitialized": "数据库未初始化或缺少数据表，请在终端执行 npm run db:migrate:prod 应用数据库迁移。"
   },
   "setup": {
     "title": "安装指南",

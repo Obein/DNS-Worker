@@ -121,7 +121,8 @@
     "noUsersRegistered": "アカウントが登録されていません。管理者として登録してください。",
     "registerAdminTitle": "管理者アカウントの登録",
     "registerAdminDesc": "システムにアカウントがありません。最初に登録されたユーザーがシステム管理者になります。",
-    "goToRegisterAdmin": "管理者登録"
+    "goToRegisterAdmin": "管理者登録",
+    "dbNotInitialized": "データベースが初期化されていないかテーブルが見つかりません。npm run db:migrate:prod を実行してください。"
   },
   "setup": {
     "title": "インストールガイド",

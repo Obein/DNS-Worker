@@ -121,7 +121,8 @@
     "noUsersRegistered": "Noch keine Konten registriert. Bitte registrieren Sie sich als Administrator.",
     "registerAdminTitle": "Administratorkonto registrieren",
     "registerAdminDesc": "Keine Konten im System. Der erste Benutzer wird Systemadministrator.",
-    "goToRegisterAdmin": "Admin registrieren"
+    "goToRegisterAdmin": "Admin registrieren",
+    "dbNotInitialized": "Datenbank nicht initialisiert oder Tabellen fehlen. Bitte führen Sie npm run db:migrate:prod aus."
   },
   "setup": {
     "title": "Installationsanleitung",

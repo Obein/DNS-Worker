@@ -121,7 +121,8 @@
     "noUsersRegistered": "No hay cuentas registradas. Por favor, regístrese como administrador.",
     "registerAdminTitle": "Registrar cuenta de administrador",
     "registerAdminDesc": "No hay cuentas en el sistema. El primer usuario será el administrador del sistema.",
-    "goToRegisterAdmin": "Registrar admin"
+    "goToRegisterAdmin": "Registrar admin",
+    "dbNotInitialized": "La base de datos no está inicializada o faltan tablas. Ejecute npm run db:migrate:prod en la terminal."
   },
   "setup": {
     "title": "Guía de instalación",

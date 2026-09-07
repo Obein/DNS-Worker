@@ -122,7 +122,8 @@
     "noUsersRegistered": "No accounts registered yet. Please sign up to become an administrator.",
     "registerAdminTitle": "Register Administrator Account",
     "registerAdminDesc": "No accounts in the system. The first user will become the system administrator.",
-    "goToRegisterAdmin": "Register Admin"
+    "goToRegisterAdmin": "Register Admin",
+    "dbNotInitialized": "Database is not initialized or missing tables. Please run npm run db:migrate:prod in terminal."
   },
   "setup": {
     "title": "Setup Guide",
