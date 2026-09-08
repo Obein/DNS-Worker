@@ -150,6 +150,13 @@ export interface ResolutionLog {
   upstream?: string;
 }
 
+export interface LogHourlyRollup {
+  profile_id: string;
+  hour_timestamp: number;
+  action: 'PASS' | 'BLOCK' | 'REDIRECT' | 'FAIL' | string;
+  count: number;
+}
+
 export interface ExecutionContext extends CFExecutionContext {}
 
 export interface Context {
