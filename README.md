@@ -198,7 +198,7 @@ DNS Worker can run completely independent of Cloudflare Workers as a standalone 
 * **Web Dashboard & DoH (Default Port 3000)**: Full-featured React management dashboard and REST API.
 * **Local SQLite Database**: Automatically executes schema migrations out-of-the-box without cloud dependencies.
 
-#### Environment Variables (Configure in `.env` or system environment)
+#### Environment Variables (Configure in `.env.serverfull`, `.env`, or system environment)
 
 | Environment Variable | Description | Default / Example |
 |---|---|---|
@@ -214,10 +214,11 @@ DNS Worker can run completely independent of Cloudflare Workers as a standalone 
 
 #### Quick Start
 
-1. Configure environment variables (copy from template):
+1. Configure environment variables:
+The project provides an out-of-the-box configuration file `.env.serverfull` (the server automatically loads system environment variables, `.env`, or `.env.serverfull` by priority). You can directly modify `.env.serverfull`, or copy it to `.env` for customization:
 ```bash
-cp .env.serverfull .env
-# Edit .env to set your TLS certificate paths and JWT_SECRET
+# Edit .env.serverfull directly (or copy via cp .env.serverfull .env first)
+nano .env.serverfull
 ```
 
 2. Build frontend and start Serverfull service:

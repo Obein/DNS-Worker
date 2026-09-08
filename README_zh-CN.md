@@ -205,7 +205,7 @@ DNS Worker 支持脱离 Cloudflare Workers，直接在独立服务器/VPS（Linu
 * **Web 控制台与 DoH (默认端口 3000)**：全功能 Web 管理面板与 REST API，开箱即用。
 * **本地 SQLite 数据库**：自动执行迁移脚本初始化表结构，无需任何云端依赖。
 
-#### 环境变量配置 (在 `.env` 或系统环境变量中配置)
+#### 环境变量配置 (在 `.env.serverfull`、`.env` 或系统环境变量中配置)
 
 | 环境变量 | 说明 | 默认值 / 示例 |
 |---|---|---|
@@ -221,10 +221,11 @@ DNS Worker 支持脱离 Cloudflare Workers，直接在独立服务器/VPS（Linu
 
 #### 快速启动
 
-1. 配置环境变量（可参考并复制项目提供的模版）：
+1. 配置环境变量：
+项目内置提供开箱即用的配置文件 `.env.serverfull`（程序会自动按优先级加载系统变量、`.env` 或 `.env.serverfull`）。您可以直接修改 `.env.serverfull`，也可以复制为 `.env` 进行定制：
 ```bash
-cp .env.serverfull .env
-# 编辑 .env 修改 TLS 证书路径及 JWT_SECRET 等
+# 直接编辑 .env.serverfull（亦可 cp .env.serverfull .env 后编辑）
+nano .env.serverfull
 ```
 
 2. 编译前端并启动服务：
