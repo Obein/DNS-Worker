@@ -151,7 +151,8 @@ async function runTests() {
       host: '127.0.0.1',
       port: DOT_TEST_PORT,
       servername: 'testkey123.dns.local', // SNI routing to 'testkey123'
-      rejectUnauthorized: false
+      ca: fs.readFileSync(path.join(testDir, 'certs', 'ca.crt')),
+      rejectUnauthorized: true
     }, () => {
       tlsSocket.write(dotFrame);
     });
