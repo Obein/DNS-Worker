@@ -27,9 +27,9 @@ export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
 export const TOTP_TOKEN_REGEX = /^\d{6}$/;
 /**
  * Profile name validation regular expression.
- * Requirements: 1-30 characters, allowing letters, numbers, spaces, underscores, and hyphens.
+ * Requirements: 1-30 characters, allowing letters, numbers, spaces, underscores, hyphens, and parentheses.
  */
-export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ ()-]{1,30}$/u;
 /**
  * Access Point (AP) name validation regular expression.
  * Requirements: 1-30 characters, allowing letters, numbers, underscores, and hyphens.
