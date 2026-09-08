@@ -93,22 +93,37 @@ export const useImportProfile = (onRefresh?: () => void) => {
       // Update settings
       await updateProfileSettings(createdProfileId, data.settings);
 
-      // Import rules sequentially if present
+      // Import rules sequentially if present, deduplicating identical patterns
       if (data.rules && Array.isArray(data.rules)) {
+        const seenPatterns = new Set<string>();
         for (const rule of data.rules) {
           if (
             rule &&
             typeof rule.pattern === "string" &&
             (rule.type === "ALLOW" || rule.type === "BLOCK" || rule.type === "REDIRECT")
           ) {
-            await addProfileRule(createdProfileId, {
-              type: rule.type,
-              pattern: rule.pattern,
-              v_a: rule.v_a || undefined,
-              v_aaaa: rule.v_aaaa || undefined,
-              v_cname: rule.v_cname || undefined,
-              v_txt: rule.v_txt || undefined,
-            });
+            const normalizedPattern = rule.pattern.trim().toLowerCase();
+            if (!normalizedPattern || seenPatterns.has(normalizedPattern)) {
+              continue;
+            }
+            seenPatterns.add(normalizedPattern);
+
+            try {
+              await addProfileRule(createdProfileId, {
+                type: rule.type,
+                pattern: rule.pattern.trim(),
+                v_a: rule.v_a || undefined,
+                v_aaaa: rule.v_aaaa || undefined,
+                v_cname: rule.v_cname || undefined,
+                v_txt: rule.v_txt || undefined,
+              });
+            } catch (err: unknown) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              // Ignore duplicate rule error during import, rethrow any other unexpected errors
+              if (!errMsg.includes("Rule for this domain already exists")) {
+                throw err;
+              }
+            }
           }
         }
       }
