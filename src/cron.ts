@@ -47,8 +47,13 @@ export async function handleScheduled(
           ? Number(env.MAX_LOG_RETENTION_DAYS)
           : 30;
         await logModel.cleanupGlobal(maxRetentionDays);
+
+        const aggregated = await logModel.aggregateHourlyRollups();
+        if (aggregated > 0) {
+          console.log(`[Cron] Hourly rollup aggregation: aggregated ${aggregated} record(s).`);
+        }
       } catch (e) {
-        console.error("[Cron] Global log cleanup failed:", e);
+        console.error("[Cron] Global log cleanup or hourly aggregation failed:", e);
       }
 
       try {
