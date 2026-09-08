@@ -161,7 +161,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   const exportProfile = async () => {
     if (!profile || !settings) return;
     try {
-      const rules = await getProfileRules(profileId);
+      const rawRules = await getProfileRules(profileId);
+      const seenPatterns = new Set<string>();
+      const rules = (rawRules || []).filter((r) => {
+        const norm = (r.pattern || "").trim().toLowerCase();
+        if (!norm || seenPatterns.has(norm)) return false;
+        seenPatterns.add(norm);
+        return true;
+      });
 
       const exportData = {
         version: 1,
