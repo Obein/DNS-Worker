@@ -3,6 +3,7 @@ export {
   decodeName,
   getQTypeName,
   parseDNSQuery,
+  parseDNSQueryFromRaw,
   parseDNSAnswer
 } from "./dns/decoder";
 export {

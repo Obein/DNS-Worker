@@ -197,6 +197,50 @@ npm run dev
 npm run deploy
 ```
 
+### 服务器独立部署 (Serverfull 模式)
+
+DNS Worker 支持脱离 Cloudflare Workers，直接在独立服务器/VPS（Linux、Windows、macOS）上以 Serverfull 模式运行。该模式同时支持：
+* **经典 UDP DNS (端口 53)**：标准的 RFC 1035 UDP DNS 解析服务，可直接填入路由器或系统 DNS 设置中。
+* **DNS over TLS / DoT (端口 853)**：标准的 RFC 7858 加密 DNS，原生支持 Android 9+ 系统自带的“私有 DNS”（Private DNS），并支持通过 SNI（如 `<profile_key>.dns.example.com`）自动路由到指定的 Profile。
+* **Web 控制台与 DoH (默认端口 3000)**：全功能 Web 管理面板与 REST API，开箱即用。
+* **本地 SQLite 数据库**：自动执行迁移脚本初始化表结构，无需任何云端依赖。
+
+#### 环境变量配置 (在 `.env.serverfull`、`.env` 或系统环境变量中配置)
+
+| 环境变量 | 说明 | 默认值 / 示例 |
+|---|---|---|
+| `SERVERFULL_TLS_KEY_PATH` | TLS 私钥文件路径 (PEM 格式，亦兼容 `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
+| `SERVERFULL_TLS_CERT_PATH` | TLS 公钥/证书链文件路径 (PEM 格式，亦兼容 `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
+| `SERVERFULL_UDP_PORT` | 经典 UDP DNS 监听端口 | `53` |
+| `SERVERFULL_DOT_PORT` | DoT (TLS) 监听端口 | `853` |
+| `SERVERFULL_HTTP_PORT` | HTTP Web 面板与 DoH 监听端口 | `3000` |
+| `SERVERFULL_HOST` | 监听地址 | `0.0.0.0` |
+| `SERVERFULL_DB_PATH` | 本地 SQLite 数据库文件路径 | `./data/dns_worker.sqlite` |
+| `SERVERFULL_DEFAULT_PROFILE_KEY` | UDP DNS 或无 SNI 时的默认配置 Profile Key | 首个创建的 Profile |
+| `JWT_SECRET` | 会话 Token 加密密钥 | 自定义安全字符串 |
+
+#### 快速启动
+
+1. 配置环境变量：
+项目内置提供开箱即用的配置文件 `.env.serverfull`（程序会自动按优先级加载系统变量、`.env` 或 `.env.serverfull`）。您可以直接修改 `.env.serverfull`，也可以复制为 `.env` 进行定制：
+```bash
+# 直接编辑 .env.serverfull（亦可 cp .env.serverfull .env 后编辑）
+nano .env.serverfull
+```
+
+2. 编译前端并启动服务：
+```bash
+npm run start:serverfull
+```
+
+3. 注册为 Linux 系统常驻服务 (systemd)：
+```bash
+sudo npm run service-create:linux
+sudo systemctl start dns-worker
+sudo systemctl status dns-worker
+```
+该命令会自动生成 `/etc/systemd/system/dns-worker.service`，配置 `CAP_NET_BIND_SERVICE` 特权端口（53/853）绑定能力并配置开机自启。
+
 ### 线上部署到 Cloudflare Pages (⚠️ 不推荐)
 
 如果您希望以 Cloudflare Pages (Advanced Mode) 部署该项目：

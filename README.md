@@ -190,6 +190,50 @@ npm run dev
 npm run deploy
 ```
 
+### Serverfull Mode Deployment (Standalone Server / VPS)
+
+DNS Worker can run completely independent of Cloudflare Workers as a standalone service on your Linux, Windows, or macOS server. Serverfull mode provides:
+* **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
+* **DNS over TLS / DoT (Port 853)**: RFC 7858 encrypted DNS, natively supported by Android 9+ "Private DNS", with SNI-based Profile routing (e.g. `<profile_key>.dns.example.com`).
+* **Web Dashboard & DoH (Default Port 3000)**: Full-featured React management dashboard and REST API.
+* **Local SQLite Database**: Automatically executes schema migrations out-of-the-box without cloud dependencies.
+
+#### Environment Variables (Configure in `.env.serverfull`, `.env`, or system environment)
+
+| Environment Variable | Description | Default / Example |
+|---|---|---|
+| `SERVERFULL_TLS_KEY_PATH` | Absolute path to TLS private key file (PEM format, alias: `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
+| `SERVERFULL_TLS_CERT_PATH` | Absolute path to TLS certificate chain file (PEM format, alias: `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
+| `SERVERFULL_UDP_PORT` | Classic UDP DNS listening port | `53` |
+| `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
+| `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `3000` |
+| `SERVERFULL_HOST` | Listening host IP | `0.0.0.0` |
+| `SERVERFULL_DB_PATH` | Local SQLite database file path | `./data/dns_worker.sqlite` |
+| `SERVERFULL_DEFAULT_PROFILE_KEY` | Default Profile key when no SNI or profile identifier is provided | First created profile |
+| `JWT_SECRET` | Session authentication token secret key | Auto-generated secure random string |
+
+#### Quick Start
+
+1. Configure environment variables:
+The project provides an out-of-the-box configuration file `.env.serverfull` (the server automatically loads system environment variables, `.env`, or `.env.serverfull` by priority). You can directly modify `.env.serverfull`, or copy it to `.env` for customization:
+```bash
+# Edit .env.serverfull directly (or copy via cp .env.serverfull .env first)
+nano .env.serverfull
+```
+
+2. Build frontend and start Serverfull service:
+```bash
+npm run start:serverfull
+```
+
+3. Register as a Linux systemd background service:
+```bash
+sudo npm run service-create:linux
+sudo systemctl start dns-worker
+sudo systemctl status dns-worker
+```
+This generates `/etc/systemd/system/dns-worker.service` configured with `CAP_NET_BIND_SERVICE` privileges to bind ports 53 and 853 with automatic restart on boot.
+
 ### Online Deployment to Cloudflare Pages (⚠️ Not Recommended)
 
 If you wish to deploy the project using Cloudflare Pages (Advanced Mode):

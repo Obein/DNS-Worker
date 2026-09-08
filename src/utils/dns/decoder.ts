@@ -67,6 +67,39 @@ export function getQTypeName(type: number): string {
 /**
  * Parses an incoming HTTP Request (GET or POST) containing a DNS query packet.
  *
+/**
+ * Parses raw DNS query bytes into a structured DNSQuery object.
+ *
+ * @param raw - The raw DNS packet buffer.
+ * @returns Parsed DNSQuery or null if invalid/truncated.
+ */
+export function parseDNSQueryFromRaw(raw: Uint8Array): DNSQuery | null {
+  try {
+    // Minimum header length: Header(12) + QTYPE(2) + QCLASS(2) = 16
+    if (raw.length < 16) return null;
+
+    const { name, read } = decodeName(raw, 12);
+    const qtypeOffset = 12 + read;
+
+    // Boundary check for query type and class
+    if (qtypeOffset + 4 > raw.length) return null;
+
+    const qtypeCode = (raw[qtypeOffset] << 8) | raw[qtypeOffset + 1];
+
+    return {
+      name,
+      type: getQTypeName(qtypeCode),
+      raw
+    };
+  } catch (e) {
+    console.error("DNS Parse Error:", e);
+    return null;
+  }
+}
+
+/**
+ * Parses an incoming HTTP Request (GET or POST) containing a DNS query packet.
+ *
  * @param request - The incoming Cloudflare Worker Request object.
  * @returns A promise resolving to the parsed DNSQuery or null if invalid.
  */
@@ -96,22 +129,7 @@ export async function parseDNSQuery(
       return null;
     }
 
-    // Minimum header length: Header(12) + QTYPE(2) + QCLASS(2) = 16
-    if (raw.length < 16) return null;
-
-    const { name, read } = decodeName(raw, 12);
-    const qtypeOffset = 12 + read;
-
-    // Boundary check for query type and class
-    if (qtypeOffset + 4 > raw.length) return null;
-
-    const qtypeCode = (raw[qtypeOffset] << 8) | raw[qtypeOffset + 1];
-
-    return {
-      name,
-      type: getQTypeName(qtypeCode),
-      raw
-    };
+    return parseDNSQueryFromRaw(raw);
   } catch (e) {
     console.error("DNS Parse Error:", e);
     return null;

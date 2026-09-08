@@ -4,7 +4,7 @@ import { fetchGeoIP } from "../utils/geoip";
 import { buildResponse, buildResponseMulti, buildDNSQuery, parseDNSAnswer, injectEcsIntoQuery, DNSRecord } from "../utils/dns";
 import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, ensureCloudflareIpRangesLoaded, saveActiveCfEchConfig } from "../utils/ech";
 import { dnsCache } from "./cache";
-import { connect } from 'cloudflare:sockets';
+import { connectUniversal } from "../utils/sockets";
 import { isSafeUrl } from "../utils/validator";
 import { enqueueLog } from "./logBatcher";
 
@@ -58,7 +58,7 @@ export const pipelineResolver = {
           tcpPort = parseInt(parts[1]) || 53;
         }
 
-        const socket = connect({ hostname: tcpHost, port: tcpPort });
+        const socket = await connectUniversal({ hostname: tcpHost, port: tcpPort });
         const writer = socket.writable.getWriter();
         const reader = socket.readable.getReader();
 
