@@ -76,9 +76,17 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           className="w-8 h-8 object-contain shrink-0"
         />
         {isSidebarOpen && (
-          <span className="ml-3 font-bold text-lg dark:text-white">
-            DNS Worker
-          </span>
+          <div className="ml-3 flex flex-col justify-center min-w-0">
+            <span className="font-bold text-base leading-tight dark:text-white truncate">
+              DNS Worker
+            </span>
+            <span
+              className="text-xs text-gray-500 dark:text-gray-400 font-mono leading-tight mt-0.5 truncate select-all"
+              title={typeof window !== "undefined" ? window.location.host || window.location.hostname : ""}
+            >
+              {typeof window !== "undefined" ? window.location.host || window.location.hostname : ""}
+            </span>
+          </div>
         )}
       </div>
       <div className="flex-1 py-4 px-2 overflow-y-auto overflow-x-hidden">
