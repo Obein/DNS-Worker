@@ -188,7 +188,29 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
           <div className="space-y-4 md:ml-4 mt-4 md:mt-0">
             <H5 className="font-bold">{t("setup.androidTitle")}</H5>
             <p className="text-sm">{t("setup.androidDesc")}</p>
-            <Callout intent={Intent.WARNING} icon="help" className="text-xs">
+
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                {t("setup.androidDotTitle", "私有 DNS (DoT - Serverfull 模式)")}
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t("setup.androidDotDesc", "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Tag
+                  minimal
+                  interactive
+                  onClick={() => copyToClipboard(`${profileKey}.${window.location.hostname}`)}
+                  icon="duplicate"
+                  className="font-mono text-sm py-1 px-3"
+                  intent={Intent.PRIMARY}
+                >
+                  {`${profileKey}.${window.location.hostname}`}
+                </Tag>
+              </div>
+            </div>
+
+            <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
               {t("setup.androidWarning")}
             </Callout>
           </div>

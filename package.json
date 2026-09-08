@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "npm run db:migrate:dev && concurrently \"npm run ui:dev\" \"wrangler dev\"",
     "start": "npm run build && wrangler dev",
+    "start:serverfull": "npm run build && tsx src/serverfull/index.ts",
+    "serverfull": "npm run build && tsx src/serverfull/index.ts",
+    "service-create:linux": "node scripts/create-linux-service.cjs",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",
@@ -15,6 +18,7 @@
     "db:migrate:dev": "wrangler d1 migrations apply dns_worker_db --local",
     "db:migrate:prod": "echo \"y\" | wrangler d1 migrations apply dns_worker_db --remote",
     "db:status": "wrangler d1 execute dns_worker_db --local --command='SELECT name FROM sqlite_master WHERE type=\"table\"'",
+    "test:serverfull": "tsx test/test_serverfull.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "ui:dev": "cd web && npm run dev",
     "ui:build": "cd web && npm run build",
@@ -29,7 +33,9 @@
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260908.1",
+    "@types/node": "^22.13.4",
     "concurrently": "^10.0.5",
+    "tsx": "^4.19.3",
     "typescript": "^7.0.2",
     "wrangler": "^4.129.1"
   },

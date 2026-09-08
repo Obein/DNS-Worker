@@ -9,7 +9,7 @@ import { profileKeyMemoryMap } from '../pipeline/cache';
 /**
  * Resolves profile and access point metadata with multi-tier caching (L1 Memory -> L2 Cache API -> D1 DB).
  */
-async function resolveProfileByKey(
+export async function resolveProfileByKey(
   profileKey: string,
   env: Env,
   ctx: ExecutionContext
@@ -74,6 +74,45 @@ async function resolveProfileByKey(
   }
 
   return null;
+}
+
+/**
+ * Resolves default profile when no profile key is specified in connection or query.
+ */
+export async function resolveDefaultProfile(
+  env: Env,
+  ctx: ExecutionContext
+): Promise<(ProfileWithBloom & { access_point_id?: string; access_point_name?: string }) | null> {
+  const defaultKey = env.SERVERFULL_DEFAULT_PROFILE_KEY || env.DEFAULT_PROFILE_KEY;
+  if (defaultKey) {
+    const profile = await resolveProfileByKey(defaultKey, env, ctx);
+    if (profile) return profile;
+  }
+
+  try {
+    const profileModel = new ProfileModel(env.DB);
+    const profiles = await profileModel.list("ORDER BY created_at ASC LIMIT 1", []);
+    if (profiles && profiles.length > 0) {
+      const fullProfile = await profileModel.getById(profiles[0].id);
+      if (fullProfile) return fullProfile;
+    }
+  } catch (e: any) {
+    console.warn("[Profile] Failed to query fallback default profile:", e.message || e);
+  }
+
+  return {
+    id: "default",
+    name: "Default Profile",
+    settings: JSON.stringify({
+      upstream: [env.FAIL_OPEN_UPSTREAM || "https://security.cloudflare-dns.com/dns-query"],
+      default_policy: "ALLOW",
+      log_retention_days: 0,
+      ecs: { enabled: true, use_client_ip: true }
+    }),
+    owner_id: "system",
+    created_at: Math.floor(Date.now() / 1000),
+    updated_at: Math.floor(Date.now() / 1000)
+  } as any;
 }
 
 /**
