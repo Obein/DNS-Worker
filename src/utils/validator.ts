@@ -36,9 +36,9 @@ export const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
 
 /**
  * Profile name validation regular expression.
- * Requirements: 1-30 characters, containing letters, numbers, underscores, or hyphens.
+ * Requirements: 1-30 characters, containing letters, numbers, underscores, hyphens, or parentheses.
  */
-export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ -]{1,30}$/u;
+export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ ()-]{1,30}$/u;
 
 /**
  * Access key validation regular expression.
