@@ -33,24 +33,44 @@ export async function handleProfileListsRequest(
 
     const body = await request.json() as any;
 
-    // Support bulk list addition when body is an array or contains lists/urls/filters array
-    const isBulk = Array.isArray(body) || (body && (Array.isArray(body.lists) || Array.isArray(body.urls) || Array.isArray(body.filters)));
+    // Support bulk list addition when body is an array or contains lists/urls/filters/blocklists array
+    const candidateList = Array.isArray(body)
+      ? body
+      : (body?.lists || body?.list || body?.urls || body?.url || body?.filters || body?.filter || body?.blocklists || body?.blocklist);
+
+    const isBulk = Array.isArray(candidateList);
     if (isBulk) {
-      const rawList: any[] = Array.isArray(body) ? body : (body.lists || body.urls || body.filters);
+      const rawList: any[] = candidateList;
       const seen = new Set<string>();
-      const validUrls: string[] = [];
+      const validItems: { url: string; enabled: number }[] = [];
 
       for (const item of rawList) {
-        const urlStr = typeof item === 'string' ? item.trim() : (item?.url ? String(item.url).trim() : '');
-        if (!urlStr || (!urlStr.startsWith('http://') && !urlStr.startsWith('https://'))) continue;
+        let urlStr = typeof item === 'string'
+          ? item.trim()
+          : (item?.url ?? item?.link ?? item?.uri ?? item?.address ?? item?.source ?? item?.target ?? item?.download_url ?? '');
+        if (typeof urlStr !== 'string') continue;
+        urlStr = urlStr.replace(/^["']|["']$/g, '').trim();
+        if (urlStr.startsWith('//')) {
+          urlStr = `https:${urlStr}`;
+        } else if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+          if (urlStr.includes('.') && !urlStr.includes(' ') && urlStr.length > 3) {
+            urlStr = `https://${urlStr}`;
+          } else {
+            continue;
+          }
+        }
         if (!isSafeUrl(urlStr)) continue;
         const norm = urlStr.toLowerCase();
         if (seen.has(norm)) continue;
         seen.add(norm);
-        validUrls.push(urlStr);
+
+        const enabled = (item && typeof item === 'object' && item.enabled !== undefined)
+          ? (item.enabled ? 1 : 0)
+          : 1;
+        validItems.push({ url: urlStr, enabled });
       }
 
-      if (validUrls.length === 0) {
+      if (validItems.length === 0) {
         return new Response(JSON.stringify({ count: 0, message: "No valid URLs provided" }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
@@ -59,11 +79,11 @@ export async function handleProfileListsRequest(
 
       const existingLists = await listModel.getLists(profileId);
       const existingUrls = new Set(existingLists.map(l => l.url.trim().toLowerCase()));
-      const urlsToInsert = validUrls.filter(u => !existingUrls.has(u.toLowerCase()));
+      const itemsToInsert = validItems.filter(item => !existingUrls.has(item.url.toLowerCase()));
 
       let insertedCount = 0;
-      if (urlsToInsert.length > 0) {
-        insertedCount = await listModel.addListsBulk(profileId, urlsToInsert);
+      if (itemsToInsert.length > 0) {
+        insertedCount = await listModel.addListsBulk(profileId, itemsToInsert);
         ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
         ctx.waitUntil(pipeline.clearCache(profileId));
       }

@@ -19,14 +19,18 @@ export class ListModel {
    * Chunks execution into batches of up to 100 statements to respect D1 limits.
    *
    * @param profileId - Profile identifier.
-   * @param urls - Array of filter list URLs to insert.
+   * @param items - Array of filter list URLs or objects with url & enabled status.
    * @returns Total number of lists successfully inserted.
    */
-  async addListsBulk(profileId: string, urls: string[]): Promise<number> {
-    if (!urls || urls.length === 0) return 0;
-    const statements = urls.map(url =>
-      this.db.prepare("INSERT INTO lists (profile_id, url) VALUES (?, ?)").bind(profileId, url.trim())
-    );
+  async addListsBulk(profileId: string, items: (string | { url: string; enabled?: number | boolean })[]): Promise<number> {
+    if (!items || items.length === 0) return 0;
+    const statements = items.map(item => {
+      const url = typeof item === 'string' ? item.trim() : item.url.trim();
+      const enabled = (typeof item === 'object' && item.enabled !== undefined)
+        ? (item.enabled ? 1 : 0)
+        : 1;
+      return this.db.prepare("INSERT INTO lists (profile_id, url, enabled) VALUES (?, ?, ?)").bind(profileId, url, enabled);
+    });
 
     let inserted = 0;
     for (let i = 0; i < statements.length; i += 100) {

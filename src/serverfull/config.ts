@@ -5,7 +5,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { randomBytes } from 'node:crypto';
+import crypto from 'node:crypto';
 import { Env } from '../types';
 
 export interface ServerfullConfig {
@@ -93,7 +93,7 @@ export function getServerfullConfig(): { config: ServerfullConfig; env: Env } {
   const env: Env = {
     DB: null as any, // Set by db.ts
     ASSETS: null as any, // Set by http.ts
-    JWT_SECRET: process.env.JWT_SECRET || 'dns_worker_serverfull_secret_' + randomBytes(32).toString('hex'),
+    JWT_SECRET: process.env.JWT_SECRET || 'dns_worker_serverfull_secret_' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''),
     FAIL_OPEN_UPSTREAM: process.env.FAIL_OPEN_UPSTREAM || 'https://freedns.controld.com/no-ads-malware-typo',
     MAX_ACCESS_POINTS_PER_PROFILE: process.env.MAX_ACCESS_POINTS_PER_PROFILE || 100,
     MAX_PROFILES_PER_USER: process.env.MAX_PROFILES_PER_USER || 10,

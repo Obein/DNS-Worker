@@ -188,8 +188,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
           enabled: Boolean(l.enabled)
         }));
 
+      // Profile export schema version: v1 = legacy (rules only), v2 = added external filter lists (filters)
       const exportData = {
-        version: 1,
+        version: 2,
         name: profile.name,
         settings: settings,
         rules: rules,
