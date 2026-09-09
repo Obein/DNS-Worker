@@ -59,6 +59,13 @@ interface ExportedProfileData {
   exported_at?: number;
 }
 
+/**
+ * Current supported profile export schema version.
+ * - v1: Legacy format (settings and rules only)
+ * - v2: Extended format (settings, rules, and external subscription filter lists)
+ */
+export const CURRENT_PROFILE_SCHEMA_VERSION = 2;
+
 export const useImportProfile = (onRefresh?: () => void) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +93,14 @@ export const useImportProfile = (onRefresh?: () => void) => {
       if (!data || typeof data !== "object" || !data.settings || !data.name) {
         alert(t("common.invalidFormat", "无效文件格式"));
         return;
+      }
+
+      // Schema version check: v1 (rules only), v2 (rules + external filters)
+      const fileVersion = typeof data.version === "number" ? data.version : 1;
+      if (fileVersion > CURRENT_PROFILE_SCHEMA_VERSION) {
+        console.warn(
+          `[ProfileImport] File version (${fileVersion}) is newer than supported version (${CURRENT_PROFILE_SCHEMA_VERSION}). Proceeding with backward-compatible import.`
+        );
       }
 
       // Fetch existing profiles to avoid duplicate name conflicts
