@@ -120,7 +120,10 @@ export async function addProfileRulesBulk(profileId: string, rules: Omit<Rule, "
   return res.json();
 }
 
-export async function addProfileListsBulk(profileId: string, urls: (string | { url: string })[]): Promise<{ count: number }> {
+export async function addProfileListsBulk(
+  profileId: string,
+  urls: (string | { url: string; enabled?: boolean | number })[]
+): Promise<{ count: number }> {
   const res = await profileFetch(`/api/profiles/${profileId}/lists`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

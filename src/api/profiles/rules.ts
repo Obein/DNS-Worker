@@ -1,4 +1,4 @@
-import { Env, User, ExecutionContext } from "../../types";
+import { Env, User, ExecutionContext, Rule } from "../../types";
 import { RuleModel } from "../../models/rule";
 import { pipeline } from "../../pipeline";
 
