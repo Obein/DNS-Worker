@@ -236,7 +236,9 @@
     "addSuccess": "Règle ajoutée avec succès",
     "addFailed": "Échec de l'ajout de la règle",
     "updateSuccess": "Règle mise à jour avec succès",
-    "updateFailed": "Échec de la mise à jour de la règle"
+    "updateFailed": "Échec de la mise à jour de la règle",
+    "tableCreatedAt": "Date d'ajout",
+    "clickToSort": "Cliquer pour trier"
   },
   "analytics": {
     "customRange": "Période personnalisée",
@@ -541,6 +543,20 @@
         "geolocation_missing": "Informations géographiques manquantes",
         "token_reuse": "Réutilisation de tokens (Alerte de sécurité)"
       }
+    },
+    "sessions": {
+      "title": "Sessions actives",
+      "session": "Session",
+      "device": "Appareil",
+      "ip": "Adresse IP",
+      "loginTime": "Heure de connexion",
+      "expires": "Expire le",
+      "action": "Action",
+      "current": "Actuelle",
+      "revoke": "Révoquer",
+      "revokeFailed": "Échec de la révocation de la session.",
+      "empty": "Aucune session active trouvée.",
+      "unknownDevice": "Appareil inconnu"
     }
   },
   "intro": {

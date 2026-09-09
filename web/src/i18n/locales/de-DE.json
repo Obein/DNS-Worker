@@ -236,7 +236,9 @@
     "addSuccess": "Regel erfolgreich hinzugefügt",
     "addFailed": "Regel konnte nicht hinzugefügt werden",
     "updateSuccess": "Regel erfolgreich aktualisiert",
-    "updateFailed": "Regel konnte nicht aktualisiert werden"
+    "updateFailed": "Regel konnte nicht aktualisiert werden",
+    "tableCreatedAt": "Hinzugefügt am",
+    "clickToSort": "Klicken zum Sortieren"
   },
   "analytics": {
     "customRange": "Benutzerdefinierter Zeitraum",
@@ -541,6 +543,20 @@
         "geolocation_missing": "Fehlende geografische Informationen",
         "token_reuse": "Wiederverwendung von Tokens (Sicherheitswarnung)"
       }
+    },
+    "sessions": {
+      "title": "Aktive Sitzungen",
+      "session": "Sitzung",
+      "device": "Gerät",
+      "ip": "IP-Adresse",
+      "loginTime": "Anmeldezeit",
+      "expires": "Gültig bis",
+      "action": "Aktion",
+      "current": "Aktuell",
+      "revoke": "Widerrufen",
+      "revokeFailed": "Sitzung konnte nicht widerrufen werden.",
+      "empty": "Keine aktiven Sitzungen gefunden.",
+      "unknownDevice": "Unbekanntes Gerät"
     }
   },
   "intro": {

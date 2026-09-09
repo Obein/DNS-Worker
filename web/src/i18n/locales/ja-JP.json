@@ -236,7 +236,9 @@
     "addSuccess": "ルールを追加しました",
     "addFailed": "ルールの追加に失敗しました",
     "updateSuccess": "ルールを更新しました",
-    "updateFailed": "ルールの更新に失敗しました"
+    "updateFailed": "ルールの更新に失敗しました",
+    "tableCreatedAt": "追加日時",
+    "clickToSort": "クリックして並べ替え"
   },
   "analytics": {
     "customRange": "カスタム期間",
@@ -541,6 +543,20 @@
         "geolocation_missing": "地理的位置情報の不足",
         "token_reuse": "トークンの再利用（セキュリティ警告）"
       }
+    },
+    "sessions": {
+      "title": "アクティブなセッション",
+      "session": "セッション",
+      "device": "デバイス",
+      "ip": "IPアドレス",
+      "loginTime": "ログイン時間",
+      "expires": "有効期限",
+      "action": "操作",
+      "current": "現在",
+      "revoke": "取り消す",
+      "revokeFailed": "セッションの取り消しに失敗しました。",
+      "empty": "アクティブなセッションは見つかりませんでした。",
+      "unknownDevice": "不明なデバイス"
     }
   },
   "intro": {

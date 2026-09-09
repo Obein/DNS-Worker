@@ -13,10 +13,11 @@ export class RuleModel {
 
   async addRule(profileId: string, rule: Partial<Rule>): Promise<boolean> {
     const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
+    const createdAt = rule.created_at ?? Math.floor(Date.now() / 1000);
     const result = await this.db.prepare(
-      "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
-      .bind(profileId, rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null)
+      .bind(profileId, rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null, createdAt)
       .run();
     return result.success;
   }
@@ -31,10 +32,12 @@ export class RuleModel {
    */
   async addRulesBulk(profileId: string, rules: Partial<Rule>[]): Promise<number> {
     if (!rules || rules.length === 0) return 0;
+    const now = Math.floor(Date.now() / 1000);
     const statements = rules.map(rule => {
       const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
+      const createdAt = rule.created_at ?? now;
       return this.db.prepare(
-        "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
       ).bind(
         profileId,
         rule.type,
@@ -42,7 +45,8 @@ export class RuleModel {
         rule.v_a || null,
         rule.v_aaaa || null,
         rule.v_txt || null,
-        rule.v_cname || null
+        rule.v_cname || null,
+        createdAt
       );
     });
 

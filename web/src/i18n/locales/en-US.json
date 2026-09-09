@@ -237,7 +237,9 @@
     "addSuccess": "Rule added successfully",
     "addFailed": "Failed to add rule",
     "updateSuccess": "Rule updated successfully",
-    "updateFailed": "Failed to update rule"
+    "updateFailed": "Failed to update rule",
+    "tableCreatedAt": "Added Time",
+    "clickToSort": "Click to sort"
   },
   "analytics": {
     "customRange": "Custom Range",
@@ -515,7 +517,18 @@
       "done": "Done — I've saved my keys"
     },
     "sessions": {
-      "session": "Session"
+      "session": "Session",
+      "title": "Active Sessions",
+      "device": "Device",
+      "ip": "IP Address",
+      "loginTime": "Login Time",
+      "expires": "Expires",
+      "action": "Action",
+      "current": "Current",
+      "revoke": "Revoke",
+      "revokeFailed": "Failed to revoke session.",
+      "empty": "No active sessions found.",
+      "unknownDevice": "Unknown Device"
     },
     "activity": {
       "title": "Account Activity",

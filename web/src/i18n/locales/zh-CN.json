@@ -237,7 +237,9 @@
     "addSuccess": "规则添加成功",
     "addFailed": "添加规则失败",
     "updateSuccess": "规则更新成功",
-    "updateFailed": "更新规则失败"
+    "updateFailed": "更新规则失败",
+    "tableCreatedAt": "添加时间",
+    "clickToSort": "点击排序"
   },
   "analytics": {
     "customRange": "自定义时间范围",
@@ -515,7 +517,18 @@
       "done": "完成，我已保存密钥"
     },
     "sessions": {
-      "session": "会话"
+      "session": "会话",
+      "title": "活跃会话",
+      "device": "设备",
+      "ip": "IP 地址",
+      "loginTime": "登录时间",
+      "expires": "过期时间",
+      "action": "操作",
+      "current": "当前会话",
+      "revoke": "撤销",
+      "revokeFailed": "撤销会话失败。",
+      "empty": "未找到活跃会话。",
+      "unknownDevice": "未知设备"
     },
     "activity": {
       "title": "账号活动记录",
