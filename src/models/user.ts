@@ -305,6 +305,18 @@ export class UserModel {
       )
     `).bind(thirtyDaysAgo, thirtyDaysAgo);
 
+    const deleteDestinationRollupsStmt = this.db.prepare(`
+      DELETE FROM destination_hourly_rollups
+      WHERE profile_id IN (
+        SELECT id FROM profiles
+        WHERE owner_id IN (
+          SELECT id FROM users
+          WHERE role = 'user'
+            AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
+        )
+      )
+    `).bind(thirtyDaysAgo, thirtyDaysAgo);
+
     const deleteLogsStmt = this.db.prepare(`
       DELETE FROM logs
       WHERE profile_id IN (
@@ -338,10 +350,17 @@ export class UserModel {
         ) < ?
       `).bind(ninetyDaysAgo);
 
-    const results = await this.db.batch([deleteRollupsStmt, deleteClientRollupsStmt, deleteLogsStmt, deleteProfilesStmt, deleteUsersStmt]);
+    const results = await this.db.batch([
+      deleteRollupsStmt,
+      deleteClientRollupsStmt,
+      deleteDestinationRollupsStmt,
+      deleteLogsStmt,
+      deleteProfilesStmt,
+      deleteUsersStmt
+    ]);
     return {
-      clearedProfiles: results[3].meta.changes || 0,
-      deletedUsers: results[4].meta.changes || 0
+      clearedProfiles: results[4].meta.changes || 0,
+      deletedUsers: results[5].meta.changes || 0
     };
   }
 }
