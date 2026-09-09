@@ -7,8 +7,10 @@ import {
   getProfiles,
   updateProfileSettings,
   addProfileRule,
+  addProfileRulesBulk,
+  addProfileListsBulk,
 } from "../../services";
-import type { GlobalProfileSettings } from "../../services";
+import type { GlobalProfileSettings, Rule } from "../../services";
 
 interface ExportedRule {
   type: string;
@@ -21,11 +23,18 @@ interface ExportedRule {
   priority?: number;
 }
 
+interface ExportedFilter {
+  url: string;
+  enabled?: boolean;
+}
+
 interface ExportedProfileData {
   version?: number;
   name: string;
   settings: GlobalProfileSettings;
   rules?: ExportedRule[];
+  filters?: (string | ExportedFilter)[];
+  lists?: (string | ExportedFilter)[];
   exported_at?: number;
 }
 
@@ -93,9 +102,10 @@ export const useImportProfile = (onRefresh?: () => void) => {
       // Update settings
       await updateProfileSettings(createdProfileId, data.settings);
 
-      // Import rules sequentially if present, deduplicating identical patterns
-      if (data.rules && Array.isArray(data.rules)) {
+      // Batch import rules if present
+      if (data.rules && Array.isArray(data.rules) && data.rules.length > 0) {
         const seenPatterns = new Set<string>();
+        const validRules: Omit<Rule, "id">[] = [];
         for (const rule of data.rules) {
           if (
             rule &&
@@ -107,23 +117,60 @@ export const useImportProfile = (onRefresh?: () => void) => {
               continue;
             }
             seenPatterns.add(normalizedPattern);
+            validRules.push({
+              type: rule.type,
+              pattern: rule.pattern.trim(),
+              v_a: rule.v_a || undefined,
+              v_aaaa: rule.v_aaaa || undefined,
+              v_cname: rule.v_cname || undefined,
+              v_txt: rule.v_txt || undefined,
+            });
+          }
+        }
 
-            try {
-              await addProfileRule(createdProfileId, {
-                type: rule.type,
-                pattern: rule.pattern.trim(),
-                v_a: rule.v_a || undefined,
-                v_aaaa: rule.v_aaaa || undefined,
-                v_cname: rule.v_cname || undefined,
-                v_txt: rule.v_txt || undefined,
-              });
-            } catch (err: unknown) {
-              const errMsg = err instanceof Error ? err.message : String(err);
-              // Ignore duplicate rule error during import, rethrow any other unexpected errors
-              if (!errMsg.includes("Rule for this domain already exists")) {
-                throw err;
+        if (validRules.length > 0) {
+          try {
+            await addProfileRulesBulk(createdProfileId, validRules);
+          } catch (bulkErr) {
+            console.warn("[ProfileImport] Bulk rules failed, falling back to sequential:", bulkErr);
+            for (const r of validRules) {
+              try {
+                await addProfileRule(createdProfileId, r);
+              } catch (seqErr: unknown) {
+                const msg = seqErr instanceof Error ? seqErr.message : String(seqErr);
+                if (!msg.includes("Rule for this domain already exists")) {
+                  throw seqErr;
+                }
               }
             }
+          }
+        }
+      }
+
+      // Batch import filters / subscription lists if present (supports both 'filters' and 'lists' keys)
+      const rawFilters = (data.filters && Array.isArray(data.filters))
+        ? data.filters
+        : (data.lists && Array.isArray(data.lists) ? data.lists : []);
+
+      if (rawFilters.length > 0) {
+        const seenUrls = new Set<string>();
+        const validUrls: string[] = [];
+        for (const f of rawFilters) {
+          const urlStr = typeof f === "string" ? f.trim() : (f?.url ? String(f.url).trim() : "");
+          if (!urlStr || (!urlStr.startsWith("http://") && !urlStr.startsWith("https://"))) {
+            continue;
+          }
+          const norm = urlStr.toLowerCase();
+          if (seenUrls.has(norm)) continue;
+          seenUrls.add(norm);
+          validUrls.push(urlStr);
+        }
+
+        if (validUrls.length > 0) {
+          try {
+            await addProfileListsBulk(createdProfileId, validUrls);
+          } catch (filterErr) {
+            console.warn("[ProfileImport] Failed to batch import filters:", filterErr);
           }
         }
       }

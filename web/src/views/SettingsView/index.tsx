@@ -15,7 +15,8 @@ import {
   renameProfile,
   updateProfileSettings,
   testResolution,
-  getProfileRules
+  getProfileRules,
+  getProfileLists
 } from "../../services";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef, currentUser, onSavingChange }) => {
@@ -161,7 +162,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   const exportProfile = async () => {
     if (!profile || !settings) return;
     try {
-      const rawRules = await getProfileRules(profileId);
+      const [rawRules, rawLists] = await Promise.all([
+        getProfileRules(profileId).catch(() => []),
+        getProfileLists(profileId).catch(() => [])
+      ]);
+
       const seenPatterns = new Set<string>();
       const rules = (rawRules || []).filter((r) => {
         const norm = (r.pattern || "").trim().toLowerCase();
@@ -170,11 +175,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         return true;
       });
 
+      const seenUrls = new Set<string>();
+      const filters = (rawLists || [])
+        .filter((l) => {
+          const norm = (l.url || "").trim().toLowerCase();
+          if (!norm || seenUrls.has(norm)) return false;
+          seenUrls.add(norm);
+          return true;
+        })
+        .map((l) => ({
+          url: l.url,
+          enabled: Boolean(l.enabled)
+        }));
+
       const exportData = {
         version: 1,
         name: profile.name,
         settings: settings,
         rules: rules,
+        filters: filters,
         exported_at: Math.floor(Date.now() / 1000),
       };
 

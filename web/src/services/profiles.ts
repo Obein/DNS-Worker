@@ -110,6 +110,26 @@ export async function addProfileRule(profileId: string, rule: Omit<Rule, "id">):
   if (!res.ok) throw new Error(await res.text());
 }
 
+export async function addProfileRulesBulk(profileId: string, rules: Omit<Rule, "id">[]): Promise<{ count: number }> {
+  const res = await profileFetch(`/api/profiles/${profileId}/rules`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(rules)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function addProfileListsBulk(profileId: string, urls: (string | { url: string })[]): Promise<{ count: number }> {
+  const res = await profileFetch(`/api/profiles/${profileId}/lists`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(urls)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function updateProfileRule(profileId: string, rule: Rule): Promise<void> {
   const res = await profileFetch(`/api/profiles/${profileId}/rules`, {
     method: "PUT",

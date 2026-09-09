@@ -31,7 +31,50 @@ export async function handleProfileListsRequest(
       return new Response(JSON.stringify({ message: "Sync started" }), { status: 202 });
     }
 
-    const { url: listUrl } = await request.json() as { url: string };
+    const body = await request.json() as any;
+
+    // Support bulk list addition when body is an array or contains lists/urls/filters array
+    const isBulk = Array.isArray(body) || (body && (Array.isArray(body.lists) || Array.isArray(body.urls) || Array.isArray(body.filters)));
+    if (isBulk) {
+      const rawList: any[] = Array.isArray(body) ? body : (body.lists || body.urls || body.filters);
+      const seen = new Set<string>();
+      const validUrls: string[] = [];
+
+      for (const item of rawList) {
+        const urlStr = typeof item === 'string' ? item.trim() : (item?.url ? String(item.url).trim() : '');
+        if (!urlStr || (!urlStr.startsWith('http://') && !urlStr.startsWith('https://'))) continue;
+        if (!isSafeUrl(urlStr)) continue;
+        const norm = urlStr.toLowerCase();
+        if (seen.has(norm)) continue;
+        seen.add(norm);
+        validUrls.push(urlStr);
+      }
+
+      if (validUrls.length === 0) {
+        return new Response(JSON.stringify({ count: 0, message: "No valid URLs provided" }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      const existingLists = await listModel.getLists(profileId);
+      const existingUrls = new Set(existingLists.map(l => l.url.trim().toLowerCase()));
+      const urlsToInsert = validUrls.filter(u => !existingUrls.has(u.toLowerCase()));
+
+      let insertedCount = 0;
+      if (urlsToInsert.length > 0) {
+        insertedCount = await listModel.addListsBulk(profileId, urlsToInsert);
+        ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
+        ctx.waitUntil(pipeline.clearCache(profileId));
+      }
+
+      return new Response(JSON.stringify({ success: true, count: insertedCount }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { url: listUrl } = body as { url: string };
     if (!listUrl || (!listUrl.startsWith('http://') && !listUrl.startsWith('https://'))) {
       return new Response("Invalid list URL format", { status: 400 });
     }

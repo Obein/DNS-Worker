@@ -14,6 +14,31 @@ export class ListModel {
     return result.success;
   }
 
+  /**
+   * Batch inserts multiple filter list URLs for a profile using D1 batch operations.
+   * Chunks execution into batches of up to 100 statements to respect D1 limits.
+   *
+   * @param profileId - Profile identifier.
+   * @param urls - Array of filter list URLs to insert.
+   * @returns Total number of lists successfully inserted.
+   */
+  async addListsBulk(profileId: string, urls: string[]): Promise<number> {
+    if (!urls || urls.length === 0) return 0;
+    const statements = urls.map(url =>
+      this.db.prepare("INSERT INTO lists (profile_id, url) VALUES (?, ?)").bind(profileId, url.trim())
+    );
+
+    let inserted = 0;
+    for (let i = 0; i < statements.length; i += 100) {
+      const chunk = statements.slice(i, i + 100);
+      const results = await this.db.batch(chunk);
+      for (const res of results) {
+        if (res.success) inserted += res.meta.changes || 1;
+      }
+    }
+    return inserted;
+  }
+
   async deleteList(id: number, profileId: string): Promise<boolean> {
     const result = await this.db.prepare("DELETE FROM lists WHERE id = ? AND profile_id = ?").bind(id, profileId).run();
     return result.success;

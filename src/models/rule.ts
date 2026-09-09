@@ -21,6 +21,42 @@ export class RuleModel {
     return result.success;
   }
 
+  /**
+   * Batch inserts multiple rules for a profile using D1 batch operations.
+   * Chunks execution into batches of up to 100 statements to respect D1 limits.
+   *
+   * @param profileId - Profile identifier.
+   * @param rules - Array of partial rules to insert.
+   * @returns Total number of rules successfully inserted.
+   */
+  async addRulesBulk(profileId: string, rules: Partial<Rule>[]): Promise<number> {
+    if (!rules || rules.length === 0) return 0;
+    const statements = rules.map(rule => {
+      const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
+      return this.db.prepare(
+        "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(
+        profileId,
+        rule.type,
+        normalizedPattern,
+        rule.v_a || null,
+        rule.v_aaaa || null,
+        rule.v_txt || null,
+        rule.v_cname || null
+      );
+    });
+
+    let inserted = 0;
+    for (let i = 0; i < statements.length; i += 100) {
+      const chunk = statements.slice(i, i + 100);
+      const results = await this.db.batch(chunk);
+      for (const res of results) {
+        if (res.success) inserted += res.meta.changes || 1;
+      }
+    }
+    return inserted;
+  }
+
   async updateRule(id: number, profileId: string, rule: Partial<Rule>): Promise<boolean> {
     const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
     const result = await this.db.prepare(
