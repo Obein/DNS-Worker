@@ -1,17 +1,33 @@
 import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { ResolutionLog } from "../types";
 
+let logSeqCounter = 0;
+
+/**
+ * Generates a unique, monotonically increasing 64-bit safe integer ID for log records.
+ * Fits within JavaScript Number.MAX_SAFE_INTEGER (9,007,199,254,740,991) and is valid until year 2255.
+ *
+ * Combines milliseconds timestamp with local sequence counter to guarantee uniqueness
+ * across micro-batches and concurrent resolutions.
+ */
+export function generateLogId(): number {
+  const seq = (logSeqCounter++) % 1000;
+  return Date.now() * 1000 + seq;
+}
+
 export class LogModel {
   constructor(private db: D1Database) {}
 
   createInsertStatement(log: ResolutionLog) {
+    const logId = log.id ?? generateLogId();
     return this.db.prepare(
-      "INSERT INTO logs (profile_id, access_point_id, timestamp, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
       .bind(
         log.profile_id,
-        log.access_point_id || null,
         log.timestamp,
+        logId,
+        log.access_point_id || null,
         log.client_ip,
         log.geo_country || null,
         log.domain,
@@ -128,13 +144,26 @@ export class LogModel {
     return results;
   }
 
-  async getLog(profileId: string, logId: number): Promise<ResolutionLog | null> {
+  async getLog(profileId: string, logId: number, timestamp?: number): Promise<ResolutionLog | null> {
+    if (timestamp !== undefined && !isNaN(timestamp)) {
+      return await this.db.prepare(`
+        SELECT l.*, p.name as profile_name, ap.name as access_point_name 
+        FROM logs l 
+        JOIN profiles p ON l.profile_id = p.id 
+        LEFT JOIN access_points ap ON l.access_point_id = ap.id
+        WHERE l.profile_id = ? AND l.timestamp = ? AND l.id = ?
+      `)
+        .bind(profileId, timestamp, logId)
+        .first<ResolutionLog | null>();
+    }
+
     return await this.db.prepare(`
       SELECT l.*, p.name as profile_name, ap.name as access_point_name 
       FROM logs l 
       JOIN profiles p ON l.profile_id = p.id 
       LEFT JOIN access_points ap ON l.access_point_id = ap.id
       WHERE l.profile_id = ? AND l.id = ?
+      LIMIT 1
     `)
       .bind(profileId, logId)
       .first<ResolutionLog | null>();
@@ -162,9 +191,11 @@ export class LogModel {
     const batchSize = 10000;
     while (totalDeleted < maxRows) {
       const currentBatch = Math.min(batchSize, maxRows - totalDeleted);
-      const result = await this.db.prepare(
-        "DELETE FROM logs WHERE profile_id = ? AND timestamp < ? LIMIT ?"
-      )
+      const result = await this.db.prepare(`
+        DELETE FROM logs WHERE (profile_id, timestamp, id) IN (
+          SELECT profile_id, timestamp, id FROM logs WHERE profile_id = ? AND timestamp < ? LIMIT ?
+        )
+      `)
         .bind(profileId, olderThanTimestamp, currentBatch)
         .run();
       const count = result.meta.changes || 0;
@@ -235,9 +266,11 @@ export class LogModel {
 
         // Delete up to 10,000 rows per profile per hourly cron run to prevent write spikes
         statements.push(
-          this.db.prepare(
-            "DELETE FROM logs WHERE profile_id = ? AND timestamp < ? LIMIT 10000"
-          ).bind(profile.id, threshold)
+          this.db.prepare(`
+            DELETE FROM logs WHERE (profile_id, timestamp, id) IN (
+              SELECT profile_id, timestamp, id FROM logs WHERE profile_id = ? AND timestamp < ? LIMIT 10000
+            )
+          `).bind(profile.id, threshold)
         );
       }
 

@@ -205,8 +205,14 @@ export async function exportProfileLogs(profileId: string, queryParams: string):
   return res.json();
 }
 
-export async function getProfileLogDetails(profileId: string, logId: number, options?: { signal?: AbortSignal }): Promise<LogEntry> {
-  const res = await profileFetch(`/api/profiles/${profileId}/logs/${logId}`, { signal: options?.signal });
+export async function getProfileLogDetails(
+  profileId: string,
+  logId: number,
+  timestamp?: number,
+  options?: { signal?: AbortSignal }
+): Promise<LogEntry> {
+  const query = timestamp !== undefined ? `?timestamp=${timestamp}` : "";
+  const res = await profileFetch(`/api/profiles/${profileId}/logs/${logId}${query}`, { signal: options?.signal });
   if (!res.ok) throw new Error("Failed to fetch log details");
   return res.json();
 }

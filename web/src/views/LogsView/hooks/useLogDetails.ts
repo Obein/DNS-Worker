@@ -24,7 +24,7 @@ export function useLogDetails(
       setDetailedLog(null);
 
       const controller = new AbortController();
-      getProfileLogDetails(profileId, selectedLog.id, { signal: controller.signal })
+      getProfileLogDetails(profileId, selectedLog.id, selectedLog.timestamp, { signal: controller.signal })
         .then((data: any) => {
           setDetailedLog(data);
         })

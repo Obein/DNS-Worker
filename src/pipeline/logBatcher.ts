@@ -1,5 +1,5 @@
 import { Env, ExecutionContext, ProfileSettings, ResolutionLog } from "../types";
-import { LogModel } from "../models/log";
+import { LogModel, generateLogId } from "../models/log";
 import { cacheUtils } from "../utils/cache";
 
 /** In-memory batch queue of logs waiting to be flushed to D1 */
@@ -172,10 +172,15 @@ export function enqueueLog(
     return;
   }
 
-  // 3. Enqueue the log entry
+  // 3. Ensure unique id is assigned before queueing
+  if (!log.id) {
+    log.id = generateLogId();
+  }
+
+  // 4. Enqueue the log entry
   logBatchQueue.push(log);
 
-  // 4. Determine if an immediate flush is required or a deferred flush should be scheduled
+  // 5. Determine if an immediate flush is required or a deferred flush should be scheduled
   const now = Date.now();
   if (logBatchQueue.length >= MAX_BATCH_SIZE || now - lastFlushTime >= FLUSH_INTERVAL_MS) {
     ctx.waitUntil(flushLogBatch(env));
