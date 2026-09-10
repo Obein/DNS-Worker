@@ -38,7 +38,12 @@ export function parseDnsStamp(stampStr: string): DnsStamp {
     throw new Error('Invalid DNS Stamp: must start with sdns://');
   }
 
-  const b64 = clean.slice(7).replace(/=+$/, '');
+  const rawB64 = clean.slice(7);
+  let end = rawB64.length;
+  while (end > 0 && rawB64.charCodeAt(end - 1) === 61) { // 61 is '='
+    end--;
+  }
+  const b64 = rawB64.slice(0, end);
   let binaryStr: string;
 
   if (typeof Buffer !== 'undefined') {
