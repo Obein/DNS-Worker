@@ -4,7 +4,14 @@ import { Env } from "../types";
 export { getRequestCoordinates, calculateDistanceInKm } from "../utils/geo";
 
 // Re-export Crypto Utilities
-export { generateId, extractSaltHex, hmacSha256, generateSessionHash } from "../utils/crypto";
+export {
+  generateId,
+  generateZBase32Token,
+  ZBASE32_ALPHABET,
+  extractSaltHex,
+  hmacSha256,
+  generateSessionHash
+} from "../utils/crypto";
 
 // Re-export Cookie Management
 export {

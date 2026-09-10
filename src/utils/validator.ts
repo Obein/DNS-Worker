@@ -43,9 +43,9 @@ export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ ()-]{1,30}$/u;
 
 /**
  * Access key validation regular expression.
- * Requirements: 6-12 characters, containing only letters and numbers.
+ * Requirements: 5-12 characters, containing only letters and numbers (supporting 5-char z-base-32 tokens).
  */
-export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
+export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{5,12}$/;
 
 /**
  * TOTP token validation regular expression.

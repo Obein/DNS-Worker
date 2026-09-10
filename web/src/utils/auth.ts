@@ -17,9 +17,9 @@ export const USERNAME_REGEX = /^[a-z_][a-z0-9_-]{4,31}$/;
 export const PASSWORD_REGEX = /^[a-zA-Z\d~`!@#$%^&*()_\-+={[}\]|\\:;"'<,>.?\/]{12,100}$/;
 /**
  * Access key validation regular expression.
- * Requirements: 6-12 alphanumeric characters only.
+ * Requirements: 5-12 alphanumeric characters only (supporting 5-char z-base-32 tokens).
  */
-export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{6,12}$/;
+export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{5,12}$/;
 /**
  * TOTP token validation regular expression.
  * Requirements: exactly 6 digits.

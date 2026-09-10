@@ -130,7 +130,7 @@ export default {
         });
       }
 
-      // DNS-over-HTTPS (DoH) Route: /<6-12 digit profile key>
+      // DNS-over-HTTPS (DoH) Route: /<5-12 char profile key or access point token>
       const rawKey = url.pathname.slice(1); 
       const isKeyValid = ACCESS_KEY_REGEX.test(rawKey);
       const isDoHRequest = request.method === 'POST' || 
