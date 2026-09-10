@@ -126,7 +126,7 @@ export function isPublicInternetIP(ip: string): boolean {
 
 /**
  * Checks whether the given URL is safe to fetch (prevents SSRF).
- * - Restricts to HTTP/HTTPS/TCP/TLS/SDNS protocols.
+ * - Restricts to HTTP/HTTPS/TCP/TLS/DNS Stamp protocols.
  * - Blocks local, loopback, and private IP ranges.
  * - Blocks common metadata hostnames.
  * @param urlString The URL to validate.

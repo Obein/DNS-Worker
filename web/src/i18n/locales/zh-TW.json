@@ -383,7 +383,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "經典 DNS",
     "httpsOnly": "僅支援 HTTPS",
-    "upstreamDesc": "所有未被攔截的查詢將由本應用轉發至此伺服器。支援 DoH (HTTPS) 或 經典 DNS (如 1.1.1.2)。推薦使用 DoH (DNS over HTTPS)，相對而言會擁有更快更穩健更安全的連接。經典 DNS 將透過 TCP 轉發。",
+    "upstreamDesc": "所有未被攔截的查詢將由本應用轉發至此伺服器。支援 DoH (HTTPS)、DoT (tls://)、DNS Stamp (sdns://) 或經典 DNS。經典 DNS 透過 TCP 轉發。",
     "defaultPolicyTitle": "默認過濾行為",
     "onNoMatch": "未匹配規則時",
     "allowAll": "允許所有查詢",

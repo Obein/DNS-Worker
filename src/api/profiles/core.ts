@@ -151,7 +151,7 @@ export async function handleProfilesCoreRequest(
         const isBareHost = !url.includes('//') && !url.startsWith('/');
 
         if (!isHttps && !isHttp && !isTcp && !isTls && !isSdns && !isBareHost) {
-          return new Response("Invalid upstream URL format. Only HTTP(S), TCP, TLS (DoT), SDNS (DNS Stamps), or bare host[:port] are allowed.", { status: 400 });
+          return new Response("Invalid upstream URL format. Only HTTP(S), TCP, TLS (DoT), DNS Stamp (sdns://), or bare host[:port] are allowed.", { status: 400 });
         }
         // 统一规范化后做安全检查（防 SSRF）
         const normalized = isBareHost ? `tcp://${url}` : url;

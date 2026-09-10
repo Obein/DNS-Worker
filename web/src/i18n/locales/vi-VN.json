@@ -382,7 +382,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "DNS truyền thống",
     "httpsOnly": "Chỉ hỗ trợ HTTPS",
-    "upstreamDesc": "Tất cả các truy vấn không bị chặn sẽ được ứng dụng này chuyển tiếp đến máy chủ này. Hỗ trợ DoH (HTTPS) hoặc DNS truyền thống (ví dụ: 1.1.1.2). Khuyến nghị sử dụng DoH (DNS over HTTPS) để có kết nối nhanh hơn, ổn định hơn và an toàn hơn. DNS truyền thống sẽ được chuyển tiếp qua TCP.",
+    "upstreamDesc": "Tất cả các truy vấn không bị chặn sẽ được chuyển tiếp đến máy chủ này. Hỗ trợ DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) hoặc DNS truyền thống. DNS truyền thống được chuyển tiếp qua TCP.",
     "defaultPolicyTitle": "Hành vi chặn mặc định",
     "onNoMatch": "Khi không khớp quy tắc",
     "allowAll": "Cho phép tất cả truy vấn",

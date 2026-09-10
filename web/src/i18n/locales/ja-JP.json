@@ -382,7 +382,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "従来の DNS",
     "httpsOnly": "HTTPS のみサポート",
-    "upstreamDesc": "ブロックされなかったすべてのクエリはこのサーバーへ転送されます。DoH (HTTPS) または従来のDNS (例: 1.1.1.2) に対応しています。より高速で安定し、暗号化されて安全な DoH (DNS over HTTPS) の使用を推奨します。従来の DNS は TCP 経由で転送されます。",
+    "upstreamDesc": "ブロックされなかったすべてのクエリはこのサーバーへ転送されます。DoH (HTTPS)、DoT (tls://)、DNS Stamp (sdns://)、従来の DNS に対応しています。従来の DNS は TCP 経由で転送されます。",
     "defaultPolicyTitle": "デフォルトの動作",
     "onNoMatch": "ルールにマッチしない場合",
     "allowAll": "すべてのクエリを許可",

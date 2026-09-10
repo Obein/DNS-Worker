@@ -108,13 +108,13 @@ export const pipelineResolver = {
       if (rawUpstreamUrl.startsWith('sdns://')) {
         const stamp = parseDnsStamp(rawUpstreamUrl);
         if (stamp.protocol === 'dnscrypt') {
-          throw new Error("DNSCrypt (0x01) protocol in SDNS stamp is not supported; please use DoH (0x02) or DoT (0x03) SDNS stamps");
+          throw new Error("DNSCrypt (0x01) protocol in DNS Stamp is not supported; please use DoH (0x02) or DoT (0x03) DNS Stamps");
         }
         if (stamp.protocol === 'doq') {
-          throw new Error("DNS over QUIC (0x04) in SDNS stamp is not supported; please use DoH (0x02) or DoT (0x03) SDNS stamps");
+          throw new Error("DNS over QUIC (0x04) in DNS Stamp is not supported; please use DoH (0x02) or DoT (0x03) DNS Stamps");
         }
         if (!stamp.resolvedUrl) {
-          throw new Error(`Unsupported SDNS stamp protocol: 0x${stamp.protocolId.toString(16)}`);
+          throw new Error(`Unsupported DNS Stamp protocol: 0x${stamp.protocolId.toString(16)}`);
         }
         effectiveUpstreamUrl = stamp.resolvedUrl;
       }

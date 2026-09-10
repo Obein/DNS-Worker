@@ -382,7 +382,7 @@
     "dnsIP": "IP DNS",
     "classicDns": "DNS classique",
     "httpsOnly": "Prendre en charge HTTPS uniquement",
-    "upstreamDesc": "Toutes les requêtes non bloquées seront envoyées à ce serveur. Prend en charge DoH (HTTPS) ou le DNS classique (ex. 1.1.1.2). L'utilisation de DoH (DNS over HTTPS) est fortement recommandée pour des connexions plus rapides, plus stables et chiffrées. Le DNS classique sera acheminé via TCP.",
+    "upstreamDesc": "Toutes les requêtes non bloquées seront envoyées à ce serveur. Prend en charge DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) ou le DNS classique. Le DNS classique est acheminé via TCP.",
     "defaultPolicyTitle": "Comportement de filtrage par défaut",
     "onNoMatch": "Si aucune règle ne correspond",
     "allowAll": "Autoriser toutes les requêtes",
