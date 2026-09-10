@@ -1,5 +1,5 @@
 import React from "react";
-import { Spinner, Callout } from "@blueprintjs/core";
+import { Spinner, Callout, Intent } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
 import type { LogEntry } from "../types";
@@ -19,6 +19,7 @@ interface LogsContentProps {
   prevLatestTimestamp: number | null;
   setSelectedLog: (log: LogEntry | null) => void;
   setIsDrawerOpen: (isOpen: boolean) => void;
+  logRetentionDays?: number;
 }
 
 export const LogsContent: React.FC<LogsContentProps> = ({
@@ -34,6 +35,7 @@ export const LogsContent: React.FC<LogsContentProps> = ({
   prevLatestTimestamp,
   setSelectedLog,
   setIsDrawerOpen,
+  logRetentionDays,
 }) => {
   const { t } = useTranslation();
 
@@ -45,10 +47,21 @@ export const LogsContent: React.FC<LogsContentProps> = ({
       {logs.length === 0 && !loading ? (
         <div className="py-20">
           <Callout
-            title={searchQuery ? t("logs.noResults") : t("logs.noRecords")}
-            icon={searchQuery ? "search" : "outdated"}
+            title={
+              logRetentionDays === 0
+                ? t("logs.loggingDisabledTitle", "日志记录已关闭")
+                : searchQuery
+                ? t("logs.noResults")
+                : t("logs.noRecords")
+            }
+            icon={logRetentionDays === 0 ? "disable" : searchQuery ? "search" : "outdated"}
+            intent={logRetentionDays === 0 ? Intent.WARNING : Intent.NONE}
           >
-            {searchQuery ? t("logs.noResultsDesc", { query: searchQuery }) : t("logs.noRecordsDesc")}
+            {logRetentionDays === 0
+              ? t("logs.loggingDisabledDesc", "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中开启日志留存。")
+              : searchQuery
+              ? t("logs.noResultsDesc", { query: searchQuery })
+              : t("logs.noRecordsDesc")}
           </Callout>
         </div>
       ) : isMobile ? (

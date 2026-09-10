@@ -333,7 +333,9 @@
     "noMatchingCountries": "일치하는 국가를 찾을 수 없습니다",
     "searchIsp": "통신사/ISP 검색...",
     "noMatchingIsps": "일치하는 통신사를 찾을 수 없습니다",
-    "loadingIsps": "통신사 목록 불러오는 중..."
+    "loadingIsps": "통신사 목록 불러오는 중...",
+    "loggingDisabledTitle": "로그 기록이 비활성화되었습니다",
+    "loggingDisabledDesc": "이 프로필의 로그 보존이 '비활성화'로 설정되었습니다. 쿼리 로그가 기록되지 않습니다. 로그를 보려면 설정에서 로그 보존을 활성화하세요."
   },
   "filtering": {
     "title": "외부 차단 리스트",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored (검閲 우회)",
     "presetAdGuard": "AdGuard (광고/추적 제거)",
     "presetAdGuardFamily": "AdGuard Family protection (광고/추적/성인 콘텐츠 제거/안전 검색)",
-    "retention10m": "10분 (개인정보 보호)",
+    "retention10m": "10분",
     "retention1h": "1시간",
     "retention24h": "24시간",
     "retention7d": "7일",
@@ -450,7 +452,9 @@
     "whatIsEch": "ECH (Encrypted Client Hello)란 무엇인가요?",
     "echHelpDesc": "ECH는 실제 목적지 도메인(Inner SNI)을 완전히 암호화하고 네트워크 중간자에게는 위장 도메인(Outer SNI)만 노출하는 TLS 1.3의 핵심 보안 확장 기능입니다.",
     "echHelpBenefit1": "ISP나 중간자가 방문 중인 세부 하위 도메인을 감청하는 것을 방지",
-    "echHelpBenefit2": "DoH와 결합하여 평문 SNI 노출 및 차단 위험 제거"
+    "echHelpBenefit2": "DoH와 결합하여 평문 SNI 노출 및 차단 위험 제거",
+    "retentionDisabled": "비활성화 (개인 정보 보호)",
+    "retentionDisabledDesc": "로그 기록이 비활성화되었습니다. 시스템은 DNS 쿼리 로그를 기록하지 않으며 기존 로그를 즉시 삭제합니다."
   },
   "account": {
     "title": "계정 설정",

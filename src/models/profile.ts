@@ -1,6 +1,6 @@
 import { D1Database } from "@cloudflare/workers-types";
 import { Profile, ProfileSettings } from "../types";
-import { generateId } from "../lib/auth";
+import { generateId, generateZBase32Token } from "../lib/auth";
 
 export interface ProfileWithBloom extends Profile {
   list_bloom?: string;
@@ -68,21 +68,33 @@ export class ProfileModel {
 
   async create(profile: { id: string, profile_key?: string, owner_id: string, name: string, settings: ProfileSettings }): Promise<boolean> {
     const now = Math.floor(Date.now() / 1000);
-    // Use provided profile_key or generate a 12-char secure string
-    const profileKey = profile.profile_key || generateId(12);
     const apId = generateId(12);
-    
-    const statements = [
-      this.db.prepare(
-        "INSERT INTO profiles (id, profile_key, owner_id, name, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-      ).bind(profile.id, profileKey, profile.owner_id, profile.name, JSON.stringify(profile.settings), now, now),
-      this.db.prepare(
-        "INSERT INTO access_points (id, profile_id, name, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
-      ).bind(apId, profile.id, "Device-1", profileKey, now, now)
-    ];
+    const MAX_RETRIES = 5;
 
-    const results = await this.db.batch(statements);
-    return results.every(r => r.success);
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const apToken = generateZBase32Token(5);
+      const profileKey = profile.profile_key || apToken;
+      
+      const statements = [
+        this.db.prepare(
+          "INSERT INTO profiles (id, profile_key, owner_id, name, settings, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        ).bind(profile.id, profileKey, profile.owner_id, profile.name, JSON.stringify(profile.settings), now, now),
+        this.db.prepare(
+          "INSERT INTO access_points (id, profile_id, name, token, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+        ).bind(apId, profile.id, "Device-1", apToken, now, now)
+      ];
+
+      try {
+        const results = await this.db.batch(statements);
+        return results.every(r => r.success);
+      } catch (err: any) {
+        if (attempt < MAX_RETRIES - 1 && (String(err).includes("UNIQUE constraint failed") || String(err).includes("SQLITE_CONSTRAINT"))) {
+          continue;
+        }
+        throw err;
+      }
+    }
+    return false;
   }
 
   async delete(id: string): Promise<boolean> {

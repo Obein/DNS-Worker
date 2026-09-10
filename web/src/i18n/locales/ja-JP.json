@@ -333,7 +333,9 @@
     "noMatchingCountries": "一致する国が見つかりません",
     "searchIsp": "プロバイダを検索...",
     "noMatchingIsps": "一致するプロバイダが見つかりません",
-    "loadingIsps": "プロバイダを読み込み中..."
+    "loadingIsps": "プロバイダを読み込み中...",
+    "loggingDisabledTitle": "ログ記録が無効です",
+    "loggingDisabledDesc": "このプロファイルのログ保存期間は「無効」に設定されています。クエリログは記録されません。ログを表示するには、設定でログ保存を有効にしてください。"
   },
   "filtering": {
     "title": "外部ブロックリスト",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored (検閲回避)",
     "presetAdGuard": "AdGuard (広告/トラッカーブロック)",
     "presetAdGuardFamily": "AdGuard Family protection (広告/トラッカー/成人向けコンテンツブロック/セーフサーチ)",
-    "retention10m": "10分間 (プライバシー重視)",
+    "retention10m": "10分",
     "retention1h": "1時間",
     "retention24h": "24時間",
     "retention7d": "7日間",
@@ -450,7 +452,9 @@
     "whatIsEch": "ECH (Encrypted Client Hello) とは？",
     "echHelpDesc": "ECH は TLS 1.3 の重要なプライバシー拡張機能であり、実際の接続先ドメイン (Inner SNI) を完全暗号化し、ネットワーク監視者にはダミードメイン (Outer SNI) のみを表示します。",
     "echHelpBenefit1": "プロバイダや中間者による閲覧先ドメインの盗聴を防止",
-    "echHelpBenefit2": "DoH と連携して平文 SNI の漏洩や検閲を回避"
+    "echHelpBenefit2": "DoH と連携して平文 SNI の漏洩や検閲を回避",
+    "retentionDisabled": "無効 (プライバシー配慮)",
+    "retentionDisabledDesc": "ログ記録は無効です。システムはDNSクエリログを記録せず、過去のログを即座に消去します。"
   },
   "account": {
     "title": "アカウント設定",

@@ -44,7 +44,11 @@ export const LogRetentionCard: React.FC<LogRetentionCardProps> = ({ settings, se
             ))}
           </HTMLSelect>
         </FormGroup>
-        <p className="text-xs opacity-60">{t("settings.retentionDesc")}</p>
+        <p className="text-xs opacity-60">
+          {settings.log_retention_days === 0
+            ? t("settings.retentionDisabledDesc", "已关闭日志记录。系统将不会记录任何 DNS 查询日志并立即清空历史日志。")
+            : t("settings.retentionDesc")}
+        </p>
       </div>
     </Card>
   );

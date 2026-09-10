@@ -107,6 +107,36 @@ export async function verifyPassword(password: string, storedHash: string, versi
 }
 
 /**
+ * Standard z-base-32 alphabet (Tahoe-LAFS human-oriented base-32 encoding).
+ * 32 characters designed for high legibility and reduced transcription errors:
+ * excludes 0, l, v, 2 to avoid visual ambiguity.
+ */
+export const ZBASE32_ALPHABET: string = "ybndrfg8ejkmcpqxot1uwisza345h769";
+
+/**
+ * Generates a cryptographically secure random token of the specified length
+ * using the z-base-32 character set, derived directly from binary randomness.
+ *
+ * Each character is sampled from a cryptographically secure random byte via
+ * `crypto.getRandomValues`. Because 256 is an exact integer multiple of 32 (256 % 32 === 0),
+ * masking each byte with `0x1f` (31) partitions the 256 possible byte values into 32
+ * equally probable buckets (8 byte values per character), guaranteeing zero modulo bias
+ * and uniform entropy.
+ *
+ * @param length - Number of characters to generate (defaults to 5).
+ * @returns A string of z-base-32 encoded characters.
+ */
+export function generateZBase32Token(length: number = 5): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let token = "";
+  for (let i = 0; i < length; i++) {
+    token += ZBASE32_ALPHABET[bytes[i] & 0x1f];
+  }
+  return token;
+}
+
+/**
  * Generates a secure random ID of the specified length.
  */
 export function generateId(length: number): string {

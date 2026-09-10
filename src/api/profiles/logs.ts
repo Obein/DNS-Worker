@@ -46,6 +46,14 @@ export async function handleProfileLogsAndAnalyticsRequest(
     const logRetentionDays = settings.log_retention_days !== undefined
       ? Math.min(Number(settings.log_retention_days), globalMaxRetention)
       : globalMaxRetention;
+
+    if (logRetentionDays === 0) {
+      if (pathParts.length > 4 && pathParts[4] !== 'export') {
+        return new Response("Log Not Found", { status: 404 });
+      }
+      return new Response(JSON.stringify([]), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     const retentionThreshold = Math.floor(until - (logRetentionDays * 24 * 3600));
 
     if (startParam && endParam) {

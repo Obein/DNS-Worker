@@ -334,7 +334,9 @@
     "noMatchingCountries": "No matching countries found",
     "searchIsp": "Search ISP...",
     "noMatchingIsps": "No matching ISPs found",
-    "loadingIsps": "Loading ISPs..."
+    "loadingIsps": "Loading ISPs...",
+    "loggingDisabledTitle": "Logging Disabled",
+    "loggingDisabledDesc": "Log retention for this profile is set to 'Disabled'. No query logs are recorded. To view logs, enable log retention in Settings."
   },
   "filtering": {
     "title": "External Filters",
@@ -424,7 +426,7 @@
     "presetControlDUncensored": "ControlD Uncensored",
     "presetAdGuard": "AdGuard (Anti-track)",
     "presetAdGuardFamily": "AdGuard Family",
-    "retention10m": "10 Minutes (Privacy Concerns)",
+    "retention10m": "10 Minutes",
     "retention1h": "1 Hour",
     "retention24h": "24 Hours",
     "retention7d": "7 Days",
@@ -451,7 +453,9 @@
     "whatIsEch": "What is ECH (Encrypted Client Hello)?",
     "echHelpDesc": "ECH (Encrypted Client Hello) is a crucial TLS 1.3 privacy extension that fully encrypts the real Server Name Indication (Inner SNI), exposing only a fronting domain (Outer SNI) to network observers.",
     "echHelpBenefit1": "Prevents ISPs and eavesdroppers from inspecting the exact domain or subdomain you are visiting",
-    "echHelpBenefit2": "Combines with DoH and ECH Fronting to eliminate plaintext SNI leakage and filtering"
+    "echHelpBenefit2": "Combines with DoH and ECH Fronting to eliminate plaintext SNI leakage and filtering",
+    "retentionDisabled": "Disabled (Privacy Concerns)",
+    "retentionDisabledDesc": "Logging is disabled. The system will not record any DNS query logs and will immediately clear historical logs."
   },
   "account": {
     "title": "Account Settings",

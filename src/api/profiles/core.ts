@@ -176,8 +176,24 @@ export async function handleProfilesCoreRequest(
     // 仅在显式缩短日志留存期时触发主动清理，避免每次保存设置无谓执行 DELETE
     const newDays = newSettings.log_retention_days;
     if (newDays != null && Number(newDays) < oldDays) {
-      const threshold = Math.floor(Date.now() / 1000 - (Number(newDays) * 24 * 3600));
-      ctx.waitUntil(logModel.cleanup(profileId, threshold));
+      if (Number(newDays) === 0) {
+        // 关闭日志时彻底清空当前配置的历史日志与聚合记录
+        ctx.waitUntil((async () => {
+          try {
+            await env.DB.batch([
+              env.DB.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId),
+            ]);
+          } catch (e: any) {
+            console.error("[Profile] Failed to purge logs on retention disable:", e?.message || e);
+          }
+        })());
+      } else {
+        const threshold = Math.floor(Date.now() / 1000 - (Number(newDays) * 24 * 3600));
+        ctx.waitUntil(logModel.cleanup(profileId, threshold));
+      }
     }
 
     // 设置变更仅清除配置缓存，保留 2.5MB 布隆过滤器缓存

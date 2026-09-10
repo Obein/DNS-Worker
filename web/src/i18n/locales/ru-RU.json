@@ -333,7 +333,9 @@
     "noMatchingCountries": "Подходящие страны не найдены",
     "searchIsp": "Поиск провайдера...",
     "noMatchingIsps": "Подходящие провайдеры не найдены",
-    "loadingIsps": "Загрузка провайдеров..."
+    "loadingIsps": "Загрузка провайдеров...",
+    "loggingDisabledTitle": "Ведение журнала отключено",
+    "loggingDisabledDesc": "Хранение журналов для этого профиля отключено. Журналы запросов не записываются. Чтобы просмотреть журналы, включите хранение журналов в настройках."
   },
   "filtering": {
     "title": "Внешние списки фильтрации",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored",
     "presetAdGuard": "AdGuard",
     "presetAdGuardFamily": "AdGuard Family",
-    "retention10m": "10 мин",
+    "retention10m": "10 минут",
     "retention1h": "1 час",
     "retention24h": "24 часа",
     "retention7d": "7 дней",
@@ -450,7 +452,9 @@
     "whatIsEch": "Что такое ECH (Encrypted Client Hello)?",
     "echHelpDesc": "ECH — расширение конфиденциальности TLS 1.3, которое полностью шифрует реальное имя домена (Inner SNI), показывая наблюдателям только маскировочный домен (Outer SNI).",
     "echHelpBenefit1": "Предотвращает отслеживание провайдерами посещаемых вами поддоменов",
-    "echHelpBenefit2": "В сочетании с DoH устраняет утечки открытого SNI"
+    "echHelpBenefit2": "В сочетании с DoH устраняет утечки открытого SNI",
+    "retentionDisabled": "Отключено (В целях конфиденциальности)",
+    "retentionDisabledDesc": "Ведение журнала отключено. Система не будет записывать журналы DNS-запросов и немедленно удалит существующие журналы."
   },
   "account": {
     "title": "Настройки аккаунта",
