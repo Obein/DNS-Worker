@@ -236,7 +236,9 @@
     "addSuccess": "Thêm quy tắc thành công",
     "addFailed": "Thêm quy tắc thất bại",
     "updateSuccess": "Cập nhật quy tắc thành công",
-    "updateFailed": "Cập nhật quy tắc thất bại"
+    "updateFailed": "Cập nhật quy tắc thất bại",
+    "tableCreatedAt": "Thời gian thêm",
+    "clickToSort": "Nhấp để sắp xếp"
   },
   "analytics": {
     "customRange": "Khoảng thời gian tùy chỉnh",
@@ -541,6 +543,20 @@
         "geolocation_missing": "Thiếu thông tin vị trí địa lý",
         "token_reuse": "Sử dụng lại mã xác thực (Cảnh báo bảo mật)"
       }
+    },
+    "sessions": {
+      "title": "Phiên hoạt động",
+      "session": "Phiên",
+      "device": "Thiết bị",
+      "ip": "Địa chỉ IP",
+      "loginTime": "Thời gian đăng nhập",
+      "expires": "Hết hạn",
+      "action": "Hành động",
+      "current": "Hiện tại",
+      "revoke": "Thu hồi",
+      "revokeFailed": "Không thể thu hồi phiên.",
+      "empty": "Không tìm thấy phiên hoạt động nào.",
+      "unknownDevice": "Thiết bị không xác định"
     }
   },
   "intro": {

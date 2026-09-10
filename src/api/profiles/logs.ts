@@ -88,7 +88,10 @@ export async function handleProfileLogsAndAnalyticsRequest(
         return new Response("Invalid Log ID", { status: 400 });
       }
 
-      const logDetail = await logModel.getLog(profileId, logId);
+      const timestampParam = urlParams.get('timestamp');
+      const timestamp = timestampParam ? parseInt(timestampParam, 10) : undefined;
+
+      const logDetail = await logModel.getLog(profileId, logId, timestamp);
       if (!logDetail) {
         return new Response("Log Not Found", { status: 404 });
       }

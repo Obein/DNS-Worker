@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { HTMLTable, Tag, Intent } from "@blueprintjs/core";
-import { ShieldX, CheckCircle, ArrowRightLeft } from "lucide-react";
+import { ShieldX, CheckCircle, ArrowRightLeft, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type {  Rule  } from "../types";
+import { clsx } from "clsx";
+import { formatDateTime } from "../../../utils/date";
+import type { Rule } from "../types";
 
 export interface RulesTableProps {
   rules: Rule[];
@@ -10,8 +12,11 @@ export interface RulesTableProps {
   getBlockDetail: () => string;
 }
 
+type SortField = "action" | "pattern" | "details" | "created_at";
+type SortOrder = "asc" | "desc";
+
 interface ColumnConfig {
-  key: string;
+  key: SortField;
   header: React.ReactNode;
   headerClassName?: string;
   cellClassName?: string;
@@ -20,6 +25,54 @@ interface ColumnConfig {
 
 export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlockDetail }) => {
   const { t } = useTranslation();
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  const handleHeaderClick = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder(field === "created_at" ? "desc" : "asc");
+    }
+  };
+
+  const getRuleDetailString = (rule: Rule): string => {
+    if (rule.type === "REDIRECT") {
+      return [rule.v_a, rule.v_aaaa, rule.v_cname, rule.v_txt].filter(Boolean).join(" ");
+    }
+    if (rule.type === "BLOCK") {
+      return getBlockDetail();
+    }
+    return t("rules.detailAllow", "Forward to upstream");
+  };
+
+  const sortedRules = useMemo(() => {
+    return [...rules].sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case "action":
+          cmp = a.type.localeCompare(b.type);
+          break;
+        case "pattern":
+          cmp = a.pattern.localeCompare(b.pattern);
+          break;
+        case "details":
+          cmp = getRuleDetailString(a).localeCompare(getRuleDetailString(b));
+          break;
+        case "created_at": {
+          const timeA = a.created_at ?? a.id;
+          const timeB = b.created_at ?? b.id;
+          cmp = timeA - timeB;
+          break;
+        }
+      }
+      if (cmp === 0) {
+        cmp = a.id - b.id;
+      }
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+  }, [rules, sortField, sortOrder, getBlockDetail, t]);
 
   const columns: ColumnConfig[] = [
     {
@@ -95,6 +148,15 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlo
         </>
       ),
     },
+    {
+      key: "created_at",
+      header: t("rules.tableCreatedAt", "添加时间"),
+      headerClassName: "w-44",
+      cellClassName: "text-xs text-gray-500 align-middle",
+      render: (rule: Rule): React.ReactNode => (
+        rule.created_at ? formatDateTime(new Date(rule.created_at * 1000)) : "—"
+      ),
+    },
   ];
 
   return (
@@ -103,14 +165,33 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlo
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key} className={col.headerClassName}>
-                {col.header}
+              <th
+                key={col.key}
+                onClick={() => handleHeaderClick(col.key)}
+                className={clsx(
+                  col.headerClassName,
+                  "cursor-pointer select-none transition-colors hover:text-blue-500"
+                )}
+                title={t("rules.clickToSort", "点击排序")}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>{col.header}</span>
+                  {sortField === col.key ? (
+                    sortOrder === "asc" ? (
+                      <ArrowUp size={13} className="text-blue-500 shrink-0" />
+                    ) : (
+                      <ArrowDown size={13} className="text-blue-500 shrink-0" />
+                    )
+                  ) : (
+                    <ArrowUpDown size={12} className="opacity-30 hover:opacity-75 shrink-0" />
+                  )}
+                </div>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rules.map((rule) => (
+          {sortedRules.map((rule) => (
             <tr key={rule.id} onClick={() => startEdit(rule)} className="cursor-pointer">
               {columns.map((col) => (
                 <td key={col.key} className={col.cellClassName}>
@@ -124,3 +205,4 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlo
     </div>
   );
 };
+

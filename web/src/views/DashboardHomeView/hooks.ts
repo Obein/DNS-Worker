@@ -22,6 +22,7 @@ interface ExportedRule {
   v_txt?: string | null;
   record_type?: string;
   priority?: number;
+  created_at?: number;
 }
 
 interface ExportedFilter {
@@ -160,6 +161,7 @@ export const useImportProfile = (onRefresh?: () => void) => {
               v_aaaa: rule.v_aaaa || undefined,
               v_cname: rule.v_cname || undefined,
               v_txt: rule.v_txt || undefined,
+              created_at: typeof rule.created_at === "number" ? rule.created_at : undefined,
             });
           }
         }

@@ -237,7 +237,9 @@
     "addSuccess": "規則新增成功",
     "addFailed": "新增規則失敗",
     "updateSuccess": "規則更新成功",
-    "updateFailed": "更新規則失敗"
+    "updateFailed": "更新規則失敗",
+    "tableCreatedAt": "新增時間",
+    "clickToSort": "點擊排序"
   },
   "analytics": {
     "customRange": "自訂時間範圍",
@@ -515,7 +517,18 @@
       "done": "完成，我已保存密鑰"
     },
     "sessions": {
-      "session": "會話"
+      "session": "會話",
+      "title": "活躍會話",
+      "device": "裝置",
+      "ip": "IP 位址",
+      "loginTime": "登入時間",
+      "expires": "過期時間",
+      "action": "操作",
+      "current": "目前會話",
+      "revoke": "撤銷",
+      "revokeFailed": "撤銷會話失敗。",
+      "empty": "未找到活躍會話。",
+      "unknownDevice": "未知裝置"
     },
     "activity": {
       "title": "帳號活動記錄",

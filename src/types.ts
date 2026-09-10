@@ -101,6 +101,7 @@ export interface Rule {
   v_aaaa?: string;
   v_txt?: string;
   v_cname?: string;
+  created_at?: number;
 }
 
 export interface List {

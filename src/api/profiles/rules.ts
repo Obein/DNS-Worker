@@ -46,6 +46,7 @@ export async function handleProfileRulesRequest(
           v_aaaa: r.v_aaaa || null,
           v_txt: r.v_txt || null,
           v_cname: r.v_cname || null,
+          created_at: typeof r.created_at === 'number' ? r.created_at : undefined,
         });
       }
 
