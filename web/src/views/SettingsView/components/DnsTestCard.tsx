@@ -121,9 +121,13 @@ export const DnsTestCard: React.FC<DnsTestCardProps> = ({ testInput, setTestInpu
                   <div className="flex justify-between items-center">
                     <span className="font-bold uppercase tracking-wider">{t("settings.diagnostics")}</span>
                     <span className="font-bold">
-                      {testResult.diagnostics.status > 0
-                        ? `HTTP ${testResult.diagnostics.status}${testResult.diagnostics.status_text ? ` (${testResult.diagnostics.status_text})` : ""}`
-                        : "Network / Connection Error"}
+                      {testResult.action === "FAIL"
+                        ? (testResult.diagnostics.status > 0
+                            ? `HTTP ${testResult.diagnostics.status}${testResult.diagnostics.status_text ? ` (${testResult.diagnostics.status_text})` : ""}`
+                            : "Network / Connection Error")
+                        : (testResult.diagnostics.method === "POST" || testResult.diagnostics.method === "GET"
+                            ? `HTTP ${testResult.diagnostics.status}${testResult.diagnostics.status_text ? ` (${testResult.diagnostics.status_text})` : ""}`
+                            : "Connected (OK)")}
                     </span>
                   </div>
 
@@ -151,23 +155,6 @@ export const DnsTestCard: React.FC<DnsTestCardProps> = ({ testInput, setTestInpu
                     <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 break-words text-[11px]">
                       <div className="font-bold mb-0.5 opacity-60">{t("settings.upstreamResponse")}:</div>
                       <div className="line-clamp-3">{testResult.diagnostics.response_body}</div>
-                    </div>
-                  )}
-
-                  {testResult.action === "FAIL" && (
-                    <div className="text-[11px] opacity-90 pt-1.5 border-t border-gray-200 dark:border-gray-700/60 text-amber-800 dark:text-amber-300">
-                      {testResult.diagnostics.status === 525 && (
-                        <div>💡 {t("settings.suggestion525")}</div>
-                      )}
-                      {testResult.diagnostics.status === 505 && (
-                        <div>💡 {t("settings.suggestion505")}</div>
-                      )}
-                      {testResult.diagnostics.status === 429 && (
-                        <div>💡 {t("settings.suggestion429")}</div>
-                      )}
-                      {testResult.diagnostics.status === 0 && (
-                        <div>💡 {t("settings.suggestionConnection")}</div>
-                      )}
                     </div>
                   )}
                 </div>

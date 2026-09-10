@@ -6,6 +6,7 @@ import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, 
 import { dnsCache } from "./cache";
 import { connectUniversal } from "../utils/sockets";
 import { isSafeUrl } from "../utils/validator";
+import { parseDnsStamp } from "../utils/dnsStamp";
 import { enqueueLog } from "./logBatcher";
 
 export class UpstreamHttpError extends Error {
@@ -20,23 +21,69 @@ export class UpstreamHttpError extends Error {
   }
 }
 
+/**
+ * Reads a 2-byte framed DNS message from a ReadableStream reader (RFC 1035 / RFC 7858).
+ * Handles TCP / TLS packet fragmentation and enforces a timeout.
+ */
+async function readFramedDnsResponse(reader: ReadableStreamDefaultReader<Uint8Array>, timeoutMs = 5000): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  let expectedBodyLength: number | null = null;
+
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Upstream Socket Timeout")), timeoutMs);
+  });
+
+  try {
+    while (true) {
+      const { value, done } = await Promise.race([reader.read(), timeoutPromise]);
+      if (done || !value) {
+        throw new Error("Socket closed before complete DNS response received");
+      }
+
+      chunks.push(value);
+      totalBytes += value.length;
+
+      if (expectedBodyLength === null && totalBytes >= 2) {
+        const b0 = chunks[0][0];
+        const b1 = chunks[0].length > 1 ? chunks[0][1] : chunks[1][0];
+        expectedBodyLength = (b0 << 8) | b1;
+      }
+
+      if (expectedBodyLength !== null && totalBytes >= 2 + expectedBodyLength) {
+        const combined = new Uint8Array(totalBytes);
+        let offset = 0;
+        for (const chunk of chunks) {
+          combined.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return combined.slice(2, 2 + expectedBodyLength);
+      }
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const pipelineResolver = {
   async resolve(request: Request, query: DNSQuery, context: Context, settings: ProfileSettings, action: 'PASS', reason?: string): Promise<ResolutionResult> {
     const logModel = new LogModel(context.env.DB);
-    let upstreamUrl = settings.upstream[0] || "https://security.cloudflare-dns.com/dns-query";
-    if (!isSafeUrl(upstreamUrl)) {
+    const rawUpstreamUrl = settings.upstream[0] || "https://security.cloudflare-dns.com/dns-query";
+    let effectiveUpstreamUrl = rawUpstreamUrl;
+    let diagMethod = "POST";
+    let diagTarget = rawUpstreamUrl;
+
+    if (!isSafeUrl(rawUpstreamUrl)) {
       return { 
         answer: new Uint8Array(), ttl: 0, action: "FAIL", reason: "Unsafe upstream URL",
-        diagnostics: { upstream_url: upstreamUrl, method: "BLOCKED", status: 0 },
+        diagnostics: { upstream_url: rawUpstreamUrl, method: "BLOCKED", status: 0 },
         latency: Date.now() - context.startTime
       };
     }
     const startFetch = Date.now();
     let answer: Uint8Array;
     let upstreamLatency = 0;
-    let isClassicDns = !upstreamUrl.startsWith('http');
-    let tcpHost = '';
-    let tcpPort = 53;
 
     // ── ECS 处理 ──────────────────────────────────────────────────────────
     // ECS 通过 RFC 7871 OPT RR 直接写入 DNS 线格式（wire format），而非 URL 参数。
@@ -58,48 +105,119 @@ export const pipelineResolver = {
     }
 
     try {
-      if (isClassicDns) {
-        // 经典 DNS 处理 (通过 TCP Socket)
-        // 去除 tcp:// 前缀和裸 IP 均可正确解析
-        tcpHost = upstreamUrl.replace(/^tcp:\/\//, '');
-        if (tcpHost.includes(':')) {
+      if (rawUpstreamUrl.startsWith('sdns://')) {
+        const stamp = parseDnsStamp(rawUpstreamUrl);
+        if (stamp.protocol === 'dnscrypt') {
+          throw new Error("DNSCrypt (0x01) protocol in SDNS stamp is not supported; please use DoH (0x02) or DoT (0x03) SDNS stamps");
+        }
+        if (stamp.protocol === 'doq') {
+          throw new Error("DNS over QUIC (0x04) in SDNS stamp is not supported; please use DoH (0x02) or DoT (0x03) SDNS stamps");
+        }
+        if (!stamp.resolvedUrl) {
+          throw new Error(`Unsupported SDNS stamp protocol: 0x${stamp.protocolId.toString(16)}`);
+        }
+        effectiveUpstreamUrl = stamp.resolvedUrl;
+      }
+
+      if (effectiveUpstreamUrl.startsWith('tls://')) {
+        // ── DNS over TLS (DoT - RFC 7858) ──────────────────────────────────
+        diagMethod = "DoT";
+        let dotHost = effectiveUpstreamUrl.replace(/^tls:\/\//, '');
+        let dotPort = 853;
+        if (dotHost.startsWith('[')) {
+          const closeIdx = dotHost.indexOf(']');
+          if (closeIdx !== -1) {
+            const ip = dotHost.slice(1, closeIdx);
+            const rest = dotHost.slice(closeIdx + 1);
+            dotHost = ip;
+            if (rest.startsWith(':')) {
+              dotPort = parseInt(rest.slice(1), 10) || 853;
+            }
+          }
+        } else if (dotHost.includes(':')) {
+          const parts = dotHost.split(':');
+          dotHost = parts[0];
+          dotPort = parseInt(parts[1], 10) || 853;
+        }
+        diagTarget = `tls://${dotHost}:${dotPort}`;
+
+        const socket = await connectUniversal({
+          hostname: dotHost,
+          port: dotPort,
+          secureTransport: 'on'
+        });
+
+        try {
+          const writer = socket.writable.getWriter();
+          const reader = socket.readable.getReader();
+
+          // RFC 7858 Section 3.3: 2-byte length prefix + DNS message
+          const framedQuery = new Uint8Array(queryRaw.length + 2);
+          framedQuery[0] = (queryRaw.length >> 8) & 0xff;
+          framedQuery[1] = queryRaw.length & 0xff;
+          framedQuery.set(queryRaw, 2);
+
+          await writer.write(framedQuery);
+          writer.releaseLock();
+
+          answer = await readFramedDnsResponse(reader, 5000);
+        } finally {
+          await socket.close().catch(() => {});
+        }
+        upstreamLatency = Date.now() - startFetch;
+
+      } else if (!effectiveUpstreamUrl.startsWith('http://') && !effectiveUpstreamUrl.startsWith('https://')) {
+        // ── 经典 DNS (TCP Socket) ──────────────────────────────────────────
+        diagMethod = "TCP";
+        let tcpHost = effectiveUpstreamUrl.replace(/^tcp:\/\//, '');
+        let tcpPort = 53;
+        if (tcpHost.startsWith('[')) {
+          const closeIdx = tcpHost.indexOf(']');
+          if (closeIdx !== -1) {
+            const ip = tcpHost.slice(1, closeIdx);
+            const rest = tcpHost.slice(closeIdx + 1);
+            tcpHost = ip;
+            if (rest.startsWith(':')) {
+              tcpPort = parseInt(rest.slice(1), 10) || 53;
+            }
+          }
+        } else if (tcpHost.includes(':')) {
           const parts = tcpHost.split(':');
           tcpHost = parts[0];
-          tcpPort = parseInt(parts[1]) || 53;
+          tcpPort = parseInt(parts[1], 10) || 53;
         }
+        diagTarget = `tcp://${tcpHost}:${tcpPort}`;
 
-        const socket = await connectUniversal({ hostname: tcpHost, port: tcpPort });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
+        const socket = await connectUniversal({
+          hostname: tcpHost,
+          port: tcpPort,
+          secureTransport: 'off'
+        });
 
-        // TCP DNS：同样使用注入 ECS 后的 queryRaw
-        const tcpQuery = new Uint8Array(queryRaw.length + 2);
-        tcpQuery[0] = (queryRaw.length >> 8) & 0xff;
-        tcpQuery[1] = queryRaw.length & 0xff;
-        tcpQuery.set(queryRaw, 2);
+        try {
+          const writer = socket.writable.getWriter();
+          const reader = socket.readable.getReader();
 
-        await writer.write(tcpQuery);
-        writer.releaseLock();
+          const framedQuery = new Uint8Array(queryRaw.length + 2);
+          framedQuery[0] = (queryRaw.length >> 8) & 0xff;
+          framedQuery[1] = queryRaw.length & 0xff;
+          framedQuery.set(queryRaw, 2);
 
-        // 读取响应长度，添加 5 秒超时
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error("TCP Upstream Timeout")), 5000)
-        );
-        const result = await Promise.race([reader.read(), timeoutPromise]);
+          await writer.write(framedQuery);
+          writer.releaseLock();
 
-        if (!result.value) throw new Error("Socket closed");
-        
-        let responseBuffer = result.value;
-        if (responseBuffer.length < 2) throw new Error("Invalid TCP response");
-        
-        const responseLength = (responseBuffer[0] << 8) | responseBuffer[1];
-        answer = responseBuffer.slice(2, 2 + responseLength);
-        
-        await socket.close();
+          answer = await readFramedDnsResponse(reader, 5000);
+        } finally {
+          await socket.close().catch(() => {});
+        }
         upstreamLatency = Date.now() - startFetch;
+
       } else {
-        // DoH 处理：ECS 已注入 queryRaw（wire format），无需 URL 参数
-        const response = await fetch(upstreamUrl, {
+        // ── DoH (DNS over HTTPS) ───────────────────────────────────────────
+        diagMethod = "POST";
+        diagTarget = effectiveUpstreamUrl;
+
+        const response = await fetch(effectiveUpstreamUrl, {
           method: "POST",
           headers: { 
             "Accept": "application/dns-message",
@@ -230,7 +348,7 @@ export const pipelineResolver = {
             reason: effectiveReason,
             answer: parsedAnswers.map(a => a.data).join(", "),
             dest_geoip: destGeoJson,
-            upstream: upstreamUrl,
+            upstream: rawUpstreamUrl,
             latency,
             ecs
           }, settings, context.env, context.ctx);
@@ -253,8 +371,8 @@ export const pipelineResolver = {
         latency: Date.now() - context.startTime, 
         timings: { upstream_fetch: upstreamLatency },
         diagnostics: {
-          upstream_url: isClassicDns ? `tcp://${tcpHost}:${tcpPort}` : upstreamUrl,
-          method: isClassicDns ? "TCP" : "POST",
+          upstream_url: rawUpstreamUrl.startsWith('sdns://') ? `${rawUpstreamUrl} (${diagTarget})` : diagTarget,
+          method: diagMethod,
           status: 200,
           status_text: "OK"
         }
@@ -296,7 +414,7 @@ export const pipelineResolver = {
             reason: failReason,
             answer: "",
             dest_geoip: "",
-            upstream: upstreamUrl,
+            upstream: rawUpstreamUrl,
             latency: Date.now() - context.startTime,
             ecs
           }, settings, context.env, context.ctx);
@@ -312,8 +430,8 @@ export const pipelineResolver = {
         reason: failReason,
         latency: Date.now() - context.startTime,
         diagnostics: {
-          upstream_url: isClassicDns ? `tcp://${tcpHost || 'unknown'}:${tcpPort}` : upstreamUrl,
-          method: isClassicDns ? "TCP" : "POST",
+          upstream_url: rawUpstreamUrl.startsWith('sdns://') ? `${rawUpstreamUrl} (${diagTarget})` : diagTarget,
+          method: diagMethod,
           status,
           status_text: statusText,
           error_detail: errorDetail,

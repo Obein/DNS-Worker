@@ -145,11 +145,13 @@ export async function handleProfilesCoreRequest(
         const isHttps = url.startsWith('https://');
         const isHttp  = url.startsWith('http://');
         const isTcp   = url.startsWith('tcp://');
+        const isTls   = url.startsWith('tls://');
+        const isSdns  = url.startsWith('sdns://');
         // 裸 host[:port]：不含 / 且不含 scheme
         const isBareHost = !url.includes('//') && !url.startsWith('/');
 
-        if (!isHttps && !isHttp && !isTcp && !isBareHost) {
-          return new Response("Invalid upstream URL format. Only HTTP(S), TCP, or bare host[:port] are allowed.", { status: 400 });
+        if (!isHttps && !isHttp && !isTcp && !isTls && !isSdns && !isBareHost) {
+          return new Response("Invalid upstream URL format. Only HTTP(S), TCP, TLS (DoT), SDNS (DNS Stamps), or bare host[:port] are allowed.", { status: 400 });
         }
         // 统一规范化后做安全检查（防 SSRF）
         const normalized = isBareHost ? `tcp://${url}` : url;

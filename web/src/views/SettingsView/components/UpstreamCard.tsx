@@ -38,10 +38,10 @@ export const UpstreamCard: React.FC<UpstreamCardProps> = ({ settings, setSetting
       <H5 className="flex items-center gap-2 mb-4 font-bold">
         <Server size={18} className="text-blue-500" /> {t("settings.upstreamTitle")}
       </H5>
-      <FormGroup label={t("settings.dohUrl") + "/" + t("settings.classicDns")}>
+      <FormGroup label={`${t("settings.dohUrl")} / DoT (tls://) / SDNS (sdns://) / ${t("settings.classicDns")}`}>
         <InputGroup
           fill
-          placeholder="https://dns.example.net/dns-query"
+          placeholder="https://... | tls://... | sdns://... | 1.1.1.1"
           value={settings.upstream?.[0] || ""}
           onChange={(e) => setSettings({ ...settings, upstream: [e.target.value] })}
           onFocus={(e) => e.target.select()}
