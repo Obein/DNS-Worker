@@ -205,7 +205,7 @@ export const useSignupWizard = ({
     try {
       const options = await getPasskeyRegistrationOptions();
       const credential = await startPasskeyRegistration(options);
-      const res = await verifyPasskeyRegistration({ name: "Primary Passkey", credential });
+      const res = await verifyPasskeyRegistration({ name: "primary_passkey", credential });
       if (res.recovery_keys && res.recovery_keys.length > 0) {
         setTotpRecoveryKeys(res.recovery_keys);
         setSignupStep("recovery");

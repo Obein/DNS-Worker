@@ -616,7 +616,7 @@
       "empty": "尚未新增任何通行密鑰。",
       "addTitle": "新增通行密鑰",
       "nameLabel": "通行密鑰名稱",
-      "namePlaceholder": "例如：我的裝置 / YubiKey",
+      "namePlaceholder": "例如：my_passkey",
       "promptNotice": "點擊繼續後，瀏覽器將彈出系統提示，引導您完成生物識別或硬體安全金鑰註冊。",
       "continue": "繼續",
       "renameTitle": "重命名通行密鑰",
@@ -632,7 +632,10 @@
       "neverUsed": "從未在登入中使用",
       "updated": "通行密鑰更新成功",
       "registered": "通行密鑰新增成功",
-      "deleted": "通行密鑰已刪除"
+      "deleted": "通行密鑰已刪除",
+      "appNameLabel": "應用名 (網域名稱)",
+      "appNameHelper": "通行密鑰將綁定至此網域",
+      "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線"
     },
     "mfaNone": "無",
     "resetUserPassword": "重設密碼",

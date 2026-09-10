@@ -615,7 +615,7 @@
       "empty": "パスキーはまだ追加されていません。",
       "addTitle": "パスキーを追加",
       "nameLabel": "パスキー名",
-      "namePlaceholder": "例：MacBook / YubiKey",
+      "namePlaceholder": "例：my_passkey",
       "promptNotice": "「続行」をクリックすると、ブラウザがプロンプトを表示し、生体認証またはセキュリティキーの登録を案内します。",
       "continue": "続行",
       "renameTitle": "パスキーの名前を変更",
@@ -631,7 +631,10 @@
       "neverUsed": "未使用",
       "updated": "パスキーを更新しました",
       "registered": "パスキーを登録しました",
-      "deleted": "パスキーを削除しました"
+      "deleted": "パスキーを削除しました",
+      "appNameLabel": "アプリ名 (ドメイン)",
+      "appNameHelper": "パスキーはこのドメインに関連付けられます",
+      "formatTip": "パスキー名ヒント：1〜30文字。英数字、アンダースコア、ハイフンのみ使用可能"
     },
     "mfaNone": "なし",
     "resetUserPassword": "パスワードをリセット",

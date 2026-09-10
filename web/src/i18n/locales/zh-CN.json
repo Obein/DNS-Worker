@@ -616,7 +616,7 @@
       "empty": "尚未添加任何通行密钥。",
       "addTitle": "添加通行密钥",
       "nameLabel": "通行密钥名称",
-      "namePlaceholder": "例如：我的设备 / YubiKey",
+      "namePlaceholder": "例如：my_passkey",
       "promptNotice": "点击继续后，浏览器将弹出系统提示，引导您完成生物识别或硬件安全密钥录入。",
       "continue": "继续",
       "renameTitle": "重命名通行密钥",
@@ -632,7 +632,10 @@
       "neverUsed": "从未在登录中使用",
       "updated": "通行密钥更新成功",
       "registered": "通行密钥添加成功",
-      "deleted": "通行密钥已删除"
+      "deleted": "通行密钥已删除",
+      "appNameLabel": "应用名 (域名)",
+      "appNameHelper": "通行密钥将绑定至此域名",
+      "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线"
     },
     "mfaNone": "无",
     "resetUserPassword": "重置密码",

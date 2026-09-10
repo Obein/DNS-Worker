@@ -616,7 +616,7 @@
       "empty": "No passkeys added yet.",
       "addTitle": "Add Passkey",
       "nameLabel": "Passkey Name",
-      "namePlaceholder": "e.g. My MacBook / YubiKey",
+      "namePlaceholder": "e.g. my_passkey",
       "promptNotice": "After clicking continue, your browser will prompt you to complete biometric or security key registration.",
       "continue": "Continue",
       "renameTitle": "Rename Passkey",
@@ -632,7 +632,10 @@
       "neverUsed": "Never used",
       "updated": "Passkey updated successfully",
       "registered": "Passkey registered successfully",
-      "deleted": "Passkey deleted"
+      "deleted": "Passkey deleted",
+      "appNameLabel": "Application (Domain)",
+      "appNameHelper": "The passkey will be bound to this application domain",
+      "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only"
     },
     "mfaNone": "None",
     "resetUserPassword": "Reset Password",

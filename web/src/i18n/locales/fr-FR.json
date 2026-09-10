@@ -615,7 +615,7 @@
       "empty": "Aucune clé d'accès ajoutée pour le moment.",
       "addTitle": "Ajouter une clé d'accès",
       "nameLabel": "Nom de la clé d'accès",
-      "namePlaceholder": "ex. Mon MacBook / YubiKey",
+      "namePlaceholder": "ex. my_passkey",
       "promptNotice": "Après avoir cliqué sur Continuer, votre navigateur vous invitera à terminer l'enregistrement biométrique ou de la clé de sécurité.",
       "continue": "Continuer",
       "renameTitle": "Renommer la clé d'accès",
@@ -631,7 +631,10 @@
       "neverUsed": "Jamais utilisé",
       "updated": "Clé d'accès mise à jour avec succès",
       "registered": "Clé d'accès enregistrée avec succès",
-      "deleted": "Clé d'accès supprimée"
+      "deleted": "Clé d'accès supprimée",
+      "appNameLabel": "Application (Domaine)",
+      "appNameHelper": "La clé d'accès sera liée à ce domaine",
+      "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés"
     },
     "mfaNone": "Aucun",
     "resetUserPassword": "Réinitialiser le mot de passe",

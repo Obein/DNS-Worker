@@ -9,11 +9,14 @@ import {
   FormGroup,
   InputGroup,
   Classes,
-  Spinner
+  Spinner,
+  Tooltip,
+  Position
 } from "@blueprintjs/core";
 import { KeyRound, Fingerprint, Plus, Trash2, Edit2, ShieldAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
+import { validatePasskeyName } from "../../../utils/auth";
 import {
   getPasskeys,
   getPasskeyRegistrationOptions,
@@ -43,13 +46,16 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   // Add Passkey state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [passkeyName, setPasskeyName] = useState("");
+  const [nameFocused, setNameFocused] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [addError, setAddError] = useState("");
 
   // Rename state
   const [editingPasskey, setEditingPasskey] = useState<Passkey | null>(null);
   const [editName, setEditName] = useState("");
+  const [renameFocused, setRenameFocused] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState("");
 
   // Delete state
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -76,11 +82,18 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   const handleOpenAdd = () => {
     setPasskeyName("");
     setAddError("");
+    setNameFocused(false);
     setIsAddOpen(true);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmed = passkeyName.trim();
+    if (!validatePasskeyName(trimmed)) {
+      setAddError(t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed"));
+      return;
+    }
+
     setRegistering(true);
     setAddError("");
 
@@ -88,7 +101,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
       const options = await getPasskeyRegistrationOptions();
       const credential = await startPasskeyRegistration(options);
       const res = await verifyPasskeyRegistration({
-        name: passkeyName.trim() || t("account.passkey.defaultName", "Passkey"),
+        name: trimmed,
         credential
       });
 
@@ -118,19 +131,27 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   const handleOpenRename = (pk: Passkey) => {
     setEditingPasskey(pk);
     setEditName(pk.name);
+    setRenameError("");
+    setRenameFocused(false);
   };
 
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingPasskey || !editName.trim()) return;
+    const trimmed = editName.trim();
+    if (!editingPasskey || !trimmed) return;
+    if (!validatePasskeyName(trimmed)) {
+      setRenameError(t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed"));
+      return;
+    }
 
     setRenaming(true);
+    setRenameError("");
     try {
-      await renamePasskey(editingPasskey.id, editName.trim());
+      await renamePasskey(editingPasskey.id, trimmed);
       setEditingPasskey(null);
       await fetchPasskeys();
     } catch (err: any) {
-      alert(err.message || t("common.errorNetwork"));
+      setRenameError(err.message || t("common.errorNetwork"));
     } finally {
       setRenaming(false);
     }
@@ -288,18 +309,44 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
               </Callout>
             )}
             <FormGroup
-              label={t("account.passkey.nameLabel", "Passkey Name")}
-              labelFor="passkey-name-input"
-              helperText={t("account.passkey.nameHelper", "e.g. MacBook Touch ID, iPhone, YubiKey 5")}
+              label={t("account.passkey.appNameLabel", "Application (Domain)")}
+              helperText={t("account.passkey.appNameHelper", "The passkey will be bound to this application domain.")}
             >
               <InputGroup
-                id="passkey-name-input"
-                autoFocus
-                placeholder={t("account.passkey.namePlaceholder", "My Device")}
-                value={passkeyName}
-                onChange={(e) => setPasskeyName(e.target.value)}
-                disabled={registering}
+                readOnly
+                disabled
+                leftIcon="globe"
+                value={window.location.hostname}
               />
+            </FormGroup>
+            <FormGroup
+              label={t("account.passkey.nameLabel", "Passkey Name")}
+              labelFor="passkey-name-input"
+              helperText={t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed")}
+            >
+              <Tooltip
+                content={t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed")}
+                isOpen={nameFocused}
+                position={Position.TOP}
+                intent={Intent.PRIMARY}
+                className="w-full"
+              >
+                <div className="w-full block">
+                  <InputGroup
+                    id="passkey-name-input"
+                    autoFocus
+                    placeholder={t("account.passkey.namePlaceholder", "e.g. my_passkey")}
+                    value={passkeyName}
+                    onChange={(e) => {
+                      setPasskeyName(e.target.value);
+                      if (addError) setAddError("");
+                    }}
+                    onFocus={() => setNameFocused(true)}
+                    onBlur={() => setNameFocused(false)}
+                    disabled={registering}
+                  />
+                </div>
+              </Tooltip>
             </FormGroup>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {t(
@@ -320,6 +367,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
                 type="submit"
                 text={t("account.passkey.continue", "Continue")}
                 loading={registering}
+                disabled={!validatePasskeyName(passkeyName.trim()) || registering}
               />
             </div>
           </div>
@@ -335,13 +383,47 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
       >
         <form onSubmit={handleRenameSubmit}>
           <div className={Classes.DIALOG_BODY}>
-            <FormGroup label={t("account.passkey.nameLabel", "Passkey Name")}>
+            {renameError && (
+              <Callout intent={Intent.DANGER} className="mb-4">
+                {renameError}
+              </Callout>
+            )}
+            <FormGroup
+              label={t("account.passkey.appNameLabel", "Application (Domain)")}
+            >
               <InputGroup
-                autoFocus
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                disabled={renaming}
+                readOnly
+                disabled
+                leftIcon="globe"
+                value={window.location.hostname}
               />
+            </FormGroup>
+            <FormGroup
+              label={t("account.passkey.nameLabel", "Passkey Name")}
+              helperText={t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed")}
+            >
+              <Tooltip
+                content={t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed")}
+                isOpen={renameFocused}
+                position={Position.TOP}
+                intent={Intent.PRIMARY}
+                className="w-full"
+              >
+                <div className="w-full block">
+                  <InputGroup
+                    autoFocus
+                    placeholder={t("account.passkey.namePlaceholder", "e.g. my_passkey")}
+                    value={editName}
+                    onChange={(e) => {
+                      setEditName(e.target.value);
+                      if (renameError) setRenameError("");
+                    }}
+                    onFocus={() => setRenameFocused(true)}
+                    onBlur={() => setRenameFocused(false)}
+                    disabled={renaming}
+                  />
+                </div>
+              </Tooltip>
             </FormGroup>
           </div>
           <div className={Classes.DIALOG_FOOTER}>
@@ -356,6 +438,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
                 type="submit"
                 text={t("common.save", "Save")}
                 loading={renaming}
+                disabled={!validatePasskeyName(editName.trim()) || renaming}
               />
             </div>
           </div>

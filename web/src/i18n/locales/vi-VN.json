@@ -615,7 +615,7 @@
       "empty": "Chưa có Passkey nào được thêm.",
       "addTitle": "Thêm Passkey",
       "nameLabel": "Tên Passkey",
-      "namePlaceholder": "vd: MacBook của tôi / YubiKey",
+      "namePlaceholder": "vd: my_passkey",
       "promptNotice": "Sau khi nhấp tiếp tục, trình duyệt sẽ nhắc bạn hoàn tất đăng ký sinh trắc học hoặc khóa bảo mật.",
       "continue": "Tiếp tục",
       "renameTitle": "Đổi tên Passkey",
@@ -631,7 +631,10 @@
       "neverUsed": "Chưa từng sử dụng",
       "updated": "Cập nhật Passkey thành công",
       "registered": "Đã đăng ký Passkey thành công",
-      "deleted": "Đã xóa Passkey"
+      "deleted": "Đã xóa Passkey",
+      "appNameLabel": "Ứng dụng (Tên miền)",
+      "appNameHelper": "Mã khóa sẽ được liên kết với tên miền này",
+      "formatTip": "Gợi ý tên Passkey: 1-30 ký tự, chỉ cho phép chữ cái, số, dấu gạch dưới và dấu gạch ngang"
     },
     "mfaNone": "Không",
     "resetUserPassword": "Đặt lại mật khẩu",

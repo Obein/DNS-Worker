@@ -615,7 +615,7 @@
       "empty": "Passkey еще не добавлены.",
       "addTitle": "Добавить Passkey",
       "nameLabel": "Имя Passkey",
-      "namePlaceholder": "Например: Мой MacBook / YubiKey",
+      "namePlaceholder": "например: my_passkey",
       "promptNotice": "После нажатия кнопки продолжения браузер предложит пройти биометрическую регистрацию или использовать ключ безопасности.",
       "continue": "Продолжить",
       "renameTitle": "Переименовать Passkey",
@@ -631,7 +631,10 @@
       "neverUsed": "Никогда не использовался",
       "updated": "Passkey успешно обновлен",
       "registered": "Passkey успешно зарегистрирован",
-      "deleted": "Passkey удален"
+      "deleted": "Passkey удален",
+      "appNameLabel": "Приложение (домен)",
+      "appNameHelper": "Ключ доступа будет привязан к этому домену",
+      "formatTip": "Имя Passkey: 1-30 символов (только буквы, цифры, _, -)"
     },
     "mfaNone": "Нет",
     "resetUserPassword": "Сбросить пароль",

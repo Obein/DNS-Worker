@@ -77,6 +77,9 @@ export const SignupMfaStep: React.FC<SignupMfaStepProps> = ({
                       {t("auth.mfaRecommended", "推荐 · 无密码")}
                     </Tag>
                   </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-mono mt-0.5">
+                    {window.location.hostname}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0 leading-relaxed">
                     {t(
                       "auth.passkeySignupDesc",

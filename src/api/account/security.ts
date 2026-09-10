@@ -3,7 +3,7 @@ import { hashPassword, verifyPassword, generateSessionHash } from "../../utils/c
 import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
-import { PASSWORD_REGEX } from "../../utils/validator";
+import { PASSWORD_REGEX, PASSKEY_NAME_REGEX } from "../../utils/validator";
 import { PasskeyModel } from "../../models/passkey";
 import {
   generateWebAuthnChallenge,
@@ -219,8 +219,9 @@ export async function handleSecurityRequest(
     if (subAction === 'register' && pathParts[4] === 'options' && request.method === 'POST') {
       const existingPasskeys = await passkeyModel.listByUser(user.id);
       const challenge = generateWebAuthnChallenge();
-      const url = new URL(request.url);
-      const rpId = url.hostname;
+      const originHeader = request.headers.get("origin");
+      const host = originHeader ? new URL(originHeader).hostname : request.headers.get("host")?.split(":")[0] || new URL(request.url).hostname;
+      const rpId = host;
       const cache = (caches as any).default;
       await cacheUtils.set(cache, `webauthn_reg_challenge:${user.id}`, { challenge, rpId }, 300);
 
@@ -286,7 +287,10 @@ export async function handleSecurityRequest(
           return new Response("This passkey is already registered", { status: 409 });
         }
 
-        const passkeyName = (name || "").trim().slice(0, 50) || "Passkey";
+        const passkeyName = (name || "").trim();
+        if (!PASSKEY_NAME_REGEX.test(passkeyName)) {
+          return new Response("Invalid Passkey name format", { status: 400 });
+        }
         const transports = Array.isArray(credential.response.transports) ? credential.response.transports : undefined;
 
         const created = await passkeyModel.create({
@@ -321,12 +325,15 @@ export async function handleSecurityRequest(
     if (subAction && request.method === 'PATCH') {
       const passkeyId = subAction;
       const { name } = await request.json() as { name: string };
-      if (!name || !name.trim()) return new Response("Name is required", { status: 400 });
+      const trimmedName = (name || "").trim();
+      if (!trimmedName || !PASSKEY_NAME_REGEX.test(trimmedName)) {
+        return new Response("Invalid Passkey name format", { status: 400 });
+      }
 
       const passkey = await passkeyModel.getById(passkeyId, user.id);
       if (!passkey) return new Response("Passkey not found", { status: 404 });
 
-      const success = await passkeyModel.updateName(passkeyId, user.id, name.trim().slice(0, 50));
+      const success = await passkeyModel.updateName(passkeyId, user.id, trimmedName);
       return new Response(JSON.stringify({ success }), { headers: { 'Content-Type': 'application/json' } });
     }
 

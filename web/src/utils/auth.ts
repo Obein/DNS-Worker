@@ -36,10 +36,25 @@ export const PROFILE_NAME_REGEX = /^[\p{L}\p{N}_ ()-]{1,30}$/u;
  */
 export const AP_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
 /**
+ * Passkey name validation regular expression.
+ * Requirements: 1-30 characters, allowing letters, numbers, underscores, and hyphens (same as AP_NAME_REGEX).
+ */
+export const PASSKEY_NAME_REGEX = /^[a-zA-Z0-9_-]{1,30}$/;
+/**
  * PIN validation regular expression.
  * Requirements: exactly 4 digits.
  */
 export const PIN_REGEX = /^\d{4}$/;
+
+/**
+ * Validates whether a passkey name matches the required format (1-30 characters, alphanumeric, underscore, hyphen).
+ *
+ * @param name - The passkey name to validate.
+ * @returns True if valid.
+ */
+export function validatePasskeyName(name: string): boolean {
+  return PASSKEY_NAME_REGEX.test(name);
+}
 
 /**
  * Validates whether a username matches the required alphanumeric 5-15 character format.

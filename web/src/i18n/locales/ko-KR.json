@@ -615,7 +615,7 @@
       "empty": "추가된 패스키가 없습니다.",
       "addTitle": "패스키 추가",
       "nameLabel": "패스키 이름",
-      "namePlaceholder": "예: 내 MacBook / YubiKey",
+      "namePlaceholder": "예: my_passkey",
       "promptNotice": "계속을 클릭하면 브라우저에 생체 인식 또는 보안 키 등록을 완료하라는 메시지가 표시됩니다.",
       "continue": "계속",
       "renameTitle": "패스키 이름 바꾸기",
@@ -631,7 +631,10 @@
       "neverUsed": "사용 이력 없음",
       "updated": "패스키가 성공적으로 업데이트되었습니다",
       "registered": "패스키가 성공적으로 등록되었습니다",
-      "deleted": "패스키 삭제됨"
+      "deleted": "패스키 삭제됨",
+      "appNameLabel": "애플리케이션 (도메인)",
+      "appNameHelper": "패스키가 이 도메인에 바인딩됩니다",
+      "formatTip": "패스키 이름 팁: 1-30자, 영문자, 숫자, 언더바, 하이픈만 허용"
     },
     "mfaNone": "없음",
     "resetUserPassword": "비밀번호 재설정",
