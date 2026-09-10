@@ -199,7 +199,8 @@
     "linuxStep1": "다음 스크립트를 실행하여 cloudflared를 설치하고 systemd 서비스를 생성합니다 (127.0.0.1:53 감시).",
     "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다.",
     "accessPointsCardTitle": "액세스 포인트",
-    "currentAccessPoint": "현재 액세스 포인트"
+    "currentAccessPoint": "현재 액세스 포인트",
+    "selectAccessPointToConfigure": "구성할 액세스 포인트 선택"
   },
   "rules": {
     "title": "사용자 지정 규칙",

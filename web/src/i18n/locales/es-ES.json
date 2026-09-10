@@ -199,7 +199,8 @@
     "linuxStep1": "Ejecuta el siguiente script para instalar cloudflared y crear un servicio systemd (escucha en 127.0.0.1:53).",
     "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1.",
     "accessPointsCardTitle": "Puntos de acceso",
-    "currentAccessPoint": "Punto de acceso actual"
+    "currentAccessPoint": "Punto de acceso actual",
+    "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar"
   },
   "rules": {
     "title": "Reglas personalizadas",

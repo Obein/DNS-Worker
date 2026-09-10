@@ -27,20 +27,13 @@ export const AccessPointCard: React.FC<AccessPointCardProps> = ({
     <Section
       title={t("setup.accessPointsCardTitle", "接入点")}
       icon={<MonitorSmartphone size={16} />}
-      rightElement={
-        <Button
-          variant="minimal"
-          intent={Intent.PRIMARY}
-          className="text-xs! px-2!"
-          text={t("setup.moreAccessPoints", "更多接入点 ↗")}
-          onClick={onManageAccessPoints}
-        />
-      }
     >
       <SectionCard>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1.5 w-full sm:w-auto">
-            <span className="text-xs opacity-50 font-medium">{t("setup.currentAccessPoint", "当前接入点")}</span>
+            <span className="text-xs opacity-50 font-medium">
+              {t("setup.selectAccessPointToConfigure")}
+            </span>
             <div className="flex items-center gap-3">
               {accessPoints.length > 0 ? (
                 <HTMLSelect

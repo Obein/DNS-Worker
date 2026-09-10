@@ -199,7 +199,8 @@
     "linuxStep1": "Запустите скрипт для установки cloudflared и создания systemd-сервиса (слушает 127.0.0.1:53).",
     "linuxStep2": "Установите системный DNS на 127.0.0.1.",
     "accessPointsCardTitle": "Точки доступа",
-    "currentAccessPoint": "Текущая точка доступа"
+    "currentAccessPoint": "Текущая точка доступа",
+    "selectAccessPointToConfigure": "Выберите точку доступа для настройки"
   },
   "rules": {
     "title": "Пользовательские правила",

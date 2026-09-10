@@ -199,7 +199,8 @@
     "linuxStep1": "Chạy đoạn mã sau để cài đặt cloudflared và tạo dịch vụ systemd (lắng nghe tại 127.0.0.1:53).",
     "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1.",
     "accessPointsCardTitle": "Điểm truy cập",
-    "currentAccessPoint": "Điểm truy cập hiện tại"
+    "currentAccessPoint": "Điểm truy cập hiện tại",
+    "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình"
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",

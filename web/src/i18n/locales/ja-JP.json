@@ -199,7 +199,8 @@
     "linuxStep1": "以下のスクリプトを実行して cloudflared をインストールし、systemd サービスを作成します（127.0.0.1:53 を監視）。",
     "linuxStep2": "システムの DNS を 127.0.0.1 に変更します。",
     "accessPointsCardTitle": "アクセスポイント",
-    "currentAccessPoint": "現在のアクセスポイント"
+    "currentAccessPoint": "現在のアクセスポイント",
+    "selectAccessPointToConfigure": "設定するアクセスポイントを選択"
   },
   "rules": {
     "title": "カスタムルール",

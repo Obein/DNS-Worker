@@ -200,7 +200,8 @@
     "linuxStep1": "运行以下脚本安装 cloudflared 并创建 systemd 服务（监听 127.0.0.1:53）。",
     "linuxStep2": "将系统 DNS 修改为 127.0.0.1。",
     "accessPointsCardTitle": "接入点",
-    "currentAccessPoint": "当前接入点"
+    "currentAccessPoint": "当前接入点",
+    "selectAccessPointToConfigure": "选择接入点以配置"
   },
   "rules": {
     "title": "自定义规则",
