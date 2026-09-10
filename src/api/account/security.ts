@@ -225,6 +225,10 @@ export async function handleSecurityRequest(
       const cache = (caches as any).default;
       await cacheUtils.set(cache, `webauthn_reg_challenge:${user.id}`, { challenge, rpId }, 300);
 
+      const dbUser = await userModel.getById(user.id);
+      const username = dbUser?.username || user.username || "";
+      const userDisplayName = username ? `${username} (${rpId})` : rpId;
+
       const options = {
         challenge,
         rp: {
@@ -233,8 +237,8 @@ export async function handleSecurityRequest(
         },
         user: {
           id: base64UrlEncode(new TextEncoder().encode(user.id)),
-          name: user.username,
-          displayName: user.username
+          name: username || rpId,
+          displayName: userDisplayName
         },
         pubKeyCredParams: [
           { type: "public-key", alg: -7 },  // ES256
