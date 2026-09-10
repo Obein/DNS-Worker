@@ -105,6 +105,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction, to
         prevLatestTimestamp={prevLatestTimestamp}
         setSelectedLog={setSelectedLog}
         setIsDrawerOpen={setIsDrawerOpen}
+        logRetentionDays={logRetentionDays}
       />
 
       <LogDetailsDrawer

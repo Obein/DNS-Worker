@@ -333,7 +333,9 @@
     "noMatchingCountries": "Không tìm thấy quốc gia phù hợp",
     "searchIsp": "Tìm kiếm nhà mạng/ISP...",
     "noMatchingIsps": "Không tìm thấy ISP phù hợp",
-    "loadingIsps": "Đang tải danh sách ISP..."
+    "loadingIsps": "Đang tải danh sách ISP...",
+    "loggingDisabledTitle": "Ghi nhật ký đã bị tắt",
+    "loggingDisabledDesc": "Thời gian lưu giữ nhật ký cho hồ sơ này được đặt thành 'Tắt'. Không có nhật ký truy vấn nào được ghi lại. Để xem nhật ký, hãy bật lưu giữ nhật ký trong Cài đặt."
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored (Chống kiểm duyệt)",
     "presetAdGuard": "AdGuard (Chặn quảng cáo/Theo dõi)",
     "presetAdGuardFamily": "Bảo vệ gia đình AdGuard (Chặn quảng cáo/Theo dõi/Nội dung người lớn/Tìm kiếm an toàn)",
-    "retention10m": "10 phút (Yêu cầu quyền riêng tư)",
+    "retention10m": "10 phút",
     "retention1h": "1 giờ",
     "retention24h": "24 giờ",
     "retention7d": "7 ngày",
@@ -450,7 +452,9 @@
     "whatIsEch": "ECH (Encrypted Client Hello) là gì?",
     "echHelpDesc": "ECH là tiện ích mở rộng quyền riêng tư của TLS 1.3 giúp mã hóa hoàn toàn tên miền thực (Inner SNI), chỉ để lộ tên miền ngụy trang (Outer SNI) cho bên trung gian.",
     "echHelpBenefit1": "Ngăn chặn nhà mạng và bên trung gian theo dõi miền phụ bạn đang truy cập",
-    "echHelpBenefit2": "Kết hợp với DoH để loại bỏ rò rỉ SNI dạng văn bản thuần"
+    "echHelpBenefit2": "Kết hợp với DoH để loại bỏ rò rỉ SNI dạng văn bản thuần",
+    "retentionDisabled": "Tắt (Bảo vệ quyền riêng tư)",
+    "retentionDisabledDesc": "Ghi nhật ký đã bị tắt. Hệ thống sẽ không ghi lại bất kỳ nhật ký truy vấn DNS nào và sẽ xóa ngay nhật ký lịch sử."
   },
   "account": {
     "title": "Cài đặt tài khoản",

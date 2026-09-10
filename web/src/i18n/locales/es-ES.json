@@ -333,7 +333,9 @@
     "noMatchingCountries": "No se encontraron países coincidentes",
     "searchIsp": "Buscar ISP...",
     "noMatchingIsps": "No se encontraron ISPs coincidentes",
-    "loadingIsps": "Cargando ISPs..."
+    "loadingIsps": "Cargando ISPs...",
+    "loggingDisabledTitle": "Registro desactivado",
+    "loggingDisabledDesc": "La retención de registros para este perfil está configurada como 'Desactivado'. No se registran consultas. Para ver registros, habilite la retención en Configuración."
   },
   "filtering": {
     "title": "Listas de bloqueo externas",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored (Evitar censura)",
     "presetAdGuard": "AdGuard (Bloqueador de publicidad y trackers)",
     "presetAdGuardFamily": "AdGuard Family protection (Publicidad/trackers/contenido adulto/búsqueda segura)",
-    "retention10m": "10 minutos (Privacidad extrema)",
+    "retention10m": "10 minutos",
     "retention1h": "1 hora",
     "retention24h": "24 horas",
     "retention7d": "7 días",
@@ -450,7 +452,9 @@
     "whatIsEch": "¿Qué es ECH (Encrypted Client Hello)?",
     "echHelpDesc": "ECH es una extensión de privacidad clave de TLS 1.3 que cifra completamente el dominio de destino real (Inner SNI), mostrando solo un dominio simulado (Outer SNI) a intermediarios.",
     "echHelpBenefit1": "Evita que los ISP y observadores vean el dominio exacto o subdominio que visita",
-    "echHelpBenefit2": "Junto con DoH y ECH Fronting, elimina el riesgo de filtración de SNI en texto claro"
+    "echHelpBenefit2": "Junto con DoH y ECH Fronting, elimina el riesgo de filtración de SNI en texto claro",
+    "retentionDisabled": "Desactivado (Necesidad de privacidad)",
+    "retentionDisabledDesc": "El registro está desactivado. El sistema no registrará ningún registro de consultas DNS y borrará los registros históricos de inmediato."
   },
   "account": {
     "title": "Ajustes de cuenta",

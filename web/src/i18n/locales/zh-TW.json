@@ -334,7 +334,9 @@
     "noMatchingCountries": "未找到相符國家",
     "searchIsp": "搜尋電信業者...",
     "noMatchingIsps": "未找到相符電信業者",
-    "loadingIsps": "正在載入電信業者..."
+    "loadingIsps": "正在載入電信業者...",
+    "loggingDisabledTitle": "日誌記錄已關閉",
+    "loggingDisabledDesc": "目前設定的日誌留存已設為「關閉」，系統不記錄任何查詢日誌。如需查看，請在設定中開啟日誌留存。"
   },
   "filtering": {
     "title": "外部攔截清單",
@@ -424,7 +426,7 @@
     "presetControlDUncensored": "ControlD Uncensored (抗審查)",
     "presetAdGuard": "AdGuard (去廣告/去跟蹤)",
     "presetAdGuardFamily": "AdGuard Family protection (去廣告/去跟蹤/去成人內容/安全搜尋)",
-    "retention10m": "10 分鐘 (隱私需要)",
+    "retention10m": "10 分鐘",
     "retention1h": "1 小時",
     "retention24h": "24 小時",
     "retention7d": "7 天",
@@ -451,7 +453,9 @@
     "whatIsEch": "何為 ECH (Encrypted Client Hello)？",
     "echHelpDesc": "ECH (加密客戶端問候) 是 TLS 1.3 的重要隱私擴充，它將 TLS 握手中的真實目標網域名稱 (Inner SNI) 全程加密，僅向網路中間人暴露表層偽裝網域名稱 (Outer SNI / ECH Fronting)。",
     "echHelpBenefit1": "防止中間人及 ISP 窺探您正在存取的具體網頁與子網域名稱",
-    "echHelpBenefit2": "配合 DoH 與自訂表層 SNI，消除明文 SNI 阻斷與識別風險"
+    "echHelpBenefit2": "配合 DoH 與自訂表層 SNI，消除明文 SNI 阻斷與識別風險",
+    "retentionDisabled": "關閉 (隱私需要)",
+    "retentionDisabledDesc": "已關閉日誌記錄。系統將不會記錄任何 DNS 查詢日誌並立即清空歷史日誌。"
   },
   "account": {
     "title": "帳號設定",

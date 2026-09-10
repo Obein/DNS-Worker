@@ -26,7 +26,8 @@ export const useLogRetentionOptions = (_isAdmin: boolean, maxRetentionDays: numb
   const { t } = useTranslation();
   return useMemo(() => {
     const allOptions = [
-      { label: t("settings.retention10m"), value: 0.007 },
+      { label: t("settings.retentionDisabled", "关闭 (隐私需要)"), value: 0 },
+      { label: t("settings.retention10m", "10 分钟"), value: 0.007 },
       { label: t("settings.retention1h"), value: 0.0416 },
       { label: t("settings.retention24h"), value: 1 },
       { label: t("settings.retention7d"), value: 7 },

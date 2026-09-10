@@ -333,7 +333,9 @@
     "noMatchingCountries": "Aucun pays correspondant trouvé",
     "searchIsp": "Rechercher un FAI...",
     "noMatchingIsps": "Aucun FAI correspondant trouvé",
-    "loadingIsps": "Chargement des FAI..."
+    "loadingIsps": "Chargement des FAI...",
+    "loggingDisabledTitle": "Journalisation désactivée",
+    "loggingDisabledDesc": "La conservation des journaux pour ce profil est définie sur 'Désactivé'. Aucun journal n'est enregistré. Pour afficher les journaux, activez la rétention dans les Paramètres."
   },
   "filtering": {
     "title": "Listes de blocage externes",
@@ -423,7 +425,7 @@
     "presetControlDUncensored": "ControlD Uncensored (Contourner la censure)",
     "presetAdGuard": "AdGuard (Bloqueur publicités et trackers)",
     "presetAdGuardFamily": "AdGuard Family protection (Publicités/trackers/contenu adulte/recherche sécurisée)",
-    "retention10m": "10 minutes (Confidentialité extrême)",
+    "retention10m": "10 minutes",
     "retention1h": "1 heure",
     "retention24h": "24 heures",
     "retention7d": "7 jours",
@@ -450,7 +452,9 @@
     "whatIsEch": "Qu'est-ce que l'ECH (Encrypted Client Hello) ?",
     "echHelpDesc": "L'ECH est une extension de confidentialité essentielle de TLS 1.3 qui chiffre intégralement le nom de domaine réel (Inner SNI), n'exposant qu'un domaine de façade (Outer SNI).",
     "echHelpBenefit1": "Empêche les FAI et les intermédiaires d'intercepter le sous-domaine exact visité",
-    "echHelpBenefit2": "Associé au DoH, élimine les fuites de SNI en clair"
+    "echHelpBenefit2": "Associé au DoH, élimine les fuites de SNI en clair",
+    "retentionDisabled": "Désactivé (Besoins de confidentialité)",
+    "retentionDisabledDesc": "La journalisation est désactivée. Le système n'enregistrera aucun journal de requêtes DNS et effacera immédiatement les journaux historiques."
   },
   "account": {
     "title": "Paramètres du compte",
