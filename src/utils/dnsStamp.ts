@@ -1,6 +1,6 @@
 /**
  * @file dnsStamp.ts
- * @description RFC draft DNS Stamp (sdns://) parser for ObexDNS.
+ * @description RFC draft DNS Stamp (sdns://) parser for DNS Worker.
  * Decodes base64url DNS stamps into structured resolver configurations (DoH, DoT, Plain DNS, DNSCrypt).
  */
 

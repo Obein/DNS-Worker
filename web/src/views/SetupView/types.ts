@@ -3,6 +3,7 @@ import { OverlayToaster } from "@blueprintjs/core";
 export interface SetupViewProps {
   profileId: string;
   profileKey: string;
+  profileName?: string;
   toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 

@@ -10,6 +10,7 @@ export interface SetupTabsProps {
   isMobile: boolean;
   copyToClipboard: (text: string) => void;
   profileKey: string;
+  profileName?: string;
   allRegions: Record<string, RegionConfigItem>;
   selectedRegion: string;
   currentIps: { ip: string; area: string | null }[];
@@ -19,6 +20,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   isMobile,
   copyToClipboard,
   profileKey,
+  profileName,
   allRegions,
   selectedRegion,
   currentIps,
@@ -83,12 +85,14 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                 text={t("setup.downloadConfig")}
                 icon="download"
                 onClick={() => {
-                  const xml = generateMobileConfig(profileKey, "DNS Worker", window.location.origin);
+                  const effectiveName = profileName || "DNS Worker";
+                  const xml = generateMobileConfig(profileKey, effectiveName, window.location.origin);
                   const blob = new Blob([xml], { type: "application/x-apple-aspen-config" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `dns_worker-${profileKey}.mobileconfig`;
+                  const sanitizedName = effectiveName.replace(/[^a-zA-Z0-9_\-\u4e00-\u9fa5]/g, "_");
+                  a.download = `dns_worker-${sanitizedName}-${profileKey}.mobileconfig`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}

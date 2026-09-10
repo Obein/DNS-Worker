@@ -18,10 +18,11 @@ import {
   getSubstituteInfo,
   getTraceInfo,
   queryDnsJson,
-  getProfileAccessPoints
+  getProfileAccessPoints,
+  getProfileDetails,
 } from "../../services";
 
-export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toasterRef }) => {
+export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, profileName, toasterRef }) => {
   const isMobile = useIsMobile();
   const { t, i18n } = useTranslation();
   const presetRegions = useMemo(() => getPresetRegions(t), [i18n.language, t]);
@@ -47,6 +48,20 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
     fetchAccessPoints();
   }, [profileId]);
 
+  const [currentProfileName, setCurrentProfileName] = useState<string>(profileName || "");
+
+  useEffect(() => {
+    if (profileName) {
+      setCurrentProfileName(profileName);
+    } else if (profileId) {
+      getProfileDetails(profileId)
+        .then((data: any) => {
+          if (data?.name) setCurrentProfileName(data.name);
+        })
+        .catch(() => {});
+    }
+  }, [profileId, profileName]);
+
   const activeAp = useMemo(() => {
     if (accessPoints.length === 0) return null;
     return accessPoints.find(ap => ap.id === selectedApId) || accessPoints[0];
@@ -54,6 +69,9 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
 
   const activeToken = activeAp ? activeAp.token : profileKey;
   const activeName = activeAp ? activeAp.name : undefined;
+  const effectiveProfileName = activeName
+    ? `${currentProfileName || "DNS Worker"} (${activeName})`
+    : (currentProfileName || "DNS Worker");
   const dohUrl = `${window.location.origin}/${activeToken}`;
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -245,6 +263,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         isMobile={isMobile}
         copyToClipboard={copyToClipboard}
         profileKey={activeToken}
+        profileName={effectiveProfileName}
         allRegions={allRegions}
         selectedRegion={selectedRegion}
         currentIps={currentIps}
