@@ -309,17 +309,6 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
               </Callout>
             )}
             <FormGroup
-              label={t("account.passkey.appNameLabel", "Application (Domain)")}
-              helperText={t("account.passkey.appNameHelper", "The passkey will be bound to this application domain.")}
-            >
-              <InputGroup
-                readOnly
-                disabled
-                leftIcon="globe"
-                value={window.location.hostname}
-              />
-            </FormGroup>
-            <FormGroup
               label={t("account.passkey.nameLabel", "Passkey Name")}
               labelFor="passkey-name-input"
               helperText={t("account.passkey.formatTip", "1-30 characters, letters, numbers, hyphens and underscores allowed")}
