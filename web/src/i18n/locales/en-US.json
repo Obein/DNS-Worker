@@ -633,7 +633,7 @@
       "updated": "Passkey updated successfully",
       "registered": "Passkey registered successfully",
       "deleted": "Passkey deleted",
-      "appNameLabel": "Application (Domain)",
+      "appNameLabel": "Domain",
       "appNameHelper": "The passkey will be bound to this application domain",
       "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only"
     },

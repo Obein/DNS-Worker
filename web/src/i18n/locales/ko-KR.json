@@ -632,7 +632,7 @@
       "updated": "패스키가 성공적으로 업데이트되었습니다",
       "registered": "패스키가 성공적으로 등록되었습니다",
       "deleted": "패스키 삭제됨",
-      "appNameLabel": "애플리케이션 (도메인)",
+      "appNameLabel": "도메인",
       "appNameHelper": "패스키가 이 도메인에 바인딩됩니다",
       "formatTip": "패스키 이름 팁: 1-30자, 영문자, 숫자, 언더바, 하이픈만 허용"
     },

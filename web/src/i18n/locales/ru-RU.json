@@ -632,7 +632,7 @@
       "updated": "Passkey успешно обновлен",
       "registered": "Passkey успешно зарегистрирован",
       "deleted": "Passkey удален",
-      "appNameLabel": "Приложение (домен)",
+      "appNameLabel": "Домен",
       "appNameHelper": "Ключ доступа будет привязан к этому домену",
       "formatTip": "Имя Passkey: 1-30 символов (только буквы, цифры, _, -)"
     },

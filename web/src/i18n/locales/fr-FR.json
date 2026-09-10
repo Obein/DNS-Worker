@@ -632,7 +632,7 @@
       "updated": "Clé d'accès mise à jour avec succès",
       "registered": "Clé d'accès enregistrée avec succès",
       "deleted": "Clé d'accès supprimée",
-      "appNameLabel": "Application (Domaine)",
+      "appNameLabel": "Domaine",
       "appNameHelper": "La clé d'accès sera liée à ce domaine",
       "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés"
     },

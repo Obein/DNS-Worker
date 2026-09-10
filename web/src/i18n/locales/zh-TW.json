@@ -633,7 +633,7 @@
       "updated": "通行密鑰更新成功",
       "registered": "通行密鑰新增成功",
       "deleted": "通行密鑰已刪除",
-      "appNameLabel": "應用名 (網域名稱)",
+      "appNameLabel": "網域名稱",
       "appNameHelper": "通行密鑰將綁定至此網域",
       "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線"
     },

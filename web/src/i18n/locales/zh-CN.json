@@ -633,7 +633,7 @@
       "updated": "通行密钥更新成功",
       "registered": "通行密钥添加成功",
       "deleted": "通行密钥已删除",
-      "appNameLabel": "应用名 (域名)",
+      "appNameLabel": "域名",
       "appNameHelper": "通行密钥将绑定至此域名",
       "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线"
     },

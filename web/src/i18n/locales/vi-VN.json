@@ -632,7 +632,7 @@
       "updated": "Cập nhật Passkey thành công",
       "registered": "Đã đăng ký Passkey thành công",
       "deleted": "Đã xóa Passkey",
-      "appNameLabel": "Ứng dụng (Tên miền)",
+      "appNameLabel": "Tên miền",
       "appNameHelper": "Mã khóa sẽ được liên kết với tên miền này",
       "formatTip": "Gợi ý tên Passkey: 1-30 ký tự, chỉ cho phép chữ cái, số, dấu gạch dưới và dấu gạch ngang"
     },
