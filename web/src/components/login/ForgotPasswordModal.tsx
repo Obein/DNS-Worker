@@ -353,7 +353,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                     onClick={handlePasskeyVerify}
                     className="font-semibold py-4 rounded-xl shadow-sm flex items-center justify-center space-x-2"
                   >
-                    <Fingerprint size={18} className="mr-1.5" />
+                    <Fingerprint size={18} className="inline mr-1.5" />
                     <span>{t("auth.verifyWithPasskey", "Verify with Passkey")}</span>
                   </Button>
                 )}
