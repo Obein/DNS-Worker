@@ -12,6 +12,7 @@
  */
 
 import { isIPv4, isIPv6, createCidrMatcher } from "./cidr";
+import { parseDnsStamp } from "./dnsStamp";
 
 export { isIPv4, isIPv6 } from "./cidr";
 
@@ -125,7 +126,7 @@ export function isPublicInternetIP(ip: string): boolean {
 
 /**
  * Checks whether the given URL is safe to fetch (prevents SSRF).
- * - Restricts to HTTP/HTTPS/TCP protocols.
+ * - Restricts to HTTP/HTTPS/TCP/TLS/DNS Stamp protocols.
  * - Blocks local, loopback, and private IP ranges.
  * - Blocks common metadata hostnames.
  * @param urlString The URL to validate.
@@ -133,9 +134,16 @@ export function isPublicInternetIP(ip: string): boolean {
  */
 export function isSafeUrl(urlString: string): boolean {
   try {
+    if (urlString.startsWith('sdns://')) {
+      const stamp = parseDnsStamp(urlString);
+      return isSafeUrl(stamp.resolvedUrl);
+    }
+
     let parseableUrl: string;
     if (urlString.startsWith('tcp://')) {
       parseableUrl = urlString.replace('tcp://', 'http://');
+    } else if (urlString.startsWith('tls://')) {
+      parseableUrl = urlString.replace('tls://', 'http://');
     } else if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
       parseableUrl = urlString;
     } else {

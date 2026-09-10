@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (proxy DoH Cloudflared)",
     "linuxDesc": "Ejecuta un proxy DNS local ligero para enviar las consultas DNS cifradas mediante DoH a Obex.",
     "linuxStep1": "Ejecuta el siguiente script para instalar cloudflared y crear un servicio systemd (escucha en 127.0.0.1:53).",
-    "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1."
+    "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1.",
+    "accessPointsCardTitle": "Puntos de acceso",
+    "currentAccessPoint": "Punto de acceso actual",
+    "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar"
   },
   "rules": {
     "title": "Reglas personalizadas",
@@ -382,7 +385,7 @@
     "dnsIP": "IP de DNS",
     "classicDns": "DNS clásico",
     "httpsOnly": "Admitir solo HTTPS",
-    "upstreamDesc": "Todas las consultas no bloqueadas se enviarán a este servidor. Admite DoH (HTTPS) o DNS clásico (p. ej., 1.1.1.2). Se recomienda encarecidamente usar DoH (DNS over HTTPS) para obtener conexiones más rápidas, seguras y estables. El DNS clásico se enviará a través de TCP.",
+    "upstreamDesc": "Todas las consultas no bloqueadas se reenviarán a este servidor. Admite DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) o DNS clásico. El DNS clásico se reenvía a través de TCP.",
     "defaultPolicyTitle": "Comportamiento de filtrado predeterminado",
     "onNoMatch": "Cuando no coincide ninguna regla",
     "allowAll": "Permitir todas las consultas",
@@ -410,6 +413,8 @@
     "answerSection": "Sección de respuestas (Answer Section)",
     "noRecordsReturned": "Esta consulta no devolvió ningún registro.",
     "diagnostics": "Información de diagnóstico",
+    "errorDetail": "Detalles del error",
+    "upstreamResponse": "Respuesta del upstream",
     "presetCloudflareSecurity": "Cloudflare Security (Rápido/Protección frente a malware/phishing)",
     "presetCloudflareFamilies": "Cloudflare Families (Rápido/Protección frente a malware/contenido adulto)",
     "presetQuad9": "Quad9 (Protección frente a malware/Sin registros/Sin ECS)",

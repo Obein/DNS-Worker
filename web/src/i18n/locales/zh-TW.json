@@ -198,7 +198,10 @@
     "linuxTitle": "Linux (Cloudflared DoH 代理)",
     "linuxDesc": "在本地執行輕量級 DNS 代理，透過 DoH 將解析請求加密轉發至 Obex。",
     "linuxStep1": "執行以下腳本安裝 cloudflared 並建立 systemd 服務（監聽 127.0.0.1:53）。",
-    "linuxStep2": "將系統 DNS 修改為 127.0.0.1。"
+    "linuxStep2": "將系統 DNS 修改為 127.0.0.1。",
+    "accessPointsCardTitle": "接入點",
+    "currentAccessPoint": "目前接入點",
+    "selectAccessPointToConfigure": "選擇接入點以設定"
   },
   "rules": {
     "title": "自訂規則",
@@ -383,7 +386,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "經典 DNS",
     "httpsOnly": "僅支援 HTTPS",
-    "upstreamDesc": "所有未被攔截的查詢將由本應用轉發至此伺服器。支援 DoH (HTTPS) 或 經典 DNS (如 1.1.1.2)。推薦使用 DoH (DNS over HTTPS)，相對而言會擁有更快更穩健更安全的連接。經典 DNS 將透過 TCP 轉發。",
+    "upstreamDesc": "所有未被攔截的查詢將由本應用轉發至此伺服器。支援 DoH (HTTPS)、DoT (tls://)、DNS Stamp (sdns://) 或經典 DNS。經典 DNS 透過 TCP 轉發。",
     "defaultPolicyTitle": "默認過濾行為",
     "onNoMatch": "未匹配規則時",
     "allowAll": "允許所有查詢",
@@ -411,6 +414,8 @@
     "answerSection": "解析結果回顯 (Answer Section)",
     "noRecordsReturned": "本次查詢未返回任何記錄。",
     "diagnostics": "診斷資訊",
+    "errorDetail": "錯誤詳情",
+    "upstreamResponse": "上游回應內容",
     "presetCloudflareSecurity": "Cloudflare Security (快速/去惡意域名/去釣魚域名)",
     "presetCloudflareFamilies": "Cloudflare Families (快速/去惡意域名/去成人內容)",
     "presetQuad9": "Quad9 (去惡意域名/無日誌/不呈遞 ECS)",

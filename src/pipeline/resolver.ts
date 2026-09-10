@@ -6,23 +6,84 @@ import { isCloudflareIp, buildCloudflareEchConfig, DEFAULT_ECH_FRONTING_DOMAIN, 
 import { dnsCache } from "./cache";
 import { connectUniversal } from "../utils/sockets";
 import { isSafeUrl } from "../utils/validator";
+import { parseDnsStamp } from "../utils/dnsStamp";
 import { enqueueLog } from "./logBatcher";
+
+export class UpstreamHttpError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly statusText: string,
+    public readonly responseBodySnippet: string,
+    public readonly cfRay?: string
+  ) {
+    super(`Upstream HTTP ${status}${statusText ? ` ${statusText}` : ''}`);
+    this.name = 'UpstreamHttpError';
+  }
+}
+
+/**
+ * Reads a 2-byte framed DNS message from a ReadableStream reader (RFC 1035 / RFC 7858).
+ * Handles TCP / TLS packet fragmentation and enforces a timeout.
+ */
+async function readFramedDnsResponse(reader: ReadableStreamDefaultReader<Uint8Array>, timeoutMs = 5000): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  let expectedBodyLength: number | null = null;
+
+  let timer: any;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Upstream Socket Timeout")), timeoutMs);
+  });
+
+  try {
+    while (true) {
+      const { value, done } = await Promise.race([reader.read(), timeoutPromise]);
+      if (done || !value) {
+        throw new Error("Socket closed before complete DNS response received");
+      }
+
+      chunks.push(value);
+      totalBytes += value.length;
+
+      if (expectedBodyLength === null && totalBytes >= 2) {
+        const b0 = chunks[0][0];
+        const b1 = chunks[0].length > 1 ? chunks[0][1] : chunks[1][0];
+        expectedBodyLength = (b0 << 8) | b1;
+      }
+
+      if (expectedBodyLength !== null && totalBytes >= 2 + expectedBodyLength) {
+        const combined = new Uint8Array(totalBytes);
+        let offset = 0;
+        for (const chunk of chunks) {
+          combined.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return combined.slice(2, 2 + expectedBodyLength);
+      }
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 export const pipelineResolver = {
   async resolve(request: Request, query: DNSQuery, context: Context, settings: ProfileSettings, action: 'PASS', reason?: string): Promise<ResolutionResult> {
     const logModel = new LogModel(context.env.DB);
-    let upstreamUrl = settings.upstream[0] || "https://security.cloudflare-dns.com/dns-query";
-    if (!isSafeUrl(upstreamUrl)) {
+    const rawUpstreamUrl = settings.upstream[0] || "https://security.cloudflare-dns.com/dns-query";
+    let effectiveUpstreamUrl = rawUpstreamUrl;
+    let diagMethod = "POST";
+    let diagTarget = rawUpstreamUrl;
+
+    if (!isSafeUrl(rawUpstreamUrl)) {
       return { 
         answer: new Uint8Array(), ttl: 0, action: "FAIL", reason: "Unsafe upstream URL",
-        diagnostics: { upstream_url: upstreamUrl, method: "BLOCKED", status: 0 },
+        diagnostics: { upstream_url: rawUpstreamUrl, method: "BLOCKED", status: 0 },
         latency: Date.now() - context.startTime
       };
     }
     const startFetch = Date.now();
     let answer: Uint8Array;
     let upstreamLatency = 0;
-    let isClassicDns = !upstreamUrl.startsWith('http');
 
     // ── ECS 处理 ──────────────────────────────────────────────────────────
     // ECS 通过 RFC 7871 OPT RR 直接写入 DNS 线格式（wire format），而非 URL 参数。
@@ -44,64 +105,139 @@ export const pipelineResolver = {
     }
 
     try {
-      // 经典 DNS 的 host 和 port，提升到外层供 diagnostics 使用
-      let tcpHost = '';
-      let tcpPort = 53;
+      if (rawUpstreamUrl.startsWith('sdns://')) {
+        const stamp = parseDnsStamp(rawUpstreamUrl);
+        if (stamp.protocol === 'dnscrypt') {
+          throw new Error("DNSCrypt (0x01) protocol in DNS Stamp is not supported; please use DoH (0x02) or DoT (0x03) DNS Stamps");
+        }
+        if (stamp.protocol === 'doq') {
+          throw new Error("DNS over QUIC (0x04) in DNS Stamp is not supported; please use DoH (0x02) or DoT (0x03) DNS Stamps");
+        }
+        if (!stamp.resolvedUrl) {
+          throw new Error(`Unsupported DNS Stamp protocol: 0x${stamp.protocolId.toString(16)}`);
+        }
+        effectiveUpstreamUrl = stamp.resolvedUrl;
+      }
 
-      if (isClassicDns) {
-        // 经典 DNS 处理 (通过 TCP Socket)
-        // 去除 tcp:// 前缀和裸 IP 均可正确解析
-        tcpHost = upstreamUrl.replace(/^tcp:\/\//, '');
-        if (tcpHost.includes(':')) {
+      if (effectiveUpstreamUrl.startsWith('tls://')) {
+        // ── DNS over TLS (DoT - RFC 7858) ──────────────────────────────────
+        diagMethod = "DoT";
+        let dotHost = effectiveUpstreamUrl.replace(/^tls:\/\//, '');
+        let dotPort = 853;
+        if (dotHost.startsWith('[')) {
+          const closeIdx = dotHost.indexOf(']');
+          if (closeIdx !== -1) {
+            const ip = dotHost.slice(1, closeIdx);
+            const rest = dotHost.slice(closeIdx + 1);
+            dotHost = ip;
+            if (rest.startsWith(':')) {
+              dotPort = parseInt(rest.slice(1), 10) || 853;
+            }
+          }
+        } else if (dotHost.includes(':')) {
+          const parts = dotHost.split(':');
+          dotHost = parts[0];
+          dotPort = parseInt(parts[1], 10) || 853;
+        }
+        diagTarget = `tls://${dotHost}:${dotPort}`;
+
+        const socket = await connectUniversal({
+          hostname: dotHost,
+          port: dotPort,
+          secureTransport: 'on'
+        });
+
+        try {
+          const writer = socket.writable.getWriter();
+          const reader = socket.readable.getReader();
+
+          // RFC 7858 Section 3.3: 2-byte length prefix + DNS message
+          const framedQuery = new Uint8Array(queryRaw.length + 2);
+          framedQuery[0] = (queryRaw.length >> 8) & 0xff;
+          framedQuery[1] = queryRaw.length & 0xff;
+          framedQuery.set(queryRaw, 2);
+
+          await writer.write(framedQuery);
+          writer.releaseLock();
+
+          answer = await readFramedDnsResponse(reader, 5000);
+        } finally {
+          await socket.close().catch(() => {});
+        }
+        upstreamLatency = Date.now() - startFetch;
+
+      } else if (!effectiveUpstreamUrl.startsWith('http://') && !effectiveUpstreamUrl.startsWith('https://')) {
+        // ── 经典 DNS (TCP Socket) ──────────────────────────────────────────
+        diagMethod = "TCP";
+        let tcpHost = effectiveUpstreamUrl.replace(/^tcp:\/\//, '');
+        let tcpPort = 53;
+        if (tcpHost.startsWith('[')) {
+          const closeIdx = tcpHost.indexOf(']');
+          if (closeIdx !== -1) {
+            const ip = tcpHost.slice(1, closeIdx);
+            const rest = tcpHost.slice(closeIdx + 1);
+            tcpHost = ip;
+            if (rest.startsWith(':')) {
+              tcpPort = parseInt(rest.slice(1), 10) || 53;
+            }
+          }
+        } else if (tcpHost.includes(':')) {
           const parts = tcpHost.split(':');
           tcpHost = parts[0];
-          tcpPort = parseInt(parts[1]) || 53;
+          tcpPort = parseInt(parts[1], 10) || 53;
         }
+        diagTarget = `tcp://${tcpHost}:${tcpPort}`;
 
-        const socket = await connectUniversal({ hostname: tcpHost, port: tcpPort });
-        const writer = socket.writable.getWriter();
-        const reader = socket.readable.getReader();
+        const socket = await connectUniversal({
+          hostname: tcpHost,
+          port: tcpPort,
+          secureTransport: 'off'
+        });
 
-        // TCP DNS：同样使用注入 ECS 后的 queryRaw
-        const tcpQuery = new Uint8Array(queryRaw.length + 2);
-        tcpQuery[0] = (queryRaw.length >> 8) & 0xff;
-        tcpQuery[1] = queryRaw.length & 0xff;
-        tcpQuery.set(queryRaw, 2);
+        try {
+          const writer = socket.writable.getWriter();
+          const reader = socket.readable.getReader();
 
-        await writer.write(tcpQuery);
-        writer.releaseLock();
+          const framedQuery = new Uint8Array(queryRaw.length + 2);
+          framedQuery[0] = (queryRaw.length >> 8) & 0xff;
+          framedQuery[1] = queryRaw.length & 0xff;
+          framedQuery.set(queryRaw, 2);
 
-        // 读取响应长度，添加 5 秒超时
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error("TCP Upstream Timeout")), 5000)
-        );
-        const result = await Promise.race([reader.read(), timeoutPromise]);
+          await writer.write(framedQuery);
+          writer.releaseLock();
 
-        if (!result.value) throw new Error("Socket closed");
-        
-        let responseBuffer = result.value;
-        if (responseBuffer.length < 2) throw new Error("Invalid TCP response");
-        
-        const responseLength = (responseBuffer[0] << 8) | responseBuffer[1];
-        answer = responseBuffer.slice(2, 2 + responseLength);
-        
-        await socket.close();
+          answer = await readFramedDnsResponse(reader, 5000);
+        } finally {
+          await socket.close().catch(() => {});
+        }
         upstreamLatency = Date.now() - startFetch;
+
       } else {
-        // DoH 处理：ECS 已注入 queryRaw（wire format），无需 URL 参数
-        const response = await fetch(upstreamUrl, {
+        // ── DoH (DNS over HTTPS) ───────────────────────────────────────────
+        diagMethod = "POST";
+        diagTarget = effectiveUpstreamUrl;
+
+        const response = await fetch(effectiveUpstreamUrl, {
           method: "POST",
           headers: { 
             "Accept": "application/dns-message",
             "Content-Type": "application/dns-message", 
-            "User-Agent": "Obex-DNS/1.0",
-            "Connection": "keep-alive"
+            "User-Agent": "Obex-DNS/1.0"
           },
           body: queryRaw,
           signal: AbortSignal.timeout(5000)
         });
 
-        if (!response.ok) throw new Error(`Upstream HTTP ${response.status}`);
+        if (!response.ok) {
+          let snippet = "";
+          try {
+            const rawBody = await response.text();
+            // 提取纯文本摘要（剥除 HTML 标签及多余空白），保留前 300 字符
+            snippet = rawBody.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+          } catch {}
+          const cfRay = response.headers.get("cf-ray") || undefined;
+          throw new UpstreamHttpError(response.status, response.statusText, snippet, cfRay);
+        }
         const answerBuffer = await response.arrayBuffer();
         answer = new Uint8Array(answerBuffer);
         upstreamLatency = Date.now() - startFetch;
@@ -212,7 +348,7 @@ export const pipelineResolver = {
             reason: effectiveReason,
             answer: parsedAnswers.map(a => a.data).join(", "),
             dest_geoip: destGeoJson,
-            upstream: upstreamUrl,
+            upstream: rawUpstreamUrl,
             latency,
             ecs
           }, settings, context.env, context.ctx);
@@ -235,21 +371,72 @@ export const pipelineResolver = {
         latency: Date.now() - context.startTime, 
         timings: { upstream_fetch: upstreamLatency },
         diagnostics: {
-          upstream_url: isClassicDns ? `tcp://${tcpHost}:${tcpPort}` : upstreamUrl,
-          method: isClassicDns ? "TCP" : "GET",
-          status: 200
+          upstream_url: rawUpstreamUrl.startsWith('sdns://') ? `${rawUpstreamUrl} (${diagTarget})` : diagTarget,
+          method: diagMethod,
+          status: 200,
+          status_text: "OK"
         }
       };
     } catch (e: any) {
+      let status = 0;
+      let statusText: string | undefined;
+      let errorDetail = e?.message || String(e);
+      let responseBodySnippet: string | undefined;
+      let cfRay: string | undefined;
+
+      if (e instanceof UpstreamHttpError) {
+        status = e.status;
+        statusText = e.statusText || undefined;
+        responseBodySnippet = e.responseBodySnippet || undefined;
+        cfRay = e.cfRay;
+      } else if (e?.cause) {
+        const causeMsg = typeof e.cause === 'object' && e.cause ? (e.cause.message || String(e.cause)) : String(e.cause);
+        errorDetail += ` (Cause: ${causeMsg})`;
+      }
+
+      const failReason = status > 0
+        ? `Upstream HTTP ${status}${statusText ? ` ${statusText}` : ''}`
+        : `Upstream Error: ${errorDetail}`;
+
+      // 异步持久化解析失败日志，便于在管理面板“查询日志”中排查上游故障
+      context.ctx.waitUntil((async () => {
+        try {
+          const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+          enqueueLog({
+            profile_id: context.profileId,
+            access_point_id: context.accessPointId,
+            timestamp: Math.floor(Date.now() / 1000),
+            client_ip: clientIp,
+            geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
+            domain: query.name,
+            record_type: query.type,
+            action: "FAIL",
+            reason: failReason,
+            answer: "",
+            dest_geoip: "",
+            upstream: rawUpstreamUrl,
+            latency: Date.now() - context.startTime,
+            ecs
+          }, settings, context.env, context.ctx);
+        } catch {
+          // Ignore background logging failures
+        }
+      })());
+
       return { 
         answer: new Uint8Array(), 
         ttl: 0, 
         action: "FAIL", 
-        reason: `Upstream Error: ${e.message}`,
+        reason: failReason,
+        latency: Date.now() - context.startTime,
         diagnostics: {
-          upstream_url: upstreamUrl,
-          method: isClassicDns ? "TCP" : "GET",
-          status: 0
+          upstream_url: rawUpstreamUrl.startsWith('sdns://') ? `${rawUpstreamUrl} (${diagTarget})` : diagTarget,
+          method: diagMethod,
+          status,
+          status_text: statusText,
+          error_detail: errorDetail,
+          response_body: responseBodySnippet,
+          cf_ray: cfRay
         }
       };
     }

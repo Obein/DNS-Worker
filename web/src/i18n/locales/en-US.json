@@ -198,7 +198,10 @@
     "linuxTitle": "Linux (Cloudflared DoH Proxy)",
     "linuxDesc": "Run a local DNS proxy to forward queries to Obex via DoH.",
     "linuxStep1": "Run this script to install cloudflared and setup systemd service (listening on 127.0.0.1:53).",
-    "linuxStep2": "Change your system DNS to 127.0.0.1."
+    "linuxStep2": "Change your system DNS to 127.0.0.1.",
+    "accessPointsCardTitle": "Access Points",
+    "currentAccessPoint": "Current Access Point",
+    "selectAccessPointToConfigure": "Select Access Point to Configure"
   },
   "rules": {
     "title": "Custom Rules",
@@ -383,7 +386,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "Classic DNS",
     "httpsOnly": "HTTPS Only",
-    "upstreamDesc": "Unblocked queries will be forwarded to this server. Supports DoH (HTTPS) or Classic DNS (e.g., 1.1.1.2). DoH is recommended for speed and security. Classic DNS uses TCP.",
+    "upstreamDesc": "All unblocked queries will be forwarded to this upstream server. Supports DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://), or Classic DNS. Classic DNS is forwarded via TCP.",
     "defaultPolicyTitle": "Default Policy",
     "onNoMatch": "On No Match",
     "allowAll": "Allow all queries",
@@ -411,6 +414,8 @@
     "answerSection": "Answer Section",
     "noRecordsReturned": "No records returned for this query.",
     "diagnostics": "Diagnostics",
+    "errorDetail": "Error Details",
+    "upstreamResponse": "Upstream Response",
     "presetCloudflareSecurity": "Cloudflare Security",
     "presetCloudflareFamilies": "Cloudflare Families",
     "presetQuad9": "Quad9 (No Log/No ECS)",

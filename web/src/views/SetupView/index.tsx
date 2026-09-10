@@ -8,6 +8,7 @@ import type {  SetupViewProps, ClientInfo  } from "./types";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { SetupHeader } from "./components/SetupHeader";
 import { VerifyConnectionCard } from "./components/VerifyConnectionCard";
+import { AccessPointCard } from "./components/AccessPointCard";
 import { DohUrlCard } from "./components/DohUrlCard";
 import { SetupTabs } from "./components/SetupTabs";
 import { AccessPointDrawer } from "./components/AccessPointDrawer";
@@ -18,10 +19,11 @@ import {
   getSubstituteInfo,
   getTraceInfo,
   queryDnsJson,
-  getProfileAccessPoints
+  getProfileAccessPoints,
+  getProfileDetails,
 } from "../../services";
 
-export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toasterRef }) => {
+export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, profileName, toasterRef }) => {
   const isMobile = useIsMobile();
   const { t, i18n } = useTranslation();
   const presetRegions = useMemo(() => getPresetRegions(t), [i18n.language, t]);
@@ -46,6 +48,20 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
   useEffect(() => {
     fetchAccessPoints();
   }, [profileId]);
+
+  const [currentProfileName, setCurrentProfileName] = useState<string>(profileName || "");
+
+  useEffect(() => {
+    if (profileName) {
+      setCurrentProfileName(profileName);
+    } else if (profileId) {
+      getProfileDetails(profileId)
+        .then((data: any) => {
+          if (data?.name) setCurrentProfileName(data.name);
+        })
+        .catch(() => {});
+    }
+  }, [profileId, profileName]);
 
   const activeAp = useMemo(() => {
     if (accessPoints.length === 0) return null;
@@ -230,21 +246,27 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, toa
         traceInfo={traceInfo}
       />
 
-      <DohUrlCard 
-        dohUrl={dohUrl} 
-        accessPointName={activeName}
-        copyToClipboard={copyToClipboard} 
-        isMobile={isMobile} 
-        onManageAccessPoints={() => setIsAccessPointDrawerOpen(true)}
+      <AccessPointCard
         accessPoints={accessPoints}
         selectedApId={activeAp?.id || null}
         onSelectAp={setSelectedApId}
+        accessPointName={activeName}
+        onManageAccessPoints={() => setIsAccessPointDrawerOpen(true)}
+        isMobile={isMobile}
+      />
+
+      <DohUrlCard 
+        dohUrl={dohUrl} 
+        copyToClipboard={copyToClipboard} 
+        isMobile={isMobile} 
       />
 
       <SetupTabs
         isMobile={isMobile}
         copyToClipboard={copyToClipboard}
         profileKey={activeToken}
+        profileName={currentProfileName || undefined}
+        accessPointName={activeName}
         allRegions={allRegions}
         selectedRegion={selectedRegion}
         currentIps={currentIps}

@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (Cloudflared DoH-Proxy)",
     "linuxDesc": "Führen Sie einen lokalen DNS-Proxy aus, um DNS-Anfragen verschlüsselt über DoH an Obex weiterzuleiten.",
     "linuxStep1": "Führen Sie das folgende Skript aus, um cloudflared zu installieren und einen systemd-Dienst zu erstellen (hört auf 127.0.0.1:53).",
-    "linuxStep2": "Ändern Sie die System-DNS-Adresse auf 127.0.0.1."
+    "linuxStep2": "Ändern Sie die System-DNS-Adresse auf 127.0.0.1.",
+    "accessPointsCardTitle": "Zugangspunkte",
+    "currentAccessPoint": "Aktueller Zugangspunkt",
+    "selectAccessPointToConfigure": "Zugangspunkt zum Konfigurieren auswählen"
   },
   "rules": {
     "title": "Benutzerdefinierte Regeln",
@@ -382,7 +385,7 @@
     "dnsIP": "DNS-IP",
     "classicDns": "Klassisches DNS",
     "httpsOnly": "Nur HTTPS unterstützen",
-    "upstreamDesc": "Alle nicht blockierten Anfragen werden an diesen Server weitergeleitet. Unterstützt DoH (HTTPS) oder klassisches DNS (z. B. 1.1.1.2). DoH (DNS over HTTPS) wird dringend empfohlen für schnellere, sicherere und stabilere Verbindungen. Klassisches DNS wird über TCP weitergeleitet.",
+    "upstreamDesc": "Alle nicht blockierten Anfragen werden an diesen Server weitergeleitet. Unterstützt DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) oder klassisches DNS. Klassisches DNS wird über TCP weitergeleitet.",
     "defaultPolicyTitle": "Standard-Filterverhalten",
     "onNoMatch": "Wenn keine Regel zutrifft",
     "allowAll": "Alle Abfragen zulassen",
@@ -410,6 +413,8 @@
     "answerSection": "Antwortbereich (Answer Section)",
     "noRecordsReturned": "Diese Abfrage hat keine Datensätze zurückgegeben.",
     "diagnostics": "Diagnoseinformationen",
+    "errorDetail": "Fehlerdetails",
+    "upstreamResponse": "Upstream-Antwort",
     "presetCloudflareSecurity": "Cloudflare Security (Schnell/Schutz vor Schadsoftware/Phishing)",
     "presetCloudflareFamilies": "Cloudflare Families (Schnell/Schutz vor Schadsoftware/Erwachseneninhalten)",
     "presetQuad9": "Quad9 (Schutz vor Schadsoftware/Keine Protokolle/Ohne ECS)",

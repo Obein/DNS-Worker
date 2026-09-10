@@ -70,6 +70,7 @@ export const ProfileRoutes = ({
             <SetupView
               profileId={id}
               profileKey={selectedProfile?.profile_key || id}
+              profileName={selectedProfile?.name}
               toasterRef={toasterRef}
             />
           }

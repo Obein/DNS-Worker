@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (Cloudflared DoH прокси)",
     "linuxDesc": "Локальный DNS прокси для шифрования запросов.",
     "linuxStep1": "Запустите скрипт для установки cloudflared и создания systemd-сервиса (слушает 127.0.0.1:53).",
-    "linuxStep2": "Установите системный DNS на 127.0.0.1."
+    "linuxStep2": "Установите системный DNS на 127.0.0.1.",
+    "accessPointsCardTitle": "Точки доступа",
+    "currentAccessPoint": "Текущая точка доступа",
+    "selectAccessPointToConfigure": "Выберите точку доступа для настройки"
   },
   "rules": {
     "title": "Пользовательские правила",
@@ -382,7 +385,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "Классический DNS",
     "httpsOnly": "Только HTTPS",
-    "upstreamDesc": "Запросы будут пересылаться на этот сервер. Поддерживает DoH (HTTPS) или классический DNS. Рекомендуется DoH (безопаснее, быстрее).",
+    "upstreamDesc": "Все незаблокированные запросы будут пересылаться на этот сервер. Поддерживает DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) или классический DNS. Классический DNS передается через TCP.",
     "defaultPolicyTitle": "Фильтрация по умолчанию",
     "onNoMatch": "Если правил нет",
     "allowAll": "Разрешать всё",
@@ -410,6 +413,8 @@
     "answerSection": "Ответ (Answer Section)",
     "noRecordsReturned": "Записей не возвращено.",
     "diagnostics": "Диагностика",
+    "errorDetail": "Сведения об ошибке",
+    "upstreamResponse": "Ответ вышестоящего сервера",
     "presetCloudflareSecurity": "Cloudflare Security",
     "presetCloudflareFamilies": "Cloudflare Families",
     "presetQuad9": "Quad9",

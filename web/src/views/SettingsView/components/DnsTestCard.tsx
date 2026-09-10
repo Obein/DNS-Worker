@@ -112,13 +112,51 @@ export const DnsTestCard: React.FC<DnsTestCardProps> = ({ testInput, setTestInpu
             </div>
 
             {testResult.diagnostics && (
-              <Callout minimal intent={Intent.NONE} className="text-xs font-mono opacity-80">
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <span className="font-bold">{t("settings.diagnostics")}</span>
-                    <span>HTTP {testResult.diagnostics.status}</span>
+              <Callout
+                minimal
+                intent={testResult.action === "FAIL" ? Intent.DANGER : Intent.NONE}
+                className="text-xs font-mono"
+              >
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold uppercase tracking-wider">{t("settings.diagnostics")}</span>
+                    <span className="font-bold">
+                      {testResult.action === "FAIL"
+                        ? (testResult.diagnostics.status > 0
+                            ? `HTTP ${testResult.diagnostics.status}${testResult.diagnostics.status_text ? ` (${testResult.diagnostics.status_text})` : ""}`
+                            : "Network / Connection Error")
+                        : (testResult.diagnostics.method === "POST" || testResult.diagnostics.method === "GET"
+                            ? `HTTP ${testResult.diagnostics.status}${testResult.diagnostics.status_text ? ` (${testResult.diagnostics.status_text})` : ""}`
+                            : "Connected (OK)")}
+                    </span>
                   </div>
-                  <div className="break-all">{testResult.diagnostics.upstream_url}</div>
+
+                  <div className="flex items-center gap-2 text-xs opacity-80">
+                    <span className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-[10px] font-bold">
+                      {testResult.diagnostics.method}
+                    </span>
+                    <span className="break-all">{testResult.diagnostics.upstream_url}</span>
+                  </div>
+
+                  {testResult.diagnostics.cf_ray && (
+                    <div className="text-[11px] opacity-75">
+                      CF-Ray: <span className="font-bold">{testResult.diagnostics.cf_ray}</span>
+                    </div>
+                  )}
+
+                  {testResult.diagnostics.error_detail && testResult.action === "FAIL" && (
+                    <div className="p-2 bg-red-50 dark:bg-red-950/40 rounded border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 break-words">
+                      <div className="font-bold mb-0.5">{t("settings.errorDetail")}:</div>
+                      <div>{testResult.diagnostics.error_detail}</div>
+                    </div>
+                  )}
+
+                  {testResult.diagnostics.response_body && (
+                    <div className="p-2 bg-gray-100 dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 break-words text-[11px]">
+                      <div className="font-bold mb-0.5 opacity-60">{t("settings.upstreamResponse")}:</div>
+                      <div className="line-clamp-3">{testResult.diagnostics.response_body}</div>
+                    </div>
+                  )}
                 </div>
               </Callout>
             )}

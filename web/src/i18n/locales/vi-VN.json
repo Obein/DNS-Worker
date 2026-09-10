@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (Proxy Cloudflared DoH)",
     "linuxDesc": "Chạy một proxy DNS nhẹ tại địa phương, mã hóa và chuyển tiếp các yêu cầu phân giải đến Obex thông qua DoH.",
     "linuxStep1": "Chạy đoạn mã sau để cài đặt cloudflared và tạo dịch vụ systemd (lắng nghe tại 127.0.0.1:53).",
-    "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1."
+    "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1.",
+    "accessPointsCardTitle": "Điểm truy cập",
+    "currentAccessPoint": "Điểm truy cập hiện tại",
+    "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình"
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",
@@ -382,7 +385,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "DNS truyền thống",
     "httpsOnly": "Chỉ hỗ trợ HTTPS",
-    "upstreamDesc": "Tất cả các truy vấn không bị chặn sẽ được ứng dụng này chuyển tiếp đến máy chủ này. Hỗ trợ DoH (HTTPS) hoặc DNS truyền thống (ví dụ: 1.1.1.2). Khuyến nghị sử dụng DoH (DNS over HTTPS) để có kết nối nhanh hơn, ổn định hơn và an toàn hơn. DNS truyền thống sẽ được chuyển tiếp qua TCP.",
+    "upstreamDesc": "Tất cả các truy vấn không bị chặn sẽ được chuyển tiếp đến máy chủ này. Hỗ trợ DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) hoặc DNS truyền thống. DNS truyền thống được chuyển tiếp qua TCP.",
     "defaultPolicyTitle": "Hành vi chặn mặc định",
     "onNoMatch": "Khi không khớp quy tắc",
     "allowAll": "Cho phép tất cả truy vấn",
@@ -410,6 +413,8 @@
     "answerSection": "Kết quả phân giải (Answer Section)",
     "noRecordsReturned": "Truy vấn này không trả về bất kỳ bản ghi nào.",
     "diagnostics": "Thông tin chẩn đoán",
+    "errorDetail": "Chi tiết lỗi",
+    "upstreamResponse": "Phản hồi từ máy chủ nguồn",
     "presetCloudflareSecurity": "Cloudflare Security (Nhanh/Chặn tên miền độc hại/Chặn tên miền lừa đảo)",
     "presetCloudflareFamilies": "Cloudflare Families (Nhanh/Chặn tên miền độc hại/Chặn nội dung người lớn)",
     "presetQuad9": "Quad9 (Chặn tên miền độc hại/Không lưu nhật ký/Không gửi ECS)",

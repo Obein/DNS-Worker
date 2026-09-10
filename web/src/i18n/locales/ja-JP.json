@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (Cloudflared DoH プロキシ)",
     "linuxDesc": "ローカルで軽量なDNSプロキシを実行し、DoH 経由でリクエストを暗号化して Obex に転送します。",
     "linuxStep1": "以下のスクリプトを実行して cloudflared をインストールし、systemd サービスを作成します（127.0.0.1:53 を監視）。",
-    "linuxStep2": "システムの DNS を 127.0.0.1 に変更します。"
+    "linuxStep2": "システムの DNS を 127.0.0.1 に変更します。",
+    "accessPointsCardTitle": "アクセスポイント",
+    "currentAccessPoint": "現在のアクセスポイント",
+    "selectAccessPointToConfigure": "設定するアクセスポイントを選択"
   },
   "rules": {
     "title": "カスタムルール",
@@ -382,7 +385,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "従来の DNS",
     "httpsOnly": "HTTPS のみサポート",
-    "upstreamDesc": "ブロックされなかったすべてのクエリはこのサーバーへ転送されます。DoH (HTTPS) または従来のDNS (例: 1.1.1.2) に対応しています。より高速で安定し、暗号化されて安全な DoH (DNS over HTTPS) の使用を推奨します。従来の DNS は TCP 経由で転送されます。",
+    "upstreamDesc": "ブロックされなかったすべてのクエリはこのサーバーへ転送されます。DoH (HTTPS)、DoT (tls://)、DNS Stamp (sdns://)、従来の DNS に対応しています。従来の DNS は TCP 経由で転送されます。",
     "defaultPolicyTitle": "デフォルトの動作",
     "onNoMatch": "ルールにマッチしない場合",
     "allowAll": "すべてのクエリを許可",
@@ -410,6 +413,8 @@
     "answerSection": "解決結果 (Answer Section)",
     "noRecordsReturned": "このクエリから返されたレコードはありませんでした。",
     "diagnostics": "診断情報",
+    "errorDetail": "エラー詳細",
+    "upstreamResponse": "アップストリーム応答内容",
     "presetCloudflareSecurity": "Cloudflare Security (高速/マルウェア・フィッシング対策)",
     "presetCloudflareFamilies": "Cloudflare Families (高速/マルウェア・成人向けコンテンツブロック)",
     "presetQuad9": "Quad9 (マルウェア対策/ログなし/ECS非送信)",

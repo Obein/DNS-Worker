@@ -197,7 +197,10 @@
     "linuxTitle": "Linux (Cloudflared DoH 프록시)",
     "linuxDesc": "로컬에서 가벼운 DNS 프록시를 실행하여 DoH를 통해 요청을 암호화하고 Obex로 전달합니다.",
     "linuxStep1": "다음 스크립트를 실행하여 cloudflared를 설치하고 systemd 서비스를 생성합니다 (127.0.0.1:53 감시).",
-    "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다."
+    "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다.",
+    "accessPointsCardTitle": "액세스 포인트",
+    "currentAccessPoint": "현재 액세스 포인트",
+    "selectAccessPointToConfigure": "구성할 액세스 포인트 선택"
   },
   "rules": {
     "title": "사용자 지정 규칙",
@@ -382,7 +385,7 @@
     "dnsIP": "DNS IP",
     "classicDns": "기존 DNS",
     "httpsOnly": "HTTPS만 지원",
-    "upstreamDesc": "차단되지 않은 모든 쿼리는 이 서버로 전달됩니다. DoH (HTTPS) 또는 기존 DNS (예: 1.1.1.2)를 지원합니다. 더 빠르고 안정적이며 암호화되어 안전한 DoH (DNS over HTTPS) 사용을 권장합니다. 기존 DNS는 TCP를 통해 전달됩니다.",
+    "upstreamDesc": "차단되지 않은 모든 쿼리는 이 서버로 전달됩니다. DoH (HTTPS), DoT (tls://), DNS Stamp (sdns://) 또는 기존 DNS를 지원합니다. 기존 DNS는 TCP를 통해 전달됩니다.",
     "defaultPolicyTitle": "기본 필터링 동작",
     "onNoMatch": "일치하는 규칙이 없을 때",
     "allowAll": "모든 쿼리 허용",
@@ -410,6 +413,8 @@
     "answerSection": "해석 결과 회신 (Answer Section)",
     "noRecordsReturned": "이 쿼리는 반환된 레코드가 없습니다.",
     "diagnostics": "진단 정보",
+    "errorDetail": "오류 세부 정보",
+    "upstreamResponse": "업스트림 응답 내용",
     "presetCloudflareSecurity": "Cloudflare Security (빠름/악성 및 피싱 도메인 제거)",
     "presetCloudflareFamilies": "Cloudflare Families (빠름/악성 및 성인 콘텐츠 제거)",
     "presetQuad9": "Quad9 (악성 도메인 제거/로그 없음/ECS 미제공)",
