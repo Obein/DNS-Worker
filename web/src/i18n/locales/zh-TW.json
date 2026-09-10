@@ -198,7 +198,9 @@
     "linuxTitle": "Linux (Cloudflared DoH 代理)",
     "linuxDesc": "在本地執行輕量級 DNS 代理，透過 DoH 將解析請求加密轉發至 Obex。",
     "linuxStep1": "執行以下腳本安裝 cloudflared 並建立 systemd 服務（監聽 127.0.0.1:53）。",
-    "linuxStep2": "將系統 DNS 修改為 127.0.0.1。"
+    "linuxStep2": "將系統 DNS 修改為 127.0.0.1。",
+    "accessPointsCardTitle": "接入點",
+    "currentAccessPoint": "目前接入點"
   },
   "rules": {
     "title": "自訂規則",

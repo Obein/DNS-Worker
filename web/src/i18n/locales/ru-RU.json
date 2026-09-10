@@ -197,7 +197,9 @@
     "linuxTitle": "Linux (Cloudflared DoH прокси)",
     "linuxDesc": "Локальный DNS прокси для шифрования запросов.",
     "linuxStep1": "Запустите скрипт для установки cloudflared и создания systemd-сервиса (слушает 127.0.0.1:53).",
-    "linuxStep2": "Установите системный DNS на 127.0.0.1."
+    "linuxStep2": "Установите системный DNS на 127.0.0.1.",
+    "accessPointsCardTitle": "Точки доступа",
+    "currentAccessPoint": "Текущая точка доступа"
   },
   "rules": {
     "title": "Пользовательские правила",

@@ -197,7 +197,9 @@
     "linuxTitle": "Linux (Cloudflared DoH 프록시)",
     "linuxDesc": "로컬에서 가벼운 DNS 프록시를 실행하여 DoH를 통해 요청을 암호화하고 Obex로 전달합니다.",
     "linuxStep1": "다음 스크립트를 실행하여 cloudflared를 설치하고 systemd 서비스를 생성합니다 (127.0.0.1:53 감시).",
-    "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다."
+    "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다.",
+    "accessPointsCardTitle": "액세스 포인트",
+    "currentAccessPoint": "현재 액세스 포인트"
   },
   "rules": {
     "title": "사용자 지정 규칙",

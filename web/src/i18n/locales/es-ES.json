@@ -197,7 +197,9 @@
     "linuxTitle": "Linux (proxy DoH Cloudflared)",
     "linuxDesc": "Ejecuta un proxy DNS local ligero para enviar las consultas DNS cifradas mediante DoH a Obex.",
     "linuxStep1": "Ejecuta el siguiente script para instalar cloudflared y crear un servicio systemd (escucha en 127.0.0.1:53).",
-    "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1."
+    "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1.",
+    "accessPointsCardTitle": "Puntos de acceso",
+    "currentAccessPoint": "Punto de acceso actual"
   },
   "rules": {
     "title": "Reglas personalizadas",

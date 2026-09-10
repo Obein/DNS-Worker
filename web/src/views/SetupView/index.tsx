@@ -8,6 +8,7 @@ import type {  SetupViewProps, ClientInfo  } from "./types";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { SetupHeader } from "./components/SetupHeader";
 import { VerifyConnectionCard } from "./components/VerifyConnectionCard";
+import { AccessPointCard } from "./components/AccessPointCard";
 import { DohUrlCard } from "./components/DohUrlCard";
 import { SetupTabs } from "./components/SetupTabs";
 import { AccessPointDrawer } from "./components/AccessPointDrawer";
@@ -245,15 +246,19 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         traceInfo={traceInfo}
       />
 
-      <DohUrlCard 
-        dohUrl={dohUrl} 
-        accessPointName={activeName}
-        copyToClipboard={copyToClipboard} 
-        isMobile={isMobile} 
-        onManageAccessPoints={() => setIsAccessPointDrawerOpen(true)}
+      <AccessPointCard
         accessPoints={accessPoints}
         selectedApId={activeAp?.id || null}
         onSelectAp={setSelectedApId}
+        accessPointName={activeName}
+        onManageAccessPoints={() => setIsAccessPointDrawerOpen(true)}
+        isMobile={isMobile}
+      />
+
+      <DohUrlCard 
+        dohUrl={dohUrl} 
+        copyToClipboard={copyToClipboard} 
+        isMobile={isMobile} 
       />
 
       <SetupTabs

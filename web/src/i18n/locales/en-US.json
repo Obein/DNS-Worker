@@ -198,7 +198,9 @@
     "linuxTitle": "Linux (Cloudflared DoH Proxy)",
     "linuxDesc": "Run a local DNS proxy to forward queries to Obex via DoH.",
     "linuxStep1": "Run this script to install cloudflared and setup systemd service (listening on 127.0.0.1:53).",
-    "linuxStep2": "Change your system DNS to 127.0.0.1."
+    "linuxStep2": "Change your system DNS to 127.0.0.1.",
+    "accessPointsCardTitle": "Access Points",
+    "currentAccessPoint": "Current Access Point"
   },
   "rules": {
     "title": "Custom Rules",

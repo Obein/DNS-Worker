@@ -197,7 +197,9 @@
     "linuxTitle": "Linux (Proxy Cloudflared DoH)",
     "linuxDesc": "Chạy một proxy DNS nhẹ tại địa phương, mã hóa và chuyển tiếp các yêu cầu phân giải đến Obex thông qua DoH.",
     "linuxStep1": "Chạy đoạn mã sau để cài đặt cloudflared và tạo dịch vụ systemd (lắng nghe tại 127.0.0.1:53).",
-    "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1."
+    "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1.",
+    "accessPointsCardTitle": "Điểm truy cập",
+    "currentAccessPoint": "Điểm truy cập hiện tại"
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",
