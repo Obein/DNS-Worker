@@ -28,6 +28,15 @@ export async function deleteUser(id: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
+export async function adminResetUserPassword(userId: string, newPassword: string): Promise<void> {
+  const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ newPassword })
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
 export async function getSystemSettings(): Promise<Record<string, string>> {
   const res = await fetch("/api/admin/settings");
   if (!res.ok) throw new Error("Failed to fetch system settings");

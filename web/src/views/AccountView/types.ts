@@ -5,6 +5,8 @@ export interface UserInfo {
   created_at?: number;
   totp_enabled?: boolean;
   totp_skip_password?: boolean;
+  passkeys_count?: number;
+  mfa_enabled?: boolean;
   last_active_at?: number;
   last_resolve_at?: number;
   timezone?: string | null;

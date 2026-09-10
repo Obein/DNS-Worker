@@ -128,7 +128,38 @@
     "orUseTotp": "Or use authenticator code",
     "passwordRequiredFirst": "Please enter your password first",
     "passkeyVerification": "Passkey Verification",
-    "passkeyPromptDesc": "Verify using your registered biometric or security key"
+    "passkeyPromptDesc": "Verify using your registered biometric or security key",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Reset Password",
+    "forgotPasswordDesc": "Recover your account securely using multi-factor authentication (Passkey or TOTP).",
+    "noMfaContactAdmin": "This account has not configured any multi-factor authentication (Passkey or TOTP) and cannot self-recover. Please contact a system administrator to reset your password.",
+    "chooseMfaForReset": "Choose an authentication method to verify your identity:",
+    "authViaPasskey": "Verify with Passkey",
+    "authViaPasskeyDesc": "1-click authentication using biometrics or a hardware security key",
+    "authViaTotp": "Verify with Authenticator App (TOTP)",
+    "authViaTotpDesc": "Enter the 6-digit dynamic code from your authenticator app",
+    "authViaRecoveryKey": "Use Emergency Recovery Key",
+    "authViaRecoveryKeyDesc": "Enter a 10-character emergency recovery key",
+    "verifyAndProceed": "Verify and Continue",
+    "setNewPassword": "Set New Password",
+    "setNewPasswordDesc": "Identity verified. Please set a new password for your account.",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "passwordMismatch": "New passwords do not match",
+    "saveAndReset": "Save and Reset Password",
+    "resetSuccessTitle": "Password Reset Successfully",
+    "resetSuccessDesc": "Your password has been updated and all existing login sessions have been terminated. Please log in with your new password.",
+    "goToLogin": "Proceed to Login",
+    "mfaSetupTitle": "Enhance Account Security",
+    "mfaSetupDesc": "Configuring Multi-Factor Authentication (MFA) safeguards your account, unlocks passwordless login, and enables self-service password recovery.",
+    "mfaRecommended": "Recommended",
+    "passkeySignupDesc": "Use Touch ID, Face ID, Windows Hello, or a security key. Lightning-fast and phishing-resistant.",
+    "bindPasskeyNow": "Register Passkey Now",
+    "mfaUniversal": "Universal",
+    "totpSignupDesc": "Use Google Authenticator, 1Password, or any standard authenticator app.",
+    "setupTotpBtn": "Set Up Authenticator App",
+    "skipMfaSetup": "Skip for now, complete signup",
+    "backToMfaOptions": "Back to options"
   },
   "setup": {
     "title": "Setup Guide",
@@ -528,7 +559,8 @@
       "recoveryKeysWarning": "Store these 8 keys safely (e.g., password manager). Each key can only be used once. You will NOT see them again after closing this dialog.",
       "copyKeys": "Copy All Keys",
       "copied": "Copied!",
-      "done": "Done — I've saved my keys"
+      "done": "Done — I've saved my keys",
+      "activeDesc": "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account."
     },
     "sessions": {
       "session": "Session",
@@ -601,6 +633,21 @@
       "updated": "Passkey updated successfully",
       "registered": "Passkey registered successfully",
       "deleted": "Passkey deleted"
+    },
+    "mfaNone": "None",
+    "resetUserPassword": "Reset Password",
+    "resetPasswordTitle": "Reset User Password",
+    "resetPasswordWarning": "After reset, all existing login sessions for this user will be invalidated immediately. The user must sign in with the new password.",
+    "resetPasswordSuccess": "Password reset successfully. The user's active sessions have been terminated.",
+    "confirmReset": "Confirm Reset",
+    "mfa": {
+      "title": "Multi-Factor Authentication (MFA)",
+      "enabled": "Configured",
+      "notConfigured": "Not Configured",
+      "desc": "Passkeys and Authenticator Apps (TOTP) both serve as MFA authentication methods. Configuring at least one factor protects your account and enables passwordless login and self-service password recovery.",
+      "passwordlessTitle": "Passwordless Login",
+      "passwordlessDesc": "When enabled, logging in will skip the password requirement and verify your identity directly via Passkey or TOTP.",
+      "unconfiguredHint": "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
     }
   },
   "intro": {

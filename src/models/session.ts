@@ -112,6 +112,11 @@ export class SessionModel {
     return result.success;
   }
 
+  async deleteAllByUserId(userId: string): Promise<boolean> {
+    const result = await this.db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId).run();
+    return result.success;
+  }
+
   async createPendingTotpSession(id: string, userId: string, expiresAt: number): Promise<boolean> {
     const result = await this.db.prepare("INSERT INTO pending_totp_sessions (id, user_id, expires_at) VALUES (?, ?, ?)").bind(id, userId, expiresAt).run();
     return result.success;

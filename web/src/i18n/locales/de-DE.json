@@ -127,7 +127,38 @@
     "orUseTotp": "Oder Authentifikator-Code verwenden",
     "passwordRequiredFirst": "Bitte geben Sie zuerst Ihr Passwort ein",
     "passkeyVerification": "Passkey-Verifizierung",
-    "passkeyPromptDesc": "Verifizieren Sie mit Ihrer registrierten Biometrie oder Ihrem Sicherheitsschlüssel"
+    "passkeyPromptDesc": "Verifizieren Sie mit Ihrer registrierten Biometrie oder Ihrem Sicherheitsschlüssel",
+    "forgotPassword": "Passwort vergessen?",
+    "forgotPasswordTitle": "Passwort zurücksetzen",
+    "forgotPasswordDesc": "Stellen Sie Ihr Konto sicher über Multi-Faktor-Authentifizierung (Passkey oder TOTP) wieder her.",
+    "noMfaContactAdmin": "Für dieses Konto ist keine Multi-Faktor-Authentifizierung (Passkey oder TOTP) eingerichtet. Bitte wenden Sie sich an einen Administrator, um Ihr Passwort zurückzusetzen.",
+    "chooseMfaForReset": "Wählen Sie eine Methode zur Identitätsprüfung:",
+    "authViaPasskey": "Mit Passkey verifizieren",
+    "authViaPasskeyDesc": "Ein-Klick-Verifizierung über Biometrie oder Hardware-Sicherheitsschlüssel",
+    "authViaTotp": "Mit Authentifikator-App (TOTP) verifizieren",
+    "authViaTotpDesc": "Geben Sie den 6-stelligen Code aus Ihrer Authentifikator-App ein",
+    "authViaRecoveryKey": "Notfall-Wiederherstellungsschlüssel verwenden",
+    "authViaRecoveryKeyDesc": "Geben Sie einen 10-stelligen Notfall-Wiederherstellungsschlüssel ein",
+    "verifyAndProceed": "Verifizieren und fortfahren",
+    "setNewPassword": "Neues Passwort festlegen",
+    "setNewPasswordDesc": "Identität bestätigt. Bitte legen Sie ein neues Passwort für Ihr Konto fest.",
+    "newPassword": "Neues Passwort",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "passwordMismatch": "Die Passwörter stimmen nicht überein",
+    "saveAndReset": "Speichern und zurücksetzen",
+    "resetSuccessTitle": "Passwort erfolgreich zurückgesetzt",
+    "resetSuccessDesc": "Ihr Passwort wurde aktualisiert und alle bestehenden Sitzungen wurden beendet. Bitte melden Sie sich mit Ihrem neuen Passwort an.",
+    "goToLogin": "Zur Anmeldung",
+    "mfaSetupTitle": "Kontosicherheit erhöhen",
+    "mfaSetupDesc": "Die Einrichtung der Multi-Faktor-Authentifizierung (MFA) schützt Ihr Konto und ermöglicht passwortlose Anmeldung sowie Kontowiederherstellung.",
+    "mfaRecommended": "Empfohlen",
+    "passkeySignupDesc": "Verwenden Sie Touch ID, Face ID oder Sicherheitsschlüssel. Schnell und phishing-resistent.",
+    "bindPasskeyNow": "Jetzt Passkey registrieren",
+    "mfaUniversal": "Universell",
+    "totpSignupDesc": "Verwenden Sie Google Authenticator, 1Password oder eine andere TOTP-App.",
+    "setupTotpBtn": "Authentifikator-App einrichten",
+    "skipMfaSetup": "Vorläufig überspringen",
+    "backToMfaOptions": "Zurück zur Auswahl"
   },
   "setup": {
     "title": "Installationsanleitung",
@@ -527,7 +558,8 @@
       "recoveryKeysWarning": "Bitte bewahren Sie diese 8 Schlüssel an einem sicheren Ort auf (z. B. Passwort-Manager). Jeder Schlüssel kann nur einmal verwendet werden. Nach dem Schließen dieses Fensters können Sie diese nicht erneut anzeigen.",
       "copyKeys": "Alle Schlüssel kopieren",
       "copied": "Kopiert!",
-      "done": "Fertig, ich habe die Schlüssel gespeichert"
+      "done": "Fertig, ich habe die Schlüssel gespeichert",
+      "activeDesc": "Die Authentifikator-App (TOTP) ist aktiv und generiert 6-stellige Bestätigungscodes."
     },
     "activity": {
       "title": "Aktivitätsprotokoll des Kontos",
@@ -600,6 +632,21 @@
       "updated": "Passkey erfolgreich aktualisiert",
       "registered": "Passkey erfolgreich registriert",
       "deleted": "Passkey gelöscht"
+    },
+    "mfaNone": "Keine",
+    "resetUserPassword": "Passwort zurücksetzen",
+    "resetPasswordTitle": "Benutzerpasswort zurücksetzen",
+    "resetPasswordWarning": "Nach dem Zurücksetzen werden alle aktiven Sitzungen dieses Benutzers sofort beendet.",
+    "resetPasswordSuccess": "Passwort erfolgreich zurückgesetzt. Alle aktiven Sitzungen wurden beendet.",
+    "confirmReset": "Zurücksetzen bestätigen",
+    "mfa": {
+      "title": "Multi-Faktor-Authentifizierung (MFA)",
+      "enabled": "Konfiguriert",
+      "notConfigured": "Nicht konfiguriert",
+      "desc": "Passkeys und Authentifikator-Apps (TOTP) dienen als MFA-Methoden. Die Konfiguration mindestens eines Faktors schützt Ihr Konto und ermöglicht passwortlose Anmeldung.",
+      "passwordlessTitle": "Passwortlose Anmeldung",
+      "passwordlessDesc": "Bei Aktivierung wird die Passworteingabe übersprungen und Ihre Identität direkt per Passkey oder TOTP geprüft.",
+      "unconfiguredHint": "Noch keine MFA konfiguriert. Richten Sie unten einen Passkey oder eine Authentifikator-App ein."
     }
   },
   "intro": {

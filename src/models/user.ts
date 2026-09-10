@@ -226,14 +226,52 @@ export class UserModel {
   }
 
   /**
-   * Disables TOTP and clears all TOTP-related data for a user.
+   * Disables TOTP. If keepMfaState is true (e.g. user has registered Passkeys),
+   * recovery keys and passwordless settings are retained.
    */
-  async removeTOTP(id: string): Promise<boolean> {
+  async removeTOTP(id: string, keepMfaState: boolean = false): Promise<boolean> {
+    if (keepMfaState) {
+      const result = await this.db
+        .prepare('UPDATE users SET totp_secret = NULL, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 0 WHERE id = ?')
+        .bind(id)
+        .run();
+      return result.success;
+    }
     const result = await this.db
       .prepare('UPDATE users SET totp_secret = NULL, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 0, totp_skip_password = 0, totp_recovery_keys = NULL, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?')
       .bind(id)
       .run();
     return result.success;
+  }
+
+  /**
+   * Saves or updates hashed recovery keys for a user (used by Passkeys or TOTP).
+   */
+  async updateRecoveryKeys(id: string, recoveryKeysHashed: string[]): Promise<boolean> {
+    const recoveryKeysStr = JSON.stringify(recoveryKeysHashed);
+    const encryptedKeys = await encryptEnvelope(recoveryKeysStr, this.env);
+
+    if (encryptedKeys) {
+      const result = await this.db
+        .prepare(
+          'UPDATE users SET totp_recovery_keys = NULL, totp_recovery_keys_encrypted = ?, totp_recovery_keys_dek = ? WHERE id = ?'
+        )
+        .bind(
+          encryptedKeys.dataEncrypted,
+          encryptedKeys.dekEncrypted,
+          id
+        )
+        .run();
+      return result.success;
+    } else {
+      const result = await this.db
+        .prepare(
+          'UPDATE users SET totp_recovery_keys = ?, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?'
+        )
+        .bind(recoveryKeysStr, id)
+        .run();
+      return result.success;
+    }
   }
 
   /**

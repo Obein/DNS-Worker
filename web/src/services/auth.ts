@@ -129,3 +129,56 @@ export async function lockSession(): Promise<void> {
   const res = await fetch("/api/auth/lock-session", { method: "POST" });
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
+
+export interface ForgotPasswordInitResponse {
+  can_reset: boolean;
+  reason?: string;
+  recoveryToken?: string;
+  has_passkey?: boolean;
+  passkey_options?: any;
+  has_totp?: boolean;
+  has_recovery_keys?: boolean;
+}
+
+export interface ForgotPasswordVerifyPayload {
+  recoveryToken: string;
+  passkeyAssertion?: any;
+  totpTokenHash?: string;
+  totpSalt?: string;
+  recoveryKey?: string;
+}
+
+export interface ForgotPasswordVerifyResponse {
+  success: boolean;
+  resetToken: string;
+}
+
+export async function initForgotPassword(username: string, turnstileToken?: string | null): Promise<ForgotPasswordInitResponse> {
+  const res = await fetch("/api/auth/forgot-password/init", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, turnstileToken })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function verifyForgotPasswordMfa(payload: ForgotPasswordVerifyPayload): Promise<ForgotPasswordVerifyResponse> {
+  const res = await fetch("/api/auth/forgot-password/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function resetPasswordWithToken(resetToken: string, newPassword: string): Promise<{ success: boolean }> {
+  const res = await fetch("/api/auth/forgot-password/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ resetToken, newPassword })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}

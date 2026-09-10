@@ -12,6 +12,10 @@ export interface UserInfo {
   id: string;
   username: string;
   role: "admin" | "user";
+  totp_enabled?: boolean;
+  totp_skip_password?: boolean;
+  passkeys_count?: number;
+  mfa_enabled?: boolean;
   timezone?: string | null;
   locale?: string | null;
   password_version?: number;

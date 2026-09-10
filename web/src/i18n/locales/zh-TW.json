@@ -128,7 +128,38 @@
     "orUseTotp": "或使用數字驗證器",
     "passwordRequiredFirst": "請先輸入密碼",
     "passkeyVerification": "通行密鑰驗證",
-    "passkeyPromptDesc": "使用已註冊的裝置生物識別或硬體安全金鑰進行驗證"
+    "passkeyPromptDesc": "使用已註冊的裝置生物識別或硬體安全金鑰進行驗證",
+    "forgotPassword": "忘記密碼？",
+    "forgotPasswordTitle": "重設密碼",
+    "forgotPasswordDesc": "透過多因素驗證（通行金鑰或數位驗證碼）安全找回您的帳號。",
+    "noMfaContactAdmin": "該帳號未設定任何多因素驗證（Passkey 或 TOTP），無法自助重設密碼。請聯絡系統管理員為您重設密碼。",
+    "chooseMfaForReset": "請選擇一種驗證方式以核驗您的身分：",
+    "authViaPasskey": "使用通行金鑰驗證",
+    "authViaPasskeyDesc": "使用指紋、臉孔或硬體安全金鑰一鍵完成驗證",
+    "authViaTotp": "使用數位驗證器 (TOTP)",
+    "authViaTotpDesc": "輸入身分驗證器應用程式產生的 6 位動態驗證碼",
+    "authViaRecoveryKey": "使用緊急復原金鑰",
+    "authViaRecoveryKeyDesc": "輸入 10 位緊急復原金鑰",
+    "verifyAndProceed": "核驗並繼續",
+    "setNewPassword": "設定新密碼",
+    "setNewPasswordDesc": "身分核驗成功，請為您的帳號設定一個新密碼。",
+    "newPassword": "新密碼",
+    "confirmNewPassword": "確認新密碼",
+    "passwordMismatch": "兩次輸入的新密碼不相符",
+    "saveAndReset": "儲存並重設密碼",
+    "resetSuccessTitle": "密碼重設成功",
+    "resetSuccessDesc": "您的密碼已更新，所有現有登入工作階段已登出。請使用新密碼重新登入。",
+    "goToLogin": "前往登入",
+    "mfaSetupTitle": "強化帳號安全",
+    "mfaSetupDesc": "設定多因素驗證 (MFA) 可有效保護您的帳號，並解鎖無密碼快速登入與密碼自助找回功能。",
+    "mfaRecommended": "推薦",
+    "passkeySignupDesc": "使用指紋、臉孔或安全金鑰，免去繁瑣輸入，兼顧極速體驗與頂級安全防護。",
+    "bindPasskeyNow": "立即綁定通行金鑰",
+    "mfaUniversal": "通用",
+    "totpSignupDesc": "使用 Google Authenticator、1Password 等身分驗證器產生 6 位動態驗證碼。",
+    "setupTotpBtn": "設定數位驗證器",
+    "skipMfaSetup": "暫不設定，直接完成",
+    "backToMfaOptions": "返回選擇其他方式"
   },
   "setup": {
     "title": "安裝指南",
@@ -528,7 +559,8 @@
       "recoveryKeysWarning": "請將這 8 個密鑰妥善保存（如密碼管理器）。每個密鑰只能使用一次，關閉此視窗後將無法再次查看。",
       "copyKeys": "複製全部密鑰",
       "copied": "已複製！",
-      "done": "完成，我已保存密鑰"
+      "done": "完成，我已保存密鑰",
+      "activeDesc": "數位驗證器已啟用，正在為您的帳號提供 6 位動態驗證碼保護。"
     },
     "sessions": {
       "session": "會話",
@@ -601,6 +633,21 @@
       "updated": "通行密鑰更新成功",
       "registered": "通行密鑰新增成功",
       "deleted": "通行密鑰已刪除"
+    },
+    "mfaNone": "無",
+    "resetUserPassword": "重設密碼",
+    "resetPasswordTitle": "重設使用者密碼",
+    "resetPasswordWarning": "重設後，該使用者的所有現有工作階段將立即登出，使用者需使用新密碼重新登入。",
+    "resetPasswordSuccess": "密碼已成功重設，使用者舊登入工作階段已登出。",
+    "confirmReset": "確認重設",
+    "mfa": {
+      "title": "多因素驗證 (MFA)",
+      "enabled": "已設定",
+      "notConfigured": "未設定",
+      "desc": "通行金鑰 (Passkey) 與數位驗證器 (TOTP) 均可作為多因素驗證方式，設定任選其一即可保障帳號安全並支援無密碼登入與密碼重設。",
+      "passwordlessTitle": "無密碼登入 (Passwordless Login)",
+      "passwordlessDesc": "啟用後，登入時無需輸入密碼，直接透過通行金鑰 (Passkey) 或數位驗證碼 (TOTP) 完成身分核驗。",
+      "unconfiguredHint": "目前帳號尚未設定任何多因素驗證。設定通行金鑰或數位驗證器後，可啟用無密碼快速登入並在忘記密碼時安全找回帳號。"
     }
   },
   "intro": {

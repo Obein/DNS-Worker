@@ -127,7 +127,38 @@
     "orUseTotp": "または認証アプリのコードを使用",
     "passwordRequiredFirst": "最初にパスワードを入力してください",
     "passkeyVerification": "パスキー認証",
-    "passkeyPromptDesc": "登録された生体認証またはセキュリティキーを使用して検証"
+    "passkeyPromptDesc": "登録された生体認証またはセキュリティキーを使用して検証",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "forgotPasswordTitle": "パスワードのリセット",
+    "forgotPasswordDesc": "多要素認証（パスキーまたは認証コード）を使用して安全にアカウントを回復します。",
+    "noMfaContactAdmin": "このアカウントには多要素認証（PasskeyまたはTOTP）が設定されていないため、セルフ回復できません。システム管理者にリセットを依頼してください。",
+    "chooseMfaForReset": "本人確認の方法を選択してください：",
+    "authViaPasskey": "パスキーで認証",
+    "authViaPasskeyDesc": "生体認証またはセキュリティキーを使用したワンクリック認証",
+    "authViaTotp": "認証アプリ (TOTP) で認証",
+    "authViaTotpDesc": "認証アプリに表示される6桁の動的コードを入力",
+    "authViaRecoveryKey": "緊急リカバリーキーを使用",
+    "authViaRecoveryKeyDesc": "10文字の緊急リカバリーキーを入力",
+    "verifyAndProceed": "検証して続行",
+    "setNewPassword": "新しいパスワードを設定",
+    "setNewPasswordDesc": "本人確認が完了しました。アカウントの新しいパスワードを入力してください。",
+    "newPassword": "新しいパスワード",
+    "confirmNewPassword": "新しいパスワードの確認",
+    "passwordMismatch": "パスワードが一致しません",
+    "saveAndReset": "保存してリセット",
+    "resetSuccessTitle": "パスワードのリセットが完了しました",
+    "resetSuccessDesc": "パスワードが更新され、すべての既存セッションが無効化されました。新しいパスワードで再ログインしてください。",
+    "goToLogin": "ログインへ進む",
+    "mfaSetupTitle": "アカウントのセキュリティ強化",
+    "mfaSetupDesc": "多要素認証 (MFA) を設定すると、アカウントの保護、パスワードレスログイン、パスワードのセルフ復旧が有効になります。",
+    "mfaRecommended": "おすすめ",
+    "passkeySignupDesc": "Touch ID、Face ID、セキュリティキーを使用して、手軽かつ最高水準のセキュリティを実現します。",
+    "bindPasskeyNow": "パスキーを登録する",
+    "mfaUniversal": "汎用",
+    "totpSignupDesc": "Google Authenticatorや1Passwordなどの認証アプリを使用して6桁コードを生成します。",
+    "setupTotpBtn": "認証アプリを設定する",
+    "skipMfaSetup": "今はスキップして完了",
+    "backToMfaOptions": "オプションの選択に戻る"
   },
   "setup": {
     "title": "インストールガイド",
@@ -527,7 +558,8 @@
       "recoveryKeysWarning": "これらの8つのリカバリキーを安全な場所（パスワード管理アプリなど）に保存してください。各キーは1回のみ使用可能で、このウィンドウを閉じると再表示されません。",
       "copyKeys": "すべてのキーをコピー",
       "copied": "コピーしました！",
-      "done": "完了（キーを保存しました）"
+      "done": "完了（キーを保存しました）",
+      "activeDesc": "認証アプリ (TOTP) が有効化され、6桁の確認コードを生成しています。"
     },
     "activity": {
       "title": "アカウントアクティビティ履歴",
@@ -600,6 +632,21 @@
       "updated": "パスキーを更新しました",
       "registered": "パスキーを登録しました",
       "deleted": "パスキーを削除しました"
+    },
+    "mfaNone": "なし",
+    "resetUserPassword": "パスワードをリセット",
+    "resetPasswordTitle": "ユーザーパスワードのリセット",
+    "resetPasswordWarning": "リセット後、このユーザーの既存のログインセッションはすべて即座に無効化されます。",
+    "resetPasswordSuccess": "パスワードが正常にリセットされました。アクティブなセッションは終了しました。",
+    "confirmReset": "リセットを確認",
+    "mfa": {
+      "title": "多要素認証 (MFA)",
+      "enabled": "設定済み",
+      "notConfigured": "未設定",
+      "desc": "パスキー (Passkey) と認証アプリ (TOTP) の両方がMFA認証方法として利用できます。少なくとも1つを設定することでアカウントを保護し、パスワードレスログインが可能になります。",
+      "passwordlessTitle": "パスワードレスログイン",
+      "passwordlessDesc": "有効にするとパスワード入力が不要となり、パスキーまたはTOTPで直接本人確認が行われます。",
+      "unconfiguredHint": "MFA認証方法がまだ設定されていません。下記よりパスキーまたは認証アプリを設定してください。"
     }
   },
   "intro": {

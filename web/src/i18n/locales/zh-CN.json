@@ -128,7 +128,38 @@
     "orUseTotp": "或使用数字验证器",
     "passwordRequiredFirst": "请先输入密码",
     "passkeyVerification": "通行密钥验证",
-    "passkeyPromptDesc": "使用已注册的设备生物识别或硬件安全密钥进行验证"
+    "passkeyPromptDesc": "使用已注册的设备生物识别或硬件安全密钥进行验证",
+    "forgotPassword": "忘记密码？",
+    "forgotPasswordTitle": "找回密码",
+    "forgotPasswordDesc": "通过多因素认证（通行密钥或数字验证码）安全找回您的账号。",
+    "noMfaContactAdmin": "该账号未配置任何多因素认证（Passkey 或 TOTP），无法自助找回密码。请联系系统管理员为您重置密码。",
+    "chooseMfaForReset": "请选择一种认证方式以核验您的身份：",
+    "authViaPasskey": "使用通行密钥验证",
+    "authViaPasskeyDesc": "使用指纹、面容或硬件安全密钥一键完成验证",
+    "authViaTotp": "使用数字验证器 (TOTP)",
+    "authViaTotpDesc": "输入身份验证器应用生成的 6 位动态验证码",
+    "authViaRecoveryKey": "使用紧急恢复密钥",
+    "authViaRecoveryKeyDesc": "输入 10 位应急恢复密钥",
+    "verifyAndProceed": "核验并继续",
+    "setNewPassword": "设置新密码",
+    "setNewPasswordDesc": "身份核验成功，请为您的账号设置一个新密码。",
+    "newPassword": "新密码",
+    "confirmNewPassword": "确认新密码",
+    "passwordMismatch": "两次输入的新密码不一致",
+    "saveAndReset": "保存并重置密码",
+    "resetSuccessTitle": "密码重置成功",
+    "resetSuccessDesc": "您的密码已更新，所有现有登录会话已注销。请使用新密码重新登录。",
+    "goToLogin": "前往登录",
+    "mfaSetupTitle": "增强账号安全",
+    "mfaSetupDesc": "配置多因素认证 (MFA) 可有效保护您的账号，并解锁无密码快捷登录与密码自助找回功能。",
+    "mfaRecommended": "推荐",
+    "passkeySignupDesc": "使用指纹、面容或安全密钥，无需繁琐输入，兼顾极速体验与最高等级安全防护。",
+    "bindPasskeyNow": "立即绑定通行密钥",
+    "mfaUniversal": "通用",
+    "totpSignupDesc": "使用 Google Authenticator、1Password 等身份验证器生成 6 位动态验证码。",
+    "setupTotpBtn": "配置数字验证器",
+    "skipMfaSetup": "暂不配置，直接完成",
+    "backToMfaOptions": "返回选择其他方式"
   },
   "setup": {
     "title": "安装指南",
@@ -528,7 +559,8 @@
       "recoveryKeysWarning": "请将这 8 个密钥妥善保存（如密码管理器）。每个密钥只能使用一次，关闭此窗口后将无法再次查看。",
       "copyKeys": "复制全部密钥",
       "copied": "已复制！",
-      "done": "完成，我已保存密钥"
+      "done": "完成，我已保存密钥",
+      "activeDesc": "数字验证器已启用，正在为您的账号提供 6 位动态验证码保护。"
     },
     "sessions": {
       "session": "会话",
@@ -601,6 +633,21 @@
       "updated": "通行密钥更新成功",
       "registered": "通行密钥添加成功",
       "deleted": "通行密钥已删除"
+    },
+    "mfaNone": "无",
+    "resetUserPassword": "重置密码",
+    "resetPasswordTitle": "重置用户密码",
+    "resetPasswordWarning": "重置后，该用户的所有现有会话将立即注销，用户需使用新密码重新登录。",
+    "resetPasswordSuccess": "密码已成功重置，用户旧登录会话已注销。",
+    "confirmReset": "确认重置",
+    "mfa": {
+      "title": "多因素认证 (MFA)",
+      "enabled": "已配置",
+      "notConfigured": "未配置",
+      "desc": "通行密钥 (Passkey) 与数字验证器 (TOTP) 均可作为多因素认证方式，配置任选其一即可保障账号安全并支持无密码登录与密码重置。",
+      "passwordlessTitle": "无密码登录 (Passwordless Login)",
+      "passwordlessDesc": "启用后，登录时无需输入密码，直接通过通行密钥 (Passkey) 或数字验证码 (TOTP) 完成身份核验。",
+      "unconfiguredHint": "当前账号尚未配置任何多因素认证。配置通行密钥或数字验证器后，可启用无密码快捷登录并在忘记密码时安全找回账号。"
     }
   },
   "intro": {

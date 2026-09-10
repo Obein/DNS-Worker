@@ -123,10 +123,13 @@ export async function handleSecurityRequest(
       });
     }
 
-    // PATCH /api/account/totp/settings — update skip_password toggle
+    // PATCH /api/account/totp/settings — update skip_password toggle (supported when TOTP or Passkey is configured)
     if (subAction === 'settings' && request.method === 'PATCH') {
       const dbUser = await userModel.getById(user.id);
-      if (!dbUser?.totp_enabled) return new Response("TOTP is not enabled", { status: 400 });
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeys = await passkeyModel.listByUser(user.id);
+      const hasMfa = !!dbUser?.totp_enabled || passkeys.length > 0;
+      if (!hasMfa) return new Response("MFA is not enabled", { status: 400 });
 
       const { skip_password } = await request.json() as { skip_password: boolean };
       await userModel.updateTOTPSettings(user.id, !!skip_password);
@@ -147,7 +150,11 @@ export async function handleSecurityRequest(
         }
       }
 
-      await userModel.removeTOTP(user.id);
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeys = await passkeyModel.listByUser(user.id);
+      const hasPasskey = passkeys.length > 0;
+
+      await userModel.removeTOTP(user.id, hasPasskey);
       await activityLog.record(user.id, 'totp_removed', clientIp, userAgent, undefined, sessionHash);
       return new Response(JSON.stringify({ success: true }));
     }
@@ -293,8 +300,17 @@ export async function handleSecurityRequest(
           aaguid: parsed.aaguid
         });
 
+        const dbUser = await userModel.getById(user.id);
+        let recoveryKeys: string[] | undefined = undefined;
+        if (dbUser && !dbUser.totp_recovery_keys) {
+          const plaintextKeys = generateRecoveryKeys();
+          const hashedKeys = await Promise.all(plaintextKeys.map(hashRecoveryKey));
+          await userModel.updateRecoveryKeys(user.id, hashedKeys);
+          recoveryKeys = plaintextKeys;
+        }
+
         await activityLog.record(user.id, 'passkey_registered', clientIp, userAgent, { name: passkeyName }, sessionHash);
-        return new Response(JSON.stringify(created), { status: 201, headers: { 'Content-Type': 'application/json' } });
+        return new Response(JSON.stringify({ ...created, recovery_keys: recoveryKeys }), { status: 201, headers: { 'Content-Type': 'application/json' } });
       } catch (err: any) {
         console.warn("[Passkey Registration] Verification failed:", err.message || err);
         return new Response(err.message || "Passkey registration failed", { status: 400 });
@@ -322,8 +338,29 @@ export async function handleSecurityRequest(
 
       await passkeyModel.delete(passkeyId, user.id);
       await activityLog.record(user.id, 'passkey_deleted', clientIp, userAgent, { name: passkey.name }, sessionHash);
+
+      // 若用户不再拥有任何 Passkey 且未启用 TOTP，则自动关闭无密码登录
+      const remainingPasskeys = await passkeyModel.countByUser(user.id);
+      const dbUser = await userModel.getById(user.id);
+      if (remainingPasskeys === 0 && !dbUser?.totp_enabled) {
+        await userModel.updateTOTPSettings(user.id, false);
+      }
+
       return new Response(JSON.stringify({ success: true }));
     }
+  }
+
+  // ─── 统一 MFA 设置接口 (/api/account/mfa/settings) ───
+  if (action === 'mfa' && pathParts[3] === 'settings' && request.method === 'PATCH') {
+    const dbUser = await userModel.getById(user.id);
+    const passkeyModel = new PasskeyModel(env.DB);
+    const passkeys = await passkeyModel.listByUser(user.id);
+    const hasMfa = !!dbUser?.totp_enabled || passkeys.length > 0;
+    if (!hasMfa) return new Response("MFA is not enabled", { status: 400 });
+
+    const { skip_password } = await request.json() as { skip_password: boolean };
+    await userModel.updateTOTPSettings(user.id, !!skip_password);
+    return new Response(JSON.stringify({ success: true }));
   }
 
   return new Response("Not Found", { status: 404 });

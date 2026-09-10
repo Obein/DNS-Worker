@@ -127,7 +127,38 @@
     "orUseTotp": "또는 인증 앱 코드 사용",
     "passwordRequiredFirst": "먼저 비밀번호를 입력해 주세요",
     "passkeyVerification": "패스키 인증",
-    "passkeyPromptDesc": "등록된 생체 인식 또는 보안 키를 사용하여 인증"
+    "passkeyPromptDesc": "등록된 생체 인식 또는 보안 키를 사용하여 인증",
+    "forgotPassword": "비밀번호를 잊으셨나요?",
+    "forgotPasswordTitle": "비밀번호 재설정",
+    "forgotPasswordDesc": "다중 요소 인증(패스키 또는 인증 앱)을 사용하여 계정을 안전하게 복구합니다.",
+    "noMfaContactAdmin": "이 계정에는 다중 요소 인증(Passkey 또는 TOTP)이 설정되어 있지 않아 직접 복구할 수 없습니다. 시스템 관리자에게 문의하세요.",
+    "chooseMfaForReset": "본인 인증 방법을 선택하세요:",
+    "authViaPasskey": "패스키로 인증",
+    "authViaPasskeyDesc": "생체 인식 또는 보안 키를 사용한 원클릭 인증",
+    "authViaTotp": "인증 앱 (TOTP)으로 인증",
+    "authViaTotpDesc": "인증 앱에 표시된 6자리 동적 코드를 입력하세요",
+    "authViaRecoveryKey": "비상 복구 키 사용",
+    "authViaRecoveryKeyDesc": "10자리 비상 복구 키 입력",
+    "verifyAndProceed": "인증 및 계속",
+    "setNewPassword": "새 비밀번호 설정",
+    "setNewPasswordDesc": "인증되었습니다. 계정에 사용할 새 비밀번호를 입력하세요.",
+    "newPassword": "새 비밀번호",
+    "confirmNewPassword": "새 비밀번호 확인",
+    "passwordMismatch": "입력한 비밀번호가 일치하지 않습니다",
+    "saveAndReset": "저장 및 재설정",
+    "resetSuccessTitle": "비밀번호 재설정 완료",
+    "resetSuccessDesc": "비밀번호가 업데이트되었으며 모든 기존 세션이 로그아웃되었습니다. 새 비밀번호로 다시 로그인하세요.",
+    "goToLogin": "로그인으로 이동",
+    "mfaSetupTitle": "계정 보안 강화",
+    "mfaSetupDesc": "다중 요소 인증(MFA)을 구성하면 계정을 안전하게 보호하고 비밀번호 없는 로그인 및 비밀번호 복구가 가능해집니다.",
+    "mfaRecommended": "추천",
+    "passkeySignupDesc": "지문, 얼굴 인식 또는 보안 키를 사용하여 빠르고 안전하게 인증하세요.",
+    "bindPasskeyNow": "지금 패스키 등록",
+    "mfaUniversal": "범용",
+    "totpSignupDesc": "Google Authenticator, 1Password 등의 앱을 사용하여 6자리 인증 코드를 생성합니다.",
+    "setupTotpBtn": "인증 앱 설정",
+    "skipMfaSetup": "지금은 건너뛰기",
+    "backToMfaOptions": "옵션 선택으로 돌아가기"
   },
   "setup": {
     "title": "설치 가이드",
@@ -527,7 +558,8 @@
       "recoveryKeysWarning": "이 8개의 복구 키를 안전한 곳(비밀번호 관리 앱 등)에 보관하십시오. 각 키는 단 한 번만 사용할 수 있으며, 이 창을 닫으면 다시 확인할 수 없습니다.",
       "copyKeys": "모든 키 복사",
       "copied": "복사 완료!",
-      "done": "완료 (키를 저장했습니다)"
+      "done": "완료 (키를 저장했습니다)",
+      "activeDesc": "인증 앱(TOTP)이 활성화되어 6자리 확인 코드를 생성하고 있습니다."
     },
     "activity": {
       "title": "계정 활동 기록",
@@ -600,6 +632,21 @@
       "updated": "패스키가 성공적으로 업데이트되었습니다",
       "registered": "패스키가 성공적으로 등록되었습니다",
       "deleted": "패스키 삭제됨"
+    },
+    "mfaNone": "없음",
+    "resetUserPassword": "비밀번호 재설정",
+    "resetPasswordTitle": "사용자 비밀번호 재설정",
+    "resetPasswordWarning": "재설정 후 해당 사용자의 모든 활성 세션이 즉시 만료됩니다.",
+    "resetPasswordSuccess": "비밀번호가 성공적으로 재설정되었습니다. 활성 세션이 종료되었습니다.",
+    "confirmReset": "재설정 확인",
+    "mfa": {
+      "title": "다중 요소 인증 (MFA)",
+      "enabled": "구성됨",
+      "notConfigured": "구성되지 않음",
+      "desc": "패스키(Passkey)와 인증 앱(TOTP) 모두 MFA 인증 방식으로 사용할 수 있습니다. 최소 하나를 설정하여 계정을 보호하세요.",
+      "passwordlessTitle": "비밀번호 없는 로그인",
+      "passwordlessDesc": "활성화하면 비밀번호 입력 없이 패스키 또는 TOTP로 직접 신원을 확인합니다.",
+      "unconfiguredHint": "아직 MFA 방식이 설정되지 않았습니다. 아래에서 패스키나 인증 앱을 설정하세요."
     }
   },
   "intro": {

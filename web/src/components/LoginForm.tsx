@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { LoginUsernameStep } from "./login/LoginUsernameStep";
 import { LoginCredentialsStep } from "./login/LoginCredentialsStep";
+import { ForgotPasswordModal } from "./login/ForgotPasswordModal";
 import { useLoginForm } from "./login/useLoginForm";
 
 /**
@@ -45,6 +46,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onToggleMode
 }) => {
   const { t } = useTranslation();
+  const [forgotModalOpen, setForgotModalOpen] = React.useState(false);
 
   const {
     loginStep,
@@ -155,6 +157,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           hasPasskey={hasPasskey}
           passkeyLoading={passkeyLoading}
           onPasskeyLogin={handlePasskeyLogin}
+          onForgotPassword={() => setForgotModalOpen(true)}
           useRecovery={useRecovery}
           setUseRecovery={setUseRecovery}
           password={password}
@@ -173,15 +176,34 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       )}
 
       {loginStep === 1 && (
-        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center text-sm">
           <button
             onClick={onToggleMode}
-            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer text-sm"
+            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer"
           >
             {t("auth.noAccount")}
           </button>
+          <button
+            type="button"
+            onClick={() => setForgotModalOpen(true)}
+            className="text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:underline bg-transparent border-none cursor-pointer"
+          >
+            {t("auth.forgotPassword", "忘记密码？")}
+          </button>
         </div>
       )}
+
+      <ForgotPasswordModal
+        isOpen={forgotModalOpen}
+        onClose={() => setForgotModalOpen(false)}
+        initialUsername={username}
+        authConfig={authConfig}
+        turnstileReady={turnstileReady}
+        onSuccess={(resetUser) => {
+          if (resetUser) setUsername(resetUser);
+          resetToStep1();
+        }}
+      />
     </>
   );
 };

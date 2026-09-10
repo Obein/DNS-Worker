@@ -127,7 +127,38 @@
     "orUseTotp": "Ou utiliser le code de l'authentificateur",
     "passwordRequiredFirst": "Veuillez d'abord saisir votre mot de passe",
     "passkeyVerification": "Vérification par clé d'accès",
-    "passkeyPromptDesc": "Vérifiez à l'aide de vos données biométriques enregistrées ou de votre clé de sécurité"
+    "passkeyPromptDesc": "Vérifiez à l'aide de vos données biométriques enregistrées ou de votre clé de sécurité",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPasswordTitle": "Réinitialiser le mot de passe",
+    "forgotPasswordDesc": "Récupérez votre compte en toute sécurité grâce à l'authentification multifacteur (Passkey ou TOTP).",
+    "noMfaContactAdmin": "Ce compte n'a configuré aucune authentification multifacteur (Passkey ou TOTP). Veuillez contacter un administrateur.",
+    "chooseMfaForReset": "Choisissez une méthode pour vérifier votre identité :",
+    "authViaPasskey": "Vérifier avec Passkey",
+    "authViaPasskeyDesc": "Vérification en un clic par biométrie ou clé de sécurité matérielle",
+    "authViaTotp": "Vérifier avec l'application d'authentification (TOTP)",
+    "authViaTotpDesc": "Saisissez le code à 6 chiffres généré par votre application",
+    "authViaRecoveryKey": "Utiliser une clé de récupération d'urgence",
+    "authViaRecoveryKeyDesc": "Saisissez une clé de récupération à 10 caractères",
+    "verifyAndProceed": "Vérifier et continuer",
+    "setNewPassword": "Définir un nouveau mot de passe",
+    "setNewPasswordDesc": "Identité vérifiée. Veuillez définir un nouveau mot de passe pour votre compte.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "saveAndReset": "Enregistrer et réinitialiser",
+    "resetSuccessTitle": "Mot de passe réinitialisé avec succès",
+    "resetSuccessDesc": "Votre mot de passe a été mis à jour et toutes vos sessions actives ont été fermées. Veuillez vous reconnecter.",
+    "goToLogin": "Aller à la connexion",
+    "mfaSetupTitle": "Renforcer la sécurité du compte",
+    "mfaSetupDesc": "La configuration de l'authentification multifacteur (MFA) protège votre compte et active la connexion sans mot de passe.",
+    "mfaRecommended": "Recommandé",
+    "passkeySignupDesc": "Utilisez Touch ID, Face ID ou une clé de sécurité. Rapide et résistant au phishing.",
+    "bindPasskeyNow": "Enregistrer une clé d'accès maintenant",
+    "mfaUniversal": "Universel",
+    "totpSignupDesc": "Utilisez Google Authenticator, 1Password ou toute application TOTP standard.",
+    "setupTotpBtn": "Configurer l'application d'authentification",
+    "skipMfaSetup": "Ignorer pour l'instant",
+    "backToMfaOptions": "Retour aux options"
   },
   "setup": {
     "title": "Guide d'installation",
@@ -527,7 +558,8 @@
       "recoveryKeysWarning": "Veuillez conserver ces 8 clés dans un endroit sûr (ex. un gestionnaire de mots de passe). Chaque clé ne peut être utilisée qu'une seule fois. Après la fermeture de cette fenêtre, vous ne pourrez plus les afficher.",
       "copyKeys": "Copier toutes les clés",
       "copied": "Copié !",
-      "done": "Terminé, j'ai enregistré les clés"
+      "done": "Terminé, j'ai enregistré les clés",
+      "activeDesc": "L'application d'authentification (TOTP) est active et génère des codes à 6 chiffres."
     },
     "activity": {
       "title": "Historique d'activité du compte",
@@ -600,6 +632,21 @@
       "updated": "Clé d'accès mise à jour avec succès",
       "registered": "Clé d'accès enregistrée avec succès",
       "deleted": "Clé d'accès supprimée"
+    },
+    "mfaNone": "Aucun",
+    "resetUserPassword": "Réinitialiser le mot de passe",
+    "resetPasswordTitle": "Réinitialiser le mot de passe de l'utilisateur",
+    "resetPasswordWarning": "Après la réinitialisation, toutes les sessions actives de l'utilisateur seront immédiatement révoquées.",
+    "resetPasswordSuccess": "Mot de passe réinitialisé avec succès. Les sessions actives ont été révoquées.",
+    "confirmReset": "Confirmer la réinitialisation",
+    "mfa": {
+      "title": "Authentification multifacteur (MFA)",
+      "enabled": "Configuré",
+      "notConfigured": "Non configuré",
+      "desc": "Les clés d'accès (Passkeys) et les applications d'authentification (TOTP) servent de méthodes MFA. Configurer au moins l'un d'eux protège votre compte.",
+      "passwordlessTitle": "Connexion sans mot de passe",
+      "passwordlessDesc": "Une fois activée, la saisie du mot de passe est ignorée et votre identité est vérifiée directement via Passkey ou TOTP.",
+      "unconfiguredHint": "Aucune méthode MFA n'est encore configurée. Configurez un Passkey ou une application d'authentification ci-dessous."
     }
   },
   "intro": {

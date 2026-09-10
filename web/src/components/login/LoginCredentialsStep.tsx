@@ -18,6 +18,8 @@ export interface LoginCredentialsStepProps {
   passkeyLoading?: boolean;
   /** Callback to trigger passkey authentication. */
   onPasskeyLogin?: () => void;
+  /** Callback to open forgot password modal. */
+  onForgotPassword?: () => void;
   /** Flag showing if recovery key is being used instead of authenticator app. */
   useRecovery: boolean;
   /** Callback to toggle between recovery key and TOTP token mode. */
@@ -61,6 +63,7 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
   hasPasskey = false,
   passkeyLoading = false,
   onPasskeyLogin,
+  onForgotPassword,
   useRecovery,
   setUseRecovery,
   password,
@@ -116,7 +119,23 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
   return (
     <form onSubmit={handleFormSubmit} className="space-y-4">
       {requiresPassword && (
-        <FormGroup label={t("auth.password")} labelFor="password">
+        <FormGroup
+          label={
+            <div className="flex justify-between items-center w-full">
+              <span>{t("auth.password")}</span>
+              {onForgotPassword && (
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline bg-transparent border-none cursor-pointer p-0 font-normal"
+                >
+                  {t("auth.forgotPassword", "忘记密码？")}
+                </button>
+              )}
+            </div>
+          }
+          labelFor="password"
+        >
           <InputGroup
             id="password"
             leftIcon="lock"

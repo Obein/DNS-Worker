@@ -127,7 +127,38 @@
     "orUseTotp": "O usar código de autenticador",
     "passwordRequiredFirst": "Por favor, introduzca su contraseña primero",
     "passkeyVerification": "Verificación con Passkey",
-    "passkeyPromptDesc": "Verifique usando sus datos biométricos registrados o clave de seguridad"
+    "passkeyPromptDesc": "Verifique usando sus datos biométricos registrados o clave de seguridad",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "forgotPasswordTitle": "Restablecer contraseña",
+    "forgotPasswordDesc": "Recupere su cuenta de forma segura mediante autenticación multifactor (Passkey o TOTP).",
+    "noMfaContactAdmin": "Esta cuenta no tiene configurada autenticación multifactor (Passkey o TOTP). Comuníquese con un administrador para restablecer su contraseña.",
+    "chooseMfaForReset": "Elija un método de autenticación para verificar su identidad:",
+    "authViaPasskey": "Verificar con Passkey",
+    "authViaPasskeyDesc": "Verificación en un clic mediante biometría o llave de seguridad de hardware",
+    "authViaTotp": "Verificar con aplicación de autenticación (TOTP)",
+    "authViaTotpDesc": "Ingrese el código dinámico de 6 dígitos de su aplicación",
+    "authViaRecoveryKey": "Usar clave de recuperación de emergencia",
+    "authViaRecoveryKeyDesc": "Ingrese una clave de recuperación de 10 caracteres",
+    "verifyAndProceed": "Verificar y continuar",
+    "setNewPassword": "Establecer nueva contraseña",
+    "setNewPasswordDesc": "Identidad verificada. Por favor, introduzca una nueva contraseña para su cuenta.",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "passwordMismatch": "Las nuevas contraseñas no coinciden",
+    "saveAndReset": "Guardar y restablecer",
+    "resetSuccessTitle": "Contraseña restablecida con éxito",
+    "resetSuccessDesc": "Su contraseña ha sido actualizada y todas las sesiones anteriores se han cerrado. Inicie sesión con su nueva contraseña.",
+    "goToLogin": "Ir a iniciar sesión",
+    "mfaSetupTitle": "Mejore la seguridad de su cuenta",
+    "mfaSetupDesc": "Configurar la autenticación multifactor (MFA) protege su cuenta y desbloquea el inicio de sesión sin contraseña y la recuperación de cuenta.",
+    "mfaRecommended": "Recomendado",
+    "passkeySignupDesc": "Use Touch ID, Face ID o llaves de seguridad. Rápido y resistente al phishing.",
+    "bindPasskeyNow": "Registrar Passkey ahora",
+    "mfaUniversal": "Universal",
+    "totpSignupDesc": "Use Google Authenticator, 1Password o cualquier app compatible con TOTP.",
+    "setupTotpBtn": "Configurar aplicación de autenticación",
+    "skipMfaSetup": "Omitir por ahora",
+    "backToMfaOptions": "Volver a las opciones"
   },
   "setup": {
     "title": "Guía de instalación",
@@ -527,7 +558,8 @@
       "recoveryKeysWarning": "Guarda estas 8 claves en un lugar seguro (p. ej., un gestor de contraseñas). Cada clave solo se puede usar una vez. Tras cerrar esta ventana, no podrás volver a verlas.",
       "copyKeys": "Copiar todas las claves",
       "copied": "¡Copiado!",
-      "done": "Hecho, he guardado las claves"
+      "done": "Hecho, he guardado las claves",
+      "activeDesc": "La aplicación de autenticación (TOTP) está activa y genera códigos de 6 dígitos."
     },
     "activity": {
       "title": "Registro de actividad de la cuenta",
@@ -600,6 +632,21 @@
       "updated": "Passkey actualizada con éxito",
       "registered": "Passkey registrada con éxito",
       "deleted": "Passkey eliminada"
+    },
+    "mfaNone": "Ninguno",
+    "resetUserPassword": "Restablecer contraseña",
+    "resetPasswordTitle": "Restablecer contraseña de usuario",
+    "resetPasswordWarning": "Tras el restablecimiento, todas las sesiones activas del usuario se cerrarán de inmediato.",
+    "resetPasswordSuccess": "Contraseña restablecida con éxito. Las sesiones anteriores han sido cerradas.",
+    "confirmReset": "Confirmar restablecimiento",
+    "mfa": {
+      "title": "Autenticación multifactor (MFA)",
+      "enabled": "Configurado",
+      "notConfigured": "No configurado",
+      "desc": "Las llaves de paso (Passkey) y las apps de autenticación (TOTP) funcionan como métodos MFA. Configurar al menos uno protege su cuenta.",
+      "passwordlessTitle": "Inicio de sesión sin contraseña",
+      "passwordlessDesc": "Al activarlo, se omitirá el campo de contraseña y se verificará su identidad directamente por Passkey o TOTP.",
+      "unconfiguredHint": "Aún no hay ningún método MFA configurado. Configure un Passkey o app de autenticación a continuación."
     }
   },
   "intro": {

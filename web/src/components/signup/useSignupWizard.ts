@@ -13,9 +13,12 @@ import {
   signup,
   setupTotp,
   confirmTotp,
+  getPasskeyRegistrationOptions,
+  verifyPasskeyRegistration,
   ApiError
 } from "../../services";
 import { setAccessToken } from "../../utils/token";
+import { startPasskeyRegistration } from "../../utils/webauthn";
 
 interface AuthConfig {
   turnstile_site_key: string;
@@ -68,6 +71,11 @@ export const useSignupWizard = ({
   // Setup/verification loading indicators
   const [totpSetupLoading, setTotpSetupLoading] = useState(false);
   const [totpSetupError, setTotpSetupError] = useState("");
+
+  // MFA selection & passkey states
+  const [mfaChoice, setMfaChoice] = useState<"choose" | "totp">("choose");
+  const [passkeyRegLoading, setPasskeyRegLoading] = useState(false);
+  const [passkeyRegError, setPasskeyRegError] = useState("");
 
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -186,6 +194,32 @@ export const useSignupWizard = ({
     }
   };
 
+  const handleChooseTotp = async () => {
+    setMfaChoice("totp");
+    await startSignupTotpSetup();
+  };
+
+  const handleRegisterPasskey = async () => {
+    setPasskeyRegLoading(true);
+    setPasskeyRegError("");
+    try {
+      const options = await getPasskeyRegistrationOptions();
+      const credential = await startPasskeyRegistration(options);
+      const res = await verifyPasskeyRegistration({ name: "Primary Passkey", credential });
+      if (res.recovery_keys && res.recovery_keys.length > 0) {
+        setTotpRecoveryKeys(res.recovery_keys);
+        setSignupStep("recovery");
+      } else {
+        onSuccess();
+      }
+    } catch (err: any) {
+      console.error("Passkey registration failed:", err);
+      setPasskeyRegError(formatApiErrorMessage(err, t));
+    } finally {
+      setPasskeyRegLoading(false);
+    }
+  };
+
   const handleSignupTotpConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!totpSetupData) return;
@@ -246,7 +280,8 @@ export const useSignupWizard = ({
       if (data.accessToken) {
         setAccessToken(data.accessToken);
       }
-      await startSignupTotpSetup();
+      setMfaChoice("choose");
+      setSignupStep("totp");
     } catch (err: any) {
       if (err instanceof ApiError) {
         const fakeRes = { status: err.status } as Response;
@@ -272,6 +307,12 @@ export const useSignupWizard = ({
     setUsername,
     password,
     setPassword,
+    mfaChoice,
+    setMfaChoice,
+    passkeyRegLoading,
+    passkeyRegError,
+    handleRegisterPasskey,
+    handleChooseTotp,
     totpSetupToken,
     setTotpSetupToken,
     totpSetupData,

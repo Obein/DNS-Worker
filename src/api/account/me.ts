@@ -2,6 +2,7 @@ import { Env, User, ExecutionContext } from "../../types";
 import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../../lib/auth";
 import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
+import { PasskeyModel } from "../../models/passkey";
 import { USERNAME_REGEX } from "../../utils/validator";
 
 /**
@@ -32,12 +33,18 @@ export async function handleMeRequest(
         ? Math.min(Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
         : Math.min(7, globalMaxRetention);
 
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeysCount = await passkeyModel.countByUser(user.id);
+      const mfaEnabled = !!(dbUser?.totp_enabled) || passkeysCount > 0;
+
       return new Response(JSON.stringify({
         id: user.id,
         username: dbUser?.username || "",
         role: user.role,
         totp_enabled: !!(dbUser?.totp_enabled),
         totp_skip_password: !!(dbUser?.totp_skip_password),
+        passkeys_count: passkeysCount,
+        mfa_enabled: mfaEnabled,
         timezone: dbUser?.timezone || null,
         locale: dbUser?.locale || "en-US",
         password_version: dbUser?.password_version ?? 1,

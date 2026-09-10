@@ -5,8 +5,6 @@ import {
   H4,
   Tag,
   Intent,
-  Switch,
-  Divider,
   Button,
   Dialog,
   Callout,
@@ -24,9 +22,9 @@ export interface TOTPEnabledStateProps {
   /** The current user information object. */
   user: UserInfo;
   /** Flag indicating if updating settings request is loading. */
-  settingsLoading: boolean;
+  settingsLoading?: boolean;
   /** Callback triggered when the skip password switch changes. */
-  onToggleSkipPassword: (val: boolean) => void;
+  onToggleSkipPassword?: (val: boolean) => void;
   /** Flag representing if the disable 2FA dialog is open. */
   disableDialogOpen: boolean;
   /** Callback to open/close the disable 2FA dialog. */
@@ -53,8 +51,6 @@ export interface TOTPEnabledStateProps {
  */
 export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
   user,
-  settingsLoading,
-  onToggleSkipPassword,
   disableDialogOpen,
   setDisableDialogOpen,
   disablePassword,
@@ -79,25 +75,21 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
         </Tag>
       </div>
       <div className="space-y-4">
-        <Switch
-          label={t(
-            "account.totp.skipPassword",
-            "Passwordless login (TOTP only — hide password field)"
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t(
+            "account.totp.activeDesc",
+            "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account."
           )}
-          checked={!!user.totp_skip_password}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            onToggleSkipPassword(e.currentTarget.checked)
-          }
-          disabled={settingsLoading}
-        />
-        <Divider />
-        <Button
-          intent={Intent.DANGER}
-          outlined
-          icon={<ShieldOff size={14} />}
-          text={t("account.totp.disable", "Disable Two-Factor Authentication")}
-          onClick={() => setDisableDialogOpen(true)}
-        />
+        </p>
+        <div>
+          <Button
+            intent={Intent.DANGER}
+            outlined
+            icon={<ShieldOff size={14} />}
+            text={t("account.totp.disable", "Disable Authenticator App")}
+            onClick={() => setDisableDialogOpen(true)}
+          />
+        </div>
       </div>
 
       <Dialog

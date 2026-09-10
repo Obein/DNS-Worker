@@ -26,6 +26,8 @@ import {
 import type { Passkey } from "../../../services";
 import { isPasskeySupported, startPasskeyRegistration } from "../../../utils/webauthn";
 
+import { TOTPRecoveryKeys } from "./totp/TOTPRecoveryKeys";
+
 export interface PasskeyCardProps {
   onRefresh?: () => void;
 }
@@ -35,6 +37,10 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(true);
   const [supported, setSupported] = useState(true);
+
+  // Recovery keys state (if generated upon first MFA factor creation)
+  const [recoveryKeys, setRecoveryKeys] = useState<string[] | null>(null);
+  const [copiedKeys, setCopiedKeys] = useState(false);
 
   // Add Passkey state
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -83,7 +89,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
     try {
       const options = await getPasskeyRegistrationOptions();
       const credential = await startPasskeyRegistration(options);
-      await verifyPasskeyRegistration({
+      const res = await verifyPasskeyRegistration({
         name: passkeyName.trim() || t("account.passkey.defaultName", "Passkey"),
         credential
       });
@@ -92,12 +98,23 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
       setPasskeyName("");
       await fetchPasskeys();
       onRefresh?.();
+      if (res?.recovery_keys && res.recovery_keys.length > 0) {
+        setRecoveryKeys(res.recovery_keys);
+      }
     } catch (err: any) {
       console.error("Passkey registration failed:", err);
       setAddError(err.message || t("account.passkey.regFailed", "Registration failed"));
     } finally {
       setRegistering(false);
     }
+  };
+
+  const handleCopyRecoveryKeys = () => {
+    if (!recoveryKeys) return;
+    navigator.clipboard.writeText(recoveryKeys.join("\n")).then(() => {
+      setCopiedKeys(true);
+      setTimeout(() => setCopiedKeys(false), 2000);
+    });
   };
 
   const handleOpenRename = (pk: Passkey) => {
@@ -141,6 +158,18 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
       setDeletingId(null);
     }
   };
+
+  // Phase 1: show recovery keys after setup if generated
+  if (recoveryKeys) {
+    return (
+      <TOTPRecoveryKeys
+        recoveryKeys={recoveryKeys}
+        copied={copiedKeys}
+        onCopy={handleCopyRecoveryKeys}
+        onDone={() => setRecoveryKeys(null)}
+      />
+    );
+  }
 
   return (
     <Card elevation={Elevation.ONE}>

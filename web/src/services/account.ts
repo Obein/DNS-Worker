@@ -114,6 +114,8 @@ export async function updateTotpSettings(skipPassword: boolean): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
+export const updateMfaSettings = updateTotpSettings;
+
 export async function migratePassword(clientHash: string): Promise<void> {
   const res = await fetch("/api/account/migrate-password", {
     method: "POST",
@@ -155,7 +157,13 @@ export async function getPasskeyRegistrationOptions(): Promise<any> {
   return res.json();
 }
 
-export async function verifyPasskeyRegistration(payload: { name: string; credential: any }): Promise<Passkey> {
+export interface VerifyPasskeyResponse {
+  success: boolean;
+  passkey: Passkey;
+  recovery_keys?: string[];
+}
+
+export async function verifyPasskeyRegistration(payload: { name: string; credential: any }): Promise<VerifyPasskeyResponse> {
   const res = await fetch("/api/account/passkeys/register/verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

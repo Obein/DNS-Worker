@@ -13,8 +13,7 @@ import {
   updateMe,
   updatePassword
 } from "../../services";
-import { TOTPCard } from "./components/TOTPCard";
-import { PasskeyCard } from "./components/PasskeyCard";
+import { MfaCard } from "./components/MfaCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
 import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
 import { UserManagementCard } from "./components/UserManagementCard";
@@ -255,12 +254,7 @@ export const AccountView: React.FC = () => {
       </div>
 
       {/* MFA: TOTP & Passkeys */}
-      {me && (
-        <div className="space-y-6">
-          <TOTPCard user={me} onRefresh={fetchMe} />
-          <PasskeyCard onRefresh={fetchMe} />
-        </div>
-      )}
+      {me && <MfaCard user={me} onRefresh={fetchMe} />}
 
       {/* Session Lock */}
       {me && <SessionLockCard user={me} onRefresh={fetchMe} />}

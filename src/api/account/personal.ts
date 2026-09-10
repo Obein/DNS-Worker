@@ -20,8 +20,8 @@ export async function handlePersonalAccountRequest(
     return handleMeRequest(request, env, user, pathParts, ctx);
   }
 
-  // Delegate password updates, TOTP and Passkey settings
-  if (action === 'password' || action === 'totp' || action === 'passkeys' || action === 'migrate-password' || action === 'pin') {
+  // Delegate password updates, TOTP and Passkey settings, MFA settings
+  if (action === 'password' || action === 'totp' || action === 'passkeys' || action === 'mfa' || action === 'migrate-password' || action === 'pin') {
     return handleSecurityRequest(request, env, user, pathParts, ctx);
   }
 
