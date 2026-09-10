@@ -49,6 +49,10 @@ export interface ResolutionResult {
     upstream_url: string;
     method: string;
     status: number;
+    status_text?: string;
+    error_detail?: string;
+    response_body?: string;
+    cf_ray?: string;
     response_text?: string;
     sent_dns_param?: string;
   };

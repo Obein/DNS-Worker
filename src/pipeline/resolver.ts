@@ -8,6 +8,18 @@ import { connectUniversal } from "../utils/sockets";
 import { isSafeUrl } from "../utils/validator";
 import { enqueueLog } from "./logBatcher";
 
+export class UpstreamHttpError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly statusText: string,
+    public readonly responseBodySnippet: string,
+    public readonly cfRay?: string
+  ) {
+    super(`Upstream HTTP ${status}${statusText ? ` ${statusText}` : ''}`);
+    this.name = 'UpstreamHttpError';
+  }
+}
+
 export const pipelineResolver = {
   async resolve(request: Request, query: DNSQuery, context: Context, settings: ProfileSettings, action: 'PASS', reason?: string): Promise<ResolutionResult> {
     const logModel = new LogModel(context.env.DB);
@@ -23,6 +35,8 @@ export const pipelineResolver = {
     let answer: Uint8Array;
     let upstreamLatency = 0;
     let isClassicDns = !upstreamUrl.startsWith('http');
+    let tcpHost = '';
+    let tcpPort = 53;
 
     // ── ECS 处理 ──────────────────────────────────────────────────────────
     // ECS 通过 RFC 7871 OPT RR 直接写入 DNS 线格式（wire format），而非 URL 参数。
@@ -44,10 +58,6 @@ export const pipelineResolver = {
     }
 
     try {
-      // 经典 DNS 的 host 和 port，提升到外层供 diagnostics 使用
-      let tcpHost = '';
-      let tcpPort = 53;
-
       if (isClassicDns) {
         // 经典 DNS 处理 (通过 TCP Socket)
         // 去除 tcp:// 前缀和裸 IP 均可正确解析
@@ -94,14 +104,22 @@ export const pipelineResolver = {
           headers: { 
             "Accept": "application/dns-message",
             "Content-Type": "application/dns-message", 
-            "User-Agent": "Obex-DNS/1.0",
-            "Connection": "keep-alive"
+            "User-Agent": "Obex-DNS/1.0"
           },
           body: queryRaw,
           signal: AbortSignal.timeout(5000)
         });
 
-        if (!response.ok) throw new Error(`Upstream HTTP ${response.status}`);
+        if (!response.ok) {
+          let snippet = "";
+          try {
+            const rawBody = await response.text();
+            // 提取纯文本摘要（剥除 HTML 标签及多余空白），保留前 300 字符
+            snippet = rawBody.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim().slice(0, 300);
+          } catch {}
+          const cfRay = response.headers.get("cf-ray") || undefined;
+          throw new UpstreamHttpError(response.status, response.statusText, snippet, cfRay);
+        }
         const answerBuffer = await response.arrayBuffer();
         answer = new Uint8Array(answerBuffer);
         upstreamLatency = Date.now() - startFetch;
@@ -236,20 +254,71 @@ export const pipelineResolver = {
         timings: { upstream_fetch: upstreamLatency },
         diagnostics: {
           upstream_url: isClassicDns ? `tcp://${tcpHost}:${tcpPort}` : upstreamUrl,
-          method: isClassicDns ? "TCP" : "GET",
-          status: 200
+          method: isClassicDns ? "TCP" : "POST",
+          status: 200,
+          status_text: "OK"
         }
       };
     } catch (e: any) {
+      let status = 0;
+      let statusText: string | undefined;
+      let errorDetail = e?.message || String(e);
+      let responseBodySnippet: string | undefined;
+      let cfRay: string | undefined;
+
+      if (e instanceof UpstreamHttpError) {
+        status = e.status;
+        statusText = e.statusText || undefined;
+        responseBodySnippet = e.responseBodySnippet || undefined;
+        cfRay = e.cfRay;
+      } else if (e?.cause) {
+        const causeMsg = typeof e.cause === 'object' && e.cause ? (e.cause.message || String(e.cause)) : String(e.cause);
+        errorDetail += ` (Cause: ${causeMsg})`;
+      }
+
+      const failReason = status > 0
+        ? `Upstream HTTP ${status}${statusText ? ` ${statusText}` : ''}`
+        : `Upstream Error: ${errorDetail}`;
+
+      // 异步持久化解析失败日志，便于在管理面板“查询日志”中排查上游故障
+      context.ctx.waitUntil((async () => {
+        try {
+          const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+          enqueueLog({
+            profile_id: context.profileId,
+            access_point_id: context.accessPointId,
+            timestamp: Math.floor(Date.now() / 1000),
+            client_ip: clientIp,
+            geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UN",
+            domain: query.name,
+            record_type: query.type,
+            action: "FAIL",
+            reason: failReason,
+            answer: "",
+            dest_geoip: "",
+            upstream: upstreamUrl,
+            latency: Date.now() - context.startTime,
+            ecs
+          }, settings, context.env, context.ctx);
+        } catch {
+          // Ignore background logging failures
+        }
+      })());
+
       return { 
         answer: new Uint8Array(), 
         ttl: 0, 
         action: "FAIL", 
-        reason: `Upstream Error: ${e.message}`,
+        reason: failReason,
+        latency: Date.now() - context.startTime,
         diagnostics: {
-          upstream_url: upstreamUrl,
-          method: isClassicDns ? "TCP" : "GET",
-          status: 0
+          upstream_url: isClassicDns ? `tcp://${tcpHost || 'unknown'}:${tcpPort}` : upstreamUrl,
+          method: isClassicDns ? "TCP" : "POST",
+          status,
+          status_text: statusText,
+          error_detail: errorDetail,
+          response_body: responseBodySnippet,
+          cf_ray: cfRay
         }
       };
     }
