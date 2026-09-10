@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  Card,
-  Elevation,
   H4,
   Tag,
   Intent,
@@ -25,20 +23,20 @@ export interface TOTPSetupFormProps {
   setupToken: string;
   /** Callback to update the verification token. */
   setSetupToken: (val: string) => void;
-  /** Any error message during 2FA setup or verification. */
+  /** Any error message during TOTP setup or verification. */
   setupError: string;
   /** Flag showing if setup request or verification request is loading. */
   setupLoading: boolean;
-  /** Callback to initiate the 2FA setup process on backend. */
+  /** Callback to initiate the TOTP setup process on backend. */
   onStartSetup: () => void;
-  /** Callback to confirm and activate 2FA with token. */
+  /** Callback to confirm and activate TOTP with token. */
   onConfirmSetup: (e: React.FormEvent) => void;
   /** Callback to cancel setup and return to initial prompt. */
   onCancel: () => void;
 }
 
 /**
- * TOTPSetupForm component manages the initial prompt and QR/verify steps for enabling 2FA.
+ * TOTPSetupForm component manages the initial prompt and QR/verify steps for configuring TOTP.
  *
  * @param props - Component props.
  * @returns React element representing setup form state.
@@ -56,11 +54,11 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Card elevation={Elevation.ONE}>
+    <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <Smartphone size={20} className="text-blue-500" />
         <H4 style={{ margin: 0 }}>
-          {t("account.totp.title", "Two-Factor Authentication")}
+          {t("account.totp.title", "Authenticator App (TOTP)")}
         </H4>
         <Tag minimal round intent={Intent.NONE}>
           {t("account.totp.disabled", "Disabled")}
@@ -83,7 +81,7 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
             icon={<Shield size={14} />}
             text={t(
               "account.totp.setupBtn",
-              "Enable Two-Factor Authentication"
+              "Set Up Authenticator App (TOTP)"
             )}
             loading={setupLoading}
             onClick={onStartSetup}
@@ -143,6 +141,6 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
           </form>
         </div>
       )}
-    </Card>
+    </div>
   );
 };

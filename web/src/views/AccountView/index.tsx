@@ -27,7 +27,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 
 /**
  * AccountView serves as the primary dashboard for user settings, profile updates,
- * 2FA status, active login sessions, security activity logs, and administrative tools
+ * MFA (Passkey & TOTP) status, active login sessions, security activity logs, and administrative tools
  * (user management, system preferences) for admins.
  *
  * @returns React elements representing the account dashboard view.

@@ -14,12 +14,12 @@ export interface TOTPCardProps {
 }
 
 /**
- * TOTPCard serves as the coordinator for Two-Factor Authentication settings.
+ * TOTPCard serves as the coordinator for TOTP Authenticator App settings.
  * It manages the setup, disable, recovery, and toggling logic, while delegating the rendering
  * to specialized state components (TOTPRecoveryKeys, TOTPEnabledState, TOTPSetupForm).
  *
  * @param props - Component props containing user details and refresh callback.
- * @returns React elements representing the current state of 2FA.
+ * @returns React elements representing the current state of TOTP.
  */
 export const TOTPCard: React.FC<TOTPCardProps> = ({ user, onRefresh }) => {
   const { t } = useTranslation();

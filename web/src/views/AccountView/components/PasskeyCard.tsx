@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Card,
-  Elevation,
   H4,
   Tag,
   Button,
@@ -172,7 +170,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   }
 
   return (
-    <Card elevation={Elevation.ONE}>
+    <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Fingerprint size={20} className="text-purple-500" />
@@ -396,6 +394,6 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
           </div>
         </div>
       </Dialog>
-    </Card>
+    </div>
   );
 };

@@ -1,7 +1,5 @@
 import React from "react";
 import {
-  Card,
-  Elevation,
   H4,
   Tag,
   Intent,
@@ -11,7 +9,7 @@ import {
   FormGroup,
   InputGroup
 } from "@blueprintjs/core";
-import { Shield, ShieldOff } from "lucide-react";
+import { Smartphone, ShieldOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../../types";
 
@@ -25,11 +23,11 @@ export interface TOTPEnabledStateProps {
   settingsLoading?: boolean;
   /** Callback triggered when the skip password switch changes. */
   onToggleSkipPassword?: (val: boolean) => void;
-  /** Flag representing if the disable 2FA dialog is open. */
+  /** Flag representing if the disable TOTP dialog is open. */
   disableDialogOpen: boolean;
-  /** Callback to open/close the disable 2FA dialog. */
+  /** Callback to open/close the disable TOTP dialog. */
   setDisableDialogOpen: (open: boolean) => void;
-  /** Current password entered to disable 2FA. */
+  /** Current password entered to disable TOTP. */
   disablePassword: string;
   /** Callback to update the password input field. */
   setDisablePassword: (pw: string) => void;
@@ -44,10 +42,10 @@ export interface TOTPEnabledStateProps {
 }
 
 /**
- * TOTPEnabledState component renders the 2FA settings when 2FA is active.
+ * TOTPEnabledState component renders the TOTP settings when TOTP is active.
  *
  * @param props - Component props.
- * @returns React element representing enabled 2FA state.
+ * @returns React element representing enabled TOTP state.
  */
 export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
   user,
@@ -64,11 +62,11 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
   const [showDisablePassword, setShowDisablePassword] = React.useState(false);
 
   return (
-    <Card elevation={Elevation.ONE}>
+    <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
-        <Shield size={20} className="text-green-500" />
+        <Smartphone size={20} className="text-blue-500" />
         <H4 style={{ margin: 0 }}>
-          {t("account.totp.title", "Two-Factor Authentication")}
+          {t("account.totp.title", "Authenticator App (TOTP)")}
         </H4>
         <Tag intent={Intent.SUCCESS} minimal round>
           {t("account.totp.enabled", "Enabled")}
@@ -86,7 +84,7 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
             intent={Intent.DANGER}
             outlined
             icon={<ShieldOff size={14} />}
-            text={t("account.totp.disable", "Disable Authenticator App")}
+            text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
             onClick={() => setDisableDialogOpen(true)}
           />
         </div>
@@ -100,14 +98,14 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
           setDisableError("");
           setShowDisablePassword(false);
         }}
-        title={t("account.totp.disableTitle", "Disable 2FA")}
+        title={t("account.totp.disableTitle", "Disable Authenticator App (TOTP)")}
         icon="shield"
       >
         <div className="p-6 space-y-4">
           <Callout intent={Intent.WARNING}>
             {t(
               "account.totp.disableWarning",
-              "After disabling 2FA, your account will only be protected by password."
+              "After disabling TOTP, if no Passkeys are configured, your account will only be protected by password."
             )}
           </Callout>
           {disableError && (
@@ -141,7 +139,7 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
                 />
                 <Button
                   intent={Intent.DANGER}
-                  text={t("account.totp.confirmDisable", "Disable 2FA")}
+                  text={t("account.totp.confirmDisable", "Disable TOTP")}
                   type="submit"
                   loading={disableLoading}
                 />
@@ -156,7 +154,7 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
               />
               <Button
                 intent={Intent.DANGER}
-                text={t("account.totp.confirmDisable", "Disable 2FA")}
+                text={t("account.totp.confirmDisable", "Disable TOTP")}
                 loading={disableLoading}
                 onClick={onDisable}
               />
@@ -164,6 +162,6 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
           )}
         </div>
       </Dialog>
-    </Card>
+    </div>
   );
 };

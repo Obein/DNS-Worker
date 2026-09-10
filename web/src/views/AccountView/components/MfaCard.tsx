@@ -47,8 +47,8 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <Card elevation={Elevation.ONE}>
+    <Card elevation={Elevation.ONE} className="space-y-6">
+      <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <ShieldCheck
@@ -104,11 +104,17 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
             )}
           </Callout>
         )}
-      </Card>
+      </div>
 
-      {/* Sub-cards for Passkeys and TOTP */}
+      <Divider />
+
+      {/* Section 1: Passkey */}
       <PasskeyCard onRefresh={onRefresh} />
+
+      <Divider />
+
+      {/* Section 2: TOTP */}
       <TOTPCard user={user} onRefresh={onRefresh} />
-    </div>
+    </Card>
   );
 };

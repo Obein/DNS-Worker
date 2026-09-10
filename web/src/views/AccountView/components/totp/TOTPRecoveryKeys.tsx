@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Elevation, H4, Callout, Intent, Button } from "@blueprintjs/core";
+import { H4, Callout, Intent, Button } from "@blueprintjs/core";
 import { ShieldCheck, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -18,10 +18,10 @@ export interface TOTPRecoveryKeysProps {
 }
 
 /**
- * TOTPRecoveryKeys component renders the 2FA recovery keys after a successful setup.
+ * TOTPRecoveryKeys component renders the emergency recovery keys after a successful setup.
  *
  * @param props - Component props.
- * @returns React element representing recovery keys card.
+ * @returns React element representing recovery keys container.
  */
 export const TOTPRecoveryKeys: React.FC<TOTPRecoveryKeysProps> = ({
   recoveryKeys,
@@ -32,7 +32,7 @@ export const TOTPRecoveryKeys: React.FC<TOTPRecoveryKeysProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Card elevation={Elevation.ONE}>
+    <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-800">
       <div className="flex items-center gap-2 mb-4">
         <ShieldCheck size={20} className="text-green-500" />
         <H4 style={{ margin: 0 }}>
@@ -74,6 +74,6 @@ export const TOTPRecoveryKeys: React.FC<TOTPRecoveryKeysProps> = ({
           onClick={onDone}
         />
       </div>
-    </Card>
+    </div>
   );
 };
