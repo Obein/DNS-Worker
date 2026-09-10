@@ -97,7 +97,7 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
             </div>
           </>
         ) : (
-          <Callout intent={Intent.PRIMARY} icon={<KeyRound size={16} />}>
+          <Callout intent={Intent.PRIMARY} icon={<KeyRound size={16} style={{ display: "inline-flex", alignItems: "center", marginRight: "8px" }} />}>
             {t(
               "account.mfa.unconfiguredHint",
               "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
