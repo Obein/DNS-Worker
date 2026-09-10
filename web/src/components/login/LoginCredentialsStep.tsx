@@ -1,6 +1,7 @@
 import React from "react";
 import { FormGroup, InputGroup, Button, Intent, Checkbox } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
+import { Fingerprint } from "lucide-react";
 import { DigitInput } from "../DigitInput";
 
 /**
@@ -11,6 +12,12 @@ export interface LoginCredentialsStepProps {
   requiresPassword: boolean;
   /** Flag representing if TOTP challenge is required. */
   requiresTotp: boolean;
+  /** Flag representing if user has registered passkeys. */
+  hasPasskey?: boolean;
+  /** Indicates if passkey authentication is actively in progress. */
+  passkeyLoading?: boolean;
+  /** Callback to trigger passkey authentication. */
+  onPasskeyLogin?: () => void;
   /** Flag showing if recovery key is being used instead of authenticator app. */
   useRecovery: boolean;
   /** Callback to toggle between recovery key and TOTP token mode. */
@@ -51,6 +58,9 @@ export interface LoginCredentialsStepProps {
 export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
   requiresPassword,
   requiresTotp,
+  hasPasskey = false,
+  passkeyLoading = false,
+  onPasskeyLogin,
   useRecovery,
   setUseRecovery,
   password,
@@ -94,8 +104,17 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
     );
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasPasskey && !totpToken && !recoveryKey && onPasskeyLogin) {
+      onPasskeyLogin();
+      return;
+    }
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       {requiresPassword && (
         <FormGroup label={t("auth.password")} labelFor="password">
           <InputGroup
@@ -114,6 +133,34 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
             required
           />
         </FormGroup>
+      )}
+
+      {hasPasskey && (
+        <div className="space-y-3 pt-1">
+          <Button
+            fill
+            size="large"
+            intent={Intent.PRIMARY}
+            type="button"
+            loading={passkeyLoading}
+            disabled={loading}
+            onClick={onPasskeyLogin}
+            className="font-semibold py-5 rounded-xl shadow-md flex items-center justify-center space-x-2"
+          >
+            <Fingerprint size={20} className="mr-1.5" />
+            <span>{t("auth.verifyWithPasskey", "使用通行密钥验证")}</span>
+          </Button>
+
+          {requiresTotp && (
+            <div className="relative flex py-2 items-center">
+              <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+              <span className="flex-shrink mx-3 text-gray-400 text-xs">
+                {t("auth.orUseTotp", "或使用验证码")}
+              </span>
+              <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+          )}
+        </div>
       )}
 
       {requiresTotp && (
@@ -178,16 +225,19 @@ export const LoginCredentialsStep: React.FC<LoginCredentialsStepProps> = ({
         className="mt-4 text-left"
       />
 
-      <Button
-        fill
-        size="large"
-        intent={Intent.PRIMARY}
-        type="submit"
-        loading={loading}
-        className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20"
-      >
-        {t("auth.loginBtn")}
-      </Button>
+      {(!hasPasskey || requiresTotp) && (
+        <Button
+          fill
+          size="large"
+          intent={hasPasskey ? Intent.NONE : Intent.PRIMARY}
+          type="submit"
+          loading={loading}
+          disabled={passkeyLoading}
+          className="mt-6 font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20"
+        >
+          {t("auth.loginBtn")}
+        </Button>
+      )}
     </form>
   );
 };

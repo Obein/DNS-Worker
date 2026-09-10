@@ -11,6 +11,7 @@ import {
 } from "../../utils/auth";
 import { setAccessToken } from "../../utils/token";
 import { prelogin, login, ApiError, migratePassword } from "../../services";
+import { startPasskeyAuthentication } from "../../utils/webauthn";
 
 interface AuthConfig {
   turnstile_site_key: string;
@@ -51,6 +52,9 @@ export const useLoginForm = ({
   // Server response step requirements
   const [requiresPassword, setRequiresPassword] = useState(true);
   const [requiresTotp, setRequiresTotp] = useState(false);
+  const [hasPasskey, setHasPasskey] = useState(false);
+  const [passkeyOptions, setPasskeyOptions] = useState<any>(null);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [useRecovery, setUseRecovery] = useState(false);
 
   // Status indicators
@@ -140,6 +144,8 @@ export const useLoginForm = ({
       const data = await prelogin({ username, turnstileToken });
       setRequiresPassword(data.requires_password);
       setRequiresTotp(data.requires_totp);
+      setHasPasskey(!!data.has_passkey);
+      setPasskeyOptions(data.passkey_options || null);
       setPasswordVersion(data.password_version ?? 1);
       setNonce(data.nonce);
       setServerSalt(data.serverSalt);
@@ -216,6 +222,57 @@ export const useLoginForm = ({
     }
   };
 
+  const handlePasskeyLogin = async () => {
+    if (!passkeyOptions) return;
+    setPasskeyLoading(true);
+    setError("");
+
+    try {
+      const assertion = await startPasskeyAuthentication(passkeyOptions);
+      const body: {
+        password?: string;
+        passkeyAssertion?: any;
+        keepLoggedIn?: boolean;
+      } = {
+        keepLoggedIn,
+        passkeyAssertion: assertion
+      };
+
+      if (requiresPassword) {
+        if (!password) {
+          setError(t("auth.passwordRequiredFirst", "Please enter your password first"));
+          setPasskeyLoading(false);
+          return;
+        }
+        if (passwordVersion === 2) {
+          if (!nonce || !serverSalt) {
+            throw new Error(t("auth.sessionExpired", "Session expired, please start over"));
+          }
+          const clientHash = await hashPasswordClient(password, username);
+          const storedHash = await deriveStoredHashClient(clientHash, serverSalt);
+          body.password = await hmacSha256(storedHash, nonce);
+        } else {
+          body.password = password;
+        }
+      }
+
+      const data = await login(body);
+      if (data.accessToken) {
+        setAccessToken(data.accessToken);
+      }
+      if (data.needsMigration && password) {
+        const clientHash = await hashPasswordClient(password, username);
+        await migratePassword(clientHash);
+      }
+      onSuccess();
+    } catch (err: any) {
+      console.error("Passkey authentication error:", err);
+      setError(formatApiErrorMessage(err, t));
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
+
   const resetToStep1 = () => {
     setLoginStep(1);
     setPassword("");
@@ -226,6 +283,9 @@ export const useLoginForm = ({
     setUseRecovery(false);
     setNonce(undefined);
     setServerSalt(undefined);
+    setHasPasskey(false);
+    setPasskeyOptions(null);
+    setPasskeyLoading(false);
   };
 
   return {
@@ -240,6 +300,8 @@ export const useLoginForm = ({
     setRecoveryKey,
     requiresPassword,
     requiresTotp,
+    hasPasskey,
+    passkeyLoading,
     useRecovery,
     setUseRecovery,
     loading,
@@ -252,6 +314,7 @@ export const useLoginForm = ({
     setKeepLoggedIn,
     handleStep1Submit,
     handleStep2Submit,
+    handlePasskeyLogin,
     resetToStep1
   };
 };

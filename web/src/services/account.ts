@@ -1,4 +1,4 @@
-import type { UserInfo, SessionInfo, ActivityEntry } from "./types";
+import type { UserInfo, SessionInfo, ActivityEntry, Passkey } from "./types";
 import { ApiError } from "./auth";
 
 export interface UpdatePasswordPayload {
@@ -137,6 +137,46 @@ export async function clearPin(verificationPayload: { password?: string; totpTok
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(verificationPayload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function getPasskeys(): Promise<Passkey[]> {
+  const res = await fetch("/api/account/passkeys");
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function getPasskeyRegistrationOptions(): Promise<any> {
+  const res = await fetch("/api/account/passkeys/register/options", {
+    method: "POST"
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function verifyPasskeyRegistration(payload: { name: string; credential: any }): Promise<Passkey> {
+  const res = await fetch("/api/account/passkeys/register/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function renamePasskey(id: string, name: string): Promise<void> {
+  const res = await fetch(`/api/account/passkeys/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  const res = await fetch(`/api/account/passkeys/${id}`, {
+    method: "DELETE"
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }

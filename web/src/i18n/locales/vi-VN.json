@@ -122,7 +122,12 @@
     "registerAdminTitle": "Đăng ký tài khoản quản trị viên",
     "registerAdminDesc": "Hệ thống chưa có tài khoản. Người dùng đầu tiên sẽ trở thành quản trị viên hệ thống.",
     "goToRegisterAdmin": "Đăng ký quản trị",
-    "dbNotInitialized": "Cơ sở dữ liệu chưa được khởi tạo hoặc thiếu bảng. Vui lòng chạy npm run db:migrate:prod trong terminal."
+    "dbNotInitialized": "Cơ sở dữ liệu chưa được khởi tạo hoặc thiếu bảng. Vui lòng chạy npm run db:migrate:prod trong terminal.",
+    "verifyWithPasskey": "Xác minh bằng Passkey",
+    "orUseTotp": "Hoặc sử dụng mã xác thực",
+    "passwordRequiredFirst": "Vui lòng nhập mật khẩu trước",
+    "passkeyVerification": "Xác minh Passkey",
+    "passkeyPromptDesc": "Xác minh bằng sinh trắc học hoặc khóa bảo mật đã đăng ký"
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "Hạn chế truy cập từ vị trí khác",
         "geolocation_missing": "Thiếu thông tin vị trí địa lý",
         "token_reuse": "Sử dụng lại mã xác thực (Cảnh báo bảo mật)"
-      }
+      },
+      "passkeyRegistered": "Đăng ký Passkey",
+      "passkeyDeleted": "Xóa Passkey",
+      "passkeyVerifySuccess": "Xác minh Passkey thành công",
+      "passkeyVerifyFail": "Xác minh Passkey thất bại"
     },
     "sessions": {
       "title": "Phiên hoạt động",
@@ -566,6 +575,31 @@
       "revokeFailed": "Không thể thu hồi phiên.",
       "empty": "Không tìm thấy phiên hoạt động nào.",
       "unknownDevice": "Thiết bị không xác định"
+    },
+    "passkey": {
+      "title": "Mã khóa (Passkey)",
+      "addBtn": "Thêm Passkey",
+      "desc": "Sử dụng xác thực sinh trắc học (Touch ID, Face ID, Windows Hello) hoặc khóa bảo mật (YubiKey) để xác thực đa yếu tố nhanh chóng và chống lừa đảo.",
+      "empty": "Chưa có Passkey nào được thêm.",
+      "addTitle": "Thêm Passkey",
+      "nameLabel": "Tên Passkey",
+      "namePlaceholder": "vd: MacBook của tôi / YubiKey",
+      "promptNotice": "Sau khi nhấp tiếp tục, trình duyệt sẽ nhắc bạn hoàn tất đăng ký sinh trắc học hoặc khóa bảo mật.",
+      "continue": "Tiếp tục",
+      "renameTitle": "Đổi tên Passkey",
+      "deleteTitle": "Xóa Passkey",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa Passkey \"{{name}}\" không? Bạn sẽ không thể sử dụng nó để xác thực đa yếu tố nữa.",
+      "defaultName": "Passkey",
+      "notSupported": "Trình duyệt hoặc môi trường hiện tại của bạn không hỗ trợ Passkey (WebAuthn).",
+      "regFailed": "Đăng ký Passkey thất bại",
+      "count": "{{count}} đã định cấu hình",
+      "none": "Chưa định cấu hình",
+      "created": "Thời gian tạo",
+      "lastUsed": "Sử dụng lần cuối",
+      "neverUsed": "Chưa từng sử dụng",
+      "updated": "Cập nhật Passkey thành công",
+      "registered": "Đã đăng ký Passkey thành công",
+      "deleted": "Đã xóa Passkey"
     }
   },
   "intro": {

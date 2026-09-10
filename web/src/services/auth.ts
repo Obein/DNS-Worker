@@ -24,6 +24,8 @@ export interface PreloginPayload {
 export interface PreloginResponse {
   requires_password: boolean;
   requires_totp: boolean;
+  has_passkey?: boolean;
+  passkey_options?: any;
   password_version?: number;
   nonce?: string;
   serverSalt?: string | null;
@@ -34,6 +36,7 @@ export interface LoginPayload {
   recoveryKey?: string;
   totpTokenHash?: string;
   totpSalt?: string;
+  passkeyAssertion?: any;
   keepLoggedIn?: boolean;
 }
 

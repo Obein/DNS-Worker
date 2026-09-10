@@ -181,3 +181,17 @@ export interface AccessPoint {
   created_at: number;
   updated_at: number;
 }
+
+export interface Passkey {
+  id: string;
+  user_id: string;
+  name: string;
+  credential_id: string;
+  public_key: string;
+  algorithm: number;
+  sign_count: number;
+  transports?: string | null;
+  aaguid?: string | null;
+  created_at: number;
+  last_used_at?: number | null;
+}

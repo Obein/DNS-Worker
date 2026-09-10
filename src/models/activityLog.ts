@@ -14,7 +14,11 @@ export type ActivityAction =
   | 'recovery_key_used'
   | 'session_revoked'
   | 'pin_verify_success'
-  | 'pin_verify_fail';
+  | 'pin_verify_fail'
+  | 'passkey_registered'
+  | 'passkey_deleted'
+  | 'passkey_verify_success'
+  | 'passkey_verify_fail';
 
 export interface UserActivityEntry {
   id: number;

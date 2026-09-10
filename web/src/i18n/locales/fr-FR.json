@@ -122,7 +122,12 @@
     "registerAdminTitle": "Enregistrer un compte administrateur",
     "registerAdminDesc": "Aucun compte dans le système. Le premier utilisateur deviendra administrateur système.",
     "goToRegisterAdmin": "Créer l'admin",
-    "dbNotInitialized": "Base de données non initialisée ou tables manquantes. Veuillez exécuter npm run db:migrate:prod."
+    "dbNotInitialized": "Base de données non initialisée ou tables manquantes. Veuillez exécuter npm run db:migrate:prod.",
+    "verifyWithPasskey": "Vérifier avec une clé d'accès (Passkey)",
+    "orUseTotp": "Ou utiliser le code de l'authentificateur",
+    "passwordRequiredFirst": "Veuillez d'abord saisir votre mot de passe",
+    "passkeyVerification": "Vérification par clé d'accès",
+    "passkeyPromptDesc": "Vérifiez à l'aide de vos données biométriques enregistrées ou de votre clé de sécurité"
   },
   "setup": {
     "title": "Guide d'installation",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "Écart géographique (Accès restreint)",
         "geolocation_missing": "Informations géographiques manquantes",
         "token_reuse": "Réutilisation de tokens (Alerte de sécurité)"
-      }
+      },
+      "passkeyRegistered": "Clé d'accès enregistrée",
+      "passkeyDeleted": "Clé d'accès supprimée",
+      "passkeyVerifySuccess": "Clé d'accès vérifiée",
+      "passkeyVerifyFail": "Échec de vérification de clé d'accès"
     },
     "sessions": {
       "title": "Sessions actives",
@@ -566,6 +575,31 @@
       "revokeFailed": "Échec de la révocation de la session.",
       "empty": "Aucune session active trouvée.",
       "unknownDevice": "Appareil inconnu"
+    },
+    "passkey": {
+      "title": "Clés d'accès (Passkeys)",
+      "addBtn": "Ajouter une clé d'accès",
+      "desc": "Utilisez la biométrie (Touch ID, Face ID, Windows Hello) ou des clés de sécurité (YubiKey) pour une authentification multifacteur rapide et résistante au phishing.",
+      "empty": "Aucune clé d'accès ajoutée pour le moment.",
+      "addTitle": "Ajouter une clé d'accès",
+      "nameLabel": "Nom de la clé d'accès",
+      "namePlaceholder": "ex. Mon MacBook / YubiKey",
+      "promptNotice": "Après avoir cliqué sur Continuer, votre navigateur vous invitera à terminer l'enregistrement biométrique ou de la clé de sécurité.",
+      "continue": "Continuer",
+      "renameTitle": "Renommer la clé d'accès",
+      "deleteTitle": "Supprimer la clé d'accès",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la clé d'accès \"{{name}}\" ? Vous ne pourrez plus l'utiliser pour l'authentification multifacteur.",
+      "defaultName": "Clé d'accès",
+      "notSupported": "Votre navigateur ou environnement actuel ne prend pas en charge les clés d'accès (WebAuthn).",
+      "regFailed": "Échec de l'enregistrement de la clé d'accès",
+      "count": "{{count}} configuré(s)",
+      "none": "Non configuré",
+      "created": "Créé le",
+      "lastUsed": "Dernière utilisation",
+      "neverUsed": "Jamais utilisé",
+      "updated": "Clé d'accès mise à jour avec succès",
+      "registered": "Clé d'accès enregistrée avec succès",
+      "deleted": "Clé d'accès supprimée"
     }
   },
   "intro": {

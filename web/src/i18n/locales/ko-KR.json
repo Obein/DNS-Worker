@@ -122,7 +122,12 @@
     "registerAdminTitle": "관리자 계정 등록",
     "registerAdminDesc": "시스템에 계정이 없습니다. 첫 번째 가입자가 시스템 관리자가 됩니다.",
     "goToRegisterAdmin": "관리자 등록",
-    "dbNotInitialized": "데이터베이스가 초기화되지 않았거나 테이블이 없습니다. npm run db:migrate:prod 를 실행하세요."
+    "dbNotInitialized": "데이터베이스가 초기화되지 않았거나 테이블이 없습니다. npm run db:migrate:prod 를 실행하세요.",
+    "verifyWithPasskey": "패스키로 인증",
+    "orUseTotp": "또는 인증 앱 코드 사용",
+    "passwordRequiredFirst": "먼저 비밀번호를 입력해 주세요",
+    "passkeyVerification": "패스키 인증",
+    "passkeyPromptDesc": "등록된 생체 인식 또는 보안 키를 사용하여 인증"
   },
   "setup": {
     "title": "설치 가이드",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "지리적 위치 불일치 (원격 액세스 제한)",
         "geolocation_missing": "지리적 위치 정보 누락",
         "token_reuse": "토큰 재사용 (보안 경고)"
-      }
+      },
+      "passkeyRegistered": "패스키 등록",
+      "passkeyDeleted": "패스키 삭제",
+      "passkeyVerifySuccess": "패스키 인증 성공",
+      "passkeyVerifyFail": "패스키 인증 실패"
     },
     "sessions": {
       "title": "활성 세션",
@@ -566,6 +575,31 @@
       "revokeFailed": "세션을 취소하지 못했습니다.",
       "empty": "활성 세션을 찾을 수 없습니다.",
       "unknownDevice": "알 수 없는 기기"
+    },
+    "passkey": {
+      "title": "패스키 (Passkey)",
+      "addBtn": "패스키 추가",
+      "desc": "생체 인식(Touch ID, Face ID, Windows Hello) 또는 보안 키(YubiKey)를 사용하여 빠르고 피싱에 강한 다단계 인증을 수행하세요.",
+      "empty": "추가된 패스키가 없습니다.",
+      "addTitle": "패스키 추가",
+      "nameLabel": "패스키 이름",
+      "namePlaceholder": "예: 내 MacBook / YubiKey",
+      "promptNotice": "계속을 클릭하면 브라우저에 생체 인식 또는 보안 키 등록을 완료하라는 메시지가 표시됩니다.",
+      "continue": "계속",
+      "renameTitle": "패스키 이름 바꾸기",
+      "deleteTitle": "패스키 삭제",
+      "deleteConfirm": "패스키 \"{{name}}\"을(를) 삭제하시겠습니까? 삭제 후에는 다단계 인증에 사용할 수 없습니다.",
+      "defaultName": "패스키",
+      "notSupported": "브라우저 또는 현재 환경이 패스키(WebAuthn)를 지원하지 않습니다.",
+      "regFailed": "패스키 등록 실패",
+      "count": "{{count}}개 구성됨",
+      "none": "구성되지 않음",
+      "created": "추가 일시",
+      "lastUsed": "마지막 사용",
+      "neverUsed": "사용 이력 없음",
+      "updated": "패스키가 성공적으로 업데이트되었습니다",
+      "registered": "패스키가 성공적으로 등록되었습니다",
+      "deleted": "패스키 삭제됨"
     }
   },
   "intro": {

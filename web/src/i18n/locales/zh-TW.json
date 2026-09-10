@@ -123,7 +123,12 @@
     "registerAdminTitle": "註冊管理員帳號",
     "registerAdminDesc": "系統尚無帳號，首位註冊用戶將自動成為系統管理員。",
     "goToRegisterAdmin": "註冊管理員",
-    "dbNotInitialized": "資料庫未初始化或缺少資料表，請在終端執行 npm run db:migrate:prod 套用資料庫遷移。"
+    "dbNotInitialized": "資料庫未初始化或缺少資料表，請在終端執行 npm run db:migrate:prod 套用資料庫遷移。",
+    "verifyWithPasskey": "使用通行密鑰驗證",
+    "orUseTotp": "或使用數字驗證器",
+    "passwordRequiredFirst": "請先輸入密碼",
+    "passkeyVerification": "通行密鑰驗證",
+    "passkeyPromptDesc": "使用已註冊的裝置生物識別或硬體安全金鑰進行驗證"
   },
   "setup": {
     "title": "安裝指南",
@@ -566,7 +571,36 @@
         "geolocation_mismatch": "異地存取限制",
         "geolocation_missing": "缺少地理位置資訊",
         "token_reuse": "憑證重複使用（安全警告）"
-      }
+      },
+      "passkeyRegistered": "新增通行密鑰",
+      "passkeyDeleted": "刪除通行密鑰",
+      "passkeyVerifySuccess": "通行密鑰驗證通過",
+      "passkeyVerifyFail": "通行密鑰驗證失敗"
+    },
+    "passkey": {
+      "title": "通行密鑰 (Passkey)",
+      "addBtn": "新增通行密鑰",
+      "desc": "使用生物識別（Touch ID / Face ID / Windows Hello）或硬體安全金鑰（YubiKey）進行快捷且防釣魚的多因素認證。",
+      "empty": "尚未新增任何通行密鑰。",
+      "addTitle": "新增通行密鑰",
+      "nameLabel": "通行密鑰名稱",
+      "namePlaceholder": "例如：我的裝置 / YubiKey",
+      "promptNotice": "點擊繼續後，瀏覽器將彈出系統提示，引導您完成生物識別或硬體安全金鑰註冊。",
+      "continue": "繼續",
+      "renameTitle": "重命名通行密鑰",
+      "deleteTitle": "刪除通行密鑰",
+      "deleteConfirm": "確定要刪除通行密鑰 \"{{name}}\" 嗎？刪除後將無法使用該通行密鑰進行多因素認證。",
+      "defaultName": "通行密鑰",
+      "notSupported": "您的瀏覽器或目前環境不支援通行密鑰 (WebAuthn)。",
+      "regFailed": "通行密鑰註冊失敗",
+      "count": "{{count}} 個已設定",
+      "none": "未設定",
+      "created": "新增時間",
+      "lastUsed": "最後使用",
+      "neverUsed": "從未在登入中使用",
+      "updated": "通行密鑰更新成功",
+      "registered": "通行密鑰新增成功",
+      "deleted": "通行密鑰已刪除"
     }
   },
   "intro": {

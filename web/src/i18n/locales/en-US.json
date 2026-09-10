@@ -123,7 +123,12 @@
     "registerAdminTitle": "Register Administrator Account",
     "registerAdminDesc": "No accounts in the system. The first user will become the system administrator.",
     "goToRegisterAdmin": "Register Admin",
-    "dbNotInitialized": "Database is not initialized or missing tables. Please run npm run db:migrate:prod in terminal."
+    "dbNotInitialized": "Database is not initialized or missing tables. Please run npm run db:migrate:prod in terminal.",
+    "verifyWithPasskey": "Verify with Passkey",
+    "orUseTotp": "Or use authenticator code",
+    "passwordRequiredFirst": "Please enter your password first",
+    "passkeyVerification": "Passkey Verification",
+    "passkeyPromptDesc": "Verify using your registered biometric or security key"
   },
   "setup": {
     "title": "Setup Guide",
@@ -566,7 +571,36 @@
         "geolocation_mismatch": "Geographic location mismatch",
         "geolocation_missing": "Geolocation missing",
         "token_reuse": "Token reused (security warning)"
-      }
+      },
+      "passkeyRegistered": "Passkey Registered",
+      "passkeyDeleted": "Passkey Deleted",
+      "passkeyVerifySuccess": "Passkey Verified",
+      "passkeyVerifyFail": "Passkey Verification Failed"
+    },
+    "passkey": {
+      "title": "Passkeys",
+      "addBtn": "Add Passkey",
+      "desc": "Use biometric authentication (Touch ID, Face ID, Windows Hello) or hardware security keys (YubiKey) for fast, phishing-resistant MFA.",
+      "empty": "No passkeys added yet.",
+      "addTitle": "Add Passkey",
+      "nameLabel": "Passkey Name",
+      "namePlaceholder": "e.g. My MacBook / YubiKey",
+      "promptNotice": "After clicking continue, your browser will prompt you to complete biometric or security key registration.",
+      "continue": "Continue",
+      "renameTitle": "Rename Passkey",
+      "deleteTitle": "Delete Passkey",
+      "deleteConfirm": "Are you sure you want to delete passkey \"{{name}}\"? You will no longer be able to use it for multi-factor authentication.",
+      "defaultName": "Passkey",
+      "notSupported": "Your browser or current environment does not support passkeys (WebAuthn).",
+      "regFailed": "Passkey registration failed",
+      "count": "{{count}} configured",
+      "none": "Not configured",
+      "created": "Created",
+      "lastUsed": "Last used",
+      "neverUsed": "Never used",
+      "updated": "Passkey updated successfully",
+      "registered": "Passkey registered successfully",
+      "deleted": "Passkey deleted"
     }
   },
   "intro": {

@@ -122,7 +122,12 @@
     "registerAdminTitle": "Registrar cuenta de administrador",
     "registerAdminDesc": "No hay cuentas en el sistema. El primer usuario será el administrador del sistema.",
     "goToRegisterAdmin": "Registrar admin",
-    "dbNotInitialized": "La base de datos no está inicializada o faltan tablas. Ejecute npm run db:migrate:prod en la terminal."
+    "dbNotInitialized": "La base de datos no está inicializada o faltan tablas. Ejecute npm run db:migrate:prod en la terminal.",
+    "verifyWithPasskey": "Verificar con Passkey",
+    "orUseTotp": "O usar código de autenticador",
+    "passwordRequiredFirst": "Por favor, introduzca su contraseña primero",
+    "passkeyVerification": "Verificación con Passkey",
+    "passkeyPromptDesc": "Verifique usando sus datos biométricos registrados o clave de seguridad"
   },
   "setup": {
     "title": "Guía de instalación",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "Discrepancia geográfica (Acceso restringido)",
         "geolocation_missing": "Falta información geográfica",
         "token_reuse": "Reutilización de tokens (Alerta de seguridad)"
-      }
+      },
+      "passkeyRegistered": "Passkey registrada",
+      "passkeyDeleted": "Passkey eliminada",
+      "passkeyVerifySuccess": "Passkey verificada",
+      "passkeyVerifyFail": "Fallo de verificación de Passkey"
     },
     "sessions": {
       "title": "Sesiones activas",
@@ -566,6 +575,31 @@
       "revokeFailed": "Error al revocar la sesión.",
       "empty": "No se encontraron sesiones activas.",
       "unknownDevice": "Dispositivo desconocido"
+    },
+    "passkey": {
+      "title": "Passkeys",
+      "addBtn": "Agregar Passkey",
+      "desc": "Use autenticación biométrica (Touch ID, Face ID, Windows Hello) o llaves de seguridad (YubiKey) para una autenticación multifactor rápida y resistente al phishing.",
+      "empty": "Aún no se han agregado passkeys.",
+      "addTitle": "Agregar Passkey",
+      "nameLabel": "Nombre de Passkey",
+      "namePlaceholder": "ej. Mi MacBook / YubiKey",
+      "promptNotice": "Al hacer clic en continuar, el navegador le solicitará completar el registro biométrico o de llave de seguridad.",
+      "continue": "Continuar",
+      "renameTitle": "Renombrar Passkey",
+      "deleteTitle": "Eliminar Passkey",
+      "deleteConfirm": "¿Está seguro de que desea eliminar la passkey \"{{name}}\"? Ya no podrá usarla para la autenticación multifactor.",
+      "defaultName": "Passkey",
+      "notSupported": "Su navegador o entorno actual no es compatible con passkeys (WebAuthn).",
+      "regFailed": "Error en el registro de Passkey",
+      "count": "{{count}} configurado(s)",
+      "none": "No configurado",
+      "created": "Creado",
+      "lastUsed": "Último uso",
+      "neverUsed": "Nunca utilizado",
+      "updated": "Passkey actualizada con éxito",
+      "registered": "Passkey registrada con éxito",
+      "deleted": "Passkey eliminada"
     }
   },
   "intro": {

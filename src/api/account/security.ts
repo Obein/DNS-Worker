@@ -4,6 +4,13 @@ import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, 
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
 import { PASSWORD_REGEX } from "../../utils/validator";
+import { PasskeyModel } from "../../models/passkey";
+import {
+  generateWebAuthnChallenge,
+  base64UrlEncode,
+  verifyRegistrationResponse
+} from "../../lib/webauthn";
+import { cacheUtils } from "../../utils/cache";
 
 /**
  * Handle security credentials requests to /api/account/password and /api/account/totp/...
@@ -91,7 +98,8 @@ export async function handleSecurityRequest(
         return new Response("TOTP is already enabled", { status: 409 });
       }
       const secret = generateTOTPSecret();
-      const uri = getTOTPUri(secret, dbUser?.username || 'user', 'DNS Worker');
+      const host = new URL(request.url).hostname;
+      const uri = getTOTPUri(secret, dbUser?.username || 'user', host);
       return new Response(JSON.stringify({ secret, uri }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -183,6 +191,137 @@ export async function handleSecurityRequest(
 
     if (request.method === 'DELETE') {
       await userModel.updatePinHash(user.id, null);
+      return new Response(JSON.stringify({ success: true }));
+    }
+  }
+
+  // ─── Passkey 管理接口 (/api/account/passkeys/...) ───
+  if (action === 'passkeys') {
+    const passkeyModel = new PasskeyModel(env.DB);
+    const subAction = pathParts[3];
+
+    // GET /api/account/passkeys — 列出当前用户的所有通行密钥
+    if (!subAction && request.method === 'GET') {
+      const passkeys = await passkeyModel.listByUser(user.id);
+      return new Response(JSON.stringify(passkeys), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/account/passkeys/register/options — 生成通行密钥注册挑战与参数
+    if (subAction === 'register' && pathParts[4] === 'options' && request.method === 'POST') {
+      const existingPasskeys = await passkeyModel.listByUser(user.id);
+      const challenge = generateWebAuthnChallenge();
+      const url = new URL(request.url);
+      const rpId = url.hostname;
+      const cache = (caches as any).default;
+      await cacheUtils.set(cache, `webauthn_reg_challenge:${user.id}`, { challenge, rpId }, 300);
+
+      const options = {
+        challenge,
+        rp: {
+          name: rpId,
+          id: rpId
+        },
+        user: {
+          id: base64UrlEncode(new TextEncoder().encode(user.id)),
+          name: user.username,
+          displayName: user.username
+        },
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 },  // ES256
+          { type: "public-key", alg: -257 } // RS256
+        ],
+        authenticatorSelection: {
+          userVerification: "preferred",
+          residentKey: "preferred"
+        },
+        timeout: 60000,
+        excludeCredentials: existingPasskeys.map(p => ({
+          id: p.credential_id,
+          type: "public-key",
+          transports: p.transports ? JSON.parse(p.transports) : undefined
+        }))
+      };
+
+      return new Response(JSON.stringify(options), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/account/passkeys/register/verify — 验证注册响应并保存通行密钥
+    if (subAction === 'register' && pathParts[4] === 'verify' && request.method === 'POST') {
+      const cache = (caches as any).default;
+      const cachedState = await cacheUtils.get<{ challenge: string; rpId: string }>(cache, `webauthn_reg_challenge:${user.id}`);
+      if (!cachedState) {
+        return new Response("Registration session expired, please try again", { status: 400 });
+      }
+      await cacheUtils.delete(cache, `webauthn_reg_challenge:${user.id}`);
+
+      const body = await request.json() as any;
+      const { name, credential } = body;
+      if (!credential || !credential.response) {
+        return new Response("Invalid credential data", { status: 400 });
+      }
+
+      try {
+        const parsed = await verifyRegistrationResponse({
+          clientDataJSON: credential.response.clientDataJSON,
+          attestationObject: credential.response.attestationObject,
+          expectedChallenge: cachedState.challenge,
+          expectedOrigin: request.headers.get("origin") || `https://${cachedState.rpId}`,
+          expectedRpId: cachedState.rpId
+        });
+
+        // Check if credential ID is already registered
+        const existing = await passkeyModel.getByCredentialId(parsed.credentialId);
+        if (existing) {
+          return new Response("This passkey is already registered", { status: 409 });
+        }
+
+        const passkeyName = (name || "").trim().slice(0, 50) || "Passkey";
+        const transports = Array.isArray(credential.response.transports) ? credential.response.transports : undefined;
+
+        const created = await passkeyModel.create({
+          userId: user.id,
+          name: passkeyName,
+          credentialId: parsed.credentialId,
+          publicKey: parsed.publicKeySpki,
+          algorithm: parsed.algorithm,
+          signCount: parsed.signCount,
+          transports,
+          aaguid: parsed.aaguid
+        });
+
+        await activityLog.record(user.id, 'passkey_registered', clientIp, userAgent, { name: passkeyName }, sessionHash);
+        return new Response(JSON.stringify(created), { status: 201, headers: { 'Content-Type': 'application/json' } });
+      } catch (err: any) {
+        console.warn("[Passkey Registration] Verification failed:", err.message || err);
+        return new Response(err.message || "Passkey registration failed", { status: 400 });
+      }
+    }
+
+    // PATCH /api/account/passkeys/:id — 重命名通行密钥
+    if (subAction && request.method === 'PATCH') {
+      const passkeyId = subAction;
+      const { name } = await request.json() as { name: string };
+      if (!name || !name.trim()) return new Response("Name is required", { status: 400 });
+
+      const passkey = await passkeyModel.getById(passkeyId, user.id);
+      if (!passkey) return new Response("Passkey not found", { status: 404 });
+
+      const success = await passkeyModel.updateName(passkeyId, user.id, name.trim().slice(0, 50));
+      return new Response(JSON.stringify({ success }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // DELETE /api/account/passkeys/:id — 删除通行密钥
+    if (subAction && request.method === 'DELETE') {
+      const passkeyId = subAction;
+      const passkey = await passkeyModel.getById(passkeyId, user.id);
+      if (!passkey) return new Response("Passkey not found", { status: 404 });
+
+      await passkeyModel.delete(passkeyId, user.id);
+      await activityLog.record(user.id, 'passkey_deleted', clientIp, userAgent, { name: passkey.name }, sessionHash);
       return new Response(JSON.stringify({ success: true }));
     }
   }

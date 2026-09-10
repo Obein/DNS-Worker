@@ -58,6 +58,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setRecoveryKey,
     requiresPassword,
     requiresTotp,
+    hasPasskey,
+    passkeyLoading,
+    handlePasskeyLogin,
     useRecovery,
     setUseRecovery,
     loading,
@@ -149,6 +152,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <LoginCredentialsStep
           requiresPassword={requiresPassword}
           requiresTotp={requiresTotp}
+          hasPasskey={hasPasskey}
+          passkeyLoading={passkeyLoading}
+          onPasskeyLogin={handlePasskeyLogin}
           useRecovery={useRecovery}
           setUseRecovery={setUseRecovery}
           password={password}

@@ -9,6 +9,7 @@ import {
   Shield,
   ShieldOff,
   UserPlus,
+  Fingerprint
 } from "lucide-react";
 
 export const ACTION_META: Record<
@@ -74,5 +75,25 @@ export const ACTION_META: Record<
     label: "account.activity.sessionRevoked",
     icon: <LogOut size={14} />,
     intent: Intent.WARNING,
+  },
+  passkey_registered: {
+    label: "account.activity.passkeyRegistered",
+    icon: <Fingerprint size={14} />,
+    intent: Intent.PRIMARY,
+  },
+  passkey_deleted: {
+    label: "account.activity.passkeyDeleted",
+    icon: <ShieldOff size={14} />,
+    intent: Intent.WARNING,
+  },
+  passkey_verify_success: {
+    label: "account.activity.passkeyVerifySuccess",
+    icon: <ShieldCheck size={14} />,
+    intent: Intent.SUCCESS,
+  },
+  passkey_verify_fail: {
+    label: "account.activity.passkeyVerifyFail",
+    icon: <AlertTriangle size={14} />,
+    intent: Intent.DANGER,
   },
 };

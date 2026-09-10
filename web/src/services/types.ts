@@ -1,4 +1,4 @@
-import type { Profile, AccessPoint } from "../types/auth";
+import type { Profile, AccessPoint, Passkey } from "../types/auth";
 import type { LogEntry } from "../views/LogsView/types";
 import type { Rule, ProfileSettings as RuleProfileSettings } from "../views/RulesView/types";
 import type { FilterList } from "../views/FilteringView/types";
@@ -11,6 +11,7 @@ export type {
   Profile,
   UserInfo,
   AccessPoint,
+  Passkey,
   LogEntry,
   Rule,
   RuleProfileSettings,

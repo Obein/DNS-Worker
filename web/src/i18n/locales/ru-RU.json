@@ -122,7 +122,12 @@
     "registerAdminTitle": "Регистрация учётной записи администратора",
     "registerAdminDesc": "В системе нет учётных записей. Первый пользователь станет системным администратором.",
     "goToRegisterAdmin": "Зарегистрировать админа",
-    "dbNotInitialized": "База данных не инициализирована или отсутствуют таблицы. Выполните npm run db:migrate:prod в терминале."
+    "dbNotInitialized": "База данных не инициализирована или отсутствуют таблицы. Выполните npm run db:migrate:prod в терминале.",
+    "verifyWithPasskey": "Подтвердить с помощью Passkey",
+    "orUseTotp": "Или используйте код аутентификатора",
+    "passwordRequiredFirst": "Сначала введите пароль",
+    "passkeyVerification": "Верификация Passkey",
+    "passkeyPromptDesc": "Подтвердите с помощью биометрии или ключа безопасности"
   },
   "setup": {
     "title": "Руководство по установке",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "Гео-ограничение",
         "geolocation_missing": "Нет данных гео",
         "token_reuse": "Повторный вход (безопасность)"
-      }
+      },
+      "passkeyRegistered": "Passkey зарегистрирован",
+      "passkeyDeleted": "Passkey удален",
+      "passkeyVerifySuccess": "Passkey подтвержден",
+      "passkeyVerifyFail": "Ошибка верификации Passkey"
     },
     "sessions": {
       "title": "Активные сеансы",
@@ -566,6 +575,31 @@
       "revokeFailed": "Не удалось отозвать сеанс.",
       "empty": "Активных сеансов не найдено.",
       "unknownDevice": "Неизвестное устройство"
+    },
+    "passkey": {
+      "title": "Passkey (Ключи доступа)",
+      "addBtn": "Добавить Passkey",
+      "desc": "Используйте биометрию (Touch ID, Face ID, Windows Hello) или аппаратные ключи безопасности (YubiKey) для быстрой и защищенной от фишинга аутентификации.",
+      "empty": "Passkey еще не добавлены.",
+      "addTitle": "Добавить Passkey",
+      "nameLabel": "Имя Passkey",
+      "namePlaceholder": "Например: Мой MacBook / YubiKey",
+      "promptNotice": "После нажатия кнопки продолжения браузер предложит пройти биометрическую регистрацию или использовать ключ безопасности.",
+      "continue": "Продолжить",
+      "renameTitle": "Переименовать Passkey",
+      "deleteTitle": "Удалить Passkey",
+      "deleteConfirm": "Вы уверены, что хотите удалить ключ доступа \"{{name}}\"? Вы больше не сможете использовать его для аутентификации.",
+      "defaultName": "Passkey",
+      "notSupported": "Ваш браузер или окружение не поддерживают ключи доступа (WebAuthn).",
+      "regFailed": "Не удалось зарегистрировать Passkey",
+      "count": "Настроено: {{count}}",
+      "none": "Не настроено",
+      "created": "Создано",
+      "lastUsed": "Последнее использование",
+      "neverUsed": "Никогда не использовался",
+      "updated": "Passkey успешно обновлен",
+      "registered": "Passkey успешно зарегистрирован",
+      "deleted": "Passkey удален"
     }
   },
   "intro": {

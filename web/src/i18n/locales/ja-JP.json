@@ -122,7 +122,12 @@
     "registerAdminTitle": "管理者アカウントの登録",
     "registerAdminDesc": "システムにアカウントがありません。最初に登録されたユーザーがシステム管理者になります。",
     "goToRegisterAdmin": "管理者登録",
-    "dbNotInitialized": "データベースが初期化されていないかテーブルが見つかりません。npm run db:migrate:prod を実行してください。"
+    "dbNotInitialized": "データベースが初期化されていないかテーブルが見つかりません。npm run db:migrate:prod を実行してください。",
+    "verifyWithPasskey": "パスキーで検証",
+    "orUseTotp": "または認証アプリのコードを使用",
+    "passwordRequiredFirst": "最初にパスワードを入力してください",
+    "passkeyVerification": "パスキー認証",
+    "passkeyPromptDesc": "登録された生体認証またはセキュリティキーを使用して検証"
   },
   "setup": {
     "title": "インストールガイド",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "地理的位置の不一致（異地アクセス制限）",
         "geolocation_missing": "地理的位置情報の不足",
         "token_reuse": "トークンの再利用（セキュリティ警告）"
-      }
+      },
+      "passkeyRegistered": "パスキー登録",
+      "passkeyDeleted": "パスキー削除",
+      "passkeyVerifySuccess": "パスキー認証成功",
+      "passkeyVerifyFail": "パスキー認証失敗"
     },
     "sessions": {
       "title": "アクティブなセッション",
@@ -566,6 +575,31 @@
       "revokeFailed": "セッションの取り消しに失敗しました。",
       "empty": "アクティブなセッションは見つかりませんでした。",
       "unknownDevice": "不明なデバイス"
+    },
+    "passkey": {
+      "title": "パスキー (Passkey)",
+      "addBtn": "パスキーを追加",
+      "desc": "生体認証（Touch ID、Face ID、Windows Hello）またはセキュリティキー（YubiKey）を使用して、迅速でフィッシング耐性のある多要素認証を実現します。",
+      "empty": "パスキーはまだ追加されていません。",
+      "addTitle": "パスキーを追加",
+      "nameLabel": "パスキー名",
+      "namePlaceholder": "例：MacBook / YubiKey",
+      "promptNotice": "「続行」をクリックすると、ブラウザがプロンプトを表示し、生体認証またはセキュリティキーの登録を案内します。",
+      "continue": "続行",
+      "renameTitle": "パスキーの名前を変更",
+      "deleteTitle": "パスキーを削除",
+      "deleteConfirm": "パスキー「{{name}}」を削除してもよろしいですか？削除後は多要素認証に使用できなくなります。",
+      "defaultName": "パスキー",
+      "notSupported": "お使いのブラウザまたは環境はパスキー（WebAuthn）に対応していません。",
+      "regFailed": "パスキーの登録に失敗しました",
+      "count": "{{count}} 件設定済み",
+      "none": "未設定",
+      "created": "追加日時",
+      "lastUsed": "最終使用",
+      "neverUsed": "未使用",
+      "updated": "パスキーを更新しました",
+      "registered": "パスキーを登録しました",
+      "deleted": "パスキーを削除しました"
     }
   },
   "intro": {

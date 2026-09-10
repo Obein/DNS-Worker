@@ -122,7 +122,12 @@
     "registerAdminTitle": "Administratorkonto registrieren",
     "registerAdminDesc": "Keine Konten im System. Der erste Benutzer wird Systemadministrator.",
     "goToRegisterAdmin": "Admin registrieren",
-    "dbNotInitialized": "Datenbank nicht initialisiert oder Tabellen fehlen. Bitte führen Sie npm run db:migrate:prod aus."
+    "dbNotInitialized": "Datenbank nicht initialisiert oder Tabellen fehlen. Bitte führen Sie npm run db:migrate:prod aus.",
+    "verifyWithPasskey": "Mit Passkey bestätigen",
+    "orUseTotp": "Oder Authentifikator-Code verwenden",
+    "passwordRequiredFirst": "Bitte geben Sie zuerst Ihr Passwort ein",
+    "passkeyVerification": "Passkey-Verifizierung",
+    "passkeyPromptDesc": "Verifizieren Sie mit Ihrer registrierten Biometrie oder Ihrem Sicherheitsschlüssel"
   },
   "setup": {
     "title": "Installationsanleitung",
@@ -551,7 +556,11 @@
         "geolocation_mismatch": "Geografische Abweichung (Zugriffsbeschränkung)",
         "geolocation_missing": "Fehlende geografische Informationen",
         "token_reuse": "Wiederverwendung von Tokens (Sicherheitswarnung)"
-      }
+      },
+      "passkeyRegistered": "Passkey registriert",
+      "passkeyDeleted": "Passkey gelöscht",
+      "passkeyVerifySuccess": "Passkey verifiziert",
+      "passkeyVerifyFail": "Passkey-Verifizierung fehlgeschlagen"
     },
     "sessions": {
       "title": "Aktive Sitzungen",
@@ -566,6 +575,31 @@
       "revokeFailed": "Sitzung konnte nicht widerrufen werden.",
       "empty": "Keine aktiven Sitzungen gefunden.",
       "unknownDevice": "Unbekanntes Gerät"
+    },
+    "passkey": {
+      "title": "Passkeys",
+      "addBtn": "Passkey hinzufügen",
+      "desc": "Verwenden Sie Biometrie (Touch ID, Face ID, Windows Hello) oder Sicherheitsschlüssel (YubiKey) für schnelle, phishing-resistente MFA.",
+      "empty": "Noch keine Passkeys hinzugefügt.",
+      "addTitle": "Passkey hinzufügen",
+      "nameLabel": "Passkey-Name",
+      "namePlaceholder": "z. B. Mein MacBook / YubiKey",
+      "promptNotice": "Nach dem Klick auf Weiter fordert Ihr Browser Sie auf, die Registrierung per Biometrie oder Sicherheitsschlüssel abzuschließen.",
+      "continue": "Weiter",
+      "renameTitle": "Passkey umbenennen",
+      "deleteTitle": "Passkey löschen",
+      "deleteConfirm": "Sind Sie sicher, dass Sie den Passkey \"{{name}}\" löschen möchten? Sie können ihn danach nicht mehr zur Authentifizierung verwenden.",
+      "defaultName": "Passkey",
+      "notSupported": "Ihr Browser oder Ihre aktuelle Umgebung unterstützt keine Passkeys (WebAuthn).",
+      "regFailed": "Passkey-Registrierung fehlgeschlagen",
+      "count": "{{count}} konfiguriert",
+      "none": "Nicht konfiguriert",
+      "created": "Erstellt",
+      "lastUsed": "Zuletzt verwendet",
+      "neverUsed": "Noch nie verwendet",
+      "updated": "Passkey erfolgreich aktualisiert",
+      "registered": "Passkey erfolgreich registriert",
+      "deleted": "Passkey gelöscht"
     }
   },
   "intro": {

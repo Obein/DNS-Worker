@@ -123,7 +123,12 @@
     "registerAdminTitle": "注册管理员账号",
     "registerAdminDesc": "系统尚无账号，首位注册用户将自动成为系统管理员。",
     "goToRegisterAdmin": "注册管理员",
-    "dbNotInitialized": "数据库未初始化或缺少数据表，请在终端执行 npm run db:migrate:prod 应用数据库迁移。"
+    "dbNotInitialized": "数据库未初始化或缺少数据表，请在终端执行 npm run db:migrate:prod 应用数据库迁移。",
+    "verifyWithPasskey": "使用通行密钥验证",
+    "orUseTotp": "或使用数字验证器",
+    "passwordRequiredFirst": "请先输入密码",
+    "passkeyVerification": "通行密钥验证",
+    "passkeyPromptDesc": "使用已注册的设备生物识别或硬件安全密钥进行验证"
   },
   "setup": {
     "title": "安装指南",
@@ -566,7 +571,36 @@
         "geolocation_mismatch": "异地访问限制",
         "geolocation_missing": "缺少地理位置信息",
         "token_reuse": "凭证重复使用（安全警告）"
-      }
+      },
+      "passkeyRegistered": "添加通行密钥",
+      "passkeyDeleted": "删除通行密钥",
+      "passkeyVerifySuccess": "通行密钥验证通过",
+      "passkeyVerifyFail": "通行密钥验证失败"
+    },
+    "passkey": {
+      "title": "通行密钥 (Passkey)",
+      "addBtn": "添加通行密钥",
+      "desc": "使用生物识别（Touch ID / Face ID / Windows Hello）或硬件安全密钥（YubiKey）进行快捷且防钓鱼的多因素认证。",
+      "empty": "尚未添加任何通行密钥。",
+      "addTitle": "添加通行密钥",
+      "nameLabel": "通行密钥名称",
+      "namePlaceholder": "例如：我的设备 / YubiKey",
+      "promptNotice": "点击继续后，浏览器将弹出系统提示，引导您完成生物识别或硬件安全密钥录入。",
+      "continue": "继续",
+      "renameTitle": "重命名通行密钥",
+      "deleteTitle": "删除通行密钥",
+      "deleteConfirm": "确定要删除通行密钥 \"{{name}}\" 吗？删除后将无法使用该通行密钥进行多因素认证。",
+      "defaultName": "通行密钥",
+      "notSupported": "您的浏览器或当前环境不支持通行密钥 (WebAuthn)。",
+      "regFailed": "通行密钥注册失败",
+      "count": "{{count}} 个已配置",
+      "none": "未配置",
+      "created": "添加时间",
+      "lastUsed": "最后使用",
+      "neverUsed": "从未在登录中使用",
+      "updated": "通行密钥更新成功",
+      "registered": "通行密钥添加成功",
+      "deleted": "通行密钥已删除"
     }
   },
   "intro": {
