@@ -4,13 +4,14 @@ import { Globe, AppWindowMac, Monitor, Terminal, Smartphone } from "lucide-react
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import type {  RegionConfigItem  } from "../../../config/regions";
-import { generateMobileConfig } from "../../../utils/mobileconfig";
+import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
 
 export interface SetupTabsProps {
   isMobile: boolean;
   copyToClipboard: (text: string) => void;
   profileKey: string;
   profileName?: string;
+  accessPointName?: string;
   allRegions: Record<string, RegionConfigItem>;
   selectedRegion: string;
   currentIps: { ip: string; area: string | null }[];
@@ -21,6 +22,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   copyToClipboard,
   profileKey,
   profileName,
+  accessPointName,
   allRegions,
   selectedRegion,
   currentIps,
@@ -85,14 +87,23 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                 text={t("setup.downloadConfig")}
                 icon="download"
                 onClick={() => {
-                  const effectiveName = profileName || "DNS Worker";
-                  const xml = generateMobileConfig(profileKey, effectiveName, window.location.origin);
+                  const xml = generateMobileConfig({
+                    profileKey,
+                    profileName,
+                    accessPointName,
+                    origin: window.location.origin,
+                  });
                   const blob = new Blob([xml], { type: "application/x-apple-aspen-config" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  const sanitizedName = effectiveName.replace(/[^a-zA-Z0-9_\-\u4e00-\u9fa5]/g, "_");
-                  a.download = `dns_worker-${sanitizedName}-${profileKey}.mobileconfig`;
+                  const label = formatProfileLabel(profileName, accessPointName);
+                  const domain = extractDomain(window.location.origin);
+                  const fileTag = (label || domain)
+                    .replace(/[^a-zA-Z0-9_\-\u4e00-\u9fa5]/g, "_")
+                    .replace(/_+/g, "_")
+                    .replace(/^_|_$/g, "");
+                  a.download = `dns_worker-${fileTag}-${profileKey}.mobileconfig`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}

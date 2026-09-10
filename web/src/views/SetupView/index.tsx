@@ -69,9 +69,6 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
 
   const activeToken = activeAp ? activeAp.token : profileKey;
   const activeName = activeAp ? activeAp.name : undefined;
-  const effectiveProfileName = activeName
-    ? `${currentProfileName || "DNS Worker"} (${activeName})`
-    : (currentProfileName || "DNS Worker");
   const dohUrl = `${window.location.origin}/${activeToken}`;
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -263,7 +260,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         isMobile={isMobile}
         copyToClipboard={copyToClipboard}
         profileKey={activeToken}
-        profileName={effectiveProfileName}
+        profileName={currentProfileName || undefined}
+        accessPointName={activeName}
         allRegions={allRegions}
         selectedRegion={selectedRegion}
         currentIps={currentIps}
