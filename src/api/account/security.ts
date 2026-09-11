@@ -478,7 +478,7 @@ export async function handleSecurityRequest(
       await passkeyModel.delete(passkeyId, user.id);
       await activityLog.record(user.id, 'passkey_deleted', clientIp, userAgent, { name: passkey.name }, sessionHash);
 
-      // 若用户不再拥有任何 Passkey 且未启用 TOTP，则自动关闭无密码登录
+      // 若用户不再拥有任何 Passkey 且停用 TOTP，则自动关闭无密码登录
       const remainingPasskeys = await passkeyModel.countByUser(user.id);
       const dbUser = await userModel.getById(user.id);
       if (remainingPasskeys === 0 && !dbUser?.totp_enabled) {

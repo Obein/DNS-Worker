@@ -58,7 +58,7 @@ export const LogsContent: React.FC<LogsContentProps> = ({
             intent={logRetentionDays === 0 ? Intent.WARNING : Intent.NONE}
           >
             {logRetentionDays === 0
-              ? t("logs.loggingDisabledDesc", "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中开启日志留存。")
+              ? t("logs.loggingDisabledDesc", "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中启用日志留存。")
               : searchQuery
               ? t("logs.noResultsDesc", { query: searchQuery })
               : t("logs.noRecordsDesc")}

@@ -230,7 +230,7 @@
     "windowsStep0": "设置 > 网络与互联网",
     "windowsStep1": "属性 > DNS 服务器 > 编辑 > 手动。",
     "windowsStep2": "选择并填入 DNS IP：",
-    "windowsStep3": "开启 DoH (手动模板) 并粘贴 URL。",
+    "windowsStep3": "启用 DoH (手动模板) 并粘贴 URL。",
     "windowsStep4": "关闭 回退到明文。",
     "android": "Android",
     "androidTitle": "Android 9+",
@@ -382,7 +382,7 @@
     "noMatchingIsps": "未找到匹配运营商",
     "loadingIsps": "正在加载运营商...",
     "loggingDisabledTitle": "日志记录已关闭",
-    "loggingDisabledDesc": "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中开启日志留存。"
+    "loggingDisabledDesc": "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中启用日志留存。"
   },
   "filtering": {
     "title": "外部拦截列表",
@@ -551,8 +551,8 @@
     "enableTurnstileLogin": "登录页面启用人机验证",
     "totp": {
       "title": "数字验证器 (TOTP)",
-      "enabled": "已开启",
-      "disabled": "未开启",
+      "enabled": "已启用",
+      "disabled": "停用",
       "setupDesc": "为账号添加额外的安全层。使用 Google Authenticator、Authy 或任何 TOTP 兼容应用。",
       "setupBtn": "配置数字验证器",
       "scanQR": "使用验证器应用扫描此二维码：",

@@ -230,7 +230,7 @@
     "windowsStep0": "設定 > 網路與網際網路",
     "windowsStep1": "屬性 > DNS 伺服器 > 編輯 > 手動。",
     "windowsStep2": "選擇並填入 DNS IP：",
-    "windowsStep3": "開啟 DoH (手動模板) 並粘貼 URL。",
+    "windowsStep3": "啟用 DoH (手動模板) 並粘貼 URL。",
     "windowsStep4": "關閉 回退到明文。",
     "android": "Android",
     "androidTitle": "Android 9+",
@@ -382,7 +382,7 @@
     "noMatchingIsps": "未找到相符電信業者",
     "loadingIsps": "正在載入電信業者...",
     "loggingDisabledTitle": "日誌記錄已關閉",
-    "loggingDisabledDesc": "目前設定的日誌留存已設為「關閉」，系統不記錄任何查詢日誌。如需查看，請在設定中開啟日誌留存。"
+    "loggingDisabledDesc": "目前設定的日誌留存已設為「關閉」，系統不記錄任何查詢日誌。如需查看，請在設定中啟用日誌留存。"
   },
   "filtering": {
     "title": "外部攔截清單",
