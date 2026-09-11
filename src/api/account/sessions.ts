@@ -47,6 +47,36 @@ export async function handleSessionsRequest(
       return new Response(JSON.stringify(sessionData), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    // DELETE /api/account/sessions/others (revoke all other sessions)
+    if (pathParts[3] === 'others' && request.method === 'DELETE') {
+      const { SessionModel } = await import("../../models/session");
+      const sessionModel = new SessionModel(env.DB);
+
+      const refreshToken = readRefreshTokenCookie(request.headers.get("Cookie") || "");
+      const currentSessionId = refreshToken ? parseRefreshTokenString(refreshToken)?.sid || null : null;
+
+      if (!currentSessionId) {
+        return new Response("Current session not found", { status: 400 });
+      }
+
+      const sessions = await sessionModel.getSessionsByUser(user.id);
+      const otherSessions = sessions.filter(s => s.id !== currentSessionId);
+
+      const { invalidateSession } = await import("../../lib/auth");
+      const { invalidateAuthUserCache } = await import("../../lib/middleware");
+      for (const s of otherSessions) {
+        await invalidateSession(env, s.id);
+        invalidateAuthUserCache(s.id);
+      }
+
+      const currentSessionHash = await generateSessionHash(currentSessionId, user.id);
+      await activityLog.record(user.id, 'session_revoked', clientIp, userAgent, { reason: 'user_revoke_others', count: otherSessions.length }, currentSessionHash);
+
+      return new Response(JSON.stringify({ success: true, revoked_count: otherSessions.length }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // DELETE /api/account/sessions/:id (revoke session)
     if (pathParts[3] && request.method === 'DELETE') {
       const targetSessionHash = pathParts[3];

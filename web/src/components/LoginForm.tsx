@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { LoginUsernameStep } from "./login/LoginUsernameStep";
-import { LoginCredentialsStep } from "./login/LoginCredentialsStep";
+import { LoginPasswordStep } from "./login/LoginPasswordStep";
+import { LoginMfaStep } from "./login/LoginMfaStep";
 import { useLoginForm } from "./login/useLoginForm";
 
 /**
@@ -33,10 +34,10 @@ interface LoginFormProps {
 }
 
 /**
- * LoginForm component processes login step 1 (username verification) and step 2 (password & TOTP challenge).
- *
- * @param props - Component props containing authConfig, turnstileReady, and callbacks.
- * @returns React elements representing the login state machine and forms.
+ * LoginForm processes login in distinct, decoupled steps:
+ * 1. Username input & Turnstile verification
+ * 2. Password input (if required, with "Other options" switch to MFA)
+ * 3. MFA verification (Passkey prioritized, with "Other options" switch to TOTP / Recovery)
  */
 export const LoginForm: React.FC<LoginFormProps> = ({
   authConfig,
@@ -56,10 +57,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setTotpToken,
     recoveryKey,
     setRecoveryKey,
-    requiresPassword,
     requiresTotp,
-    useRecovery,
-    setUseRecovery,
+    hasPasskey,
+    mfaMethod,
+    setMfaMethod,
+    passkeyLoading,
     loading,
     error,
     setError,
@@ -70,17 +72,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setKeepLoggedIn,
     handleStep1Submit,
     handleStep2Submit,
-    resetToStep1
+    handleStep3Submit,
+    handleSwitchToMfa,
+    handlePasskeyLogin,
+    handleBack
   } = useLoginForm({ authConfig, turnstileReady, onSuccess });
+
+  const getStepTitle = (): string => {
+    switch (loginStep) {
+      case 1:
+        return t("auth.login");
+      case 2:
+        return t("auth.password");
+      case 3:
+        return t("auth.mfaVerification", "多因素认证");
+    }
+  };
 
   return (
     <>
       <div className="flex flex-col items-center mb-8 relative">
-        {loginStep === 2 && (
+        {loginStep !== 1 && (
           <button
-            onClick={resetToStep1}
-            className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none cursor-pointer"
-            title="Back to username"
+            type="button"
+            onClick={handleBack}
+            className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none cursor-pointer p-1 rounded-lg transition-colors"
+            title={t("common.back", "返回")}
           >
             <ArrowLeft size={24} />
           </button>
@@ -91,12 +108,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           className="w-20 h-20 object-contain"
         />
         <H3 className="font-bold tracking-tight text-2xl mt-4">
-          {loginStep === 2
-            ? t("auth.authRequired", "Authentication Required")
-            : t("auth.login")}
+          {getStepTitle()}
         </H3>
         <p className="text-gray-500 mt-2 text-center text-sm leading-relaxed">
-          {loginStep === 2 ? username : t("auth.welcomeBack")}
+          {loginStep === 1 ? t("auth.welcomeBack") : username}
         </p>
       </div>
 
@@ -131,7 +146,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </Callout>
       )}
 
-      {/* Login Step 1 */}
+      {/* Step 1: Username & Turnstile */}
       {loginStep === 1 && (
         <LoginUsernameStep
           username={username}
@@ -144,33 +159,52 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         />
       )}
 
-      {/* Login Step 2 */}
+      {/* Step 2: Password (if required) */}
       {loginStep === 2 && (
-        <LoginCredentialsStep
-          requiresPassword={requiresPassword}
-          requiresTotp={requiresTotp}
-          useRecovery={useRecovery}
-          setUseRecovery={setUseRecovery}
+        <LoginPasswordStep
           password={password}
           setPassword={setPassword}
+          hasMfa={hasPasskey || requiresTotp}
+          onSwitchToMfa={handleSwitchToMfa}
+          loading={loading}
+          onSubmit={handleStep2Submit}
+          keepLoggedIn={keepLoggedIn}
+          setKeepLoggedIn={setKeepLoggedIn}
+          optionalSessionExpirationDays={
+            authConfig?.optional_session_expiration_days ?? 7
+          }
+        />
+      )}
+
+      {/* Step 3: MFA (Passkey prioritized, or TOTP / Recovery Key) */}
+      {loginStep === 3 && (
+        <LoginMfaStep
+          hasPasskey={hasPasskey}
+          requiresTotp={requiresTotp}
+          mfaMethod={mfaMethod}
+          setMfaMethod={setMfaMethod}
+          passkeyLoading={passkeyLoading}
+          onPasskeyLogin={handlePasskeyLogin}
           totpToken={totpToken}
           setTotpToken={setTotpToken}
           recoveryKey={recoveryKey}
           setRecoveryKey={setRecoveryKey}
           loading={loading}
           onClearError={() => setError("")}
-          onSubmit={handleStep2Submit}
+          onSubmit={handleStep3Submit}
           keepLoggedIn={keepLoggedIn}
           setKeepLoggedIn={setKeepLoggedIn}
-          optionalSessionExpirationDays={authConfig?.optional_session_expiration_days ?? 7}
+          optionalSessionExpirationDays={
+            authConfig?.optional_session_expiration_days ?? 7
+          }
         />
       )}
 
       {loginStep === 1 && (
-        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-center items-center text-sm">
           <button
             onClick={onToggleMode}
-            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer text-sm"
+            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer"
           >
             {t("auth.noAccount")}
           </button>

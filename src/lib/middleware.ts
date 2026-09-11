@@ -90,7 +90,7 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
       }
 
       if (session.is_paused) {
-        const pausedUser: User = { id: payload.userId, username: "", role: payload.role as any, isPaused: true, sessionId: payload.sessionId };
+        const pausedUser: User = { id: payload.userId, username: dbUser?.username || "", role: payload.role as any, isPaused: true, sessionId: payload.sessionId };
         return pausedUser;
       }
 
@@ -99,7 +99,7 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
         await sessionModel.updateLastActive(session.id, now);
       }
 
-      const validatedUser: User = { id: payload.userId, username: "", role: payload.role as any, sessionId: payload.sessionId };
+      const validatedUser: User = { id: payload.userId, username: dbUser?.username || "", role: payload.role as any, sessionId: payload.sessionId };
 
       // Cache for 10 seconds (cap size at 100)
       if (authUserMemoryCache.size > 100) {

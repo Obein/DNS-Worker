@@ -2,6 +2,7 @@ import { Env, User, ExecutionContext } from "../../types";
 import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../../lib/auth";
 import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
+import { PasskeyModel } from "../../models/passkey";
 import { USERNAME_REGEX } from "../../utils/validator";
 
 /**
@@ -32,12 +33,34 @@ export async function handleMeRequest(
         ? Math.min(Number(env.NORMAL_USER_MAX_LOG_RETENTION_DAYS), globalMaxRetention)
         : Math.min(7, globalMaxRetention);
 
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeysCount = await passkeyModel.countByUser(user.id);
+      const mfaEnabled = !!(dbUser?.totp_enabled) || passkeysCount > 0;
+
+      let hasRecoveryKeys = false;
+      if (dbUser?.totp_recovery_keys) {
+        try {
+          const parsed = typeof dbUser.totp_recovery_keys === 'string' ? JSON.parse(dbUser.totp_recovery_keys) : dbUser.totp_recovery_keys;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            hasRecoveryKeys = true;
+          }
+        } catch {
+          hasRecoveryKeys = true;
+        }
+      } else if (dbUser?.totp_recovery_keys_encrypted) {
+        hasRecoveryKeys = true;
+      }
+
       return new Response(JSON.stringify({
         id: user.id,
         username: dbUser?.username || "",
         role: user.role,
         totp_enabled: !!(dbUser?.totp_enabled),
         totp_skip_password: !!(dbUser?.totp_skip_password),
+        passkeys_count: passkeysCount,
+        mfa_enabled: mfaEnabled,
+        has_recovery_keys: hasRecoveryKeys,
+        recovery_keys_encrypted: !!(dbUser?.totp_recovery_keys_encrypted),
         timezone: dbUser?.timezone || null,
         locale: dbUser?.locale || "en-US",
         password_version: dbUser?.password_version ?? 1,

@@ -5,6 +5,7 @@ import { handleLoginRequest } from "./auth/login";
 import { handleRefreshRequest } from "./auth/refresh";
 import { handleLogoutRequest } from "./auth/logout";
 import { handleSessionLockRequest } from "./auth/lock";
+import { handleForgotPasswordRequest } from "./auth/forgotPassword";
 
 /**
  * Handle authentication related requests by delegating to specialized handlers.
@@ -37,6 +38,11 @@ export async function handleAuthRequest(request: Request, env: Env): Promise<Res
     // 登出接口
     if (path === '/api/auth/logout') {
       return await handleLogoutRequest(request, env);
+    }
+
+    // 忘记密码重置接口
+    if (path.startsWith('/api/auth/forgot-password')) {
+      return await handleForgotPasswordRequest(request, env);
     }
 
     // 会话锁定与解锁接口

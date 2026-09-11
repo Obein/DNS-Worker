@@ -4,11 +4,11 @@ import {
   LogIn,
   AlertTriangle,
   LogOut,
-  Key,
   ShieldCheck,
   Shield,
   ShieldOff,
   UserPlus,
+  Key
 } from "lucide-react";
 
 export const ACTION_META: Record<
@@ -70,9 +70,34 @@ export const ACTION_META: Record<
     icon: <Key size={14} />,
     intent: Intent.WARNING,
   },
+  recovery_key_rotated: {
+    label: "account.activity.recoveryKeyRotated",
+    icon: <Key size={14} />,
+    intent: Intent.WARNING,
+  },
   session_revoked: {
     label: "account.activity.sessionRevoked",
     icon: <LogOut size={14} />,
     intent: Intent.WARNING,
+  },
+  passkey_registered: {
+    label: "account.activity.passkeyRegistered",
+    icon: <Key size={14} />,
+    intent: Intent.PRIMARY,
+  },
+  passkey_deleted: {
+    label: "account.activity.passkeyDeleted",
+    icon: <ShieldOff size={14} />,
+    intent: Intent.WARNING,
+  },
+  passkey_verify_success: {
+    label: "account.activity.passkeyVerifySuccess",
+    icon: <ShieldCheck size={14} />,
+    intent: Intent.SUCCESS,
+  },
+  passkey_verify_fail: {
+    label: "account.activity.passkeyVerifyFail",
+    icon: <AlertTriangle size={14} />,
+    intent: Intent.DANGER,
   },
 };

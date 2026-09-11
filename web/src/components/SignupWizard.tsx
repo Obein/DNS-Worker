@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { SignupUsernameStep } from "./signup/SignupUsernameStep";
 import { SignupPasswordStep } from "./signup/SignupPasswordStep";
-import { SignupTotpStep } from "./signup/SignupTotpStep";
+import { SignupMfaStep } from "./signup/SignupMfaStep";
 import { SignupRecoveryStep } from "./signup/SignupRecoveryStep";
 import { useSignupWizard } from "./signup/useSignupWizard";
 
@@ -58,6 +58,12 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
     setUsername,
     password,
     setPassword,
+    mfaChoice,
+    setMfaChoice,
+    passkeyRegLoading,
+    passkeyRegError,
+    handleRegisterPasskey,
+    handleChooseTotp,
     totpSetupToken,
     setTotpSetupToken,
     totpSetupData,
@@ -108,7 +114,7 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
               ? t("auth.registerAdminTitle", "注册管理员账号")
               : t("auth.signup")
             : signupStep === "totp"
-            ? t("account.totp.title", "Two-Factor Authentication (2FA)")
+            ? t("auth.mfaSetupTitle", "配置多因素认证 (MFA)")
             : t("account.totp.recoveryKeysTitle", "Save Recovery Keys")}
         </H3>
         <p className="text-gray-500 mt-2 text-center text-sm leading-relaxed">
@@ -119,7 +125,7 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
               ? t("auth.registerAdminDesc", "系统尚无账号，首位注册用户将自动成为系统管理员。")
               : t("auth.protectInternet")
             : signupStep === "totp"
-            ? t("account.totp.setupDesc", "Add an extra layer of security.")
+            ? t("auth.mfaSetupDesc", "任选一种认证方式即可完成配置，保障账号安全。")
             : t("account.totp.recoveryKeysWarning", "Store keys safely.")}
         </p>
       </div>
@@ -165,15 +171,21 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
         />
       )}
 
-      {/* Signup Step 3: TOTP Setup */}
-      {signupStep === "totp" && totpSetupData && (
-        <SignupTotpStep
+      {/* Signup Step 3: MFA Setup (Passkey or TOTP) */}
+      {signupStep === "totp" && (
+        <SignupMfaStep
+          mfaChoice={mfaChoice}
+          setMfaChoice={setMfaChoice}
+          onRegisterPasskey={handleRegisterPasskey}
+          passkeyRegLoading={passkeyRegLoading}
+          passkeyRegError={passkeyRegError}
+          onStartTotp={handleChooseTotp}
           totpSetupData={totpSetupData}
           totpSetupToken={totpSetupToken}
           setTotpSetupToken={setTotpSetupToken}
           totpSetupError={totpSetupError}
           totpSetupLoading={totpSetupLoading}
-          onSubmit={handleSignupTotpConfirm}
+          onTotpSubmit={handleSignupTotpConfirm}
           onSkip={onSuccess}
         />
       )}

@@ -3,7 +3,8 @@ import { Button, Navbar, Alignment, Icon, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { Sun, Moon, Monitor, Settings } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
-import type { Profile } from "../types/auth";
+import { SessionLockButton } from "../components/SessionLockButton";
+import type { Profile, UserInfo } from "../types/auth";
 import clsx from "clsx";
 
 /**
@@ -24,6 +25,8 @@ interface HeaderNavbarProps {
   navigate: (path: string) => void;
   /** True if a background saving operation is active. */
   isSaving?: boolean;
+  /** Current logged in user info. */
+  currentUser?: UserInfo | null;
 }
 
 /**
@@ -40,11 +43,15 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   location,
   navigate,
   isSaving,
+  currentUser,
 }) => {
   const { t } = useTranslation();
 
   return (
-    <Navbar className="absolute! top-0 left-0 right-0 z-30 border-b! border-gray-200/50 dark:border-gray-800/50 shadow-none! bg-white/70! dark:bg-gray-900/70! backdrop-blur-lg! h-14 items-center px-4 shrink-0">
+    <Navbar
+      className="absolute! top-0 left-0 right-0 border-b! border-gray-200/50 dark:border-gray-800/50 shadow-none! bg-white/70! dark:bg-gray-900/70! backdrop-blur-lg! h-14 items-center px-4 shrink-0"
+      style={{ zIndex: 10, transform: "translateZ(0)", willChange: "transform" }}
+    >
       <Navbar.Group align={Alignment.LEFT}>
         <button
           onClick={() => navigate("/dash")}
@@ -88,6 +95,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               <span>{t("settings.saving")}</span>
             </div>
           )}
+          <SessionLockButton currentUser={currentUser} />
           <LanguageSwitcher />
           <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-lg">
             <Button

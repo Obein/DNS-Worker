@@ -174,13 +174,13 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
                 intent={Intent.PRIMARY}
                 onClick={() => setUseTotpForVerify(!useTotpForVerify)}
               >
-                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use 2FA Code")}
+                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use TOTP Code")}
               </Button>
             )}
           </div>
 
           {user?.totp_enabled && useTotpForVerify ? (
-            <FormGroup label={t("auth.totpCode", "2FA Code")} labelFor="verify-totp-input">
+            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="verify-totp-input">
               <DigitInput
                 ref={totpRef}
                 length={6}

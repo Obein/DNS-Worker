@@ -1,4 +1,4 @@
-import type { UserInfo, SessionInfo, ActivityEntry } from "./types";
+import type { UserInfo, SessionInfo, ActivityEntry, Passkey } from "./types";
 import { ApiError } from "./auth";
 
 export interface UpdatePasswordPayload {
@@ -6,6 +6,26 @@ export interface UpdatePasswordPayload {
   newPassword?: string;
   totpTokenHash?: string;
   totpSalt?: string;
+  passkeyAssertion?: any;
+}
+
+export interface VerifyIdentityPayload {
+  password?: string;
+  oldPassword?: string;
+  totpTokenHash?: string;
+  totpSalt?: string;
+  passkeyAssertion?: any;
+}
+
+export interface ViewRecoveryKeysResponse {
+  has_keys: boolean;
+  is_legacy: boolean;
+  recovery_keys: string[];
+}
+
+export interface RotateRecoveryKeyResponse {
+  success: boolean;
+  recovery_key: string;
 }
 
 export interface TotpConfirmPayload {
@@ -69,6 +89,14 @@ export async function revokeSession(id: string): Promise<{ is_current: boolean }
   return res.json();
 }
 
+export async function revokeOtherSessions(): Promise<{ success: boolean; revoked_count: number }> {
+  const res = await fetch("/api/account/sessions/others", {
+    method: "DELETE"
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function getActivityLog(params: string): Promise<ActivityEntry[]> {
   const res = await fetch(`/api/account/activity?${params}`);
   if (!res.ok) throw new Error("Failed to fetch activity log");
@@ -114,6 +142,8 @@ export async function updateTotpSettings(skipPassword: boolean): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
+export const updateMfaSettings = updateTotpSettings;
+
 export async function migratePassword(clientHash: string): Promise<void> {
   const res = await fetch("/api/account/migrate-password", {
     method: "POST",
@@ -139,4 +169,78 @@ export async function clearPin(verificationPayload: { password?: string; totpTok
     body: JSON.stringify(verificationPayload)
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function getPasskeys(): Promise<Passkey[]> {
+  const res = await fetch("/api/account/passkeys");
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function getPasskeyRegistrationOptions(): Promise<any> {
+  const res = await fetch("/api/account/passkeys/register/options", {
+    method: "POST"
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export interface VerifyPasskeyResponse {
+  success: boolean;
+  passkey: Passkey;
+  recovery_keys?: string[];
+}
+
+export async function verifyPasskeyRegistration(payload: { name: string; credential: any }): Promise<VerifyPasskeyResponse> {
+  const res = await fetch("/api/account/passkeys/register/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function renamePasskey(id: string, name: string): Promise<void> {
+  const res = await fetch(`/api/account/passkeys/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function deletePasskey(id: string): Promise<void> {
+  const res = await fetch(`/api/account/passkeys/${id}`, {
+    method: "DELETE"
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function getPasskeyAuthOptions(): Promise<any> {
+  const res = await fetch("/api/account/passkeys/auth-options", {
+    method: "POST"
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function viewRecoveryKeys(payload: VerifyIdentityPayload): Promise<ViewRecoveryKeysResponse> {
+  const res = await fetch("/api/account/recovery-keys/view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function rotateRecoveryKey(payload: VerifyIdentityPayload): Promise<RotateRecoveryKeyResponse> {
+  const res = await fetch("/api/account/recovery-keys/rotate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
 }

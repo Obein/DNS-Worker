@@ -151,6 +151,7 @@ function App() {
                 handleLogout={handleLogout}
                 navigate={navigate}
                 onRefresh={fetchProfiles}
+                currentUser={currentUser}
               />
             }
           />

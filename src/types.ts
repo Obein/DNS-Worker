@@ -39,6 +39,7 @@ export interface User {
   hashed_password?: string;
   totp_enabled?: number;       // 0 | 1
   totp_skip_password?: number; // 0 | 1 — when 1, login skips password check
+  passkeys_count?: number;
   created_at?: number;
   last_active_at?: number;
   last_resolve_at?: number;
@@ -180,4 +181,18 @@ export interface AccessPoint {
   token: string;
   created_at: number;
   updated_at: number;
+}
+
+export interface Passkey {
+  id: string;
+  user_id: string;
+  name: string;
+  credential_id: string;
+  public_key: string;
+  algorithm: number;
+  sign_count: number;
+  transports?: string | null;
+  aaguid?: string | null;
+  created_at: number;
+  last_used_at?: number | null;
 }

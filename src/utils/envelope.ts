@@ -9,7 +9,23 @@ export function getActiveKekVersion(env: any): string | null {
       }
     }
   }
-  return maxVer > 0 ? `v${maxVer}` : null;
+  if (maxVer > 0) return `v${maxVer}`;
+  if (env.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
+    return "v0";
+  }
+  return null;
+}
+
+export function getKekSecret(version: string, env: any): string | null {
+  if (!env) return null;
+  const val = env[`KEK_${version}`] || env[`KEK_${version.toUpperCase()}`];
+  if (val && typeof val === "string" && val.trim() !== "") {
+    return val;
+  }
+  if ((version === "v0" || version === "default") && env.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
+    return env.JWT_SECRET;
+  }
+  return null;
 }
 
 function toBase64(bytes: Uint8Array): string {
@@ -79,7 +95,7 @@ export async function encryptEnvelope(
     return null;
   }
 
-  const kekSecret = env[`KEK_${activeVersion}`] || env[`KEK_${activeVersion.toUpperCase()}`];
+  const kekSecret = getKekSecret(activeVersion, env);
   if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
     throw new Error(`KEK version ${activeVersion} is missing or invalid in environment variables`);
   }
@@ -139,7 +155,7 @@ export async function decryptEnvelope(
   const dataEncrypted: EnvelopeEncryptedData = JSON.parse(dataEncryptedStr);
   const dekEncrypted: EnvelopeEncryptedDek = JSON.parse(dekEncryptedStr);
 
-  const kekSecret = env[`KEK_${dekEncrypted.kek_version}`] || env[`KEK_${dekEncrypted.kek_version.toUpperCase()}`];
+  const kekSecret = getKekSecret(dekEncrypted.kek_version, env);
   if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
     throw new Error(`Required KEK version ${dekEncrypted.kek_version} is missing or invalid in environment variables`);
   }
@@ -191,7 +207,7 @@ export async function rotateEnvelopeDek(
 
   const nextVersionNumber = currentVersionNumber + 1;
   const nextKekVersion = `v${nextVersionNumber}`;
-  const nextKekSecret = env[`KEK_${nextKekVersion}`] || env[`KEK_${nextKekVersion.toUpperCase()}`];
+  const nextKekSecret = getKekSecret(nextKekVersion, env);
 
   if (!nextKekSecret || typeof nextKekSecret !== "string" || nextKekSecret.trim() === "") {
     // Next version not configured/available yet
@@ -199,7 +215,7 @@ export async function rotateEnvelopeDek(
   }
 
   // 1. Decrypt the DEK with current KEK
-  const currentKekSecret = env[`KEK_${currentKekVersion}`] || env[`KEK_${currentKekVersion.toUpperCase()}`];
+  const currentKekSecret = getKekSecret(currentKekVersion, env);
   if (!currentKekSecret || typeof currentKekSecret !== "string" || currentKekSecret.trim() === "") {
     throw new Error(`Current KEK version ${currentKekVersion} required for rotation is missing or invalid in environment`);
   }

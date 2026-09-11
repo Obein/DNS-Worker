@@ -1,9 +1,113 @@
 import { Env, User, ExecutionContext } from "../../types";
 import { hashPassword, verifyPassword, generateSessionHash } from "../../utils/crypto";
-import { generateTOTPSecret, getTOTPUri, generateRecoveryKeys, hashRecoveryKey, verifyTOTP } from "../../lib/totp";
+import {
+  generateTOTPSecret,
+  getTOTPUri,
+  generateRecoveryKey,
+  generateRecoveryKeys,
+  hashRecoveryKey,
+  verifyTOTP,
+  StoredRecoveryKeyItem
+} from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { ActivityLogModel } from "../../models/activityLog";
-import { PASSWORD_REGEX } from "../../utils/validator";
+import { PASSWORD_REGEX, PASSKEY_NAME_REGEX } from "../../utils/validator";
+import { PasskeyModel } from "../../models/passkey";
+import {
+  generateWebAuthnChallenge,
+  base64UrlEncode,
+  verifyRegistrationResponse,
+  verifyAuthenticationResponse
+} from "../../lib/webauthn";
+import { cacheUtils } from "../../utils/cache";
+
+interface ReauthPayload {
+  password?: string;
+  oldPassword?: string;
+  totpTokenHash?: string;
+  totpSalt?: string;
+  passkeyAssertion?: any;
+}
+
+interface ReauthResult {
+  success: boolean;
+  method?: 'password' | 'totp' | 'passkey';
+  error?: string;
+  reason?: string;
+}
+
+/**
+ * Re-authenticates the current user using one of: Passkey, TOTP, or Current Password.
+ */
+async function verifyUserReauth(
+  dbUser: any,
+  payload: ReauthPayload,
+  env: Env,
+  request: Request
+): Promise<ReauthResult> {
+  // 1. Passkey assertion check
+  if (payload.passkeyAssertion) {
+    const cache = (caches as any).default;
+    const cachedState = await cacheUtils.get<{ challenge: string; rpId: string }>(
+      cache,
+      `webauthn_auth_challenge:${dbUser.id}`
+    );
+    if (!cachedState) {
+      return { success: false, error: "Passkey session expired, please try again", reason: "passkey_session_expired" };
+    }
+
+    const passkeyModel = new PasskeyModel(env.DB);
+    const userPasskeys = await passkeyModel.listByUser(dbUser.id);
+    const passkey = userPasskeys.find(p => p.credential_id === payload.passkeyAssertion.id);
+    if (!passkey) {
+      return { success: false, error: "Passkey not found", reason: "passkey_not_found" };
+    }
+
+    try {
+      const { signCount } = await verifyAuthenticationResponse({
+        clientDataJSON: payload.passkeyAssertion.response.clientDataJSON,
+        authenticatorData: payload.passkeyAssertion.response.authenticatorData,
+        signature: payload.passkeyAssertion.response.signature,
+        publicKeySpki: passkey.public_key,
+        algorithm: passkey.algorithm,
+        expectedChallenge: cachedState.challenge,
+        expectedOrigin: request.headers.get("origin") || `https://${cachedState.rpId}`,
+        expectedRpId: cachedState.rpId,
+        previousSignCount: passkey.sign_count
+      });
+
+      await passkeyModel.updateUsage(passkey.id, signCount);
+      await cacheUtils.delete(cache, `webauthn_auth_challenge:${dbUser.id}`);
+      return { success: true, method: 'passkey' };
+    } catch (err: any) {
+      return { success: false, error: "Invalid Passkey signature", reason: "invalid_passkey" };
+    }
+  }
+
+  // 2. TOTP token hash check
+  if (payload.totpTokenHash) {
+    if (!dbUser.totp_enabled || !dbUser.totp_secret) {
+      return { success: false, error: "TOTP is not enabled", reason: "totp_not_enabled" };
+    }
+    const valid = await verifyTOTP(dbUser.totp_secret, payload.totpTokenHash, payload.totpSalt);
+    if (!valid) {
+      return { success: false, error: "Invalid TOTP code", reason: "invalid_totp" };
+    }
+    return { success: true, method: 'totp' };
+  }
+
+  // 3. Password check (oldPassword or password)
+  const pwd = payload.oldPassword || payload.password;
+  if (pwd) {
+    const valid = await verifyPassword(pwd, dbUser.hashed_password, dbUser.password_version ?? 1);
+    if (!valid) {
+      return { success: false, error: "Current password is incorrect", reason: "wrong_current_password" };
+    }
+    return { success: true, method: 'password' };
+  }
+
+  return { success: false, error: "Authentication required (Password, Passkey, or TOTP)", reason: "no_credentials_provided" };
+}
 
 /**
  * Handle security credentials requests to /api/account/password and /api/account/totp/...
@@ -23,40 +127,25 @@ export async function handleSecurityRequest(
 
   const sessionHash = user.sessionId ? await generateSessionHash(user.sessionId, user.id) : null;
 
-  // POST /api/account/password (password change)
+  // POST /api/account/password (password change supporting Old Password, Passkey, or TOTP)
   if (action === 'password' && request.method === 'POST') {
-    const { oldPassword, totpTokenHash, totpSalt, newPassword } = await request.json() as any;
+    const body = await request.json() as any;
+    const { newPassword } = body;
     if (!newPassword || !PASSWORD_REGEX.test(newPassword)) {
       return new Response("Password format error", { status: 400 });
     }
     const dbUser = await userModel.getById(user.id);
     if (!dbUser) return new Response("User not found", { status: 404 });
 
-    let authenticated = false;
-
-    // 如果提供了 TOTP Token，并且用户启用了 TOTP，则使用 TOTP 校验
-    if (totpTokenHash && dbUser.totp_enabled && dbUser.totp_secret) {
-      authenticated = await verifyTOTP(dbUser.totp_secret, totpTokenHash, totpSalt);
-      if (!authenticated) {
-        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'invalid_totp' }, sessionHash);
-        return new Response("Invalid TOTP code", { status: 400 });
-      }
-    } 
-    // 否则使用旧密码校验
-    else if (oldPassword) {
-      authenticated = await verifyPassword(oldPassword, dbUser.hashed_password, dbUser.password_version ?? 1);
-      if (!authenticated) {
-        await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: 'wrong_current_password' }, sessionHash);
-        return new Response("Current password is incorrect", { status: 400 });
-      }
-    } 
-    else {
-      return new Response("Authentication required (Old Password or TOTP)", { status: 400 });
+    const authResult = await verifyUserReauth(dbUser, body, env, request);
+    if (!authResult.success) {
+      await activityLog.record(user.id, 'password_change_fail', clientIp, userAgent, { reason: authResult.reason }, sessionHash);
+      return new Response(authResult.error || "Authentication failed", { status: 400 });
     }
 
     const hashedPassword = await hashPassword(newPassword, 2);
     await userModel.updatePassword(user.id, hashedPassword, 2);
-    await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: totpTokenHash ? 'totp' : 'password' }, sessionHash);
+    await activityLog.record(user.id, 'password_change_success', clientIp, userAgent, { method: authResult.method }, sessionHash);
     return new Response(JSON.stringify({ success: true }));
   }
 
@@ -91,7 +180,8 @@ export async function handleSecurityRequest(
         return new Response("TOTP is already enabled", { status: 409 });
       }
       const secret = generateTOTPSecret();
-      const uri = getTOTPUri(secret, dbUser?.username || 'user', 'DNS Worker');
+      const host = new URL(request.url).hostname;
+      const uri = getTOTPUri(secret, dbUser?.username || 'user', host);
       return new Response(JSON.stringify({ secret, uri }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -103,11 +193,18 @@ export async function handleSecurityRequest(
       const isValid = await verifyTOTP(secret, totpTokenHash, salt);
       if (!isValid) return new Response("Invalid TOTP code", { status: 400 });
 
-      // Generate 8 recovery keys, hash them for storage, return plaintext once
+      // Generate recovery keys, store both plaintext and hash under envelope encryption, return plaintext once
       const plaintextKeys = generateRecoveryKeys();
-      const hashedKeys = await Promise.all(plaintextKeys.map(hashRecoveryKey));
+      const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
+        plaintextKeys.map(async (k) => ({
+          key: k,
+          hash: await hashRecoveryKey(k)
+        }))
+      );
 
-      await userModel.updateTOTP(user.id, secret, hashedKeys);
+      await userModel.updateTOTP(user.id, secret, storedItems);
+      // Default to passwordless login upon enabling MFA
+      await userModel.updateTOTPSettings(user.id, true);
       await activityLog.record(user.id, 'totp_setup', clientIp, userAgent, undefined, sessionHash);
 
       return new Response(JSON.stringify({ success: true, recovery_keys: plaintextKeys }), {
@@ -115,10 +212,13 @@ export async function handleSecurityRequest(
       });
     }
 
-    // PATCH /api/account/totp/settings — update skip_password toggle
+    // PATCH /api/account/totp/settings — update skip_password toggle (supported when TOTP or Passkey is configured)
     if (subAction === 'settings' && request.method === 'PATCH') {
       const dbUser = await userModel.getById(user.id);
-      if (!dbUser?.totp_enabled) return new Response("TOTP is not enabled", { status: 400 });
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeys = await passkeyModel.listByUser(user.id);
+      const hasMfa = !!dbUser?.totp_enabled || passkeys.length > 0;
+      if (!hasMfa) return new Response("MFA is not enabled", { status: 400 });
 
       const { skip_password } = await request.json() as { skip_password: boolean };
       await userModel.updateTOTPSettings(user.id, !!skip_password);
@@ -139,7 +239,11 @@ export async function handleSecurityRequest(
         }
       }
 
-      await userModel.removeTOTP(user.id);
+      const passkeyModel = new PasskeyModel(env.DB);
+      const passkeys = await passkeyModel.listByUser(user.id);
+      const hasPasskey = passkeys.length > 0;
+
+      await userModel.removeTOTP(user.id, hasPasskey);
       await activityLog.record(user.id, 'totp_removed', clientIp, userAgent, undefined, sessionHash);
       return new Response(JSON.stringify({ success: true }));
     }
@@ -184,6 +288,299 @@ export async function handleSecurityRequest(
     if (request.method === 'DELETE') {
       await userModel.updatePinHash(user.id, null);
       return new Response(JSON.stringify({ success: true }));
+    }
+  }
+
+  // ─── Passkey 管理接口 (/api/account/passkeys/...) ───
+  if (action === 'passkeys') {
+    const passkeyModel = new PasskeyModel(env.DB);
+    const subAction = pathParts[3];
+
+    // GET /api/account/passkeys — 列出当前用户的所有通行密钥
+    if (!subAction && request.method === 'GET') {
+      const passkeys = await passkeyModel.listByUser(user.id);
+      return new Response(JSON.stringify(passkeys), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/account/passkeys/auth-options — 生成已登录用户的通行密钥认证选项与挑战
+    if (subAction === 'auth-options' && request.method === 'POST') {
+      const existingPasskeys = await passkeyModel.listByUser(user.id);
+      if (existingPasskeys.length === 0) {
+        return new Response("No passkeys registered", { status: 400 });
+      }
+
+      const challenge = generateWebAuthnChallenge();
+      const originHeader = request.headers.get("origin");
+      const host = originHeader ? new URL(originHeader).hostname : request.headers.get("host")?.split(":")[0] || new URL(request.url).hostname;
+      const rpId = host;
+      const cache = (caches as any).default;
+      await cacheUtils.set(cache, `webauthn_auth_challenge:${user.id}`, { challenge, rpId }, 300);
+
+      const options = {
+        challenge,
+        rpId,
+        timeout: 60000,
+        userVerification: "preferred",
+        allowCredentials: existingPasskeys.map(p => ({
+          id: p.credential_id,
+          type: "public-key",
+          transports: p.transports ? JSON.parse(p.transports) : undefined
+        }))
+      };
+
+      return new Response(JSON.stringify(options), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/account/passkeys/register/options — 生成通行密钥注册挑战与参数
+    if (subAction === 'register' && pathParts[4] === 'options' && request.method === 'POST') {
+      const existingPasskeys = await passkeyModel.listByUser(user.id);
+      const challenge = generateWebAuthnChallenge();
+      const originHeader = request.headers.get("origin");
+      const host = originHeader ? new URL(originHeader).hostname : request.headers.get("host")?.split(":")[0] || new URL(request.url).hostname;
+      const rpId = host;
+      const cache = (caches as any).default;
+      await cacheUtils.set(cache, `webauthn_reg_challenge:${user.id}`, { challenge, rpId }, 300);
+
+      const dbUser = await userModel.getById(user.id);
+      const username = dbUser?.username || user.username || "";
+      const userDisplayName = username ? `${username} (${rpId})` : rpId;
+
+      const options = {
+        challenge,
+        rp: {
+          name: rpId,
+          id: rpId
+        },
+        user: {
+          id: base64UrlEncode(new TextEncoder().encode(user.id)),
+          name: username || rpId,
+          displayName: userDisplayName
+        },
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 },  // ES256
+          { type: "public-key", alg: -257 } // RS256
+        ],
+        authenticatorSelection: {
+          userVerification: "preferred",
+          residentKey: "preferred"
+        },
+        timeout: 60000,
+        excludeCredentials: existingPasskeys.map(p => ({
+          id: p.credential_id,
+          type: "public-key",
+          transports: p.transports ? JSON.parse(p.transports) : undefined
+        }))
+      };
+
+      return new Response(JSON.stringify(options), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /api/account/passkeys/register/verify — 验证注册响应并保存通行密钥
+    if (subAction === 'register' && pathParts[4] === 'verify' && request.method === 'POST') {
+      const cache = (caches as any).default;
+      const cachedState = await cacheUtils.get<{ challenge: string; rpId: string }>(cache, `webauthn_reg_challenge:${user.id}`);
+      if (!cachedState) {
+        return new Response("Registration session expired, please try again", { status: 400 });
+      }
+      await cacheUtils.delete(cache, `webauthn_reg_challenge:${user.id}`);
+
+      const body = await request.json() as any;
+      const { name, credential } = body;
+      if (!credential || !credential.response) {
+        return new Response("Invalid credential data", { status: 400 });
+      }
+
+      try {
+        const parsed = await verifyRegistrationResponse({
+          clientDataJSON: credential.response.clientDataJSON,
+          attestationObject: credential.response.attestationObject,
+          expectedChallenge: cachedState.challenge,
+          expectedOrigin: request.headers.get("origin") || `https://${cachedState.rpId}`,
+          expectedRpId: cachedState.rpId
+        });
+
+        // Check if credential ID is already registered
+        const existing = await passkeyModel.getByCredentialId(parsed.credentialId);
+        if (existing) {
+          return new Response("This passkey is already registered", { status: 409 });
+        }
+
+        const passkeyName = (name || "").trim();
+        if (!PASSKEY_NAME_REGEX.test(passkeyName)) {
+          return new Response("Invalid Passkey name format", { status: 400 });
+        }
+        const transports = Array.isArray(credential.response.transports) ? credential.response.transports : undefined;
+
+        const created = await passkeyModel.create({
+          userId: user.id,
+          name: passkeyName,
+          credentialId: parsed.credentialId,
+          publicKey: parsed.publicKeySpki,
+          algorithm: parsed.algorithm,
+          signCount: parsed.signCount,
+          transports,
+          aaguid: parsed.aaguid
+        });
+
+        // Default to passwordless login upon enabling MFA
+        await userModel.updateTOTPSettings(user.id, true);
+
+        const dbUser = await userModel.getById(user.id);
+        let recoveryKeys: string[] | undefined = undefined;
+        if (dbUser && !dbUser.totp_recovery_keys) {
+          const plaintextKeys = generateRecoveryKeys();
+          const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
+            plaintextKeys.map(async (k) => ({
+              key: k,
+              hash: await hashRecoveryKey(k)
+            }))
+          );
+          await userModel.updateRecoveryKeys(user.id, storedItems);
+          recoveryKeys = plaintextKeys;
+        }
+
+        await activityLog.record(user.id, 'passkey_registered', clientIp, userAgent, { name: passkeyName }, sessionHash);
+        return new Response(JSON.stringify({ ...created, recovery_keys: recoveryKeys }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+      } catch (err: any) {
+        console.warn("[Passkey Registration] Verification failed:", err.message || err);
+        return new Response(err.message || "Passkey registration failed", { status: 400 });
+      }
+    }
+
+    // PATCH /api/account/passkeys/:id — 重命名通行密钥
+    if (subAction && request.method === 'PATCH') {
+      const passkeyId = subAction;
+      const { name } = await request.json() as { name: string };
+      const trimmedName = (name || "").trim();
+      if (!trimmedName || !PASSKEY_NAME_REGEX.test(trimmedName)) {
+        return new Response("Invalid Passkey name format", { status: 400 });
+      }
+
+      const passkey = await passkeyModel.getById(passkeyId, user.id);
+      if (!passkey) return new Response("Passkey not found", { status: 404 });
+
+      const success = await passkeyModel.updateName(passkeyId, user.id, trimmedName);
+      return new Response(JSON.stringify({ success }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // DELETE /api/account/passkeys/:id — 删除通行密钥
+    if (subAction && request.method === 'DELETE') {
+      const passkeyId = subAction;
+      const passkey = await passkeyModel.getById(passkeyId, user.id);
+      if (!passkey) return new Response("Passkey not found", { status: 404 });
+
+      await passkeyModel.delete(passkeyId, user.id);
+      await activityLog.record(user.id, 'passkey_deleted', clientIp, userAgent, { name: passkey.name }, sessionHash);
+
+      // 若用户不再拥有任何 Passkey 且停用 TOTP，则自动关闭无密码登录
+      const remainingPasskeys = await passkeyModel.countByUser(user.id);
+      const dbUser = await userModel.getById(user.id);
+      if (remainingPasskeys === 0 && !dbUser?.totp_enabled) {
+        await userModel.updateTOTPSettings(user.id, false);
+      }
+
+      return new Response(JSON.stringify({ success: true }));
+    }
+  }
+
+  // ─── 统一 MFA 设置接口 (/api/account/mfa/settings) ───
+  if (action === 'mfa' && pathParts[3] === 'settings' && request.method === 'PATCH') {
+    const dbUser = await userModel.getById(user.id);
+    const passkeyModel = new PasskeyModel(env.DB);
+    const passkeys = await passkeyModel.listByUser(user.id);
+    const hasMfa = !!dbUser?.totp_enabled || passkeys.length > 0;
+    if (!hasMfa) return new Response("MFA is not enabled", { status: 400 });
+
+    const { skip_password } = await request.json() as { skip_password: boolean };
+    await userModel.updateTOTPSettings(user.id, !!skip_password);
+    return new Response(JSON.stringify({ success: true }));
+  }
+
+  // ─── 应急恢复密钥管理接口 (/api/account/recovery-keys/...) ───
+  if (action === 'recovery-keys') {
+    const subAction = pathParts[3];
+
+    // POST /api/account/recovery-keys/view — 安全核验后解密查看恢复密钥
+    if (subAction === 'view' && request.method === 'POST') {
+      const body = await request.json() as any;
+      const dbUser = await userModel.getById(user.id);
+      if (!dbUser) return new Response("User not found", { status: 404 });
+
+      const authResult = await verifyUserReauth(dbUser, body, env, request);
+      if (!authResult.success) {
+        return new Response(authResult.error || "Authentication failed", { status: 400 });
+      }
+
+      if (!dbUser.totp_recovery_keys) {
+        return new Response(JSON.stringify({
+          has_keys: false,
+          is_legacy: false,
+          recovery_keys: []
+        }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      let parsed: any = null;
+      try {
+        parsed = typeof dbUser.totp_recovery_keys === 'string'
+          ? JSON.parse(dbUser.totp_recovery_keys)
+          : dbUser.totp_recovery_keys;
+      } catch {
+        parsed = [dbUser.totp_recovery_keys];
+      }
+
+      if (!Array.isArray(parsed)) {
+        parsed = [parsed];
+      }
+
+      const keys: string[] = [];
+      let isLegacy = false;
+      for (const item of parsed) {
+        if (typeof item === 'object' && item?.key) {
+          keys.push(item.key);
+        } else if (typeof item === 'string') {
+          if (/^[a-fA-F0-9]{64}$/.test(item.trim())) {
+            isLegacy = true;
+          } else {
+            keys.push(item);
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({
+        has_keys: keys.length > 0 || isLegacy,
+        is_legacy: isLegacy && keys.length === 0,
+        recovery_keys: keys
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // POST /api/account/recovery-keys/rotate — 安全核验后轮换恢复密钥
+    if (subAction === 'rotate' && request.method === 'POST') {
+      const body = await request.json() as any;
+      const dbUser = await userModel.getById(user.id);
+      if (!dbUser) return new Response("User not found", { status: 404 });
+
+      const authResult = await verifyUserReauth(dbUser, body, env, request);
+      if (!authResult.success) {
+        return new Response(authResult.error || "Authentication failed", { status: 400 });
+      }
+
+      const plaintextKey = generateRecoveryKey();
+      const hashedKey = await hashRecoveryKey(plaintextKey);
+      const newItems: StoredRecoveryKeyItem[] = [{ key: plaintextKey, hash: hashedKey }];
+
+      await userModel.updateRecoveryKeys(user.id, newItems);
+      await activityLog.record(user.id, 'recovery_key_rotated' as any, clientIp, userAgent, { method: authResult.method }, sessionHash);
+
+      return new Response(JSON.stringify({
+        success: true,
+        recovery_key: plaintextKey
+      }), { headers: { 'Content-Type': 'application/json' } });
     }
   }
 

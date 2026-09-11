@@ -158,7 +158,7 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 
 - **Node.js**: v18.x 或更高版本
 - **Package Manager**: npm
-- **Cloudflare Account**: 需要开启 Workers 和 D1 权限
+- **Cloudflare Account**: 需要启用 Workers 和 D1 权限
 
 #### 本地运行与部署步骤
 

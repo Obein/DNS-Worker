@@ -12,9 +12,14 @@ export type ActivityAction =
   | 'totp_setup'
   | 'totp_removed'
   | 'recovery_key_used'
+  | 'recovery_key_rotated'
   | 'session_revoked'
   | 'pin_verify_success'
-  | 'pin_verify_fail';
+  | 'pin_verify_fail'
+  | 'passkey_registered'
+  | 'passkey_deleted'
+  | 'passkey_verify_success'
+  | 'passkey_verify_fail';
 
 export interface UserActivityEntry {
   id: number;
@@ -46,21 +51,25 @@ export class ActivityLogModel {
     extra?: Record<string, unknown>,
     sessionIdHash?: string | null
   ): Promise<void> {
-    const now = Math.floor(Date.now() / 1000);
-    await this.db
-      .prepare(
-        'INSERT INTO user_activity_log (user_id, action, ip_address, user_agent, timestamp, extra, session_id_hash) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      )
-      .bind(
-        userId,
-        action,
-        ip,
-        userAgent ?? null,
-        now,
-        extra ? JSON.stringify(extra) : null,
-        sessionIdHash ?? null
-      )
-      .run();
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      await this.db
+        .prepare(
+          'INSERT INTO user_activity_log (user_id, action, ip_address, user_agent, timestamp, extra, session_id_hash) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )
+        .bind(
+          userId,
+          action,
+          ip,
+          userAgent ?? null,
+          now,
+          extra ? JSON.stringify(extra) : null,
+          sessionIdHash ?? null
+        )
+        .run();
+    } catch (err: any) {
+      console.error(`[ActivityLog] Failed to record '${action}' event for user ${userId}:`, err?.message || err);
+    }
   }
 
   /**

@@ -230,7 +230,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
   }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, clientInfo, t, OTHER_REGION]);
 
   return (
-    <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "p-8 max-w-5xl"}`}>
+    <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "px-8 max-w-5xl"}`}>
       <SetupHeader isMobile={isMobile} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} allRegions={allRegions} />
 
       <VerifyConnectionCard

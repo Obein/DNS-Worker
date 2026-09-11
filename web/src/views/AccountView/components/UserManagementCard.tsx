@@ -1,5 +1,17 @@
 import React, { useState } from "react";
-import { Card, Elevation, H4, Button, Intent, HTMLTable, Dialog, FormGroup, InputGroup, HTMLSelect, Tag } from "@blueprintjs/core";
+import {
+  Card,
+  Elevation,
+  H4,
+  Button,
+  Intent,
+  HTMLTable,
+  Dialog,
+  FormGroup,
+  InputGroup,
+  HTMLSelect,
+  Tag
+} from "@blueprintjs/core";
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
@@ -64,7 +76,7 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
             <tr>
               <th>{t("account.username")}</th>
               <th>{t("account.role")}</th>
-              <th>2FA</th>
+              <th>MFA</th>
               <th>ID</th>
               <th>{t("account.createdAt")}</th>
               <th>{t("account.lastActive")}</th>
@@ -78,17 +90,29 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
                 <td className="font-bold">{u.username}</td>
                 <td><Tag minimal intent={u.role === 'admin' ? Intent.DANGER : Intent.NONE}>{u.role === 'admin' ? t("account.roleAdmin") : t("account.roleUser")}</Tag></td>
                 <td>
-                  {u.totp_enabled ? (
-                    <Tag minimal intent={Intent.SUCCESS}>TOTP</Tag>
-                  ) : (
-                    <Tag minimal intent={Intent.NONE} style={{ color: "#8a9ba8" }}>无</Tag>
-                  )}
+                  <div className="flex flex-wrap gap-1">
+                    {Boolean(u.totp_enabled) && <Tag minimal intent={Intent.SUCCESS}>TOTP</Tag>}
+                    {Boolean(u.passkeys_count && u.passkeys_count > 0) && <Tag minimal intent={Intent.PRIMARY}>Passkey</Tag>}
+                    {!u.totp_enabled && !(u.passkeys_count && u.passkeys_count > 0) && (
+                      <Tag minimal intent={Intent.NONE} style={{ color: "#8a9ba8" }}>{t("account.mfaNone", "无")}</Tag>
+                    )}
+                  </div>
                 </td>
                 <td><code className="text-xs">{u.id}</code></td>
                 <td className="text-xs text-gray-500">{u.created_at ? formatDateTime(new Date(u.created_at * 1000)) : '-'}</td>
                 <td className="text-xs text-gray-500">{u.last_active_at ? formatDateTime(new Date(u.last_active_at * 1000)) : '-'}</td>
                 <td className="text-xs text-gray-500">{u.last_resolve_at ? formatDateTime(new Date(u.last_resolve_at * 1000)) : '-'}</td>
-                <td className="text-right"><Button minimal intent={Intent.DANGER} icon={<Trash2 size={14} />} disabled={u.id === currentUserId} onClick={() => handleDeleteUser(u.id)} /></td>
+                <td className="text-right">
+                  <div className="inline-flex items-center gap-1">
+                    <Button
+                      minimal
+                      intent={Intent.DANGER}
+                      icon={<Trash2 size={14} />}
+                      disabled={u.id === currentUserId}
+                      onClick={() => handleDeleteUser(u.id)}
+                    />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

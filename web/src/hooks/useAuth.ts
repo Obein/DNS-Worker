@@ -89,6 +89,23 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
     checkAuth();
   }, []);
 
+  // Listen for user profile/security updates (e.g. PIN configured/removed)
+  useEffect(() => {
+    const handleUserUpdated = async () => {
+      try {
+        const meData = await getMe();
+        setCurrentUser(meData);
+      } catch (e) {
+        console.warn("Failed to refresh user on user_updated event", e);
+      }
+    };
+
+    window.addEventListener("user_updated", handleUserUpdated);
+    return () => {
+      window.removeEventListener("user_updated", handleUserUpdated);
+    };
+  }, []);
+
   // Listen for unauthorized events from the API client / interceptor
   useEffect(() => {
     const handleUnauthorized = (e: Event) => {

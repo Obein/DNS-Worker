@@ -128,6 +128,7 @@ export class UserModel {
         u.role, 
         u.created_at, 
         u.totp_enabled,
+        (SELECT COUNT(1) FROM passkeys p WHERE p.user_id = u.id) as passkeys_count,
         u.timezone,
         u.locale,
         u.last_active_at as last_resolve_at
@@ -194,8 +195,8 @@ export class UserModel {
   /**
    * Activates TOTP for a user by storing the envelope encrypted secret and recovery keys.
    */
-  async updateTOTP(id: string, secret: string, recoveryKeysHashed: string[]): Promise<boolean> {
-    const recoveryKeysStr = JSON.stringify(recoveryKeysHashed);
+  async updateTOTP(id: string, secret: string, recoveryKeys: any[]): Promise<boolean> {
+    const recoveryKeysStr = JSON.stringify(recoveryKeys);
     const encryptedSecret = await encryptEnvelope(secret, this.env);
     const encryptedKeys = await encryptEnvelope(recoveryKeysStr, this.env);
 
@@ -226,14 +227,52 @@ export class UserModel {
   }
 
   /**
-   * Disables TOTP and clears all TOTP-related data for a user.
+   * Disables TOTP. If keepMfaState is true (e.g. user has registered Passkeys),
+   * recovery keys and passwordless settings are retained.
    */
-  async removeTOTP(id: string): Promise<boolean> {
+  async removeTOTP(id: string, keepMfaState: boolean = false): Promise<boolean> {
+    if (keepMfaState) {
+      const result = await this.db
+        .prepare('UPDATE users SET totp_secret = NULL, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 0 WHERE id = ?')
+        .bind(id)
+        .run();
+      return result.success;
+    }
     const result = await this.db
       .prepare('UPDATE users SET totp_secret = NULL, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 0, totp_skip_password = 0, totp_recovery_keys = NULL, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?')
       .bind(id)
       .run();
     return result.success;
+  }
+
+  /**
+   * Saves or updates recovery keys for a user (used by Passkeys or TOTP).
+   */
+  async updateRecoveryKeys(id: string, recoveryKeys: any[]): Promise<boolean> {
+    const recoveryKeysStr = JSON.stringify(recoveryKeys);
+    const encryptedKeys = await encryptEnvelope(recoveryKeysStr, this.env);
+
+    if (encryptedKeys) {
+      const result = await this.db
+        .prepare(
+          'UPDATE users SET totp_recovery_keys = NULL, totp_recovery_keys_encrypted = ?, totp_recovery_keys_dek = ? WHERE id = ?'
+        )
+        .bind(
+          encryptedKeys.dataEncrypted,
+          encryptedKeys.dekEncrypted,
+          id
+        )
+        .run();
+      return result.success;
+    } else {
+      const result = await this.db
+        .prepare(
+          'UPDATE users SET totp_recovery_keys = ?, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?'
+        )
+        .bind(recoveryKeysStr, id)
+        .run();
+      return result.success;
+    }
   }
 
   /**
@@ -248,9 +287,9 @@ export class UserModel {
   }
 
   /**
-   * Removes a single used recovery key from the stored hash array.
+   * Removes a single used recovery key from the stored array.
    */
-  async consumeRecoveryKey(id: string, usedIndex: number, currentHashes: string[]): Promise<boolean> {
+  async consumeRecoveryKey(id: string, usedIndex: number, currentHashes: any[]): Promise<boolean> {
     const updated = currentHashes.filter((_, i) => i !== usedIndex);
     const updatedStr = JSON.stringify(updated);
 

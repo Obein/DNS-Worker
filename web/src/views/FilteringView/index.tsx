@@ -160,7 +160,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   }, [profileId]);
 
   return (
-    <div className={clsx("md:p-8 w-full min-w-0 max-w-5xl mx-auto", isMobile ? "p-1" : "p-8")}>
+    <div className={clsx("md:p-8 w-full min-w-0 max-w-5xl mx-auto", isMobile ? "p-1" : "px-8")}>
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="w-full md:w-auto flex-1">
           {isMobile ? (

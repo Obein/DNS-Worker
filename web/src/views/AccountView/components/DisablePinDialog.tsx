@@ -112,13 +112,13 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
                 intent={Intent.PRIMARY}
                 onClick={() => setUseTotpForVerify(!useTotpForVerify)}
               >
-                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use 2FA Code")}
+                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use TOTP Code")}
               </Button>
             )}
           </div>
 
           {user?.totp_enabled && useTotpForVerify ? (
-            <FormGroup label={t("auth.totpCode", "2FA Code")} labelFor="disable-totp-input">
+            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="disable-totp-input">
               <DigitInput
                 length={6}
                 value={verifyTotp}

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, Elevation, H4, Tag, Button, Intent, HTMLTable, Spinner } from "@blueprintjs/core";
+import { Card, Elevation, H4, Tag, Button, Intent, HTMLTable, Spinner, Alert } from "@blueprintjs/core";
 import { Monitor, RefreshCw, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import { getSessions, revokeSession } from "../../../services";
+import { getSessions, revokeSession, revokeOtherSessions } from "../../../services";
 import type { SessionInfo } from "../../../services";
 import { UserAgentDisplay } from "./UserAgentDisplay";
 
@@ -20,6 +20,10 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [revokingOthers, setRevokingOthers] = useState(false);
+  const [isRevokeOthersAlertOpen, setIsRevokeOthersAlertOpen] = useState(false);
+
+  const otherSessionsCount = sessions.filter((s) => !s.is_current).length;
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -55,6 +59,19 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
     }
   };
 
+  const handleConfirmRevokeOthers = async () => {
+    setRevokingOthers(true);
+    try {
+      await revokeOtherSessions();
+      setSessions((prev) => prev.filter((s) => s.is_current));
+      setIsRevokeOthersAlertOpen(false);
+    } catch (e: any) {
+      alert(e.message || t("account.sessions.revokeFailed", "Failed to revoke session."));
+    } finally {
+      setRevokingOthers(false);
+    }
+  };
+
   return (
     <Card elevation={Elevation.ONE}>
       <div className="flex items-center justify-between mb-4">
@@ -62,11 +79,24 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
           <Monitor size={20} className="text-green-500" />
           <H4 style={{ margin: 0 }}>{t("account.sessions.title", "Active Sessions")}</H4>
         </div>
-        <Button
-          minimal
-          icon={<RefreshCw size={14} />}
-          onClick={() => fetchSessions()}
-        />
+        <div className="flex items-center gap-2">
+          {otherSessionsCount > 0 && (
+            <Button
+              small
+              minimal
+              intent={Intent.DANGER}
+              icon={<LogOut size={14} />}
+              text={t("account.sessions.revokeOthers", "Revoke Other Sessions")}
+              loading={revokingOthers}
+              onClick={() => setIsRevokeOthersAlertOpen(true)}
+            />
+          )}
+          <Button
+            minimal
+            icon={<RefreshCw size={14} />}
+            onClick={() => fetchSessions()}
+          />
+        </div>
       </div>
 
       {loading ? (
@@ -138,6 +168,24 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
           </HTMLTable>
         </div>
       )}
+
+      <Alert
+        isOpen={isRevokeOthersAlertOpen}
+        cancelButtonText={t("common.cancel", "Cancel")}
+        confirmButtonText={t("account.sessions.confirmRevokeOthers", "Revoke Other Sessions")}
+        intent={Intent.DANGER}
+        icon="log-out"
+        onCancel={() => setIsRevokeOthersAlertOpen(false)}
+        onConfirm={handleConfirmRevokeOthers}
+        loading={revokingOthers}
+      >
+        <p>
+          {t(
+            "account.sessions.revokeOthersConfirmText",
+            "Are you sure you want to revoke all other active sessions? All other logged-in devices will be signed out immediately."
+          )}
+        </p>
+      </Alert>
     </Card>
   );
 };
