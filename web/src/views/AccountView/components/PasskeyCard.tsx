@@ -13,7 +13,7 @@ import {
   Tooltip,
   Position
 } from "@blueprintjs/core";
-import { KeyRound, Fingerprint, Plus, Trash2, Edit2, ShieldAlert } from "lucide-react";
+import { KeyRound, Key, Plus, Trash2, Edit2, ShieldAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { validatePasskeyName } from "../../../utils/auth";
@@ -194,7 +194,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Fingerprint size={20} className="text-purple-500" />
+          <Key size={20} className="text-purple-500" />
           <H4 style={{ margin: 0 }}>
             {t("account.passkey.title", "Passkeys")}
           </H4>
@@ -340,7 +340,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {t(
                 "account.passkey.promptNotice",
-                "After clicking continue, your browser will prompt you to authenticate via fingerprint, face scan, PIN, or hardware key."
+                "After clicking continue, your browser will prompt you to authenticate via Key, face scan, PIN, or hardware key."
               )}
             </p>
           </div>

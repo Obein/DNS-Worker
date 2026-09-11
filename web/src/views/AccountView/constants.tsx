@@ -4,12 +4,11 @@ import {
   LogIn,
   AlertTriangle,
   LogOut,
-  Key,
   ShieldCheck,
   Shield,
   ShieldOff,
   UserPlus,
-  Fingerprint
+  Key
 } from "lucide-react";
 
 export const ACTION_META: Record<
@@ -78,7 +77,7 @@ export const ACTION_META: Record<
   },
   passkey_registered: {
     label: "account.activity.passkeyRegistered",
-    icon: <Fingerprint size={14} />,
+    icon: <Key size={14} />,
     intent: Intent.PRIMARY,
   },
   passkey_deleted: {

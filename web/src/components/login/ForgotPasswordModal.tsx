@@ -7,7 +7,7 @@ import {
   Intent,
   Callout
 } from "@blueprintjs/core";
-import { Fingerprint, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Key, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DigitInput } from "../DigitInput";
 import {
@@ -353,7 +353,7 @@ export const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
                     onClick={handlePasskeyVerify}
                     className="font-semibold py-4 rounded-xl shadow-sm flex items-center justify-center space-x-2"
                   >
-                    <Fingerprint size={18} className="inline mr-1.5" />
+                    <Key size={18} className="inline mr-1.5" />
                     <span>{t("auth.verifyWithPasskey", "Verify with Passkey")}</span>
                   </Button>
                 )}

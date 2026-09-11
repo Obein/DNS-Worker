@@ -8,7 +8,7 @@ import {
   Elevation,
   Tag
 } from "@blueprintjs/core";
-import { Fingerprint, Smartphone, ArrowLeft } from "lucide-react";
+import { Key, Smartphone, ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { QRCodeCanvas } from "../../views/AccountView/components/QRCodeCanvas";
 import { DigitInput } from "../DigitInput";
@@ -66,7 +66,7 @@ export const SignupMfaStep: React.FC<SignupMfaStepProps> = ({
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
-                  <Fingerprint size={24} />
+                  <Key size={24} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
