@@ -131,7 +131,7 @@ export const AccountView: React.FC = () => {
     return <div className="p-8 text-center">{t("common.loading")}</div>;
 
   return (
-    <div className={clsx("max-w-5xl mx-auto space-y-8", isMobile ? "p-0" : "p-8")}>
+    <div className={clsx("max-w-5xl mx-auto space-y-8", isMobile ? "p-0" : "px-8")}>
       <div className="flex justify-between items-end">
         <div>
           <h2 className="bp6-heading">{t("account.title")}</h2>
