@@ -3,7 +3,6 @@ import { generateId } from "../../lib/auth";
 import { hashPassword } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
 import { ProfileModel } from "../../models/profile";
-import { SessionModel } from "../../models/session";
 import { SystemSettingsModel } from "../../models/systemSettings";
 import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
 
@@ -42,25 +41,6 @@ export async function handleAdminRequest(
       } catch (e: any) {
         return new Response(e.message, { status: 400 });
       }
-    }
-
-    if (request.method === 'POST' && pathParts[3] && pathParts[4] === 'reset-password') {
-      const targetId = pathParts[3];
-      const targetUser = await userModel.getById(targetId);
-      if (!targetUser) return new Response("User not found", { status: 404 });
-
-      const { newPassword } = await request.json() as any;
-      if (!newPassword || !PASSWORD_REGEX.test(newPassword)) {
-        return new Response("Password format error", { status: 400 });
-      }
-
-      const hashedPassword = await hashPassword(newPassword, 2);
-      await userModel.updatePassword(targetId, hashedPassword, 2);
-
-      const sessionModel = new SessionModel(env.DB);
-      await sessionModel.deleteAllByUserId(targetId);
-
-      return new Response(JSON.stringify({ success: true }));
     }
 
     if (request.method === 'DELETE' && pathParts[3]) {

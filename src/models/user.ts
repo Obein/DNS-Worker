@@ -128,6 +128,7 @@ export class UserModel {
         u.role, 
         u.created_at, 
         u.totp_enabled,
+        (SELECT COUNT(1) FROM passkeys p WHERE p.user_id = u.id) as passkeys_count,
         u.timezone,
         u.locale,
         u.last_active_at as last_resolve_at
