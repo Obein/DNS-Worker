@@ -35,7 +35,7 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
 
   const [displayedKeys, setDisplayedKeys] = useState<string[] | null>(null);
   const [isLegacy, setIsLegacy] = useState(false);
-  const [isMasked, setIsMasked] = useState(false);
+  const [isMasked, setIsMasked] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const [cardMessage, setCardMessage] = useState<{ text: string; intent: Intent } | null>(null);
@@ -46,6 +46,7 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
   const handleStartView = () => {
     setCardMessage(null);
     setVerifyMode("view");
+    setIsMasked(true);
     setVerifyDialogOpen(true);
   };
 
@@ -76,7 +77,7 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
       } else {
         setIsLegacy(false);
         setDisplayedKeys(res.recovery_keys);
-        setIsMasked(false);
+        setIsMasked(true);
       }
     } else if (verifyMode === "rotate") {
       const res = await rotateRecoveryKey(payload);
@@ -142,13 +143,6 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
               onClick={handleStartView}
             />
           )}
-          <Button
-            small
-            intent={Intent.WARNING}
-            icon={<RefreshCw size={14} />}
-            text={t("account.recoveryKey.rotateBtn", "Rotate Key")}
-            onClick={handleStartRotate}
-          />
         </div>
       </div>
 
@@ -189,11 +183,20 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
       {/* Displayed Key Card */}
       {displayedKeys && displayedKeys.length > 0 && (
         <Card elevation={Elevation.ZERO} className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("account.recoveryKey.yourKey", "Your 30-Digit Recovery Key")}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Button
+                small
+                minimal
+                intent={Intent.WARNING}
+                icon={<RefreshCw size={14} />}
+                text={t("account.recoveryKey.rotateBtn", "Rotate Key")}
+                onClick={handleStartRotate}
+              />
+              <div className="h-4 w-px bg-gray-300 dark:bg-gray-600 mx-1 hidden sm:block" />
               <Button
                 minimal
                 small
