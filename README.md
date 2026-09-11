@@ -4,7 +4,7 @@
   <p>Protective DNS resolver based on Cloudflare Workers & D1</p>
   <p>Protect your first hop on the internet</p>
   <p align="center">
-    English | <a href="README_zh-CN.md">简体中文</a> | <a href="README_zh-TW.md">正體中文</a>
+    English | <a href="README_zh-CN.md">中文 (简体)</a> | <a href="README_zh-TW.md">中文 (正體)</a>
   </p>
 
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)

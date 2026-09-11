@@ -4,7 +4,7 @@
   <p>基於 Cloudflare Workers & D1 的 Protective DNS 解析服務</p>
   <p>保護您的網際網路第一跳</p>
   <p align="center">
-    <a href="README.md">English</a> | <a href="README_zh-CN.md">简体中文</a> | 正體中文
+    <a href="README.md">English</a> | <a href="README_zh-CN.md">中文 (简体)</a> | 中文 (正體)
   </p>
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
