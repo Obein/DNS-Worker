@@ -158,7 +158,17 @@
     "totpSignupDesc": "Verwenden Sie Google Authenticator, 1Password oder eine andere TOTP-App.",
     "setupTotpBtn": "Authentifikator-App einrichten",
     "skipMfaSetup": "Vorläufig überspringen",
-    "backToMfaOptions": "Zurück zur Auswahl"
+    "backToMfaOptions": "Zurück zur Auswahl",
+    "otherOptions": "Andere Optionen",
+    "next": "Weiter",
+    "mfaVerification": "Multi-Faktor-Authentifizierung",
+    "totpPrompt": "Geben Sie den 6-stelligen dynamischen Code aus Ihrer Authentifikator-App ein",
+    "recoveryPrompt": "Geben Sie Ihren 30-stelligen Wiederherstellungsschlüssel ein (5 Gruppen mit je 6 Ziffern)",
+    "recoveryChecksumError": "Prüfsummenfehler: Diese Gruppe ist nicht durch 11 teilbar",
+    "recoveryChecksumErrorDesc": "Prüfsummenfehler in Gruppe {{groups}}, bitte überprüfen und erneut versuchen",
+    "backToPasskey": "Zurück zur Passkey-Verifizierung",
+    "recoveryKeyRequired": "Bitte geben Sie Ihren Wiederherstellungsschlüssel ein",
+    "totpFormatError": "Bitte geben Sie einen gültigen 6-stelligen Code ein"
   },
   "setup": {
     "title": "Installationsanleitung",

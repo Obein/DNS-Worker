@@ -45,11 +45,11 @@ export const TOTPRecoveryKeys: React.FC<TOTPRecoveryKeysProps> = ({
           "Store these keys safely. Each key can only be used once. You will NOT see them again."
         )}
       </Callout>
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className={recoveryKeys.length === 1 ? "space-y-2 mb-4" : "grid grid-cols-2 gap-2 mb-4"}>
         {recoveryKeys.map((key, i) => (
           <code
             key={i}
-            className="font-mono text-sm bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-center tracking-wider"
+            className="block font-mono text-sm sm:text-base font-semibold bg-gray-100 dark:bg-gray-800 text-blue-600 dark:text-blue-400 px-4 py-3 rounded-xl text-center tracking-widest break-all select-all border border-gray-200 dark:border-gray-700"
           >
             {key}
           </code>

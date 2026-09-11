@@ -158,7 +158,17 @@
     "totpSignupDesc": "Sử dụng Google Authenticator, 1Password hoặc bất kỳ ứng dụng TOTP tiêu chuẩn nào.",
     "setupTotpBtn": "Cấu hình ứng dụng xác thực",
     "skipMfaSetup": "Bỏ qua lúc này",
-    "backToMfaOptions": "Quay lại tùy chọn"
+    "backToMfaOptions": "Quay lại tùy chọn",
+    "otherOptions": "Tùy chọn khác",
+    "next": "Tiếp theo",
+    "mfaVerification": "Xác thực đa yếu tố",
+    "totpPrompt": "Nhập mã động 6 chữ số từ ứng dụng xác thực của bạn",
+    "recoveryPrompt": "Nhập khóa khôi phục 30 chữ số của bạn (5 nhóm, mỗi nhóm 6 chữ số)",
+    "recoveryChecksumError": "Lỗi tổng kiểm tra: nhóm này không chia hết cho 11",
+    "recoveryChecksumErrorDesc": "Lỗi tổng kiểm tra ở nhóm {{groups}}, vui lòng kiểm tra và thử lại",
+    "backToPasskey": "Quay lại xác thực Passkey",
+    "recoveryKeyRequired": "Vui lòng nhập khóa khôi phục của bạn",
+    "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số"
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",

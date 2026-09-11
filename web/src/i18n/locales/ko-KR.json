@@ -158,7 +158,17 @@
     "totpSignupDesc": "Google Authenticator, 1Password 등의 앱을 사용하여 6자리 인증 코드를 생성합니다.",
     "setupTotpBtn": "인증 앱 설정",
     "skipMfaSetup": "지금은 건너뛰기",
-    "backToMfaOptions": "옵션 선택으로 돌아가기"
+    "backToMfaOptions": "옵션 선택으로 돌아가기",
+    "otherOptions": "기타 옵션",
+    "next": "다음",
+    "mfaVerification": "다단계 인증 (MFA)",
+    "totpPrompt": "인증 앱의 6자리 동적 코드를 입력하세요",
+    "recoveryPrompt": "30자리 비상 복구 키(6자리 5개 그룹)를 입력하세요",
+    "recoveryChecksumError": "체크섬 오류: 이 그룹의 6자리 숫자는 11로 나누어떨어지지 않습니다",
+    "recoveryChecksumErrorDesc": "{{groups}}번째 그룹의 체크섬 오류입니다. 확인 후 다시 시도하세요",
+    "backToPasskey": "Passkey 인증으로 돌아가기",
+    "recoveryKeyRequired": "비상 복구 키를 입력하세요",
+    "totpFormatError": "유효한 6자리 코드를 입력하세요"
   },
   "setup": {
     "title": "설치 가이드",

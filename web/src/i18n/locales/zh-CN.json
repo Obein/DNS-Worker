@@ -159,7 +159,17 @@
     "totpSignupDesc": "使用 Google Authenticator、1Password 等身份验证器生成 6 位动态验证码。",
     "setupTotpBtn": "配置数字验证器",
     "skipMfaSetup": "暂不配置，直接完成",
-    "backToMfaOptions": "返回选择其他方式"
+    "backToMfaOptions": "返回选择其他方式",
+    "otherOptions": "其他选项",
+    "next": "下一步",
+    "mfaVerification": "多因素认证",
+    "totpPrompt": "请输入身份验证应用中的 6 位动态验证码",
+    "recoveryPrompt": "请输入 30 位应急恢复密钥（5 组，每组 6 位数字）",
+    "recoveryChecksumError": "校验码错误：该组 6 位数无法被 11 整除",
+    "recoveryChecksumErrorDesc": "第 {{groups}} 组校验码错误，请核对后重试",
+    "backToPasskey": "返回通行密钥验证",
+    "recoveryKeyRequired": "请输入应急恢复密钥",
+    "totpFormatError": "请输入有效的 6 位验证码"
   },
   "setup": {
     "title": "安装指南",

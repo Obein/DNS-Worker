@@ -27,17 +27,18 @@ export interface UseLoginFormProps {
 }
 
 /**
- * Custom hook to manage LoginForm's state and submissions.
- *
- * @param props - Hook props.
- * @returns State and event handlers for LoginForm.
+ * Custom hook to manage the login state machine across:
+ * Step 1: Username
+ * Step 2: Password (if required; with "Other options" switch to MFA)
+ * Step 3: MFA (Passkey prioritized; with "Other options" switch to TOTP / Recovery)
  */
 export const useLoginForm = ({
   authConfig,
   turnstileReady,
   onSuccess
 }: UseLoginFormProps) => {
-  const [loginStep, setLoginStep] = useState<1 | 2>(1);
+  // Steps: 1 = Username, 2 = Password, 3 = MFA
+  const [loginStep, setLoginStep] = useState<1 | 2 | 3>(1);
 
   // Input states
   const [username, setUsername] = useState("");
@@ -55,7 +56,9 @@ export const useLoginForm = ({
   const [hasPasskey, setHasPasskey] = useState(false);
   const [passkeyOptions, setPasskeyOptions] = useState<any>(null);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
-  const [useRecovery, setUseRecovery] = useState(false);
+
+  // Active MFA method in Step 3
+  const [mfaMethod, setMfaMethod] = useState<"passkey" | "totp" | "recovery">("passkey");
 
   // Status indicators
   const [loading, setLoading] = useState(false);
@@ -70,7 +73,6 @@ export const useLoginForm = ({
   const widgetIdRef = useRef<string | null>(null);
 
   const { t } = useTranslation();
-
   const isTurnstileEnabled = authConfig?.turnstile_enabled_login;
 
   useEffect(() => {
@@ -126,6 +128,9 @@ export const useLoginForm = ({
     };
   }, [isTurnstileEnabled, authConfig, loginStep, turnstileReady, t]);
 
+  /**
+   * Submits Step 1 (Username + Turnstile).
+   */
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateUsername(username)) {
@@ -149,7 +154,17 @@ export const useLoginForm = ({
       setPasswordVersion(data.password_version ?? 1);
       setNonce(data.nonce);
       setServerSalt(data.serverSalt);
-      setLoginStep(2);
+
+      const userHasPasskey = !!data.has_passkey;
+      const initialMfaMethod: "passkey" | "totp" = userHasPasskey ? "passkey" : "totp";
+      setMfaMethod(initialMfaMethod);
+
+      // If passwordless login is enabled, skip password step directly to MFA step
+      if (!data.requires_password) {
+        setLoginStep(3);
+      } else {
+        setLoginStep(2);
+      }
     } catch (err: any) {
       setError(formatApiErrorMessage(err, t));
       if (window.turnstile) window.turnstile.reset();
@@ -159,8 +174,16 @@ export const useLoginForm = ({
     }
   };
 
-  const handleStep2Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  /**
+   * Helper to perform the final login call with provided credentials.
+   */
+  const executeLogin = async (credentials: {
+    useEnteredPassword?: boolean;
+    passkeyAssertion?: any;
+    totpTokenHash?: string;
+    totpSalt?: string;
+    recoveryKey?: string;
+  }) => {
     setLoading(true);
     setError("");
 
@@ -170,80 +193,18 @@ export const useLoginForm = ({
         recoveryKey?: string;
         totpTokenHash?: string;
         totpSalt?: string;
-        keepLoggedIn?: boolean;
-      } = {
-        keepLoggedIn
-      };
-      if (requiresPassword) {
-        if (passwordVersion === 2) {
-          if (!nonce || !serverSalt) {
-            throw new Error(t("auth.sessionExpired", "Session expired, please start over"));
-          }
-          const clientHash = await hashPasswordClient(password, username);
-          const storedHash = await deriveStoredHashClient(clientHash, serverSalt);
-          body.password = await hmacSha256(storedHash, nonce);
-        } else {
-          body.password = password;
-        }
-      }
-      if (requiresTotp) {
-        if (useRecovery) {
-          body.recoveryKey = recoveryKey;
-        } else {
-          const salt = crypto.randomUUID();
-          const hashHex = await hashTotpToken(totpToken, salt);
-          body.totpTokenHash = hashHex;
-          body.totpSalt = salt;
-        }
-      }
-
-      const data = await login(body);
-      if (data.accessToken) {
-        setAccessToken(data.accessToken);
-      }
-      if (data.needsMigration) {
-        const clientHash = await hashPasswordClient(password, username);
-        await migratePassword(clientHash);
-      }
-      onSuccess();
-    } catch (err: any) {
-      if (err instanceof ApiError) {
-        const fakeRes = { status: err.status } as Response;
-        if (isPasswordLeaked(fakeRes, err.bodyText)) {
-          setError(t("auth.passwordLeaked"));
-        } else {
-          setError(formatApiErrorMessage(err, t));
-        }
-      } else {
-        setError(formatApiErrorMessage(err, t));
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasskeyLogin = async () => {
-    if (!passkeyOptions) return;
-    setPasskeyLoading(true);
-    setError("");
-
-    try {
-      const assertion = await startPasskeyAuthentication(passkeyOptions);
-      const body: {
-        password?: string;
         passkeyAssertion?: any;
         keepLoggedIn?: boolean;
       } = {
         keepLoggedIn,
-        passkeyAssertion: assertion
+        passkeyAssertion: credentials.passkeyAssertion,
+        totpTokenHash: credentials.totpTokenHash,
+        totpSalt: credentials.totpSalt,
+        recoveryKey: credentials.recoveryKey
       };
 
-      if (requiresPassword) {
-        if (!password) {
-          setError(t("auth.passwordRequiredFirst", "Please enter your password first"));
-          setPasskeyLoading(false);
-          return;
-        }
+      // If user entered password in Step 2, compute challenge response
+      if (credentials.useEnteredPassword && password) {
         if (passwordVersion === 2) {
           if (!nonce || !serverSalt) {
             throw new Error(t("auth.sessionExpired", "Session expired, please start over"));
@@ -266,10 +227,121 @@ export const useLoginForm = ({
       }
       onSuccess();
     } catch (err: any) {
+      if (err instanceof ApiError) {
+        const fakeRes = { status: err.status } as Response;
+        if (isPasswordLeaked(fakeRes, err.bodyText)) {
+          setError(t("auth.passwordLeaked"));
+        } else {
+          setError(formatApiErrorMessage(err, t));
+        }
+      } else {
+        setError(formatApiErrorMessage(err, t));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Submits Step 2 (Password input).
+   * If user has MFA, advances to Step 3. Otherwise, completes login.
+   */
+  const handleStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) {
+      setError(t("auth.passwordRequiredFirst", "Please enter your password first"));
+      return;
+    }
+
+    const hasMfa = hasPasskey || requiresTotp;
+    if (hasMfa) {
+      // Advance to MFA step with password stored
+      setError("");
+      setLoginStep(3);
+      setMfaMethod(hasPasskey ? "passkey" : "totp");
+    } else {
+      // No MFA configured: execute login with password alone
+      await executeLogin({ useEnteredPassword: true });
+    }
+  };
+
+  /**
+   * Switches directly from Password Step to MFA Step via "Other options".
+   */
+  const handleSwitchToMfa = () => {
+    setPassword("");
+    setError("");
+    setLoginStep(3);
+    setMfaMethod(hasPasskey ? "passkey" : "totp");
+  };
+
+  /**
+   * Handles Passkey login in Step 3.
+   */
+  const handlePasskeyLogin = async () => {
+    if (!passkeyOptions) return;
+    setPasskeyLoading(true);
+    setError("");
+
+    try {
+      const assertion = await startPasskeyAuthentication(passkeyOptions);
+      await executeLogin({
+        useEnteredPassword: !!password,
+        passkeyAssertion: assertion
+      });
+    } catch (err: any) {
       console.error("Passkey authentication error:", err);
       setError(formatApiErrorMessage(err, t));
     } finally {
       setPasskeyLoading(false);
+    }
+  };
+
+  /**
+   * Submits Step 3 (TOTP or Recovery Key).
+   */
+  const handleStep3Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (mfaMethod === "totp") {
+      const cleanToken = totpToken.replace(/\s/g, "");
+      if (cleanToken.length !== 6) {
+        setError(t("auth.totpFormatError", "Please enter a valid 6-digit code"));
+        return;
+      }
+      const salt = crypto.randomUUID();
+      const hashHex = await hashTotpToken(cleanToken, salt);
+      await executeLogin({
+        useEnteredPassword: !!password,
+        totpTokenHash: hashHex,
+        totpSalt: salt
+      });
+    } else if (mfaMethod === "recovery") {
+      const normalizedKey = recoveryKey.replace(/[-\s]/g, "");
+      if (!normalizedKey) {
+        setError(t("auth.recoveryKeyRequired", "Please enter your recovery key"));
+        return;
+      }
+      await executeLogin({
+        useEnteredPassword: !!password,
+        recoveryKey: normalizedKey
+      });
+    }
+  };
+
+  /**
+   * Navigates back one step.
+   */
+  const handleBack = () => {
+    setError("");
+    if (loginStep === 2) {
+      resetToStep1();
+    } else if (loginStep === 3) {
+      if (requiresPassword) {
+        setLoginStep(2);
+      } else {
+        resetToStep1();
+      }
     }
   };
 
@@ -280,12 +352,12 @@ export const useLoginForm = ({
     setRecoveryKey("");
     setError("");
     setTurnstileToken(null);
-    setUseRecovery(false);
     setNonce(undefined);
     setServerSalt(undefined);
     setHasPasskey(false);
     setPasskeyOptions(null);
     setPasskeyLoading(false);
+    setMfaMethod("passkey");
   };
 
   return {
@@ -301,9 +373,9 @@ export const useLoginForm = ({
     requiresPassword,
     requiresTotp,
     hasPasskey,
+    mfaMethod,
+    setMfaMethod,
     passkeyLoading,
-    useRecovery,
-    setUseRecovery,
     loading,
     error,
     setError,
@@ -314,7 +386,10 @@ export const useLoginForm = ({
     setKeepLoggedIn,
     handleStep1Submit,
     handleStep2Submit,
+    handleStep3Submit,
+    handleSwitchToMfa,
     handlePasskeyLogin,
+    handleBack,
     resetToStep1
   };
 };

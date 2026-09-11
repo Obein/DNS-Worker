@@ -116,6 +116,8 @@ export async function handleSecurityRequest(
       const hashedKeys = await Promise.all(plaintextKeys.map(hashRecoveryKey));
 
       await userModel.updateTOTP(user.id, secret, hashedKeys);
+      // Default to passwordless login upon enabling MFA
+      await userModel.updateTOTPSettings(user.id, true);
       await activityLog.record(user.id, 'totp_setup', clientIp, userAgent, undefined, sessionHash);
 
       return new Response(JSON.stringify({ success: true, recovery_keys: plaintextKeys }), {
@@ -307,6 +309,9 @@ export async function handleSecurityRequest(
           transports,
           aaguid: parsed.aaguid
         });
+
+        // Default to passwordless login upon enabling MFA
+        await userModel.updateTOTPSettings(user.id, true);
 
         const dbUser = await userModel.getById(user.id);
         let recoveryKeys: string[] | undefined = undefined;

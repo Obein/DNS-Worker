@@ -160,34 +160,59 @@ export function getTOTPUri(secret: string, username: string, issuer: string): st
 }
 
 /**
- * Generates 8 one-time recovery keys (10 alphanumeric chars each) as plaintext.
- * These should be shown to the user ONCE and then stored hashed.
- * @returns Array of 8 plaintext recovery keys
+ * Generates a single 6-digit group where the first 5 digits are randomly generated
+ * and the 6th digit is a Modulo 11 check digit ensuring the 6-digit integer % 11 === 0.
+ *
+ * @returns 6-digit numeric string
+ */
+export function generateRecoveryGroup(): string {
+  while (true) {
+    const randomBytes = new Uint32Array(1);
+    crypto.getRandomValues(randomBytes);
+    const val = randomBytes[0] % 100000;
+    const rem = val % 11;
+    if (rem < 10) {
+      const first5 = val.toString().padStart(5, '0');
+      const checkDigit = rem.toString();
+      return `${first5}${checkDigit}`;
+    }
+  }
+}
+
+/**
+ * Generates a 30-digit recovery key consisting of 5 groups of 6 digits,
+ * separated by hyphens (e.g., "123453-678908-246802-135798-987659").
+ *
+ * @returns 30-digit formatted recovery key string
+ */
+export function generateRecoveryKey(): string {
+  const groups: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    groups.push(generateRecoveryGroup());
+  }
+  return groups.join('-');
+}
+
+/**
+ * Generates recovery keys as plaintext.
+ * Returns an array containing the 30-digit recovery key.
+ *
+ * @returns Array of plaintext recovery keys
  */
 export function generateRecoveryKeys(): string[] {
-  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters
-  const keys: string[] = [];
-
-  for (let i = 0; i < 8; i++) {
-    const bytes = new Uint8Array(10);
-    crypto.getRandomValues(bytes);
-    keys.push(
-      Array.from(bytes)
-        .map(b => charset[b % charset.length])
-        .join('')
-    );
-  }
-
-  return keys;
+  return [generateRecoveryKey()];
 }
 
 /**
  * Hashes a recovery key using SHA-256 for secure storage.
+ * Strips hyphens and whitespace before hashing for robust comparison.
+ *
  * @param key - Plaintext recovery key
  * @returns Hex-encoded SHA-256 hash
  */
 export async function hashRecoveryKey(key: string): Promise<string> {
-  const data = new TextEncoder().encode(key.toUpperCase().trim());
+  const normalized = key.replace(/[-\s]/g, '').toUpperCase().trim();
+  const data = new TextEncoder().encode(normalized);
   const hash = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -197,6 +222,7 @@ export async function hashRecoveryKey(key: string): Promise<string> {
 /**
  * Verifies a plaintext recovery key against an array of stored hashes.
  * Returns the index of the matching key, or -1 if no match.
+ *
  * @param key - Plaintext key entered by the user
  * @param storedHashes - Array of SHA-256 hex hashes from DB
  * @returns Index of matching hash, or -1
@@ -205,3 +231,4 @@ export async function findMatchingRecoveryKey(key: string, storedHashes: string[
   const inputHash = await hashRecoveryKey(key);
   return storedHashes.findIndex(h => h === inputHash);
 }
+

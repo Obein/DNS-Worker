@@ -156,8 +156,23 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     const { password, totpTokenHash, totpSalt, recoveryKey, passkeyAssertion, keepLoggedIn } = await request.json() as any;
 
     let needsMigration = false;
-    // 验证密码
-    if (!user.totp_skip_password) {
+
+    // Check MFA configuration & whether user chose "Other options" to authenticate via MFA directly
+    const passkeyModel = new PasskeyModel(env.DB);
+    const userPasskeys = await passkeyModel.listByUser(userId);
+    const hasPasskeys = userPasskeys.length > 0;
+    const hasTotp = !!user.totp_enabled;
+    const hasRecoveryKeys = !!user.totp_recovery_keys;
+    const requiresMfa = hasTotp || hasPasskeys;
+
+    const hasMfaCredential = !!(passkeyAssertion || totpTokenHash || recoveryKey);
+    const mfaBypassPassword = requiresMfa && hasMfaCredential && !password;
+
+    // 验证密码 (若用户在密码面板选择“其他选项”直接提供 MFA 凭据，则允许通过 MFA 完成认证)
+    if (!user.totp_skip_password && !mfaBypassPassword) {
+      if (!password) {
+        return new Response("Password is required", { status: 400 });
+      }
       if ((user.password_version ?? 1) === 2) {
         // Nonce challenge-response validation
         const expectedResponse = await hmacSha256(user.hashed_password, nonce);
@@ -189,12 +204,6 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     }
 
     // 验证 MFA：Passkey 或 TOTP 或 恢复密钥
-    const passkeyModel = new PasskeyModel(env.DB);
-    const userPasskeys = await passkeyModel.listByUser(userId);
-    const hasPasskeys = userPasskeys.length > 0;
-    const hasTotp = !!user.totp_enabled;
-    const requiresMfa = hasTotp || hasPasskeys;
-
     let isTotpSuccess = false;
     let isRecoverySuccess = false;
     let isPasskeySuccess = false;
@@ -240,7 +249,7 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
             return new Response(`Invalid Passkey signature. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, { status: 400 });
           }
         }
-      } else if (hasTotp && recoveryKey) {
+      } else if ((hasTotp || hasPasskeys || hasRecoveryKeys) && recoveryKey) {
         let storedHashes: string[] = [];
         try { storedHashes = JSON.parse(user.totp_recovery_keys || '[]'); } catch { }
         const matchIndex = await findMatchingRecoveryKey(recoveryKey, storedHashes);

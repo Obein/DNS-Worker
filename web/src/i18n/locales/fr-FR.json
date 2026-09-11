@@ -158,7 +158,17 @@
     "totpSignupDesc": "Utilisez Google Authenticator, 1Password ou toute application TOTP standard.",
     "setupTotpBtn": "Configurer l'application d'authentification",
     "skipMfaSetup": "Ignorer pour l'instant",
-    "backToMfaOptions": "Retour aux options"
+    "backToMfaOptions": "Retour aux options",
+    "otherOptions": "Autres options",
+    "next": "Suivant",
+    "mfaVerification": "Authentification multifacteur",
+    "totpPrompt": "Entrez le code dynamique à 6 chiffres de votre application d'authentification",
+    "recoveryPrompt": "Entrez votre clé de récupération à 30 chiffres (5 groupes de 6 chiffres)",
+    "recoveryChecksumError": "Erreur de somme de contrôle : ce groupe n'est pas divisible par 11",
+    "recoveryChecksumErrorDesc": "Erreur de somme de contrôle dans le groupe {{groups}}, veuillez vérifier et réessayer",
+    "backToPasskey": "Retour à la vérification par Passkey",
+    "recoveryKeyRequired": "Veuillez entrer votre clé de récupération",
+    "totpFormatError": "Veuillez entrer un code valide à 6 chiffres"
   },
   "setup": {
     "title": "Guide d'installation",

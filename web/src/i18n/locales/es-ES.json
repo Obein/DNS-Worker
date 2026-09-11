@@ -158,7 +158,17 @@
     "totpSignupDesc": "Use Google Authenticator, 1Password o cualquier app compatible con TOTP.",
     "setupTotpBtn": "Configurar aplicación de autenticación",
     "skipMfaSetup": "Omitir por ahora",
-    "backToMfaOptions": "Volver a las opciones"
+    "backToMfaOptions": "Volver a las opciones",
+    "otherOptions": "Otras opciones",
+    "next": "Siguiente",
+    "mfaVerification": "Autenticación multifactor",
+    "totpPrompt": "Introduce el código dinámico de 6 dígitos de tu aplicación de autenticación",
+    "recoveryPrompt": "Introduce tu clave de recuperación de 30 dígitos (5 grupos de 6 dígitos)",
+    "recoveryChecksumError": "Error de suma de control: este grupo no es divisible por 11",
+    "recoveryChecksumErrorDesc": "Error de suma de control en el grupo {{groups}}, compruébalo e inténtalo de nuevo",
+    "backToPasskey": "Volver a la verificación con Passkey",
+    "recoveryKeyRequired": "Por favor, introduce tu clave de recuperación",
+    "totpFormatError": "Por favor, introduce un código válido de 6 dígitos"
   },
   "setup": {
     "title": "Guía de instalación",

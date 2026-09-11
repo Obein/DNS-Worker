@@ -158,7 +158,17 @@
     "totpSignupDesc": "Google Authenticatorや1Passwordなどの認証アプリを使用して6桁コードを生成します。",
     "setupTotpBtn": "認証アプリを設定する",
     "skipMfaSetup": "今はスキップして完了",
-    "backToMfaOptions": "オプションの選択に戻る"
+    "backToMfaOptions": "オプションの選択に戻る",
+    "otherOptions": "その他のオプション",
+    "next": "次へ",
+    "mfaVerification": "多要素認証 (MFA)",
+    "totpPrompt": "認証アプリの 6 桁の動的確認コードを入力してください",
+    "recoveryPrompt": "30 桁の緊急リカバリキー（6 桁 × 5 グループ）を入力してください",
+    "recoveryChecksumError": "チェックサムエラー：このグループの 6 桁の数値は 11 で割り切れません",
+    "recoveryChecksumErrorDesc": "第 {{groups}} グループのチェックサムエラーです。確認して再試行してください",
+    "backToPasskey": "パスキー認証に戻る",
+    "recoveryKeyRequired": "緊急リカバリキーを入力してください",
+    "totpFormatError": "有効な 6 桁のコードを入力してください"
   },
   "setup": {
     "title": "インストールガイド",

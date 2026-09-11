@@ -159,7 +159,17 @@
     "totpSignupDesc": "Use Google Authenticator, 1Password, or any standard authenticator app.",
     "setupTotpBtn": "Set Up Authenticator App",
     "skipMfaSetup": "Skip for now, complete signup",
-    "backToMfaOptions": "Back to options"
+    "backToMfaOptions": "Back to options",
+    "otherOptions": "Other options",
+    "next": "Next",
+    "mfaVerification": "Multi-Factor Authentication",
+    "totpPrompt": "Enter the 6-digit dynamic code from your authenticator app",
+    "recoveryPrompt": "Enter your 30-digit recovery key (5 groups of 6 digits)",
+    "recoveryChecksumError": "Checksum error: this group is not divisible by 11",
+    "recoveryChecksumErrorDesc": "Checksum error in group {{groups}}, please check and try again",
+    "backToPasskey": "Back to Passkey verification",
+    "recoveryKeyRequired": "Please enter your recovery key",
+    "totpFormatError": "Please enter a valid 6-digit code"
   },
   "setup": {
     "title": "Setup Guide",
