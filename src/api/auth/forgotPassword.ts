@@ -159,8 +159,6 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
       return new Response("User not found", { status: 404 });
     }
 
-    let verified = false;
-
     // Verify Passkey
     if (passkeyAssertion && state.passkeyChallenge) {
       const passkeyModel = new PasskeyModel(env.DB);
@@ -188,7 +186,6 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
 
         await passkeyModel.updateUsage(passkey.id, signCount);
         await activityLog.record(user.id, 'passkey_verify_success', clientIp, userAgent, { flow: 'forgot_password' });
-        verified = true;
       } catch (err: any) {
         state.failedAttempts++;
         await cacheUtils.set(cache, cacheKey, state, 300);
@@ -211,7 +208,6 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
 
       await userModel.consumeRecoveryKey(user.id, matchIndex, storedHashes);
       await activityLog.record(user.id, 'recovery_key_used', clientIp, userAgent, { flow: 'forgot_password', remaining: storedHashes.length - 1 });
-      verified = true;
     }
     // Verify TOTP
     else if (totpTokenHash && user.totp_secret) {
@@ -223,14 +219,9 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
       }
 
       await activityLog.record(user.id, 'totp_verify_success', clientIp, userAgent, { flow: 'forgot_password' });
-      verified = true;
     }
     else {
       return new Response("No valid MFA credential provided", { status: 400 });
-    }
-
-    if (!verified) {
-      return new Response("Verification failed", { status: 400 });
     }
 
     // MFA verified! Invalidate recovery session and issue single-use resetToken
