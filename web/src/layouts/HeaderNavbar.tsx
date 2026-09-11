@@ -3,7 +3,8 @@ import { Button, Navbar, Alignment, Icon, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { Sun, Moon, Monitor, Settings } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
-import type { Profile } from "../types/auth";
+import { SessionLockButton } from "../components/SessionLockButton";
+import type { Profile, UserInfo } from "../types/auth";
 import clsx from "clsx";
 
 /**
@@ -24,6 +25,8 @@ interface HeaderNavbarProps {
   navigate: (path: string) => void;
   /** True if a background saving operation is active. */
   isSaving?: boolean;
+  /** Current logged in user info. */
+  currentUser?: UserInfo | null;
 }
 
 /**
@@ -40,6 +43,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   location,
   navigate,
   isSaving,
+  currentUser,
 }) => {
   const { t } = useTranslation();
 
@@ -91,6 +95,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               <span>{t("settings.saving")}</span>
             </div>
           )}
+          <SessionLockButton currentUser={currentUser} />
           <LanguageSwitcher />
           <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 p-1 rounded-lg">
             <Button

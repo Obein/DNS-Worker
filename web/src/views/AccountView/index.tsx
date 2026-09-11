@@ -68,6 +68,7 @@ export const AccountView: React.FC = () => {
       const data = await getMe();
       setMe(data);
       setEditUsername(data.username);
+      window.dispatchEvent(new Event("user_updated"));
       if (data.timezone) {
         const { setSystemTimeZone } = await import("../../utils/date");
         setSystemTimeZone(data.timezone);

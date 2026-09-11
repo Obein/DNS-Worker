@@ -4,7 +4,7 @@ import { Plus, Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { preloadHeavyViews, preloadMainViews } from "../../routes/ProfileRoutes";
-import type { Profile } from "../../types/auth";
+import type { Profile, UserInfo } from "../../types/auth";
 import { useImportProfile } from "./hooks";
 import { Navbar } from "./components/Navbar";
 import { CreateProfileCard } from "./components/CreateProfileCard";
@@ -23,6 +23,7 @@ interface DashboardHomeProps {
   handleLogout: () => void;
   navigate: (path: string) => void;
   onRefresh?: () => void;
+  currentUser?: UserInfo | null;
 }
 
 export const DashboardHomeView = ({
@@ -38,6 +39,7 @@ export const DashboardHomeView = ({
   handleLogout,
   navigate,
   onRefresh,
+  currentUser,
 }: DashboardHomeProps) => {
   const isMobile = useIsMobile();
   const { t } = useTranslation();
@@ -70,6 +72,7 @@ export const DashboardHomeView = ({
         isMobile={isMobile}
         navigate={navigate}
         handleLogout={handleLogout}
+        currentUser={currentUser}
       />
 
       <div className="flex-1 flex flex-col items-center justify-start md:justify-center p-4 pt-8 md:pt-4">

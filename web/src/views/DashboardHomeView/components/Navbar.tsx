@@ -3,6 +3,8 @@ import { Button, Intent, PopoverNext } from "@blueprintjs/core";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
+import { SessionLockButton } from "../../../components/SessionLockButton";
+import type { UserInfo } from "../../../types/auth";
 import LogoIcon from "../../../assets/obex_cat_eye_logo-256.webp";
 
 /**
@@ -12,13 +14,14 @@ interface NavbarProps {
   isMobile: boolean;
   navigate: (path: string) => void;
   handleLogout: () => void;
+  currentUser?: UserInfo | null;
 }
 
 /**
  * Navbar component for the profile selection view.
  * Displays brand logo, application name, current domain, language switcher, and account actions.
  */
-export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout }) => {
+export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout, currentUser }) => {
   const { t } = useTranslation();
   const currentDomain =
     typeof window !== "undefined"
@@ -51,6 +54,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <SessionLockButton currentUser={currentUser} />
         <LanguageSwitcher />
         <div className="flex items-center gap-1">
           <Button

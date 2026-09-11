@@ -141,6 +141,7 @@ export const MainLayout = ({
           location={location}
           navigate={navigate}
           isSaving={isSaving}
+          currentUser={currentUser}
         />
 
         {/* Page Content */}
