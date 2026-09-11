@@ -678,7 +678,7 @@
       "viewBtn": "查看恢复密钥",
       "rotateBtn": "轮换密钥",
       "yourKey": "您的 30 位应急恢复密钥",
-      "securityTip": "请妥善保管此恢复密钥。拥有此密钥的人可以重获您的账户访问权限。",
+      "securityTip": "请妥善保管此恢复密钥。拥有此密钥者可以重获您的账户访问权限。",
       "rotateConfirm": "轮换恢复密钥将使旧密钥立即失效。确定继续吗？",
       "confirmRotateBtn": "确认轮换",
       "viewVerifyTitle": "验证身份以查看恢复密钥",

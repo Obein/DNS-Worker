@@ -678,7 +678,7 @@
       "viewBtn": "檢視恢復金鑰",
       "rotateBtn": "輪換金鑰",
       "yourKey": "您的 30 位應急恢復金鑰",
-      "securityTip": "請妥善保管此恢復金鑰。擁有此金鑰的人可以重新取得您的帳戶存取權限。",
+      "securityTip": "請妥善保管此恢復金鑰。擁有此金鑰者可以重新取得您的帳戶存取權限。",
       "rotateConfirm": "輪換恢復金鑰將使舊金鑰立即失效。確定要繼續嗎？",
       "confirmRotateBtn": "確認輪換",
       "viewVerifyTitle": "驗證身分以檢視恢復金鑰",
