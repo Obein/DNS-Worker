@@ -141,7 +141,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
   };
 
   return (
-    <Card elevation={Elevation.ONE}>
+    <Card elevation={Elevation.ONE} className="isolate" style={{ isolation: "isolate" }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Key size={20} className="text-orange-500" />
@@ -149,13 +149,13 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
         </div>
 
         {(hasPasskey || hasTotp) && (
-          <div className="flex items-center">
-            <ButtonGroup>
+          <div className="flex items-center isolate" style={{ isolation: "isolate" }}>
+            <ButtonGroup variant="minimal" style={{ isolation: "isolate" }}>
               <Button
                 small
                 active={authMethod === "password"}
                 intent={authMethod === "password" ? Intent.PRIMARY : Intent.NONE}
-                icon={<Lock size={12} />}
+                icon={<Lock size={14} />}
                 text={t("account.mfa.password", "Password")}
                 onClick={() => {
                   setAuthMethod("password");
@@ -167,7 +167,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
                   small
                   active={authMethod === "passkey"}
                   intent={authMethod === "passkey" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<Key size={12} />}
+                  icon={<Key size={14} />}
                   text={t("account.mfa.passkey", "Passkey")}
                   onClick={() => {
                     setAuthMethod("passkey");
@@ -180,7 +180,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
                   small
                   active={authMethod === "totp"}
                   intent={authMethod === "totp" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<ShieldCheck size={12} />}
+                  icon={<ShieldCheck size={14} />}
                   text={t("account.mfa.totp", "TOTP")}
                   onClick={() => {
                     setAuthMethod("totp");

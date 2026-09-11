@@ -26,7 +26,10 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
       : "";
 
   return (
-    <div className="sticky top-0 z-30 h-14 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 shrink-0">
+    <div
+      className="sticky top-0 z-30 h-14 border-b border-gray-200/50 dark:border-gray-800/50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg flex items-center justify-between px-4 md:px-6 shrink-0"
+      style={{ transform: "translateZ(0)" }}
+    >
       <div className="flex items-center gap-2.5">
         <img
           src={LogoIcon}

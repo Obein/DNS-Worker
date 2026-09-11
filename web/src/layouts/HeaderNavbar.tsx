@@ -44,7 +44,10 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Navbar className="absolute! top-0 left-0 right-0 z-30 border-b! border-gray-200/50 dark:border-gray-800/50 shadow-none! bg-white/70! dark:bg-gray-900/70! backdrop-blur-lg! h-14 items-center px-4 shrink-0">
+    <Navbar
+      className="absolute! top-0 left-0 right-0 border-b! border-gray-200/50 dark:border-gray-800/50 shadow-none! bg-white/70! dark:bg-gray-900/70! backdrop-blur-lg! h-14 items-center px-4 shrink-0"
+      style={{ zIndex: 10, transform: "translateZ(0)", willChange: "transform" }}
+    >
       <Navbar.Group align={Alignment.LEFT}>
         <button
           onClick={() => navigate("/dash")}
