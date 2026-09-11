@@ -55,14 +55,29 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Smartphone size={20} className="text-blue-500" />
-        <H4 style={{ margin: 0 }}>
-          {t("account.totp.title", "Authenticator App (TOTP)")}
-        </H4>
-        <Tag minimal round intent={Intent.NONE}>
-          {t("account.totp.disabled", "Disabled")}
-        </Tag>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Smartphone size={20} className="text-blue-500" />
+          <H4 style={{ margin: 0 }}>
+            {t("account.totp.title", "Authenticator App (TOTP)")}
+          </H4>
+          <Tag minimal round intent={Intent.NONE}>
+            {t("account.totp.disabled", "Disabled")}
+          </Tag>
+        </div>
+
+        {!setupData && (
+          <Button
+            intent={Intent.PRIMARY}
+            icon={<Shield size={14} />}
+            text={t(
+              "account.totp.setupBtn",
+              "Set Up Authenticator App (TOTP)"
+            )}
+            loading={setupLoading}
+            onClick={onStartSetup}
+          />
+        )}
       </div>
 
       {!setupData ? (
@@ -76,16 +91,6 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
           {setupError && (
             <Callout intent={Intent.DANGER}>{setupError}</Callout>
           )}
-          <Button
-            intent={Intent.PRIMARY}
-            icon={<Shield size={14} />}
-            text={t(
-              "account.totp.setupBtn",
-              "Set Up Authenticator App (TOTP)"
-            )}
-            loading={setupLoading}
-            onClick={onStartSetup}
-          />
         </div>
       ) : (
         <div className="space-y-4">

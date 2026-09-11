@@ -81,6 +81,11 @@ export const SessionLockCard: React.FC<SessionLockCardProps> = ({ user, onRefres
           <ShieldCheck size={20} className="text-indigo-600" />
           <H4 className="m-0!">{t("auth.sessionLockTitle", "Idle Session Lock")}</H4>
         </div>
+        {!isPinEnabled && (
+          <Button icon="key" intent={Intent.PRIMARY} onClick={handleOpenSetup} disabled={loading}>
+            {t("auth.configurePin", "Configure 4-Digit PIN")}
+          </Button>
+        )}
       </div>
 
       <p className="text-gray-500 text-sm mb-4">
@@ -111,25 +116,19 @@ export const SessionLockCard: React.FC<SessionLockCardProps> = ({ user, onRefres
       </div>
 
       {/* PIN configuration controls */}
-      <div className="flex flex-wrap items-center gap-3">
-        {isPinEnabled ? (
-          <>
-            <Button icon="edit" onClick={handleOpenSetup} disabled={loading}>
-              {t("auth.changePin", "Change PIN")}
-            </Button>
-            <Button icon="trash" intent={Intent.DANGER} onClick={handleOpenDisable} disabled={loading}>
-              {t("auth.disablePin", "Disable PIN & Lock")}
-            </Button>
-            <Button icon="lock" intent={Intent.WARNING} onClick={handleLockNow} disabled={loading}>
-              {t("auth.lockNow", "Lock Now")}
-            </Button>
-          </>
-        ) : (
-          <Button icon="key" intent={Intent.PRIMARY} onClick={handleOpenSetup} disabled={loading}>
-            {t("auth.configurePin", "Configure 4-Digit PIN")}
+      {isPinEnabled && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button icon="edit" onClick={handleOpenSetup} disabled={loading}>
+            {t("auth.changePin", "Change PIN")}
           </Button>
-        )}
-      </div>
+          <Button icon="trash" intent={Intent.DANGER} onClick={handleOpenDisable} disabled={loading}>
+            {t("auth.disablePin", "Disable PIN & Lock")}
+          </Button>
+          <Button icon="lock" intent={Intent.WARNING} onClick={handleLockNow} disabled={loading}>
+            {t("auth.lockNow", "Lock Now")}
+          </Button>
+        </div>
+      )}
 
       {/* Dialog Components */}
       <SetupPinDialog
