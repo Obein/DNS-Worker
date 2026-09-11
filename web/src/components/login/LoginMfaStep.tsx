@@ -1,7 +1,7 @@
 import React from "react";
 import { FormGroup, Button, Intent, Checkbox } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import { Fingerprint, KeyRound } from "lucide-react";
+import { Key, KeyRound } from "lucide-react";
 import { DigitInput } from "../DigitInput";
 import { RecoveryKeyInput } from "../RecoveryKeyInput";
 
@@ -88,7 +88,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
       {mfaMethod === "passkey" && (
         <div className="space-y-5 text-center py-2">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
-            <Fingerprint size={36} />
+            <Key size={36} />
           </div>
 
           <div className="space-y-1">
@@ -120,7 +120,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
               onClick={onPasskeyLogin}
               className="font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center space-x-2"
             >
-              <Fingerprint size={20} className="inline mr-1.5" />
+              <Key size={20} className="inline mr-1.5" />
               <span>{t("auth.verifyWithPasskey", "使用通行密钥验证")}</span>
             </Button>
 
