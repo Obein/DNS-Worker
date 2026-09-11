@@ -37,6 +37,20 @@ export async function handleMeRequest(
       const passkeysCount = await passkeyModel.countByUser(user.id);
       const mfaEnabled = !!(dbUser?.totp_enabled) || passkeysCount > 0;
 
+      let hasRecoveryKeys = false;
+      if (dbUser?.totp_recovery_keys) {
+        try {
+          const parsed = typeof dbUser.totp_recovery_keys === 'string' ? JSON.parse(dbUser.totp_recovery_keys) : dbUser.totp_recovery_keys;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            hasRecoveryKeys = true;
+          }
+        } catch {
+          hasRecoveryKeys = true;
+        }
+      } else if (dbUser?.totp_recovery_keys_encrypted) {
+        hasRecoveryKeys = true;
+      }
+
       return new Response(JSON.stringify({
         id: user.id,
         username: dbUser?.username || "",
@@ -45,6 +59,8 @@ export async function handleMeRequest(
         totp_skip_password: !!(dbUser?.totp_skip_password),
         passkeys_count: passkeysCount,
         mfa_enabled: mfaEnabled,
+        has_recovery_keys: hasRecoveryKeys,
+        recovery_keys_encrypted: !!(dbUser?.totp_recovery_keys_encrypted),
         timezone: dbUser?.timezone || null,
         locale: dbUser?.locale || "en-US",
         password_version: dbUser?.password_version ?? 1,

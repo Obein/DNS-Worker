@@ -602,7 +602,8 @@
       "passkeyRegistered": "Passkey registrada",
       "passkeyDeleted": "Passkey eliminada",
       "passkeyVerifySuccess": "Passkey verificada",
-      "passkeyVerifyFail": "Fallo de verificación de Passkey"
+      "passkeyVerifyFail": "Fallo de verificación de Passkey",
+      "recoveryKeyRotated": "Clave de recuperación rotada"
     },
     "sessions": {
       "title": "Sesiones activas",
@@ -644,7 +645,9 @@
       "deleted": "Passkey eliminada",
       "appNameLabel": "Dominio",
       "appNameHelper": "La passkey se vinculará a este dominio",
-      "formatTip": "Indicación sobre el nombre de Passkey: 1-30 caracteres, solo se permiten letras, números, guiones bajos y guiones medios"
+      "formatTip": "Indicación sobre el nombre de Passkey: 1-30 caracteres, solo se permiten letras, números, guiones bajos y guiones medios",
+      "verifyPrompt": "Autentique usando biometría o llave de seguridad de su dispositivo.",
+      "changePwNotice": "Se le solicitará autenticación con Passkey al enviar."
     },
     "mfaNone": "Ninguno",
     "resetUserPassword": "Restablecer contraseña",
@@ -660,7 +663,29 @@
       "passwordlessTitle": "Inicio de sesión sin contraseña",
       "passwordlessDesc": "Al activarlo, se omitirá el campo de contraseña y se verificará su identidad directamente por Passkey o TOTP.",
       "unconfiguredHint": "Aún no hay ningún método MFA configurado. Configure un Passkey o app de autenticación a continuación."
-    }
+    },
+    "recoveryKey": {
+      "title": "Clave de recuperación de emergencia",
+      "desc": "Una clave de recuperación de emergencia le permite recuperar el acceso o restablecer su contraseña si pierde todas las llaves de acceso (Passkeys) o aplicaciones de autenticación.",
+      "configured": "Configurado",
+      "notConfigured": "No configurado",
+      "kekProtected": "Cifrado con KEK",
+      "kekTooltip": "Protegido con cifrado de sobre AES-256-GCM respaldado por KEK.",
+      "viewBtn": "Ver clave de recuperación",
+      "rotateBtn": "Rotar clave",
+      "yourKey": "Su clave de recuperación de 30 dígitos",
+      "securityTip": "Mantenga esta clave en secreto. Cualquiera que tenga acceso a ella puede acceder a su cuenta.",
+      "rotateConfirm": "Rotar su clave invalidará inmediatamente la clave actual. ¿Desea continuar?",
+      "confirmRotateBtn": "Proceder a rotar",
+      "viewVerifyTitle": "Verificar identidad para ver la clave",
+      "rotateVerifyTitle": "Verificar identidad para rotar la clave",
+      "rotateSuccess": "¡Clave de recuperación rotada con éxito! Guárdela en un lugar seguro de inmediato.",
+      "legacyNotice": "Su clave está almacenada como hash unidireccional y no se puede descifrar. Rote su clave para generar una nueva protegida con KEK."
+    },
+    "verifyIdentity": "Verificación de seguridad",
+    "verifyIdentityDesc": "Para proteger su cuenta, verifique su identidad antes de continuar.",
+    "usePasskeyInstead": "Autenticar con Passkey",
+    "changePasswordWithPasskey": "Verificar con Passkey y actualizar"
   },
   "intro": {
     "item1Title": "DNS Worker de protección",

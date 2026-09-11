@@ -617,7 +617,8 @@
       "passkeyRegistered": "添加通行密钥",
       "passkeyDeleted": "删除通行密钥",
       "passkeyVerifySuccess": "通行密钥验证通过",
-      "passkeyVerifyFail": "通行密钥验证失败"
+      "passkeyVerifyFail": "通行密钥验证失败",
+      "recoveryKeyRotated": "应急恢复密钥已轮换"
     },
     "passkey": {
       "title": "通行密钥 (Passkey)",
@@ -645,7 +646,9 @@
       "deleted": "通行密钥已删除",
       "appNameLabel": "域名",
       "appNameHelper": "通行密钥将绑定至此域名",
-      "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线"
+      "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线",
+      "verifyPrompt": "请使用设备的生物识别（人脸、指纹、Windows Hello）或安全密钥进行身份验证。",
+      "changePwNotice": "提交修改时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。"
     },
     "mfaNone": "无",
     "resetUserPassword": "重置密码",
@@ -661,7 +664,29 @@
       "passwordlessTitle": "无密码登录 (Passwordless Login)",
       "passwordlessDesc": "启用后，登录时无需输入密码，直接通过通行密钥 (Passkey) 或数字验证码 (TOTP) 完成身份核验。",
       "unconfiguredHint": "当前账号尚未配置任何多因素认证。配置通行密钥或数字验证器后，可启用无密码快捷登录并在忘记密码时安全找回账号。"
-    }
+    },
+    "recoveryKey": {
+      "title": "应急恢复密钥",
+      "desc": "应急恢复密钥用于在丢失所有通行密钥或数字验证器时重新登录账户或重置密码。恢复密钥受 KEK 信封加密保护。",
+      "configured": "已配置",
+      "notConfigured": "未配置",
+      "kekProtected": "KEK 加密保护",
+      "kekTooltip": "该恢复密钥在数据库中受根密钥 (KEK) 与数据密钥 (DEK) 双层信封加密保护。",
+      "viewBtn": "查看恢复密钥",
+      "rotateBtn": "轮换密钥",
+      "yourKey": "您的 30 位应急恢复密钥",
+      "securityTip": "请妥善保管此恢复密钥。拥有此密钥的人可以重获您的账户访问权限。",
+      "rotateConfirm": "轮换恢复密钥将使旧密钥立即失效。确定继续吗？",
+      "confirmRotateBtn": "确认轮换",
+      "viewVerifyTitle": "验证身份以查看恢复密钥",
+      "rotateVerifyTitle": "验证身份以轮换恢复密钥",
+      "rotateSuccess": "恢复密钥轮换成功！请立即妥善备份并保存新密钥。",
+      "legacyNotice": "您的恢复密钥以旧版单向哈希格式存储，无法直接解密明文展示。请点击“轮换密钥”重新生成。"
+    },
+    "verifyIdentity": "安全身份核验",
+    "verifyIdentityDesc": "为了保护您的账户安全，执行此敏感操作前请先验证您的身份。",
+    "usePasskeyInstead": "使用通行密钥验证",
+    "changePasswordWithPasskey": "使用通行密钥核验并修改密码"
   },
   "intro": {
     "item1Title": "Obex 保护性 DNS",

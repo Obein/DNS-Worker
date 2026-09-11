@@ -12,6 +12,7 @@ export type ActivityAction =
   | 'totp_setup'
   | 'totp_removed'
   | 'recovery_key_used'
+  | 'recovery_key_rotated'
   | 'session_revoked'
   | 'pin_verify_success'
   | 'pin_verify_fail'

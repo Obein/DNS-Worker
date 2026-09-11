@@ -6,6 +6,7 @@ import type { UserInfo } from "../types";
 import { updateMfaSettings } from "../../../services";
 import { PasskeyCard } from "./PasskeyCard";
 import { TOTPCard } from "./TOTPCard";
+import { RecoveryKeyCard } from "./RecoveryKeyCard";
 
 /**
  * Properties for the MfaCard component.
@@ -115,6 +116,11 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
 
       {/* Section 2: TOTP */}
       <TOTPCard user={user} onRefresh={onRefresh} />
+
+      <Divider />
+
+      {/* Section 3: Recovery Keys */}
+      <RecoveryKeyCard user={user} onRefresh={onRefresh} />
     </Card>
   );
 };

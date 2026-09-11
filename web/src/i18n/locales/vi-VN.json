@@ -602,7 +602,8 @@
       "passkeyRegistered": "Đăng ký Passkey",
       "passkeyDeleted": "Xóa Passkey",
       "passkeyVerifySuccess": "Xác minh Passkey thành công",
-      "passkeyVerifyFail": "Xác minh Passkey thất bại"
+      "passkeyVerifyFail": "Xác minh Passkey thất bại",
+      "recoveryKeyRotated": "Khóa khôi phục đã được xoay vòng"
     },
     "sessions": {
       "title": "Phiên hoạt động",
@@ -644,7 +645,9 @@
       "deleted": "Đã xóa Passkey",
       "appNameLabel": "Tên miền",
       "appNameHelper": "Mã khóa sẽ được liên kết với tên miền này",
-      "formatTip": "Gợi ý tên Passkey: 1-30 ký tự, chỉ cho phép chữ cái, số, dấu gạch dưới và dấu gạch ngang"
+      "formatTip": "Gợi ý tên Passkey: 1-30 ký tự, chỉ cho phép chữ cái, số, dấu gạch dưới và dấu gạch ngang",
+      "verifyPrompt": "Xác thực bằng sinh trắc học thiết bị hoặc khóa bảo mật.",
+      "changePwNotice": "Bạn sẽ được nhắc xác thực bằng Passkey khi gửi biểu mẫu."
     },
     "mfaNone": "Không",
     "resetUserPassword": "Đặt lại mật khẩu",
@@ -660,7 +663,29 @@
       "passwordlessTitle": "Đăng nhập không mật khẩu",
       "passwordlessDesc": "Khi bật, đăng nhập sẽ bỏ qua mật khẩu và xác minh danh tính trực tiếp qua Passkey hoặc TOTP.",
       "unconfiguredHint": "Chưa có phương thức MFA nào được cấu hình. Hãy thiết lập Passkey hoặc ứng dụng xác thực bên dưới."
-    }
+    },
+    "recoveryKey": {
+      "title": "Khóa khôi phục khẩn cấp",
+      "desc": "Khóa khôi phục khẩn cấp cho phép bạn lấy lại quyền truy cập hoặc đặt lại mật khẩu nếu mất tất cả Passkey hoặc ứng dụng xác thực. Được bảo vệ bởi mã hóa phong bì KEK.",
+      "configured": "Đã cấu hình",
+      "notConfigured": "Chưa cấu hình",
+      "kekProtected": "Được mã hóa KEK",
+      "kekTooltip": "Được bảo vệ bằng mã hóa phong bì AES-256-GCM dựa trên KEK.",
+      "viewBtn": "Xem khóa khôi phục",
+      "rotateBtn": "Xoay vòng khóa",
+      "yourKey": "Khóa khôi phục 30 chữ số của bạn",
+      "securityTip": "Giữ bí mật khóa này. Bất kỳ ai có quyền truy cập đều có thể truy cập tài khoản của bạn.",
+      "rotateConfirm": "Xoay vòng khóa sẽ vô hiệu hóa khóa hiện tại ngay lập tức. Bạn có muốn tiếp tục không?",
+      "confirmRotateBtn": "Tiến hành xoay vòng",
+      "viewVerifyTitle": "Xác minh danh tính để xem khóa",
+      "rotateVerifyTitle": "Xác minh danh tính để xoay vòng khóa",
+      "rotateSuccess": "Khóa khôi phục đã được xoay vòng thành công! Vui lòng lưu trữ khóa mới ở nơi an toàn ngay lập tức.",
+      "legacyNotice": "Khóa của bạn được lưu trữ dưới dạng băm một chiều cũ và không thể giải mã. Vui lòng xoay vòng khóa để tạo khóa mới được mã hóa KEK."
+    },
+    "verifyIdentity": "Xác minh bảo mật",
+    "verifyIdentityDesc": "Để bảo vệ tài khoản của bạn, vui lòng xác minh danh tính trước khi tiếp tục.",
+    "usePasskeyInstead": "Xác thực bằng Passkey",
+    "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",

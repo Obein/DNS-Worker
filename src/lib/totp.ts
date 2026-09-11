@@ -220,15 +220,40 @@ export async function hashRecoveryKey(key: string): Promise<string> {
 }
 
 /**
- * Verifies a plaintext recovery key against an array of stored hashes.
+ * Item representing a stored recovery key in the database.
+ */
+export interface StoredRecoveryKeyItem {
+  key: string;
+  hash: string;
+}
+
+/**
+ * Verifies a plaintext recovery key against an array of stored recovery items or hashes.
  * Returns the index of the matching key, or -1 if no match.
  *
  * @param key - Plaintext key entered by the user
- * @param storedHashes - Array of SHA-256 hex hashes from DB
- * @returns Index of matching hash, or -1
+ * @param storedItems - Array of recovery items ({ key, hash }) or legacy SHA-256 hex strings
+ * @returns Index of matching item, or -1
  */
-export async function findMatchingRecoveryKey(key: string, storedHashes: string[]): Promise<number> {
+export async function findMatchingRecoveryKey(key: string, storedItems: any[]): Promise<number> {
   const inputHash = await hashRecoveryKey(key);
-  return storedHashes.findIndex(h => h === inputHash);
+  const normalizedInput = key.replace(/[-\s]/g, '').toUpperCase().trim();
+
+  return storedItems.findIndex(item => {
+    if (!item) return false;
+    if (typeof item === 'string') {
+      if (item === inputHash) return true;
+      const normalizedItem = item.replace(/[-\s]/g, '').toUpperCase().trim();
+      return normalizedItem === normalizedInput;
+    } else if (typeof item === 'object') {
+      if (item.hash && item.hash === inputHash) return true;
+      if (item.key) {
+        const normalizedItem = String(item.key).replace(/[-\s]/g, '').toUpperCase().trim();
+        return normalizedItem === normalizedInput;
+      }
+    }
+    return false;
+  });
 }
+
 

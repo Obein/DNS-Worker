@@ -602,7 +602,8 @@
       "passkeyRegistered": "Clé d'accès enregistrée",
       "passkeyDeleted": "Clé d'accès supprimée",
       "passkeyVerifySuccess": "Clé d'accès vérifiée",
-      "passkeyVerifyFail": "Échec de vérification de clé d'accès"
+      "passkeyVerifyFail": "Échec de vérification de clé d'accès",
+      "recoveryKeyRotated": "Clé de récupération renouvelée"
     },
     "sessions": {
       "title": "Sessions actives",
@@ -644,7 +645,9 @@
       "deleted": "Clé d'accès supprimée",
       "appNameLabel": "Domaine",
       "appNameHelper": "La clé d'accès sera liée à ce domaine",
-      "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés"
+      "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés",
+      "verifyPrompt": "Authentifiez-vous à l'aide des capteurs biométriques ou d'une clé de sécurité.",
+      "changePwNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi."
     },
     "mfaNone": "Aucun",
     "resetUserPassword": "Réinitialiser le mot de passe",
@@ -660,7 +663,29 @@
       "passwordlessTitle": "Connexion sans mot de passe",
       "passwordlessDesc": "Une fois activée, la saisie du mot de passe est ignorée et votre identité est vérifiée directement via Passkey ou TOTP.",
       "unconfiguredHint": "Aucune méthode MFA n'est encore configurée. Configurez un Passkey ou une application d'authentification ci-dessous."
-    }
+    },
+    "recoveryKey": {
+      "title": "Clé de récupération d'urgence",
+      "desc": "Une clé de récupération d'urgence vous permet de récupérer l'accès ou de réinitialiser votre mot de passe en cas de perte de vos clés d'accès (Passkeys) ou applications d'authentification.",
+      "configured": "Configuré",
+      "notConfigured": "Non configuré",
+      "kekProtected": "Chiffré par KEK",
+      "kekTooltip": "Protégé par chiffrement d'enveloppe AES-256-GCM basé sur KEK.",
+      "viewBtn": "Afficher la clé",
+      "rotateBtn": "Renouveler la clé",
+      "yourKey": "Votre clé de récupération à 30 chiffres",
+      "securityTip": "Gardez cette clé secrète. Toute personne ayant accès à cette clé peut accéder à votre compte.",
+      "rotateConfirm": "Le renouvellement de votre clé invalidera immédiatement la clé actuelle. Voulez-vous continuer ?",
+      "confirmRotateBtn": "Confirmer le renouvellement",
+      "viewVerifyTitle": "Vérifier l'identité pour afficher la clé",
+      "rotateVerifyTitle": "Vérifier l'identité pour renouveler la clé",
+      "rotateSuccess": "Clé de récupération renouvelée avec succès ! Veuillez la sauvegarder immédiatement.",
+      "legacyNotice": "Votre clé est enregistrée sous forme de hachage unidirectionnel hérité et ne peut pas être déchiffrée. Veuillez renouveler votre clé."
+    },
+    "verifyIdentity": "Vérification de sécurité",
+    "verifyIdentityDesc": "Pour protéger votre compte, veuillez vérifier votre identité avant de continuer.",
+    "usePasskeyInstead": "Authentifier avec Passkey",
+    "changePasswordWithPasskey": "Vérifier avec Passkey et modifier"
   },
   "intro": {
     "item1Title": "DNS Worker de protection",

@@ -70,6 +70,11 @@ export const ACTION_META: Record<
     icon: <Key size={14} />,
     intent: Intent.WARNING,
   },
+  recovery_key_rotated: {
+    label: "account.activity.recoveryKeyRotated",
+    icon: <Key size={14} />,
+    intent: Intent.WARNING,
+  },
   session_revoked: {
     label: "account.activity.sessionRevoked",
     icon: <LogOut size={14} />,

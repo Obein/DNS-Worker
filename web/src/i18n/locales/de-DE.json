@@ -602,7 +602,8 @@
       "passkeyRegistered": "Passkey registriert",
       "passkeyDeleted": "Passkey gelöscht",
       "passkeyVerifySuccess": "Passkey verifiziert",
-      "passkeyVerifyFail": "Passkey-Verifizierung fehlgeschlagen"
+      "passkeyVerifyFail": "Passkey-Verifizierung fehlgeschlagen",
+      "recoveryKeyRotated": "Wiederherstellungsschlüssel erneuert"
     },
     "sessions": {
       "title": "Aktive Sitzungen",
@@ -644,7 +645,9 @@
       "deleted": "Passkey gelöscht",
       "appNameLabel": "Domain",
       "appNameHelper": "Der Passkey wird an diese Domain gebunden",
-      "formatTip": "Hinweis zum Passkey-Namen: 1-30 Zeichen, nur Buchstaben, Zahlen, Unterstriche und Bindestriche erlaubt"
+      "formatTip": "Hinweis zum Passkey-Namen: 1-30 Zeichen, nur Buchstaben, Zahlen, Unterstriche und Bindestriche erlaubt",
+      "verifyPrompt": "Bestätigen Sie mit Biometrie (Touch ID, Face ID, Windows Hello) oder Sicherheitsschlüssel.",
+      "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
     },
     "mfaNone": "Keine",
     "resetUserPassword": "Passwort zurücksetzen",
@@ -660,7 +663,29 @@
       "passwordlessTitle": "Passwortlose Anmeldung",
       "passwordlessDesc": "Bei Aktivierung wird die Passworteingabe übersprungen und Ihre Identität direkt per Passkey oder TOTP geprüft.",
       "unconfiguredHint": "Noch keine MFA konfiguriert. Richten Sie unten einen Passkey oder eine Authentifikator-App ein."
-    }
+    },
+    "recoveryKey": {
+      "title": "Notfall-Wiederherstellungsschlüssel",
+      "desc": "Mit einem Notfall-Wiederherstellungsschlüssel können Sie wieder Zugriff erhalten oder Ihr Passwort zurücksetzen, wenn Sie alle Passkeys oder Authentifikator-Apps verlieren.",
+      "configured": "Konfiguriert",
+      "notConfigured": "Nicht konfiguriert",
+      "kekProtected": "KEK-verschlüsselt",
+      "kekTooltip": "Geschützt durch AES-256-GCM-Umschlagverschlüsselung (Envelope Encryption) mit KEK.",
+      "viewBtn": "Schlüssel anzeigen",
+      "rotateBtn": "Schlüssel erneuern",
+      "yourKey": "Ihr 30-stelliger Wiederherstellungsschlüssel",
+      "securityTip": "Halten Sie diesen Schlüssel geheim. Jeder mit Zugriff darauf kann auf Ihr Konto zugreifen.",
+      "rotateConfirm": "Das Erneuern des Schlüssels macht den aktuellen Schlüssel sofort ungültig. Fortfahren?",
+      "confirmRotateBtn": "Erneuern bestätigen",
+      "viewVerifyTitle": "Identität bestätigen, um Schlüssel anzuzeigen",
+      "rotateVerifyTitle": "Identität bestätigen, um Schlüssel zu erneuern",
+      "rotateSuccess": "Wiederherstellungsschlüssel erfolgreich erneuert! Bitte sofort sicher aufbewahren.",
+      "legacyNotice": "Ihr Wiederherstellungsschlüssel ist als Einweg-Hash gespeichert und kann nicht entschlüsselt werden. Bitte erneuern Sie ihn."
+    },
+    "verifyIdentity": "Sicherheitsbestätigung",
+    "verifyIdentityDesc": "Um Ihr Konto zu schützen, bestätigen Sie bitte Ihre Identität.",
+    "usePasskeyInstead": "Mit Passkey bestätigen",
+    "changePasswordWithPasskey": "Mit Passkey bestätigen & ändern"
   },
   "intro": {
     "item1Title": "Obex Schutz-DNS",

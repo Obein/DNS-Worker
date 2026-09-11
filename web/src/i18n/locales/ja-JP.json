@@ -602,7 +602,8 @@
       "passkeyRegistered": "パスキー登録",
       "passkeyDeleted": "パスキー削除",
       "passkeyVerifySuccess": "パスキー認証成功",
-      "passkeyVerifyFail": "パスキー認証失敗"
+      "passkeyVerifyFail": "パスキー認証失敗",
+      "recoveryKeyRotated": "復旧キーをローテーションしました"
     },
     "sessions": {
       "title": "アクティブなセッション",
@@ -644,7 +645,9 @@
       "deleted": "パスキーを削除しました",
       "appNameLabel": "ドメイン",
       "appNameHelper": "パスキーはこのドメインに関連付けられます",
-      "formatTip": "パスキー名ヒント：1〜30文字。英数字、アンダースコア、ハイフンのみ使用可能"
+      "formatTip": "パスキー名ヒント：1〜30文字。英数字、アンダースコア、ハイフンのみ使用可能",
+      "verifyPrompt": "デバイスの生体認証（Touch ID、Face ID、Windows Hello）またはセキュリティキーで認証してください。",
+      "changePwNotice": "送信時にパスキーによる生体認証またはセキュリティキー認証が要求されます。"
     },
     "mfaNone": "なし",
     "resetUserPassword": "パスワードをリセット",
@@ -660,7 +663,29 @@
       "passwordlessTitle": "パスワードレスログイン",
       "passwordlessDesc": "有効にするとパスワード入力が不要となり、パスキーまたはTOTPで直接本人確認が行われます。",
       "unconfiguredHint": "MFA認証方法がまだ設定されていません。下記よりパスキーまたは認証アプリを設定してください。"
-    }
+    },
+    "recoveryKey": {
+      "title": "緊急復旧キー",
+      "desc": "緊急復旧キーを使用すると、すべてのパスキーや認証アプリを紛失した場合でも、アカウントに再ログインしたりパスワードをリセットしたりできます。KEKエンベロープ暗号化で保護されています。",
+      "configured": "設定済み",
+      "notConfigured": "未設定",
+      "kekProtected": "KEK暗号化保護",
+      "kekTooltip": "KEKをルートとするAES-256-GCMエンベロープ暗号化によって保護されています。",
+      "viewBtn": "復旧キーを表示",
+      "rotateBtn": "キーをローテーション",
+      "yourKey": "30桁の緊急復旧キー",
+      "securityTip": "この復旧キーは秘密に保管してください。このキーを知る人物はアカウントにアクセスできます。",
+      "rotateConfirm": "復旧キーをローテーションすると、現在のキーは即座に無効になります。続行しますか？",
+      "confirmRotateBtn": "ローテーションを実行",
+      "viewVerifyTitle": "復旧キーを表示するための本人確認",
+      "rotateVerifyTitle": "復旧キーをローテーションするための本人確認",
+      "rotateSuccess": "復旧キーが正常にローテーションされました！直ちに安全な場所に保管してください。",
+      "legacyNotice": "お使いの復旧キーは従来の不可逆ハッシュ形式で保存されているため復元表示できません。「キーをローテーション」を実行して新形式で再生成してください。"
+    },
+    "verifyIdentity": "セキュリティ本人確認",
+    "verifyIdentityDesc": "アカウントの安全のため、この操作を実行する前に本人確認を行ってください。",
+    "usePasskeyInstead": "パスキーで認証",
+    "changePasswordWithPasskey": "パスキーで認証してパスワードを変更"
   },
   "intro": {
     "item1Title": "Obex 保護DNS",

@@ -617,7 +617,8 @@
       "passkeyRegistered": "新增通行密鑰",
       "passkeyDeleted": "刪除通行密鑰",
       "passkeyVerifySuccess": "通行密鑰驗證通過",
-      "passkeyVerifyFail": "通行密鑰驗證失敗"
+      "passkeyVerifyFail": "通行密鑰驗證失敗",
+      "recoveryKeyRotated": "應急恢復金鑰已輪換"
     },
     "passkey": {
       "title": "通行密鑰 (Passkey)",
@@ -645,7 +646,9 @@
       "deleted": "通行密鑰已刪除",
       "appNameLabel": "網域名稱",
       "appNameHelper": "通行密鑰將綁定至此網域",
-      "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線"
+      "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線",
+      "verifyPrompt": "請使用裝置的生物辨識（人臉、指紋、Windows Hello）或安全金鑰進行身分驗證。",
+      "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
     },
     "mfaNone": "無",
     "resetUserPassword": "重設密碼",
@@ -661,7 +664,29 @@
       "passwordlessTitle": "無密碼登入 (Passwordless Login)",
       "passwordlessDesc": "啟用後，登入時無需輸入密碼，直接透過通行金鑰 (Passkey) 或數位驗證碼 (TOTP) 完成身分核驗。",
       "unconfiguredHint": "目前帳號尚未設定任何多因素驗證。設定通行金鑰或數位驗證器後，可啟用無密碼快速登入並在忘記密碼時安全找回帳號。"
-    }
+    },
+    "recoveryKey": {
+      "title": "應急恢復金鑰",
+      "desc": "應急恢復金鑰用於在遺失所有通行金鑰或數字驗證器時重新登入帳戶或重設密碼。恢復金鑰受 KEK 信封加密保護。",
+      "configured": "已設定",
+      "notConfigured": "未設定",
+      "kekProtected": "KEK 加密保護",
+      "kekTooltip": "該恢復金鑰在資料庫中受根金鑰 (KEK) 與資料金鑰 (DEK) 雙層信封加密保護。",
+      "viewBtn": "檢視恢復金鑰",
+      "rotateBtn": "輪換金鑰",
+      "yourKey": "您的 30 位應急恢復金鑰",
+      "securityTip": "請妥善保管此恢復金鑰。擁有此金鑰的人可以重新取得您的帳戶存取權限。",
+      "rotateConfirm": "輪換恢復金鑰將使舊金鑰立即失效。確定要繼續嗎？",
+      "confirmRotateBtn": "確認輪換",
+      "viewVerifyTitle": "驗證身分以檢視恢復金鑰",
+      "rotateVerifyTitle": "驗證身分以輪換恢復金鑰",
+      "rotateSuccess": "恢復金鑰輪換成功！請立即妥善備份並儲存新金鑰。",
+      "legacyNotice": "您的恢復金鑰以舊版單向雜湊格式儲存，無法直接解密明文展示。請點擊「輪換金鑰」重新產生。"
+    },
+    "verifyIdentity": "安全身分核驗",
+    "verifyIdentityDesc": "為了保護您的帳戶安全，執行此敏感操作前請先驗證您的身分。",
+    "usePasskeyInstead": "使用通行金鑰驗證",
+    "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼"
   },
   "intro": {
     "item1Title": "Obex 保護性 DNS",

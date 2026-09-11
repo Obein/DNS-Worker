@@ -6,6 +6,26 @@ export interface UpdatePasswordPayload {
   newPassword?: string;
   totpTokenHash?: string;
   totpSalt?: string;
+  passkeyAssertion?: any;
+}
+
+export interface VerifyIdentityPayload {
+  password?: string;
+  oldPassword?: string;
+  totpTokenHash?: string;
+  totpSalt?: string;
+  passkeyAssertion?: any;
+}
+
+export interface ViewRecoveryKeysResponse {
+  has_keys: boolean;
+  is_legacy: boolean;
+  recovery_keys: string[];
+}
+
+export interface RotateRecoveryKeyResponse {
+  success: boolean;
+  recovery_key: string;
 }
 
 export interface TotpConfirmPayload {
@@ -187,4 +207,32 @@ export async function deletePasskey(id: string): Promise<void> {
     method: "DELETE"
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
+export async function getPasskeyAuthOptions(): Promise<any> {
+  const res = await fetch("/api/account/passkeys/auth-options", {
+    method: "POST"
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function viewRecoveryKeys(payload: VerifyIdentityPayload): Promise<ViewRecoveryKeysResponse> {
+  const res = await fetch("/api/account/recovery-keys/view", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function rotateRecoveryKey(payload: VerifyIdentityPayload): Promise<RotateRecoveryKeyResponse> {
+  const res = await fetch("/api/account/recovery-keys/rotate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
 }

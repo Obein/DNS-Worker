@@ -3,15 +3,13 @@ import { Divider, Tag, Intent } from "@blueprintjs/core";
 import { ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
-import { hashPasswordClient } from "../../utils/auth";
 
 import type { UserInfo } from "./types";
 import {
   getUsers,
   getSystemSettings,
   getMe,
-  updateMe,
-  updatePassword
+  updateMe
 } from "../../services";
 import { MfaCard } from "./components/MfaCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
@@ -22,7 +20,7 @@ import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
 import { SessionLockCard } from "./components/SessionLockCard";
-import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/auth";
+import { USERNAME_REGEX } from "../../utils/auth";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
 /**
@@ -44,17 +42,6 @@ export const AccountView: React.FC = () => {
   const [editUsername, setEditUsername] = useState("");
   const [usernameLoading, setUsernameLoading] = useState(false);
   const [usernameFocused, setUsernameFocused] = useState(false);
-
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [newPasswordFocused, setNewPasswordFocused] = useState(false);
-  const [useTotpForPw, setUseTotpForPw] = useState(false);
-  const [totpToken, setTotpToken] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwMessage, setPwMessage] = useState<{
-    text: string;
-    intent: Intent;
-  } | null>(null);
 
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
 
@@ -135,64 +122,6 @@ export const AccountView: React.FC = () => {
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!PASSWORD_REGEX.test(newPassword)) {
-      setPwMessage({
-        text: t("account.formatTipPassword"),
-        intent: Intent.DANGER
-      });
-      return;
-    }
-    setPwLoading(true);
-    setPwMessage(null);
-    try {
-      let tokenPayload = useTotpForPw ? totpToken : undefined;
-      let saltPayload: string | undefined = undefined;
-
-      if (useTotpForPw && totpToken) {
-        saltPayload = crypto.randomUUID();
-        const msgBuffer = new TextEncoder().encode(totpToken + saltPayload);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-        tokenPayload = Array.from(new Uint8Array(hashBuffer))
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("");
-      }
-
-      if (!me) throw new Error("User information not loaded");
-
-      let oldPasswordPayload = oldPassword;
-      if (!useTotpForPw && oldPassword) {
-        if ((me.password_version ?? 1) === 2) {
-          oldPasswordPayload = await hashPasswordClient(oldPassword, me.username);
-        }
-      }
-
-      const newPasswordPayload = await hashPasswordClient(newPassword, me.username);
-
-      await updatePassword({
-        oldPassword: useTotpForPw ? undefined : oldPasswordPayload,
-        totpTokenHash: tokenPayload,
-        totpSalt: saltPayload,
-        newPassword: newPasswordPayload
-      });
-
-      setPwMessage({
-        text: t("account.passwordSuccess"),
-        intent: Intent.SUCCESS
-      });
-      setOldPassword("");
-      setNewPassword("");
-    } catch (e: any) {
-      setPwMessage({
-        text: e.message || t("account.updateFailed"),
-        intent: Intent.DANGER
-      });
-    } finally {
-      setPwLoading(false);
-    }
-  };
-
   useEffect(() => {
     fetchMe();
   }, [fetchMe]);
@@ -234,23 +163,7 @@ export const AccountView: React.FC = () => {
           onUpdateTimezone={handleUpdateTimezone}
         />
 
-        <ChangePasswordCard
-          me={me}
-          useTotpForPw={useTotpForPw}
-          setUseTotpForPw={setUseTotpForPw}
-          totpToken={totpToken}
-          setTotpToken={setTotpToken}
-          oldPassword={oldPassword}
-          setOldPassword={setOldPassword}
-          newPassword={newPassword}
-          setNewPassword={setNewPassword}
-          newPasswordFocused={newPasswordFocused}
-          setNewPasswordFocused={setNewPasswordFocused}
-          pwLoading={pwLoading}
-          pwMessage={pwMessage}
-          onClearMessage={() => setPwMessage(null)}
-          onSubmit={handleChangePassword}
-        />
+        <ChangePasswordCard me={me} onRefresh={fetchMe} />
       </div>
 
       {/* MFA: TOTP & Passkeys */}

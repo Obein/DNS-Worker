@@ -617,7 +617,8 @@
       "passkeyRegistered": "Passkey Registered",
       "passkeyDeleted": "Passkey Deleted",
       "passkeyVerifySuccess": "Passkey Verified",
-      "passkeyVerifyFail": "Passkey Verification Failed"
+      "passkeyVerifyFail": "Passkey Verification Failed",
+      "recoveryKeyRotated": "Recovery key rotated"
     },
     "passkey": {
       "title": "Passkeys",
@@ -645,7 +646,9 @@
       "deleted": "Passkey deleted",
       "appNameLabel": "Domain",
       "appNameHelper": "The passkey will be bound to this application domain",
-      "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only"
+      "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only",
+      "verifyPrompt": "Authenticate using your device's biometric sensor (Face ID, Touch ID, Windows Hello) or security key.",
+      "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
     },
     "mfaNone": "None",
     "resetUserPassword": "Reset Password",
@@ -661,7 +664,29 @@
       "passwordlessTitle": "Passwordless Login",
       "passwordlessDesc": "When enabled, logging in will skip the password requirement and verify your identity directly via Passkey or TOTP.",
       "unconfiguredHint": "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
-    }
+    },
+    "recoveryKey": {
+      "title": "Emergency Recovery Key",
+      "desc": "An emergency recovery key allows you to regain access or reset your password if you lose all registered Passkeys or Authenticator Apps. Store it securely offline.",
+      "configured": "Configured",
+      "notConfigured": "Not Configured",
+      "kekProtected": "KEK Encrypted",
+      "kekTooltip": "Protected with AES-256-GCM Envelope Encryption backed by Key Encryption Key (KEK).",
+      "viewBtn": "View Recovery Key",
+      "rotateBtn": "Rotate Key",
+      "yourKey": "Your 30-Digit Recovery Key",
+      "securityTip": "Keep this recovery key secret. Anyone with access to this key can regain access to your account.",
+      "rotateConfirm": "Rotating your recovery key will immediately invalidate the current recovery key. You will need to verify your identity to complete this action.",
+      "confirmRotateBtn": "Proceed to Rotate",
+      "viewVerifyTitle": "Verify Identity to View Key",
+      "rotateVerifyTitle": "Verify Identity to Rotate Key",
+      "rotateSuccess": "Recovery key rotated successfully! Please store your new key in a safe place immediately.",
+      "legacyNotice": "Your recovery key is stored as a legacy one-way hash and cannot be decrypted for display. Please rotate your recovery key to generate a new KEK envelope-encrypted key."
+    },
+    "verifyIdentity": "Security Verification",
+    "verifyIdentityDesc": "To protect your account security, please verify your identity before proceeding.",
+    "usePasskeyInstead": "Authenticate with Passkey",
+    "changePasswordWithPasskey": "Verify with Passkey & Update"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",

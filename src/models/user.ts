@@ -194,8 +194,8 @@ export class UserModel {
   /**
    * Activates TOTP for a user by storing the envelope encrypted secret and recovery keys.
    */
-  async updateTOTP(id: string, secret: string, recoveryKeysHashed: string[]): Promise<boolean> {
-    const recoveryKeysStr = JSON.stringify(recoveryKeysHashed);
+  async updateTOTP(id: string, secret: string, recoveryKeys: any[]): Promise<boolean> {
+    const recoveryKeysStr = JSON.stringify(recoveryKeys);
     const encryptedSecret = await encryptEnvelope(secret, this.env);
     const encryptedKeys = await encryptEnvelope(recoveryKeysStr, this.env);
 
@@ -245,10 +245,10 @@ export class UserModel {
   }
 
   /**
-   * Saves or updates hashed recovery keys for a user (used by Passkeys or TOTP).
+   * Saves or updates recovery keys for a user (used by Passkeys or TOTP).
    */
-  async updateRecoveryKeys(id: string, recoveryKeysHashed: string[]): Promise<boolean> {
-    const recoveryKeysStr = JSON.stringify(recoveryKeysHashed);
+  async updateRecoveryKeys(id: string, recoveryKeys: any[]): Promise<boolean> {
+    const recoveryKeysStr = JSON.stringify(recoveryKeys);
     const encryptedKeys = await encryptEnvelope(recoveryKeysStr, this.env);
 
     if (encryptedKeys) {
@@ -286,9 +286,9 @@ export class UserModel {
   }
 
   /**
-   * Removes a single used recovery key from the stored hash array.
+   * Removes a single used recovery key from the stored array.
    */
-  async consumeRecoveryKey(id: string, usedIndex: number, currentHashes: string[]): Promise<boolean> {
+  async consumeRecoveryKey(id: string, usedIndex: number, currentHashes: any[]): Promise<boolean> {
     const updated = currentHashes.filter((_, i) => i !== usedIndex);
     const updatedStr = JSON.stringify(updated);
 
