@@ -27,6 +27,15 @@ export interface VerifyIdentityDialogProps {
 
 export type AuthMethod = "password" | "passkey" | "totp";
 
+/**
+ * Computes default verification method prioritized by Passkey -> TOTP -> Password.
+ */
+const getInitialMethod = (user: UserInfo | null): AuthMethod => {
+  if (user?.passkeys_count && user.passkeys_count > 0) return "passkey";
+  if (user?.totp_enabled) return "totp";
+  return "password";
+};
+
 export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
   isOpen,
   onClose,
@@ -39,27 +48,36 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
   const hasPasskey = !!(user?.passkeys_count && user.passkeys_count > 0);
   const hasTotp = !!user?.totp_enabled;
 
-  const [method, setMethod] = useState<AuthMethod>("password");
+  const defaultMethod = getInitialMethod(user);
+
+  const [method, setMethod] = useState<AuthMethod>(defaultMethod);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [totpCode, setTotpCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Synchronously reset and synchronize state during render when dialog opens (eliminates delay/animation lag)
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (!prevIsOpen && isOpen) {
+    setPrevIsOpen(true);
+    setMethod(defaultMethod);
+    setPassword("");
+    setShowPassword(false);
+    setTotpCode("");
+    setError("");
+  } else if (prevIsOpen && !isOpen) {
+    setPrevIsOpen(false);
+  }
+
+  // Ensure selected method remains valid if user capabilities change dynamically
   useEffect(() => {
-    if (isOpen) {
-      setError("");
-      setPassword("");
-      setTotpCode("");
-      if (hasPasskey) {
-        setMethod("passkey");
-      } else if (hasTotp) {
-        setMethod("totp");
-      } else {
-        setMethod("password");
-      }
+    if (method === "passkey" && !hasPasskey) {
+      setMethod(hasTotp ? "totp" : "password");
+    } else if (method === "totp" && !hasTotp) {
+      setMethod(hasPasskey ? "passkey" : "password");
     }
-  }, [isOpen, hasPasskey, hasTotp]);
+  }, [hasPasskey, hasTotp, method]);
 
   const handleVerifyPassword = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -141,43 +159,48 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
 
         {/* Method Selector if multiple methods available */}
         {(hasPasskey || hasTotp) && (
-          <div className="flex justify-center mb-5">
-            <ButtonGroup fill>
-              {hasPasskey && (
+          <div className="flex justify-center mb-5 isolate" style={{ isolation: "isolate" }}>
+            <div className="w-full bg-gray-100/70 dark:bg-gray-800/70 p-1 rounded-lg">
+              <ButtonGroup fill variant="minimal" style={{ isolation: "isolate" }}>
+                {hasPasskey && (
+                  <Button
+                    small
+                    active={method === "passkey"}
+                    intent={method === "passkey" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<Key size={14} />}
+                    text={t("account.mfa.passkey", "Passkey")}
+                    onClick={() => {
+                      setMethod("passkey");
+                      setError("");
+                    }}
+                  />
+                )}
+                {hasTotp && (
+                  <Button
+                    small
+                    active={method === "totp"}
+                    intent={method === "totp" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<ShieldCheck size={14} />}
+                    text={t("account.mfa.totp", "TOTP")}
+                    onClick={() => {
+                      setMethod("totp");
+                      setError("");
+                    }}
+                  />
+                )}
                 <Button
-                  active={method === "passkey"}
-                  intent={method === "passkey" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<Key size={14} />}
-                  text={t("account.mfa.passkey", "Passkey")}
+                  small
+                  active={method === "password"}
+                  intent={method === "password" ? Intent.PRIMARY : Intent.NONE}
+                  icon={<Lock size={14} />}
+                  text={t("account.mfa.password", "Password")}
                   onClick={() => {
-                    setMethod("passkey");
+                    setMethod("password");
                     setError("");
                   }}
                 />
-              )}
-              {hasTotp && (
-                <Button
-                  active={method === "totp"}
-                  intent={method === "totp" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<ShieldCheck size={14} />}
-                  text={t("account.mfa.totp", "TOTP")}
-                  onClick={() => {
-                    setMethod("totp");
-                    setError("");
-                  }}
-                />
-              )}
-              <Button
-                active={method === "password"}
-                intent={method === "password" ? Intent.PRIMARY : Intent.NONE}
-                icon={<Lock size={14} />}
-                text={t("account.mfa.password", "Password")}
-                onClick={() => {
-                  setMethod("password");
-                  setError("");
-                }}
-              />
-            </ButtonGroup>
+              </ButtonGroup>
+            </div>
           </div>
         )}
 
