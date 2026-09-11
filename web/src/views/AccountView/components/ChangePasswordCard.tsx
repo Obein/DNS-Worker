@@ -12,7 +12,7 @@ import {
   Intent,
   Callout
 } from "@blueprintjs/core";
-import { Key, ShieldCheck, Fingerprint } from "lucide-react";
+import { Key, Lock, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DigitInput } from "../../../components/DigitInput";
 import type { UserInfo } from "../types";
@@ -155,7 +155,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
                 small
                 active={authMethod === "password"}
                 intent={authMethod === "password" ? Intent.PRIMARY : Intent.NONE}
-                icon={<Key size={12} />}
+                icon={<Lock size={12} />}
                 text={t("account.mfa.password", "Password")}
                 onClick={() => {
                   setAuthMethod("password");
@@ -167,7 +167,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
                   small
                   active={authMethod === "passkey"}
                   intent={authMethod === "passkey" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<Fingerprint size={12} />}
+                  icon={<Key size={12} />}
                   text={t("account.mfa.passkey", "Passkey")}
                   onClick={() => {
                     setAuthMethod("passkey");
@@ -232,7 +232,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
         )}
 
         {authMethod === "passkey" && (
-          <Callout intent={Intent.PRIMARY} icon={<Fingerprint size={16} />}>
+          <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
             <span className="text-xs">
               {t(
                 "account.passkey.changePwNotice",
@@ -277,7 +277,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
           intent={authMethod === "passkey" ? Intent.PRIMARY : Intent.WARNING}
           type="submit"
           loading={loading}
-          icon={authMethod === "passkey" ? <Fingerprint size={16} /> : undefined}
+          icon={authMethod === "passkey" ? <Key size={16} /> : undefined}
           text={
             authMethod === "passkey"
               ? t("account.changePasswordWithPasskey", "Verify with Passkey & Update")

@@ -9,7 +9,7 @@ import {
   ButtonGroup,
   Classes
 } from "@blueprintjs/core";
-import { Key, ShieldCheck, Fingerprint } from "lucide-react";
+import { Key, Lock, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { DigitInput } from "../../../components/DigitInput";
 import { hashPasswordClient, formatApiErrorMessage } from "../../../utils/auth";
@@ -147,7 +147,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
                 <Button
                   active={method === "passkey"}
                   intent={method === "passkey" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<Fingerprint size={14} />}
+                  icon={<Key size={14} />}
                   text={t("account.mfa.passkey", "Passkey")}
                   onClick={() => {
                     setMethod("passkey");
@@ -170,7 +170,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
               <Button
                 active={method === "password"}
                 intent={method === "password" ? Intent.PRIMARY : Intent.NONE}
-                icon={<Key size={14} />}
+                icon={<Lock size={14} />}
                 text={t("account.mfa.password", "Password")}
                 onClick={() => {
                   setMethod("password");
@@ -191,7 +191,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
           <div className="text-center py-4 space-y-4">
             <div className="flex justify-center">
               <div className="p-4 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500">
-                <Fingerprint size={48} />
+                <Key size={48} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -206,7 +206,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
               intent={Intent.PRIMARY}
               loading={loading}
               onClick={handleVerifyPasskey}
-              icon={<Fingerprint size={16} />}
+              icon={<Key size={16} />}
               text={t("account.usePasskeyInstead", "Authenticate with Passkey")}
             />
           </div>
