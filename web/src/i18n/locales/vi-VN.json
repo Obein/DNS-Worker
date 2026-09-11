@@ -617,7 +617,10 @@
       "revoke": "Thu hồi",
       "revokeFailed": "Không thể thu hồi phiên.",
       "empty": "Không tìm thấy phiên hoạt động nào.",
-      "unknownDevice": "Thiết bị không xác định"
+      "unknownDevice": "Thiết bị không xác định",
+      "revokeOthers": "Thu hồi các phiên khác",
+      "confirmRevokeOthers": "Thu hồi các phiên khác",
+      "revokeOthersConfirmText": "Bạn có chắc chắn muốn thu hồi tất cả các phiên hoạt động khác không? Tất cả các thiết bị đã đăng nhập khác sẽ bị đăng xuất ngay lập tức."
     },
     "passkey": {
       "title": "Mã khóa (Passkey)",

@@ -584,7 +584,10 @@
       "revoke": "撤销",
       "revokeFailed": "撤销会话失败。",
       "empty": "未找到活跃会话。",
-      "unknownDevice": "未知设备"
+      "unknownDevice": "未知设备",
+      "revokeOthers": "撤销其他会话",
+      "confirmRevokeOthers": "撤销其他会话",
+      "revokeOthersConfirmText": "确定要撤销所有其他活跃会话吗？除当前设备外，其他已登录设备将立即退出。"
     },
     "activity": {
       "title": "账号活动记录",

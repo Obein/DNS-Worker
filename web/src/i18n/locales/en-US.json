@@ -584,7 +584,10 @@
       "revoke": "Revoke",
       "revokeFailed": "Failed to revoke session.",
       "empty": "No active sessions found.",
-      "unknownDevice": "Unknown Device"
+      "unknownDevice": "Unknown Device",
+      "revokeOthers": "Revoke Other Sessions",
+      "confirmRevokeOthers": "Revoke Other Sessions",
+      "revokeOthersConfirmText": "Are you sure you want to revoke all other active sessions? All other logged-in devices will be signed out immediately."
     },
     "activity": {
       "title": "Account Activity",

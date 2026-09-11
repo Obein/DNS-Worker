@@ -617,7 +617,10 @@
       "revoke": "取り消す",
       "revokeFailed": "セッションの取り消しに失敗しました。",
       "empty": "アクティブなセッションは見つかりませんでした。",
-      "unknownDevice": "不明なデバイス"
+      "unknownDevice": "不明なデバイス",
+      "revokeOthers": "他のセッションを取り消す",
+      "confirmRevokeOthers": "他のセッションを取り消す",
+      "revokeOthersConfirmText": "他のすべてのアクティブなセッションを取り消してもよろしいですか？現在のデバイス以外のログイン中デバイスは即座にログアウトされます。"
     },
     "passkey": {
       "title": "パスキー (Passkey)",

@@ -89,6 +89,14 @@ export async function revokeSession(id: string): Promise<{ is_current: boolean }
   return res.json();
 }
 
+export async function revokeOtherSessions(): Promise<{ success: boolean; revoked_count: number }> {
+  const res = await fetch("/api/account/sessions/others", {
+    method: "DELETE"
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function getActivityLog(params: string): Promise<ActivityEntry[]> {
   const res = await fetch(`/api/account/activity?${params}`);
   if (!res.ok) throw new Error("Failed to fetch activity log");

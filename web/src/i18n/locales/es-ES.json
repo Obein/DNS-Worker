@@ -617,7 +617,10 @@
       "revoke": "Revocar",
       "revokeFailed": "Error al revocar la sesión.",
       "empty": "No se encontraron sesiones activas.",
-      "unknownDevice": "Dispositivo desconocido"
+      "unknownDevice": "Dispositivo desconocido",
+      "revokeOthers": "Revocar otras sesiones",
+      "confirmRevokeOthers": "Revocar otras sesiones",
+      "revokeOthersConfirmText": "¿Seguro que desea revocar todas las demás sesiones activas? Todos los demás dispositivos conectados se desconectarán de inmediato."
     },
     "passkey": {
       "title": "Passkeys",

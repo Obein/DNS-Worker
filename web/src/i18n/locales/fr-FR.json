@@ -617,7 +617,10 @@
       "revoke": "Révoquer",
       "revokeFailed": "Échec de la révocation de la session.",
       "empty": "Aucune session active trouvée.",
-      "unknownDevice": "Appareil inconnu"
+      "unknownDevice": "Appareil inconnu",
+      "revokeOthers": "Révoquer les autres sessions",
+      "confirmRevokeOthers": "Révoquer les autres sessions",
+      "revokeOthersConfirmText": "Voulez-vous vraiment révoquer toutes les autres sessions actives ? Tous les autres appareils connectés seront déconnectés immédiatement."
     },
     "passkey": {
       "title": "Clés d'accès (Passkeys)",

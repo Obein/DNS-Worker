@@ -617,7 +617,10 @@
       "revoke": "Widerrufen",
       "revokeFailed": "Sitzung konnte nicht widerrufen werden.",
       "empty": "Keine aktiven Sitzungen gefunden.",
-      "unknownDevice": "Unbekanntes Gerät"
+      "unknownDevice": "Unbekanntes Gerät",
+      "revokeOthers": "Andere Sitzungen widerrufen",
+      "confirmRevokeOthers": "Andere Sitzungen widerrufen",
+      "revokeOthersConfirmText": "Möchten Sie wirklich alle anderen aktiven Sitzungen widerrufen? Alle anderen angemeldeten Geräte werden sofort abgemeldet."
     },
     "passkey": {
       "title": "Passkeys",

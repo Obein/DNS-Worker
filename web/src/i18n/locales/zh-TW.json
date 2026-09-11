@@ -584,7 +584,10 @@
       "revoke": "撤銷",
       "revokeFailed": "撤銷會話失敗。",
       "empty": "未找到活躍會話。",
-      "unknownDevice": "未知裝置"
+      "unknownDevice": "未知裝置",
+      "revokeOthers": "撤銷其他會話",
+      "confirmRevokeOthers": "撤銷其他會話",
+      "revokeOthersConfirmText": "確定要撤銷所有其他活躍會話嗎？除當前設備外，其他已登錄設備將立即退出。"
     },
     "activity": {
       "title": "帳號活動記錄",
