@@ -120,7 +120,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
               onClick={onPasskeyLogin}
               className="font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center space-x-2"
             >
-              <Fingerprint size={20} className="mr-1.5" />
+              <Fingerprint size={20} className="inline mr-1.5" />
               <span>{t("auth.verifyWithPasskey", "使用通行密钥验证")}</span>
             </Button>
 
