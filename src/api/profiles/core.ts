@@ -58,6 +58,7 @@ export async function handleProfilesCoreCollectionRequest(
       upstream: ["https://security.cloudflare-dns.com/dns-query"],
       ecs: { enabled: true, use_client_ip: true },
       log_retention_days: defaultRetentionDays,
+      log_filtered_only: false,
       default_policy: 'ALLOW',
       best_effort_ech: { enabled: false, fronting_domain: "cloudflare-ech.com" }
     };
@@ -181,6 +182,7 @@ export async function handleProfilesCoreRequest(
         ctx.waitUntil((async () => {
           try {
             await env.DB.batch([
+              env.DB.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ?").bind(profileId),
               env.DB.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(profileId),
               env.DB.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(profileId),
               env.DB.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(profileId),

@@ -441,6 +441,8 @@
     "logRetentionTitle": "ログ保存期間",
     "retentionDuration": "保存期间",
     "retentionDesc": "ログは自動的に削除されます。",
+    "logFilteredOnly": "ブロックまたはリダイレクトされたドメインのみ記録",
+    "logFilteredOnlyDesc": "フィルタールールによってブロックまたはリダイレクトされたクエリのみを保存します。許可された通常のクエリは保存されず、書き込みとストレージを大幅に削減します。",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "上流サーバーに送信される ECS サブネット",
     "sendEcs": "ECS を送信する",

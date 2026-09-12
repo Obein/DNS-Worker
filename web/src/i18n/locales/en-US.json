@@ -442,6 +442,8 @@
     "logRetentionTitle": "Log Retention",
     "retentionDuration": "Duration",
     "retentionDesc": "Logs are cleared automatically.",
+    "logFilteredOnly": "Log blocked or redirected domains only",
+    "logFilteredOnlyDesc": "Only save queries blocked or redirected by filtering rules. Normal allowed queries are not stored, significantly reducing database writes and storage.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "Not all upstream DNS servers support ECS. For recursive resolvers like ControlD, ECS affects internal routing only.",
     "sendEcs": "Send ECS",

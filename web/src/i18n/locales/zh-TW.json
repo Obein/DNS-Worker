@@ -442,6 +442,8 @@
     "logRetentionTitle": "日誌留存",
     "retentionDuration": "留存時長",
     "retentionDesc": "日誌將自動清除。",
+    "logFilteredOnly": "僅記錄屏蔽或重新導向網域",
+    "logFilteredOnlyDesc": "僅儲存被規則攔截或重新導向的網域查詢，正常允許的存取不寫入資料庫，大幅減少儲存空間與寫入操作。",
     "ecsTitle": "EDNS 客戶端子網 (ECS)",
     "ecsUpstreamHint": "並非所有上游 DNS 都支援 ECS。對於 ControlD 等遞迴解析器，ECS 僅影響其內部路由，不會傳遞給上游權威伺服器。",
     "sendEcs": "呈遞 ECS",

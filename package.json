@@ -32,12 +32,12 @@
   "author": "Hugo Koo",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260910.1",
+    "@cloudflare/workers-types": "^5.20260911.1",
     "@types/node": "^22.20.2",
     "concurrently": "^10.0.5",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
-    "wrangler": "^4.130.0"
+    "wrangler": "^4.131.1"
   },
   "overrides": {
     "esbuild": "^0.28.1"

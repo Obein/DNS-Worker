@@ -1,5 +1,6 @@
 import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { ResolutionLog } from "../types";
+import { SystemSettingsModel } from "./systemSettings";
 
 let logSeqCounter = 0;
 
@@ -18,7 +19,7 @@ export function generateLogId(): number {
 export class LogModel {
   constructor(private db: D1Database) {}
 
-  createInsertStatement(log: ResolutionLog) {
+  createInsertStatement(log: ResolutionLog): D1PreparedStatement {
     const logId = log.id ?? generateLogId();
     return this.db.prepare(
       "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -40,6 +41,32 @@ export class LogModel {
         log.upstream || null,
         log.latency || null,
       );
+  }
+
+  /**
+   * Generates a prepared atomic UPSERT statement for domain_hourly_rollups.
+   * Increments the count if the record already exists for the (profile_id, hour_timestamp, domain, action) composite key.
+   *
+   * @param profileId - Profile identifier.
+   * @param hourTimestamp - Hour-aligned epoch timestamp in seconds.
+   * @param domain - Fully-qualified or normalized domain name.
+   * @param action - Resolution action ('PASS' | 'BLOCK' | 'REDIRECT' | 'FAIL').
+   * @param count - Increment count (pre-aggregated in memory).
+   * @returns D1PreparedStatement ready for batch execution.
+   */
+  createDomainRollupUpsertStatement(
+    profileId: string,
+    action: string,
+    hourTimestamp: number,
+    domain: string,
+    count: number
+  ): D1PreparedStatement {
+    return this.db.prepare(`
+      INSERT INTO domain_hourly_rollups (profile_id, action, hour_timestamp, domain, count)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(profile_id, action, hour_timestamp, domain)
+      DO UPDATE SET count = count + excluded.count
+    `).bind(profileId, action, hourTimestamp, domain, count);
   }
 
   async insert(log: ResolutionLog): Promise<boolean> {
@@ -171,6 +198,7 @@ export class LogModel {
 
   async deleteByOwner(ownerId: string): Promise<boolean> {
     const results = await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
@@ -182,6 +210,7 @@ export class LogModel {
   async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 20000): Promise<number> {
     // Purge expired rollups first (small table, sub-millisecond execution)
     await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp)
@@ -248,6 +277,11 @@ export class LogModel {
         const threshold = Math.floor(Date.now() / 1000 - (effectiveDays * 24 * 3600));
 
         // Purge expired rollups matching retention policy
+        statements.push(
+          this.db.prepare(
+            "DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
+          ).bind(profile.id, threshold)
+        );
         statements.push(
           this.db.prepare(
             "DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
@@ -330,10 +364,12 @@ export class LogModel {
    * Aggregates completed hours of raw logs into log_hourly_rollups, client_hourly_rollups, and destination_hourly_rollups.
    * Runs in the background during hourly cron maintenance (or can be called explicitly).
    *
-   * Uses profile-isolated queries with `idx_logs_profile_time` to scan only the small window
-   * of recently completed hours, upserting into rollup tables.
+   * Performance optimization:
+   * Uses `system_settings` key `last_hourly_rollup_timestamp` to track the last completed rollup hour.
+   * This completely eliminates the 320k+ row full-table scans previously caused by `SELECT MAX(hour_timestamp)`
+   * on secondary-index-less rollup tables without requiring any write-amplifying secondary indexes.
    *
-   * @param sinceSec - Optional start timestamp. If omitted, bridges from latest rollup in DB or defaults to lookback.
+   * @param sinceSec - Optional start timestamp. If omitted, bridges from system_settings or defaults to preceding hour.
    * @param untilSec - Optional end timestamp. Defaults to start of current hour (only completed hours).
    * @returns Total number of rollup records inserted or updated.
    */
@@ -342,50 +378,25 @@ export class LogModel {
     const currentHourStart = Math.floor(now / 3600) * 3600;
     const effectiveUntil = untilSec !== undefined ? Math.min(untilSec, currentHourStart) : currentHourStart;
 
-    let effectiveSinceAction = sinceSec;
-    if (effectiveSinceAction === undefined) {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) AS max_hour FROM log_hourly_rollups"
-      ).first<{ max_hour: number | null }>();
+    let effectiveSince = sinceSec;
+    const systemSettings = new SystemSettingsModel(this.db);
 
-      if (row?.max_hour) {
-        effectiveSinceAction = Math.max(row.max_hour, effectiveUntil - (7 * 86400));
-      } else {
-        effectiveSinceAction = effectiveUntil - (7 * 86400);
+    if (effectiveSince === undefined) {
+      const lastAggregatedStr = await systemSettings.get("last_hourly_rollup_timestamp");
+      if (lastAggregatedStr) {
+        const lastHour = parseInt(lastAggregatedStr, 10);
+        if (!isNaN(lastHour) && lastHour > 0) {
+          // Look back from last aggregated hour, capped at 7 days max lookback
+          effectiveSince = Math.max(lastHour, effectiveUntil - (7 * 86400));
+        }
+      }
+      if (effectiveSince === undefined) {
+        // First run initialization: aggregate the preceding completed hour only
+        effectiveSince = effectiveUntil - 3600;
       }
     }
 
-    let effectiveSinceClient = sinceSec;
-    if (effectiveSinceClient === undefined) {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) AS max_hour FROM client_hourly_rollups"
-      ).first<{ max_hour: number | null }>();
-
-      if (row?.max_hour) {
-        effectiveSinceClient = Math.max(row.max_hour, effectiveUntil - (7 * 86400));
-      } else {
-        effectiveSinceClient = effectiveUntil - (7 * 86400);
-      }
-    }
-
-    let effectiveSinceDestination = sinceSec;
-    if (effectiveSinceDestination === undefined) {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) AS max_hour FROM destination_hourly_rollups"
-      ).first<{ max_hour: number | null }>();
-
-      if (row?.max_hour) {
-        effectiveSinceDestination = Math.max(row.max_hour, effectiveUntil - (7 * 86400));
-      } else {
-        effectiveSinceDestination = effectiveUntil - (7 * 86400);
-      }
-    }
-
-    if (
-      effectiveSinceAction >= effectiveUntil &&
-      effectiveSinceClient >= effectiveUntil &&
-      effectiveSinceDestination >= effectiveUntil
-    ) {
+    if (effectiveSince >= effectiveUntil) {
       return 0;
     }
 
@@ -401,60 +412,54 @@ export class LogModel {
       const statements: D1PreparedStatement[] = [];
 
       for (const profile of profiles) {
-        if (effectiveSinceAction < effectiveUntil) {
-          statements.push(
-            this.db.prepare(`
-              INSERT OR REPLACE INTO log_hourly_rollups (profile_id, hour_timestamp, action, count)
-              SELECT
-                profile_id,
-                (timestamp / 3600) * 3600 AS hour_timestamp,
-                action,
-                COUNT(*) AS count
-              FROM logs
-              WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
-              GROUP BY (timestamp / 3600) * 3600, action
-            `).bind(profile.id, effectiveSinceAction, effectiveUntil)
-          );
-        }
+        statements.push(
+          this.db.prepare(`
+            INSERT OR REPLACE INTO log_hourly_rollups (profile_id, hour_timestamp, action, count)
+            SELECT
+              profile_id,
+              (timestamp / 3600) * 3600 AS hour_timestamp,
+              action,
+              COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+            GROUP BY (timestamp / 3600) * 3600, action
+          `).bind(profile.id, effectiveSince, effectiveUntil)
+        );
 
-        if (effectiveSinceClient < effectiveUntil) {
-          statements.push(
-            this.db.prepare(`
-              INSERT OR REPLACE INTO client_hourly_rollups (profile_id, hour_timestamp, client_ip, geo_country, access_point_id, count)
-              SELECT
-                profile_id,
-                (timestamp / 3600) * 3600 AS hour_timestamp,
-                client_ip,
-                COALESCE(geo_country, '') AS geo_country,
-                COALESCE(access_point_id, '') AS access_point_id,
-                COUNT(*) AS count
-              FROM logs
-              WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
-              GROUP BY (timestamp / 3600) * 3600, client_ip, COALESCE(geo_country, ''), COALESCE(access_point_id, '')
-            `).bind(profile.id, effectiveSinceClient, effectiveUntil)
-          );
-        }
+        statements.push(
+          this.db.prepare(`
+            INSERT OR REPLACE INTO client_hourly_rollups (profile_id, hour_timestamp, client_ip, geo_country, access_point_id, count)
+            SELECT
+              profile_id,
+              (timestamp / 3600) * 3600 AS hour_timestamp,
+              client_ip,
+              COALESCE(geo_country, '') AS geo_country,
+              COALESCE(access_point_id, '') AS access_point_id,
+              COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+            GROUP BY (timestamp / 3600) * 3600, client_ip, COALESCE(geo_country, ''), COALESCE(access_point_id, '')
+          `).bind(profile.id, effectiveSince, effectiveUntil)
+        );
 
-        if (effectiveSinceDestination < effectiveUntil) {
-          statements.push(
-            this.db.prepare(`
-              INSERT OR REPLACE INTO destination_hourly_rollups (profile_id, hour_timestamp, country_code, country, access_point_id, count)
-              SELECT
-                profile_id,
-                (timestamp / 3600) * 3600 AS hour_timestamp,
-                COALESCE(json_extract(dest_geoip, '$.country_code'), '') AS country_code,
-                COALESCE(json_extract(dest_geoip, '$.country'), '') AS country,
-                COALESCE(access_point_id, '') AS access_point_id,
-                COUNT(*) AS count
-              FROM logs
-              WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
-                AND dest_geoip IS NOT NULL
-                AND json_extract(dest_geoip, '$.country_code') IS NOT NULL
-                AND json_extract(dest_geoip, '$.country_code') != ''
-              GROUP BY (timestamp / 3600) * 3600, COALESCE(json_extract(dest_geoip, '$.country_code'), ''), COALESCE(json_extract(dest_geoip, '$.country'), ''), COALESCE(access_point_id, '')
-            `).bind(profile.id, effectiveSinceDestination, effectiveUntil)
-          );
-        }
+        statements.push(
+          this.db.prepare(`
+            INSERT OR REPLACE INTO destination_hourly_rollups (profile_id, hour_timestamp, country_code, country, access_point_id, count)
+            SELECT
+              profile_id,
+              (timestamp / 3600) * 3600 AS hour_timestamp,
+              COALESCE(json_extract(dest_geoip, '$.country_code'), '') AS country_code,
+              COALESCE(json_extract(dest_geoip, '$.country'), '') AS country,
+              COALESCE(access_point_id, '') AS access_point_id,
+              COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+              AND dest_geoip IS NOT NULL
+              AND json_extract(dest_geoip, '$.country_code') IS NOT NULL
+              AND json_extract(dest_geoip, '$.country_code') != ''
+            GROUP BY (timestamp / 3600) * 3600, COALESCE(json_extract(dest_geoip, '$.country_code'), ''), COALESCE(json_extract(dest_geoip, '$.country'), ''), COALESCE(access_point_id, '')
+          `).bind(profile.id, effectiveSince, effectiveUntil)
+        );
       }
 
       if (statements.length === 0) {
@@ -466,6 +471,9 @@ export class LogModel {
       for (const res of results) {
         totalAggregatedRows += res.meta.changes || 0;
       }
+
+      // Persist the latest completed hour timestamp in system_settings
+      await systemSettings.set("last_hourly_rollup_timestamp", String(effectiveUntil));
 
       return totalAggregatedRows;
     } catch (e: any) {
@@ -631,21 +639,97 @@ export class LogModel {
     return results;
   }
 
-  async getTopAllowed(profileId: string, since: number, until: number, accessPointId?: string) {
+  /**
+   * Retrieves top allowed domains for a given time range.
+   *
+   * Performance optimization:
+   * When no device/access point filter is present, queries pre-aggregated `domain_hourly_rollups`
+   * using covering index `idx_domain_rollups_query` (profile_id, action, hour_timestamp, domain, count),
+   * avoiding multi-million row table scans over raw logs.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param accessPointId - Optional device filter.
+   * @returns Array of top allowed domain records ordered by count descending.
+   */
+  async getTopAllowed(
+    profileId: string,
+    since: number,
+    until: number,
+    accessPointId?: string
+  ): Promise<{ domain: string; count: number }[]> {
+    if (!accessPointId) {
+      const sinceHour = Math.floor(since / 3600) * 3600;
+      const { results } = await this.db.prepare(`
+        SELECT domain, SUM(count) as count
+        FROM domain_hourly_rollups
+        WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 10
+      `).bind(profileId, sinceHour, until).all<{ domain: string; count: number }>();
+
+      if (results && results.length > 0) {
+        return results;
+      }
+    }
+
     let queryStr = "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS'";
-    let params: any[] = [profileId, since, until];
-    if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
+    const params: any[] = [profileId, since, until];
+    if (accessPointId) {
+      queryStr += " AND access_point_id = ?";
+      params.push(accessPointId);
+    }
     queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
-    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string, count: number }>();
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string; count: number }>();
     return results;
   }
 
-  async getTopBlocked(profileId: string, since: number, until: number, accessPointId?: string) {
+  /**
+   * Retrieves top blocked domains for a given time range.
+   *
+   * Performance optimization:
+   * When no device/access point filter is present, queries pre-aggregated `domain_hourly_rollups`
+   * using covering index `idx_domain_rollups_query` (profile_id, action, hour_timestamp, domain, count),
+   * avoiding multi-million row table scans over raw logs.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param accessPointId - Optional device filter.
+   * @returns Array of top blocked domain records ordered by count descending.
+   */
+  async getTopBlocked(
+    profileId: string,
+    since: number,
+    until: number,
+    accessPointId?: string
+  ): Promise<{ domain: string; count: number }[]> {
+    if (!accessPointId) {
+      const sinceHour = Math.floor(since / 3600) * 3600;
+      const { results } = await this.db.prepare(`
+        SELECT domain, SUM(count) as count
+        FROM domain_hourly_rollups
+        WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 10
+      `).bind(profileId, sinceHour, until).all<{ domain: string; count: number }>();
+
+      if (results && results.length > 0) {
+        return results;
+      }
+    }
+
     let queryStr = "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'BLOCK'";
-    let params: any[] = [profileId, since, until];
-    if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
+    const params: any[] = [profileId, since, until];
+    if (accessPointId) {
+      queryStr += " AND access_point_id = ?";
+      params.push(accessPointId);
+    }
     queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
-    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string, count: number }>();
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string; count: number }>();
     return results;
   }
 
