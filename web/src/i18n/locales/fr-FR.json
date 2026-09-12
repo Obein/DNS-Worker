@@ -650,7 +650,8 @@
       "appNameHelper": "La clé d'accès sera liée à ce domaine",
       "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés",
       "verifyPrompt": "Authentifiez-vous à l'aide des capteurs biométriques ou d'une clé de sécurité.",
-      "changePwNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi."
+      "changePwNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi.",
+      "submitNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi."
     },
     "mfaNone": "Aucun",
     "resetUserPassword": "Réinitialiser le mot de passe",

@@ -650,7 +650,8 @@
       "appNameHelper": "パスキーはこのドメインに関連付けられます",
       "formatTip": "パスキー名ヒント：1〜30文字。英数字、アンダースコア、ハイフンのみ使用可能",
       "verifyPrompt": "デバイスの生体認証（Touch ID、Face ID、Windows Hello）またはセキュリティキーで認証してください。",
-      "changePwNotice": "送信時にパスキーによる生体認証またはセキュリティキー認証が要求されます。"
+      "changePwNotice": "送信時にパスキーによる生体認証またはセキュリティキー認証が要求されます。",
+      "submitNotice": "送信時にパスキーによる生体認証またはセキュリティキー認証が要求されます。"
     },
     "mfaNone": "なし",
     "resetUserPassword": "パスワードをリセット",

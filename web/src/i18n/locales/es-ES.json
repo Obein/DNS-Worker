@@ -650,7 +650,8 @@
       "appNameHelper": "La passkey se vinculará a este dominio",
       "formatTip": "Indicación sobre el nombre de Passkey: 1-30 caracteres, solo se permiten letras, números, guiones bajos y guiones medios",
       "verifyPrompt": "Autentique usando biometría o llave de seguridad de su dispositivo.",
-      "changePwNotice": "Se le solicitará autenticación con Passkey al enviar."
+      "changePwNotice": "Se le solicitará autenticación con Passkey al enviar.",
+      "submitNotice": "Se le solicitará autenticación con Passkey al enviar."
     },
     "mfaNone": "Ninguno",
     "resetUserPassword": "Restablecer contraseña",

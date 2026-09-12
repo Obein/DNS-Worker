@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Button,
+  ButtonGroup,
   FormGroup,
   InputGroup,
   Dialog,
@@ -10,18 +11,26 @@ import {
   Classes,
   Divider
 } from "@blueprintjs/core";
+import { Lock, Key, ShieldCheck } from "lucide-react";
 import { hashPasswordClient, hashPin, hashTotpToken, PIN_REGEX, formatApiErrorMessage } from "../../../utils/auth";
-import { setPin } from "../../../services";
+import { setPin, getPasskeyAuthOptions, type VerifyIdentityPayload } from "../../../services/account";
 import type { UserInfo } from "../../../services";
 import { DigitInput, type DigitInputRef } from "../../../components/DigitInput";
+import { startPasskeyAuthentication } from "../../../utils/webauthn";
 
-interface SetupPinDialogProps {
+export type PinAuthMethod = "password" | "passkey" | "totp";
+
+export interface SetupPinDialogProps {
   isOpen: boolean;
   onClose: () => void;
   user: UserInfo | null;
   onSuccess: () => void;
 }
 
+/**
+ * SetupPinDialog handles configuring or changing the 4-digit PIN code for session locking.
+ * Supports verifying identity via Current Password, Passkey, or Authenticator App (TOTP).
+ */
 export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
   isOpen,
   onClose,
@@ -29,17 +38,30 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
   onSuccess
 }) => {
   const { t } = useTranslation();
+
+  const hasPasskey = !!(user?.passkeys_count && user.passkeys_count > 0);
+  const hasTotp = !!user?.totp_enabled;
+
+  const [authMethod, setAuthMethod] = useState<PinAuthMethod>("password");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [verifyPassword, setVerifyPassword] = useState("");
   const [showVerifyPassword, setShowVerifyPassword] = useState(false);
   const [verifyTotp, setVerifyTotp] = useState("");
-  const [useTotpForVerify, setUseTotpForVerify] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const confirmPinRef = useRef<DigitInputRef>(null);
   const totpRef = useRef<DigitInputRef>(null);
+
+  // Sync valid method if user capabilities change
+  useEffect(() => {
+    if (authMethod === "passkey" && !hasPasskey) {
+      setAuthMethod(hasTotp ? "totp" : "password");
+    } else if (authMethod === "totp" && !hasTotp) {
+      setAuthMethod(hasPasskey ? "passkey" : "password");
+    }
+  }, [hasPasskey, hasTotp, authMethod]);
 
   const handleSetupPin = async (e?: React.FormEvent, totpValue?: string) => {
     if (e) e.preventDefault();
@@ -66,11 +88,21 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
       }
       const pinHashValue = await hashPin(newPin, userId);
 
-      const verificationPayload: { password?: string; totpTokenHash?: string; totpSalt?: string } = {};
-      if (user?.totp_enabled && useTotpForVerify) {
+      const verificationPayload: VerifyIdentityPayload = {};
+
+      if (authMethod === "passkey") {
+        const options = await getPasskeyAuthOptions();
+        const passkeyAssertion = await startPasskeyAuthentication(options);
+        verificationPayload.passkeyAssertion = passkeyAssertion;
+      } else if (authMethod === "totp") {
+        const finalTotp = (totpValue || verifyTotp).replace(/\s/g, "");
+        if (finalTotp.length !== 6) {
+          setError(t("account.totp.invalidCode", "Please enter a 6-digit code"));
+          setLoading(false);
+          return;
+        }
         const salt = crypto.randomUUID();
-        const finalTotp = totpValue || verifyTotp;
-        const hashHex = await hashTotpToken(finalTotp.replace(/\s/g, ""), salt);
+        const hashHex = await hashTotpToken(finalTotp, salt);
         verificationPayload.totpTokenHash = hashHex;
         verificationPayload.totpSalt = salt;
       } else {
@@ -80,7 +112,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
           return;
         }
         let passwordPayload = verifyPassword;
-        if (user?.password_version === 2) {
+        if (user?.password_version === 2 && user?.username) {
           passwordPayload = await hashPasswordClient(verifyPassword, user.username);
         }
         verificationPayload.password = passwordPayload;
@@ -107,6 +139,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
     setVerifyPassword("");
     setShowVerifyPassword(false);
     setVerifyTotp("");
+    setAuthMethod("password");
     onClose();
   };
 
@@ -119,7 +152,7 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
       title={isPinEnabled ? t("auth.changePin", "Change PIN") : t("auth.configurePin", "Configure PIN")}
       icon="key"
       className="pb-0"
-      style={{ width: "400px" }}
+      style={{ width: "420px" }}
     >
       <form onSubmit={handleSetupPin}>
         <div className={Classes.DIALOG_BODY}>
@@ -154,9 +187,9 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
               type="password"
               disabled={loading}
               onComplete={() => {
-                if (user?.totp_enabled && useTotpForVerify) {
+                if (authMethod === "totp") {
                   totpRef.current?.focus();
-                } else {
+                } else if (authMethod === "password") {
                   document.getElementById("verify-pw-input")?.focus();
                 }
               }}
@@ -165,33 +198,54 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
 
           <Divider className="my-4" />
 
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-3">
             <span className="font-semibold text-sm">{t("auth.verifyIdentity", "Verify Identity")}</span>
-            {user?.totp_enabled && (
-              <Button
-                minimal
-                small
-                intent={Intent.PRIMARY}
-                onClick={() => setUseTotpForVerify(!useTotpForVerify)}
-              >
-                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use TOTP Code")}
-              </Button>
+            {(hasPasskey || hasTotp) && (
+              <div className="flex items-center isolate" style={{ isolation: "isolate" }}>
+                <ButtonGroup variant="minimal" style={{ isolation: "isolate" }}>
+                  <Button
+                    small
+                    active={authMethod === "password"}
+                    intent={authMethod === "password" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<Lock size={14} />}
+                    text={t("account.mfa.password", "Password")}
+                    onClick={() => {
+                      setAuthMethod("password");
+                      setError("");
+                    }}
+                  />
+                  {hasPasskey && (
+                    <Button
+                      small
+                      active={authMethod === "passkey"}
+                      intent={authMethod === "passkey" ? Intent.PRIMARY : Intent.NONE}
+                      icon={<Key size={14} />}
+                      text={t("account.mfa.passkey", "Passkey")}
+                      onClick={() => {
+                        setAuthMethod("passkey");
+                        setError("");
+                      }}
+                    />
+                  )}
+                  {hasTotp && (
+                    <Button
+                      small
+                      active={authMethod === "totp"}
+                      intent={authMethod === "totp" ? Intent.PRIMARY : Intent.NONE}
+                      icon={<ShieldCheck size={14} />}
+                      text={t("account.mfa.totp", "TOTP")}
+                      onClick={() => {
+                        setAuthMethod("totp");
+                        setError("");
+                      }}
+                    />
+                  )}
+                </ButtonGroup>
+              </div>
             )}
           </div>
 
-          {user?.totp_enabled && useTotpForVerify ? (
-            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="verify-totp-input">
-              <DigitInput
-                ref={totpRef}
-                length={6}
-                value={verifyTotp}
-                onChange={setVerifyTotp}
-                disabled={loading}
-                onComplete={(val) => handleSetupPin(undefined, val)}
-                autoFocus
-              />
-            </FormGroup>
-          ) : (
+          {authMethod === "password" && (
             <FormGroup label={t("auth.currentPassword", "Current Password")} labelFor="verify-pw-input">
               <InputGroup
                 id="verify-pw-input"
@@ -211,6 +265,31 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
                 required
               />
             </FormGroup>
+          )}
+
+          {authMethod === "totp" && (
+            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="verify-totp-input">
+              <DigitInput
+                ref={totpRef}
+                length={6}
+                value={verifyTotp}
+                onChange={setVerifyTotp}
+                disabled={loading}
+                onComplete={(val) => handleSetupPin(undefined, val)}
+                autoFocus
+              />
+            </FormGroup>
+          )}
+
+          {authMethod === "passkey" && (
+            <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
+              <span className="text-xs">
+                {t(
+                  "account.passkey.submitNotice",
+                  t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
+                )}
+              </span>
+            </Callout>
           )}
         </div>
 

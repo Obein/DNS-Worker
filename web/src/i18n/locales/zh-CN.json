@@ -651,7 +651,8 @@
       "appNameHelper": "通行密钥将绑定至此域名",
       "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线",
       "verifyPrompt": "请使用设备的生物识别（人脸、指纹、Windows Hello）或安全密钥进行身份验证。",
-      "changePwNotice": "提交修改时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。"
+      "changePwNotice": "提交修改时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。",
+      "submitNotice": "提交时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。"
     },
     "mfaNone": "无",
     "resetUserPassword": "重置密码",

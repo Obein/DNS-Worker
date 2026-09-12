@@ -650,7 +650,8 @@
       "appNameHelper": "Der Passkey wird an diese Domain gebunden",
       "formatTip": "Hinweis zum Passkey-Namen: 1-30 Zeichen, nur Buchstaben, Zahlen, Unterstriche und Bindestriche erlaubt",
       "verifyPrompt": "Bestätigen Sie mit Biometrie (Touch ID, Face ID, Windows Hello) oder Sicherheitsschlüssel.",
-      "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
+      "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert.",
+      "submitNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
     },
     "mfaNone": "Keine",
     "resetUserPassword": "Passwort zurücksetzen",

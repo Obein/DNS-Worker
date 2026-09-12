@@ -63,14 +63,24 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Smartphone size={20} className="text-blue-500" />
-        <H4 style={{ margin: 0 }}>
-          {t("account.totp.title", "Authenticator App (TOTP)")}
-        </H4>
-        <Tag intent={Intent.SUCCESS} minimal round>
-          {t("account.totp.enabled", "Enabled")}
-        </Tag>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Smartphone size={20} className="text-blue-500" />
+          <H4 style={{ margin: 0 }}>
+            {t("account.totp.title", "Authenticator App (TOTP)")}
+          </H4>
+          <Tag intent={Intent.SUCCESS} minimal round>
+            {t("account.totp.enabled", "Enabled")}
+          </Tag>
+        </div>
+
+        <Button
+          intent={Intent.DANGER}
+          outlined
+          icon={<ShieldOff size={14} />}
+          text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
+          onClick={() => setDisableDialogOpen(true)}
+        />
       </div>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -79,15 +89,6 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
             "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account."
           )}
         </p>
-        <div>
-          <Button
-            intent={Intent.DANGER}
-            outlined
-            icon={<ShieldOff size={14} />}
-            text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
-            onClick={() => setDisableDialogOpen(true)}
-          />
-        </div>
       </div>
 
       <Dialog

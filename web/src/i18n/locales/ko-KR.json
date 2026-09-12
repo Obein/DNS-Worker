@@ -650,7 +650,8 @@
       "appNameHelper": "패스키가 이 도메인에 바인딩됩니다",
       "formatTip": "패스키 이름 팁: 1-30자, 영문자, 숫자, 언더바, 하이픈만 허용",
       "verifyPrompt": "기기의 생체 인식(지문, 얼굴, Windows Hello) 또는 보안 키를 사용하여 인증하세요.",
-      "changePwNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다."
+      "changePwNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다.",
+      "submitNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다."
     },
     "mfaNone": "없음",
     "resetUserPassword": "비밀번호 재설정",

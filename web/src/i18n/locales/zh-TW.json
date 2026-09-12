@@ -651,7 +651,8 @@
       "appNameHelper": "通行密鑰將綁定至此網域",
       "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線",
       "verifyPrompt": "請使用裝置的生物辨識（人臉、指紋、Windows Hello）或安全金鑰進行身分驗證。",
-      "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
+      "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。",
+      "submitNotice": "提交時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
     },
     "mfaNone": "無",
     "resetUserPassword": "重設密碼",

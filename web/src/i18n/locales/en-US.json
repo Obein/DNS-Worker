@@ -651,7 +651,8 @@
       "appNameHelper": "The passkey will be bound to this application domain",
       "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only",
       "verifyPrompt": "Authenticate using your device's biometric sensor (Face ID, Touch ID, Windows Hello) or security key.",
-      "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
+      "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting.",
+      "submitNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
     },
     "mfaNone": "None",
     "resetUserPassword": "Reset Password",
