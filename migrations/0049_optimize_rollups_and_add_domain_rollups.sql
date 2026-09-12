@@ -1,40 +1,26 @@
--- Migration 0049: Optimize Rollup Indexes and Create domain_hourly_rollups Table
--- 1. Create domain_hourly_rollups table for high-throughput stream pre-aggregation
+-- Migration 0049: Create domain_hourly_rollups table with zero secondary indexes
+-- 1. Primary key prefix (profile_id, action, hour_timestamp, domain) matches exact query patterns.
+-- 2. WITHOUT ROWID ensures the table is a clustered B-tree, eliminating write amplification (strict 1-write-per-row).
+-- 3. Zero secondary indexes prevents index bloat and doubles write savings.
+-- 4. Avoids heavy historical backfills in migration transactions to prevent D1 timeouts and read quota exhaustion.
+
+-- Clean up any experimental secondary indexes if previously created
+DROP INDEX IF EXISTS idx_domain_rollups_query;
+DROP INDEX IF EXISTS idx_domain_rollups_hour;
+DROP INDEX IF EXISTS idx_destination_rollups_hour;
+DROP INDEX IF EXISTS idx_log_rollups_hour;
+DROP INDEX IF EXISTS idx_client_rollups_hour;
+
+-- Drop legacy table structure if exists during migration development
+DROP TABLE IF EXISTS domain_hourly_rollups;
+
+-- Create the lean clustered WITHOUT ROWID rollups table
 CREATE TABLE IF NOT EXISTS domain_hourly_rollups (
     profile_id TEXT NOT NULL,
+    action TEXT NOT NULL CHECK(action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL')),
     hour_timestamp INTEGER NOT NULL,
     domain TEXT NOT NULL,
-    action TEXT NOT NULL CHECK(action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL')),
     count INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (profile_id, hour_timestamp, domain, action)
+    PRIMARY KEY (profile_id, action, hour_timestamp, domain)
 ) WITHOUT ROWID;
 
-CREATE INDEX IF NOT EXISTS idx_domain_rollups_query 
-ON domain_hourly_rollups (profile_id, action, hour_timestamp, domain, count);
-
-CREATE INDEX IF NOT EXISTS idx_domain_rollups_hour 
-ON domain_hourly_rollups (hour_timestamp);
-
--- 2. Add single-column indexes on hour_timestamp to eliminate 320k+ row full table scans on SELECT MAX(hour_timestamp)
-CREATE INDEX IF NOT EXISTS idx_destination_rollups_hour 
-ON destination_hourly_rollups (hour_timestamp);
-
-CREATE INDEX IF NOT EXISTS idx_log_rollups_hour 
-ON log_hourly_rollups (hour_timestamp);
-
-CREATE INDEX IF NOT EXISTS idx_client_rollups_hour 
-ON client_hourly_rollups (hour_timestamp);
-
--- 3. Initial backfill for recent completed hours (last 7 days) to seed top blocked domains
-INSERT OR REPLACE INTO domain_hourly_rollups (profile_id, hour_timestamp, domain, action, count)
-SELECT
-    profile_id,
-    (timestamp / 3600) * 3600 AS hour_timestamp,
-    domain,
-    action,
-    COUNT(*) AS count
-FROM logs
-WHERE timestamp >= (CAST(strftime('%s', 'now') AS INTEGER) - 7 * 86400)
-  AND timestamp < (CAST(strftime('%s', 'now') AS INTEGER) / 3600) * 3600
-  AND action IN ('BLOCK', 'REDIRECT', 'FAIL')
-GROUP BY profile_id, (timestamp / 3600) * 3600, domain, action;

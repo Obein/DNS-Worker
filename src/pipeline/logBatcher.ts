@@ -106,14 +106,14 @@ export async function flushLogBatch(env: Env): Promise<void> {
   const logsToFlush = logBatchQueue.splice(0, MAX_BATCH_SIZE);
 
   // Atomically extract up to MAX_BATCH_SIZE domain rollups from the queue
-  const rollupsToFlush: { profileId: string; hourTimestamp: number; domain: string; action: string; count: number }[] = [];
+  const rollupsToFlush: { profileId: string; action: string; hourTimestamp: number; domain: string; count: number }[] = [];
   for (const [key, count] of domainRollupQueue.entries()) {
-    const [profileId, hourTimestampStr, domain, action] = key.split("\t");
+    const [profileId, action, hourTimestampStr, domain] = key.split("\t");
     rollupsToFlush.push({
       profileId,
+      action,
       hourTimestamp: parseInt(hourTimestampStr, 10),
       domain,
-      action,
       count
     });
     domainRollupQueue.delete(key);
@@ -136,9 +136,9 @@ export async function flushLogBatch(env: Env): Promise<void> {
     statements.push(
       logModel.createDomainRollupUpsertStatement(
         rollup.profileId,
+        rollup.action,
         rollup.hourTimestamp,
         rollup.domain,
-        rollup.action,
         rollup.count
       )
     );
@@ -217,7 +217,7 @@ export function enqueueLog(
   if (domain && domain.length <= 253 && log.profile_id) {
     const action = (log.action || "PASS").toUpperCase();
     const hourTimestamp = Math.floor((log.timestamp || Math.floor(Date.now() / 1000)) / 3600) * 3600;
-    const rollupKey = `${log.profile_id}\t${hourTimestamp}\t${domain}\t${action}`;
+    const rollupKey = `${log.profile_id}\t${action}\t${hourTimestamp}\t${domain}`;
     domainRollupQueue.set(rollupKey, (domainRollupQueue.get(rollupKey) || 0) + 1);
   }
 
