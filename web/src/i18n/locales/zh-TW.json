@@ -566,7 +566,7 @@
       "disableWarning": "停用數位驗證器後，若未設定通行金鑰，帳號將僅受密碼保護。確定要停用嗎？",
       "confirmDisable": "確認停用",
       "recoveryKeysTitle": "請保存您的恢復密鑰",
-      "recoveryKeysWarning": "請將這 8 個密鑰妥善保存（如密碼管理器）。每個密鑰只能使用一次，關閉此視窗後將無法再次查看。",
+      "recoveryKeysWarning": "請將恢復金鑰妥善保存（如密碼管理器）。每個金鑰只能使用一次。",
       "copyKeys": "複製全部密鑰",
       "copied": "已複製！",
       "done": "完成，我已保存密鑰",
@@ -651,7 +651,8 @@
       "appNameHelper": "通行密鑰將綁定至此網域",
       "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線",
       "verifyPrompt": "請使用裝置的生物辨識（人臉、指紋、Windows Hello）或安全金鑰進行身分驗證。",
-      "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
+      "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。",
+      "submitNotice": "提交時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
     },
     "mfaNone": "無",
     "resetUserPassword": "重設密碼",

@@ -255,22 +255,11 @@ export async function handleSecurityRequest(
     if (!dbUser) return new Response("User not found", { status: 404 });
 
     const body = await request.json() as any;
-    const { password, totpTokenHash, totpSalt } = body;
 
-    // 验证用户身份 (密码或 TOTP)
-    let authenticated = false;
-    if (totpTokenHash && dbUser.totp_enabled && dbUser.totp_secret) {
-      authenticated = await verifyTOTP(dbUser.totp_secret, totpTokenHash, totpSalt);
-      if (!authenticated) {
-        return new Response("Invalid TOTP code", { status: 400 });
-      }
-    } else if (password) {
-      authenticated = await verifyPassword(password, dbUser.hashed_password, dbUser.password_version ?? 1);
-      if (!authenticated) {
-        return new Response("Incorrect password", { status: 400 });
-      }
-    } else {
-      return new Response("Authentication required", { status: 400 });
+    // 验证用户身份 (密码、Passkey 或 TOTP)
+    const authResult = await verifyUserReauth(dbUser, body, env, request);
+    if (!authResult.success) {
+      return new Response(authResult.error || "Authentication failed", { status: 400 });
     }
 
     if (request.method === 'POST') {
@@ -432,17 +421,39 @@ export async function handleSecurityRequest(
         await userModel.updateTOTPSettings(user.id, true);
 
         const dbUser = await userModel.getById(user.id);
-        let recoveryKeys: string[] | undefined = undefined;
-        if (dbUser && !dbUser.totp_recovery_keys) {
-          const plaintextKeys = generateRecoveryKeys();
-          const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
-            plaintextKeys.map(async (k) => ({
-              key: k,
-              hash: await hashRecoveryKey(k)
-            }))
-          );
-          await userModel.updateRecoveryKeys(user.id, storedItems);
-          recoveryKeys = plaintextKeys;
+        let recoveryKeys: string[] = [];
+        if (dbUser) {
+          if (dbUser.totp_recovery_keys) {
+            let parsed: any = null;
+            try {
+              parsed = typeof dbUser.totp_recovery_keys === 'string'
+                ? JSON.parse(dbUser.totp_recovery_keys)
+                : dbUser.totp_recovery_keys;
+            } catch {
+              parsed = [dbUser.totp_recovery_keys];
+            }
+            if (!Array.isArray(parsed)) parsed = [parsed];
+            for (const item of parsed) {
+              if (typeof item === 'object' && item?.key) {
+                recoveryKeys.push(item.key);
+              } else if (typeof item === 'string' && !/^[a-fA-F0-9]{64}$/.test(item.trim())) {
+                recoveryKeys.push(item);
+              }
+            }
+          }
+
+          // If no recovery keys found or only legacy hashes exist, generate fresh recovery keys
+          if (recoveryKeys.length === 0) {
+            const plaintextKeys = generateRecoveryKeys();
+            const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
+              plaintextKeys.map(async (k) => ({
+                key: k,
+                hash: await hashRecoveryKey(k)
+              }))
+            );
+            await userModel.updateRecoveryKeys(user.id, storedItems);
+            recoveryKeys = plaintextKeys;
+          }
         }
 
         await activityLog.record(user.id, 'passkey_registered', clientIp, userAgent, { name: passkeyName }, sessionHash);

@@ -565,7 +565,7 @@
       "disableWarning": "TOTP를 비활성화하면 패스키가 설정되어 있지 않은 경우 계정이 비밀번호로만 보호됩니다.",
       "confirmDisable": "TOTP 비활성화",
       "recoveryKeysTitle": "복구 키를 저장해 주십시오",
-      "recoveryKeysWarning": "이 8개의 복구 키를 안전한 곳(비밀번호 관리 앱 등)에 보관하십시오. 각 키는 단 한 번만 사용할 수 있으며, 이 창을 닫으면 다시 확인할 수 없습니다.",
+      "recoveryKeysWarning": "복구 키를 안전한 곳(비밀번호 관리 앱 등)에 보관하십시오. 각 키는 단 한 번만 사용할 수 있습니다.",
       "copyKeys": "모든 키 복사",
       "copied": "복사 완료!",
       "done": "완료 (키를 저장했습니다)",
@@ -650,7 +650,8 @@
       "appNameHelper": "패스키가 이 도메인에 바인딩됩니다",
       "formatTip": "패스키 이름 팁: 1-30자, 영문자, 숫자, 언더바, 하이픈만 허용",
       "verifyPrompt": "기기의 생체 인식(지문, 얼굴, Windows Hello) 또는 보안 키를 사용하여 인증하세요.",
-      "changePwNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다."
+      "changePwNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다.",
+      "submitNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다."
     },
     "mfaNone": "없음",
     "resetUserPassword": "비밀번호 재설정",

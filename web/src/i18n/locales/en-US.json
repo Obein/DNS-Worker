@@ -566,7 +566,7 @@
       "disableWarning": "After disabling TOTP, if no Passkeys are configured, your account will only be protected by password.",
       "confirmDisable": "Disable TOTP",
       "recoveryKeysTitle": "Save Your Recovery Keys",
-      "recoveryKeysWarning": "Store these 8 keys safely (e.g., password manager). Each key can only be used once. You will NOT see them again after closing this dialog.",
+      "recoveryKeysWarning": "Store your recovery key safely (e.g., in a password manager). Each key can only be used once.",
       "copyKeys": "Copy All Keys",
       "copied": "Copied!",
       "done": "Done — I've saved my keys",
@@ -651,7 +651,8 @@
       "appNameHelper": "The passkey will be bound to this application domain",
       "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only",
       "verifyPrompt": "Authenticate using your device's biometric sensor (Face ID, Touch ID, Windows Hello) or security key.",
-      "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
+      "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting.",
+      "submitNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
     },
     "mfaNone": "None",
     "resetUserPassword": "Reset Password",

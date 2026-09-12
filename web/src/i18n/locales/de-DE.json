@@ -565,7 +565,7 @@
       "disableWarning": "Nach dem Deaktivieren von TOTP wird Ihr Konto, sofern keine Passkeys eingerichtet sind, nur noch durch ein Passwort geschützt.",
       "confirmDisable": "TOTP deaktivieren",
       "recoveryKeysTitle": "Bitte speichern Sie Ihre Wiederherstellungsschlüssel",
-      "recoveryKeysWarning": "Bitte bewahren Sie diese 8 Schlüssel an einem sicheren Ort auf (z. B. Passwort-Manager). Jeder Schlüssel kann nur einmal verwendet werden. Nach dem Schließen dieses Fensters können Sie diese nicht erneut anzeigen.",
+      "recoveryKeysWarning": "Bitte bewahren Sie den Wiederherstellungsschlüssel an einem sicheren Ort auf (z. B. Passwort-Manager). Jeder Schlüssel kann nur einmal verwendet werden.",
       "copyKeys": "Alle Schlüssel kopieren",
       "copied": "Kopiert!",
       "done": "Fertig, ich habe die Schlüssel gespeichert",
@@ -650,7 +650,8 @@
       "appNameHelper": "Der Passkey wird an diese Domain gebunden",
       "formatTip": "Hinweis zum Passkey-Namen: 1-30 Zeichen, nur Buchstaben, Zahlen, Unterstriche und Bindestriche erlaubt",
       "verifyPrompt": "Bestätigen Sie mit Biometrie (Touch ID, Face ID, Windows Hello) oder Sicherheitsschlüssel.",
-      "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
+      "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert.",
+      "submitNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
     },
     "mfaNone": "Keine",
     "resetUserPassword": "Passwort zurücksetzen",

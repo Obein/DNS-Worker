@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Button,
+  ButtonGroup,
   FormGroup,
   InputGroup,
   Dialog,
@@ -9,11 +10,13 @@ import {
   Intent,
   Classes
 } from "@blueprintjs/core";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert, Lock, Key, ShieldCheck } from "lucide-react";
 import { hashPasswordClient, hashTotpToken, formatApiErrorMessage } from "../../../utils/auth";
-import { clearPin } from "../../../services";
+import { clearPin, getPasskeyAuthOptions, type VerifyIdentityPayload } from "../../../services/account";
 import type { UserInfo } from "../../../services";
 import { DigitInput } from "../../../components/DigitInput";
+import { startPasskeyAuthentication } from "../../../utils/webauthn";
+import type { PinAuthMethod } from "./SetupPinDialog";
 
 interface DisablePinDialogProps {
   isOpen: boolean;
@@ -29,12 +32,25 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
   onSuccess
 }) => {
   const { t } = useTranslation();
+
+  const hasPasskey = !!(user?.passkeys_count && user.passkeys_count > 0);
+  const hasTotp = !!user?.totp_enabled;
+
+  const [authMethod, setAuthMethod] = useState<PinAuthMethod>("password");
   const [verifyPassword, setVerifyPassword] = useState("");
   const [showVerifyPassword, setShowVerifyPassword] = useState(false);
   const [verifyTotp, setVerifyTotp] = useState("");
-  const [useTotpForVerify, setUseTotpForVerify] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Sync valid method if user capabilities change
+  useEffect(() => {
+    if (authMethod === "passkey" && !hasPasskey) {
+      setAuthMethod(hasTotp ? "totp" : "password");
+    } else if (authMethod === "totp" && !hasTotp) {
+      setAuthMethod(hasPasskey ? "passkey" : "password");
+    }
+  }, [hasPasskey, hasTotp, authMethod]);
 
   const handleClearPin = async (e?: React.FormEvent, totpValue?: string) => {
     if (e) e.preventDefault();
@@ -42,11 +58,21 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
     setError("");
 
     try {
-      const verificationPayload: { password?: string; totpTokenHash?: string; totpSalt?: string } = {};
-      if (user?.totp_enabled && useTotpForVerify) {
+      const verificationPayload: VerifyIdentityPayload = {};
+
+      if (authMethod === "passkey") {
+        const options = await getPasskeyAuthOptions();
+        const passkeyAssertion = await startPasskeyAuthentication(options);
+        verificationPayload.passkeyAssertion = passkeyAssertion;
+      } else if (authMethod === "totp") {
+        const finalTotp = (totpValue || verifyTotp).replace(/\s/g, "");
+        if (finalTotp.length !== 6) {
+          setError(t("account.totp.invalidCode", "Please enter a 6-digit code"));
+          setLoading(false);
+          return;
+        }
         const salt = crypto.randomUUID();
-        const finalTotp = totpValue || verifyTotp;
-        const hashHex = await hashTotpToken(finalTotp.replace(/\s/g, ""), salt);
+        const hashHex = await hashTotpToken(finalTotp, salt);
         verificationPayload.totpTokenHash = hashHex;
         verificationPayload.totpSalt = salt;
       } else {
@@ -56,7 +82,7 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
           return;
         }
         let passwordPayload = verifyPassword;
-        if (user?.password_version === 2) {
+        if (user?.password_version === 2 && user?.username) {
           passwordPayload = await hashPasswordClient(verifyPassword, user.username);
         }
         verificationPayload.password = passwordPayload;
@@ -79,6 +105,7 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
     setVerifyPassword("");
     setShowVerifyPassword(false);
     setVerifyTotp("");
+    setAuthMethod("password");
     onClose();
   };
 
@@ -89,7 +116,7 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
       title={t("auth.disablePin", "Disable Session Lock")}
       icon="trash"
       className="pb-0"
-      style={{ width: "400px" }}
+      style={{ width: "420px" }}
     >
       <form onSubmit={handleClearPin}>
         <div className={Classes.DIALOG_BODY}>
@@ -103,31 +130,54 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
             {t("auth.disablePinWarning", "Disabling the PIN will disable the inactivity session locking feature completely.")}
           </Callout>
 
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-3">
             <span className="font-semibold text-sm">{t("auth.verifyIdentity", "Verify Identity")}</span>
-            {user?.totp_enabled && (
-              <Button
-                minimal
-                small
-                intent={Intent.PRIMARY}
-                onClick={() => setUseTotpForVerify(!useTotpForVerify)}
-              >
-                {useTotpForVerify ? t("auth.usePassword", "Use Password") : t("auth.use2fa", "Use TOTP Code")}
-              </Button>
+            {(hasPasskey || hasTotp) && (
+              <div className="flex items-center isolate" style={{ isolation: "isolate" }}>
+                <ButtonGroup variant="minimal" style={{ isolation: "isolate" }}>
+                  <Button
+                    small
+                    active={authMethod === "password"}
+                    intent={authMethod === "password" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<Lock size={14} />}
+                    text={t("account.mfa.password", "Password")}
+                    onClick={() => {
+                      setAuthMethod("password");
+                      setError("");
+                    }}
+                  />
+                  {hasPasskey && (
+                    <Button
+                      small
+                      active={authMethod === "passkey"}
+                      intent={authMethod === "passkey" ? Intent.PRIMARY : Intent.NONE}
+                      icon={<Key size={14} />}
+                      text={t("account.mfa.passkey", "Passkey")}
+                      onClick={() => {
+                        setAuthMethod("passkey");
+                        setError("");
+                      }}
+                    />
+                  )}
+                  {hasTotp && (
+                    <Button
+                      small
+                      active={authMethod === "totp"}
+                      intent={authMethod === "totp" ? Intent.PRIMARY : Intent.NONE}
+                      icon={<ShieldCheck size={14} />}
+                      text={t("account.mfa.totp", "TOTP")}
+                      onClick={() => {
+                        setAuthMethod("totp");
+                        setError("");
+                      }}
+                    />
+                  )}
+                </ButtonGroup>
+              </div>
             )}
           </div>
 
-          {user?.totp_enabled && useTotpForVerify ? (
-            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="disable-totp-input">
-              <DigitInput
-                length={6}
-                value={verifyTotp}
-                onChange={setVerifyTotp}
-                disabled={loading}
-                onComplete={(val) => handleClearPin(undefined, val)}
-              />
-            </FormGroup>
-          ) : (
+          {authMethod === "password" && (
             <FormGroup label={t("auth.currentPassword", "Current Password")} labelFor="disable-pw-input">
               <InputGroup
                 id="disable-pw-input"
@@ -147,6 +197,30 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
                 required
               />
             </FormGroup>
+          )}
+
+          {authMethod === "totp" && (
+            <FormGroup label={t("auth.totpCode", "TOTP Code")} labelFor="disable-totp-input">
+              <DigitInput
+                length={6}
+                value={verifyTotp}
+                onChange={setVerifyTotp}
+                disabled={loading}
+                onComplete={(val) => handleClearPin(undefined, val)}
+                autoFocus
+              />
+            </FormGroup>
+          )}
+
+          {authMethod === "passkey" && (
+            <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
+              <span className="text-xs">
+                {t(
+                  "account.passkey.submitNotice",
+                  t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
+                )}
+              </span>
+            </Callout>
           )}
         </div>
 

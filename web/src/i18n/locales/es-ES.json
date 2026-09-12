@@ -565,7 +565,7 @@
       "disableWarning": "Después de desactivar TOTP, si no hay llaves de paso (Passkeys) configuradas, su cuenta solo estará protegida por contraseña.",
       "confirmDisable": "Desactivar TOTP",
       "recoveryKeysTitle": "Por favor, guarda tus claves de recuperación",
-      "recoveryKeysWarning": "Guarda estas 8 claves en un lugar seguro (p. ej., un gestor de contraseñas). Cada clave solo se puede usar una vez. Tras cerrar esta ventana, no podrás volver a verlas.",
+      "recoveryKeysWarning": "Guarda tu clave de recuperación en un lugar seguro (p. ej., un gestor de contraseñas). Cada clave solo se puede usar una vez.",
       "copyKeys": "Copiar todas las claves",
       "copied": "¡Copiado!",
       "done": "Hecho, he guardado las claves",
@@ -650,7 +650,8 @@
       "appNameHelper": "La passkey se vinculará a este dominio",
       "formatTip": "Indicación sobre el nombre de Passkey: 1-30 caracteres, solo se permiten letras, números, guiones bajos y guiones medios",
       "verifyPrompt": "Autentique usando biometría o llave de seguridad de su dispositivo.",
-      "changePwNotice": "Se le solicitará autenticación con Passkey al enviar."
+      "changePwNotice": "Se le solicitará autenticación con Passkey al enviar.",
+      "submitNotice": "Se le solicitará autenticación con Passkey al enviar."
     },
     "mfaNone": "Ninguno",
     "resetUserPassword": "Restablecer contraseña",

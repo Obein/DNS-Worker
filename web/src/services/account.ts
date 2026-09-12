@@ -153,7 +153,7 @@ export async function migratePassword(clientHash: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function setPin(pinHash: string, verificationPayload: { password?: string; totpTokenHash?: string; totpSalt?: string }): Promise<void> {
+export async function setPin(pinHash: string, verificationPayload: VerifyIdentityPayload): Promise<void> {
   const res = await fetch("/api/account/pin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -162,7 +162,7 @@ export async function setPin(pinHash: string, verificationPayload: { password?: 
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
-export async function clearPin(verificationPayload: { password?: string; totpTokenHash?: string; totpSalt?: string }): Promise<void> {
+export async function clearPin(verificationPayload: VerifyIdentityPayload): Promise<void> {
   const res = await fetch("/api/account/pin", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
