@@ -565,7 +565,7 @@
       "disableWarning": "Après avoir désactivé TOTP, si aucune clé d'accès (Passkey) n'est configurée, votre compte ne sera protégé que par un mot de passe.",
       "confirmDisable": "Désactiver TOTP",
       "recoveryKeysTitle": "Veuillez enregistrer vos clés de récupération",
-      "recoveryKeysWarning": "Veuillez conserver ces 8 clés dans un endroit sûr (ex. un gestionnaire de mots de passe). Chaque clé ne peut être utilisée qu'une seule fois. Après la fermeture de cette fenêtre, vous ne pourrez plus les afficher.",
+      "recoveryKeysWarning": "Veuillez conserver votre clé de récupération dans un endroit sûr (ex. un gestionnaire de mots de passe). Chaque clé ne peut être utilisée qu'une seule fois.",
       "copyKeys": "Copier toutes les clés",
       "copied": "Copié !",
       "done": "Terminé, j'ai enregistré les clés",

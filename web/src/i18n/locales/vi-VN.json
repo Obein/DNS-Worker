@@ -565,7 +565,7 @@
       "disableWarning": "Sau khi tắt TOTP, nếu chưa cấu hình Passkey, tài khoản của bạn sẽ chỉ được bảo vệ bằng mật khẩu.",
       "confirmDisable": "Tắt TOTP",
       "recoveryKeysTitle": "Vui lòng lưu các khóa khôi phục của bạn",
-      "recoveryKeysWarning": "Vui lòng lưu 8 khóa này ở nơi an toàn (như trình quản lý mật khẩu). Mỗi khóa chỉ có thể sử dụng một lần, bạn sẽ không thể xem lại sau khi đóng cửa sổ này.",
+      "recoveryKeysWarning": "Vui lòng lưu khóa khôi phục ở nơi an toàn (như trình quản lý mật khẩu). Mỗi khóa chỉ có thể sử dụng một lần.",
       "copyKeys": "Sao chép tất cả khóa",
       "copied": "Đã sao chép!",
       "done": "Xong, tôi đã lưu khóa",

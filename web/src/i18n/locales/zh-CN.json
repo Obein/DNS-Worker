@@ -566,7 +566,7 @@
       "disableWarning": "停用数字验证器后，若未配置通行密钥，账号将仅受密码保护。确定要停用吗？",
       "confirmDisable": "确认停用",
       "recoveryKeysTitle": "请保存您的恢复密钥",
-      "recoveryKeysWarning": "请将这 8 个密钥妥善保存（如密码管理器）。每个密钥只能使用一次，关闭此窗口后将无法再次查看。",
+      "recoveryKeysWarning": "请将恢复密钥妥善保存（如密码管理器）。每个密钥只能使用一次。",
       "copyKeys": "复制全部密钥",
       "copied": "已复制！",
       "done": "完成，我已保存密钥",

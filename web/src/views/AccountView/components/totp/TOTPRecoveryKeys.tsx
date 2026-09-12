@@ -42,7 +42,7 @@ export const TOTPRecoveryKeys: React.FC<TOTPRecoveryKeysProps> = ({
       <Callout intent={Intent.WARNING} className="mb-4">
         {t(
           "account.totp.recoveryKeysWarning",
-          "Store these keys safely. Each key can only be used once. You will NOT see them again."
+          "Store these keys safely. Each key can only be used once."
         )}
       </Callout>
       <div className={recoveryKeys.length === 1 ? "space-y-2 mb-4" : "grid grid-cols-2 gap-2 mb-4"}>
