@@ -1,8 +1,8 @@
 import React from "react";
-import { Card, Elevation, H5, FormGroup, HTMLSelect } from "@blueprintjs/core";
+import { Card, Elevation, H5, FormGroup, HTMLSelect, Switch } from "@blueprintjs/core";
 import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type {  ProfileSettings  } from "../types";
+import type { ProfileSettings } from "../types";
 import { useLogRetentionOptions } from "../hooks";
 
 export interface LogRetentionCardProps {
@@ -25,6 +25,8 @@ export const LogRetentionCard: React.FC<LogRetentionCardProps> = ({ settings, se
     }
   }, [maxRetentionDays, settings.log_retention_days, LOG_RETENTION_OPTIONS, setSettings]);
 
+  const isLoggingDisabled = settings.log_retention_days === 0;
+
   return (
     <Card elevation={Elevation.ONE} className="dark:bg-gray-900 dark:border-gray-800">
       <H5 className="flex items-center gap-2 mb-4 font-bold">
@@ -45,10 +47,30 @@ export const LogRetentionCard: React.FC<LogRetentionCardProps> = ({ settings, se
           </HTMLSelect>
         </FormGroup>
         <p className="text-xs opacity-60">
-          {settings.log_retention_days === 0
+          {isLoggingDisabled
             ? t("settings.retentionDisabledDesc", "已关闭日志记录。系统将不会记录任何 DNS 查询日志并立即清空历史日志。")
             : t("settings.retentionDesc")}
         </p>
+
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-800/80">
+          <Switch
+            label={t("settings.logFilteredOnly", "仅记录屏蔽或重定向域名")}
+            checked={!isLoggingDisabled && !!settings.log_filtered_only}
+            disabled={isLoggingDisabled}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                log_filtered_only: e.currentTarget.checked,
+              })
+            }
+          />
+          <p className="text-xs opacity-60 mt-1">
+            {t(
+              "settings.logFilteredOnlyDesc",
+              "仅保存被规则拦截或重定向的域名查询，正常放行的访问不入库，大幅减少存储占用与写操作。"
+            )}
+          </p>
+        </div>
       </div>
     </Card>
   );

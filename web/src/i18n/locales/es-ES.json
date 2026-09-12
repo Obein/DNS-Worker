@@ -441,6 +441,8 @@
     "logRetentionTitle": "Retención de registros",
     "retentionDuration": "Periodo de retención",
     "retentionDesc": "Los registros se eliminan automáticamente. ",
+    "logFilteredOnly": "Registrar solo dominios bloqueados o redirigidos",
+    "logFilteredOnlyDesc": "Solo guarda consultas bloqueadas o redirigidas por reglas de filtrado. Las consultas permitidas no se almacenan, reduciendo notablemente escrituras y almacenamiento.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "No todos los servidores DNS admiten ECS. En resolvers recursivos como ControlD, ECS solo afecta el enrutamiento interno y no se reenvía al servidor autoritativo.",
     "sendEcs": "Enviar ECS",

@@ -441,6 +441,8 @@
     "logRetentionTitle": "Protokollaufbewahrung",
     "retentionDuration": "Aufbewahrungsdauer",
     "retentionDesc": "Protokolle werden automatisch bereinigt. ",
+    "logFilteredOnly": "Nur blockierte oder umgeleitete Domains protokollieren",
+    "logFilteredOnlyDesc": "Nur durch Filterregeln blockierte oder umgeleitete Abfragen speichern. Normal erlaubte Abfragen werden nicht gespeichert, was Schreibvorgänge und Speicherplatz spart.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "Nicht alle vorgelagerten DNS-Server unterstützen ECS. Bei rekursiven Resolvern wie ControlD beeinflusst ECS nur das interne Routing und wird nicht an den autoritativen Server weitergegeben.",
     "sendEcs": "ECS mitsenden",

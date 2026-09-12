@@ -441,6 +441,8 @@
     "logRetentionTitle": "Lưu giữ nhật ký",
     "retentionDuration": "Thời gian lưu giữ",
     "retentionDesc": "Nhật ký được xóa tự động. ",
+    "logFilteredOnly": "Chỉ ghi nhật ký các miền bị chặn hoặc chuyển hướng",
+    "logFilteredOnlyDesc": "Chỉ lưu các truy vấn bị chặn hoặc chuyển hướng bởi quy tắc lọc. Các truy vấn được phép bình thường sẽ không được lưu, giúp giảm đáng kể thao tác ghi và lưu trữ.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "ECS-подсеть, отправляемая на upstream-сервер",
     "sendEcs": "Gửi ECS",

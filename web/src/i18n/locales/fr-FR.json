@@ -441,6 +441,8 @@
     "logRetentionTitle": "Rétention des journaux",
     "retentionDuration": "Durée de rétention",
     "retentionDesc": "Les journaux sont supprimés automatiquement. ",
+    "logFilteredOnly": "Enregistrer uniquement les domaines bloqués ou redirigés",
+    "logFilteredOnlyDesc": "Enregistre uniquement les requêtes bloquées ou redirigées par les règles de filtrage. Les requêtes autorisées ne sont pas stockées, réduisant les écritures et le stockage.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "Tous les serveurs DNS en amont ne prennent pas en charge l'ECS. Pour les résolveurs récursifs comme ControlD, l'ECS n'affecte que le routage interne et n'est pas transmis au serveur faisant autorité.",
     "sendEcs": "Transmettre ECS",

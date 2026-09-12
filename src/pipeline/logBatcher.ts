@@ -207,15 +207,21 @@ export function enqueueLog(
     return;
   }
 
-  // 2. Fast memory circuit-breaker check
+  // 2. Filtered-only check: if log_filtered_only is enabled, only record BLOCK or REDIRECT queries
+  const action = (log.action || "PASS").toUpperCase();
+  const isFiltered = action === "BLOCK" || action === "REDIRECT";
+  if (settings?.log_filtered_only && !isFiltered) {
+    return;
+  }
+
+  // 3. Fast memory circuit-breaker check
   if (memoryCircuitBreakerUntil > Date.now()) {
     return;
   }
 
-  // 3. In-memory stream pre-aggregation for domain hourly rollups
+  // 4. In-memory stream pre-aggregation for domain hourly rollups
   const domain = (log.domain || "").trim().toLowerCase();
   if (domain && domain.length <= 253 && log.profile_id) {
-    const action = (log.action || "PASS").toUpperCase();
     const hourTimestamp = Math.floor((log.timestamp || Math.floor(Date.now() / 1000)) / 3600) * 3600;
     const rollupKey = `${log.profile_id}\t${action}\t${hourTimestamp}\t${domain}`;
     domainRollupQueue.set(rollupKey, (domainRollupQueue.get(rollupKey) || 0) + 1);

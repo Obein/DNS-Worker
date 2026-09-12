@@ -441,6 +441,8 @@
     "logRetentionTitle": "로그 보존",
     "retentionDuration": "보존 기간",
     "retentionDesc": "로그는 자동으로 삭제됩니다. ",
+    "logFilteredOnly": "차단되거나 리다이렉트된 도메인만 기록",
+    "logFilteredOnlyDesc": "필터링 규칙에 의해 차단되거나 리다이렉트된 쿼리만 저장합니다. 정상 허용된 쿼리는 저장되지 않아 쓰기 작업과 저장 공간을 크게 절약합니다.",
     "ecsTitle": "EDNS Client Subnet (ECS)",
     "ecsUpstreamHint": "상류 서버로 전송되는 ECS 서브넷",
     "sendEcs": "ECS 제공",
