@@ -99,6 +99,7 @@ export class ProfileModel {
 
   async delete(id: string): Promise<boolean> {
     const results = await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ?").bind(id),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(id),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(id),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(id),
@@ -110,6 +111,7 @@ export class ProfileModel {
 
   async deleteByOwner(ownerId: string): Promise<boolean> {
     const results = await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),

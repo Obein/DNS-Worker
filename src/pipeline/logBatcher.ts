@@ -1,3 +1,4 @@
+import { D1PreparedStatement } from "@cloudflare/workers-types";
 import { Env, ExecutionContext, ProfileSettings, ResolutionLog } from "../types";
 import { LogModel, generateLogId } from "../models/log";
 import { cacheUtils } from "../utils/cache";
@@ -5,7 +6,10 @@ import { cacheUtils } from "../utils/cache";
 /** In-memory batch queue of logs waiting to be flushed to D1 */
 const logBatchQueue: ResolutionLog[] = [];
 
-/** Maximum number of log statements in a single db.batch() transaction */
+/** In-memory map of pre-aggregated domain counts waiting for UPSERT flush: `${profile_id}\t${hourTimestamp}\t${domain}\t${action}` -> count */
+const domainRollupQueue = new Map<string, number>();
+
+/** Maximum number of statements of each category in a single db.batch() transaction */
 const MAX_BATCH_SIZE = 50;
 
 /** Debounce time window for micro-batch flushing (10 seconds) */
@@ -60,8 +64,9 @@ export async function tripWriteCircuitBreaker(cache?: any): Promise<void> {
   const trippedUntilSec = nowSec + CIRCUIT_BREAKER_COOLDOWN_SEC;
   memoryCircuitBreakerUntil = trippedUntilSec * 1000;
 
-  // Clear pending queue to prevent memory leaks while writes are blocked
+  // Clear pending queues to prevent memory leaks while writes are blocked
   logBatchQueue.length = 0;
+  domainRollupQueue.clear();
   isFlushScheduled = false;
 
   console.warn(
@@ -78,7 +83,7 @@ export async function tripWriteCircuitBreaker(cache?: any): Promise<void> {
 }
 
 /**
- * Flushes a batch of up to MAX_BATCH_SIZE logs to D1 via db.batch().
+ * Flushes a batch of logs and pre-aggregated domain rollups to D1 via db.batch().
  *
  * @param env Cloudflare Worker environment bindings
  */
@@ -86,24 +91,58 @@ export async function flushLogBatch(env: Env): Promise<void> {
   isFlushScheduled = false;
   lastFlushTime = Date.now();
 
-  if (logBatchQueue.length === 0) {
+  if (logBatchQueue.length === 0 && domainRollupQueue.size === 0) {
     return;
   }
 
   const cache = (caches as any).default;
   if (await isWriteQuotaTripped(cache)) {
     logBatchQueue.length = 0;
+    domainRollupQueue.clear();
     return;
   }
 
-  // Atomically extract up to MAX_BATCH_SIZE items from the front of the queue
+  // Atomically extract up to MAX_BATCH_SIZE raw logs from the front of the queue
   const logsToFlush = logBatchQueue.splice(0, MAX_BATCH_SIZE);
-  if (logsToFlush.length === 0) {
+
+  // Atomically extract up to MAX_BATCH_SIZE domain rollups from the queue
+  const rollupsToFlush: { profileId: string; hourTimestamp: number; domain: string; action: string; count: number }[] = [];
+  for (const [key, count] of domainRollupQueue.entries()) {
+    const [profileId, hourTimestampStr, domain, action] = key.split("\t");
+    rollupsToFlush.push({
+      profileId,
+      hourTimestamp: parseInt(hourTimestampStr, 10),
+      domain,
+      action,
+      count
+    });
+    domainRollupQueue.delete(key);
+    if (rollupsToFlush.length >= MAX_BATCH_SIZE) {
+      break;
+    }
+  }
+
+  if (logsToFlush.length === 0 && rollupsToFlush.length === 0) {
     return;
   }
 
   const logModel = new LogModel(env.DB);
-  const statements = logsToFlush.map((log) => logModel.createInsertStatement(log));
+  const statements: D1PreparedStatement[] = [];
+
+  for (const log of logsToFlush) {
+    statements.push(logModel.createInsertStatement(log));
+  }
+  for (const rollup of rollupsToFlush) {
+    statements.push(
+      logModel.createDomainRollupUpsertStatement(
+        rollup.profileId,
+        rollup.hourTimestamp,
+        rollup.domain,
+        rollup.action,
+        rollup.count
+      )
+    );
+  }
 
   try {
     await env.DB.batch(statements);
@@ -118,12 +157,12 @@ export async function flushLogBatch(env: Env): Promise<void> {
     ) {
       await tripWriteCircuitBreaker(cache);
     } else {
-      console.warn(`[LogBatcher] Batch write failed (${logsToFlush.length} logs):`, errorMsg);
+      console.warn(`[LogBatcher] Batch write failed (${statements.length} stmts):`, errorMsg);
     }
   }
 
-  // If there are still items remaining in the queue, schedule the next batch
-  if (logBatchQueue.length > 0) {
+  // If there are still items remaining in either queue, schedule the next batch
+  if (logBatchQueue.length > 0 || domainRollupQueue.size > 0) {
     scheduleDeferredFlush(env);
   }
 }
@@ -149,7 +188,8 @@ function scheduleDeferredFlush(env: Env): void {
 }
 
 /**
- * Enqueues a DNS resolution log for 10-second micro-batching and quota protection.
+ * Enqueues a DNS resolution log for 10-second micro-batching, in-memory stream pre-aggregation,
+ * and quota protection.
  *
  * @param log ResolutionLog object to insert
  * @param settings Current profile settings
@@ -172,17 +212,30 @@ export function enqueueLog(
     return;
   }
 
-  // 3. Ensure unique id is assigned before queueing
+  // 3. In-memory stream pre-aggregation for domain hourly rollups
+  const domain = (log.domain || "").trim().toLowerCase();
+  if (domain && domain.length <= 253 && log.profile_id) {
+    const action = (log.action || "PASS").toUpperCase();
+    const hourTimestamp = Math.floor((log.timestamp || Math.floor(Date.now() / 1000)) / 3600) * 3600;
+    const rollupKey = `${log.profile_id}\t${hourTimestamp}\t${domain}\t${action}`;
+    domainRollupQueue.set(rollupKey, (domainRollupQueue.get(rollupKey) || 0) + 1);
+  }
+
+  // 4. Ensure unique id is assigned before queueing raw log
   if (!log.id) {
     log.id = generateLogId();
   }
 
-  // 4. Enqueue the log entry
+  // 5. Enqueue the raw log entry
   logBatchQueue.push(log);
 
-  // 5. Determine if an immediate flush is required or a deferred flush should be scheduled
+  // 6. Determine if an immediate flush is required or a deferred flush should be scheduled
   const now = Date.now();
-  if (logBatchQueue.length >= MAX_BATCH_SIZE || now - lastFlushTime >= FLUSH_INTERVAL_MS) {
+  if (
+    logBatchQueue.length >= MAX_BATCH_SIZE ||
+    domainRollupQueue.size >= MAX_BATCH_SIZE ||
+    now - lastFlushTime >= FLUSH_INTERVAL_MS
+  ) {
     ctx.waitUntil(flushLogBatch(env));
   } else {
     scheduleDeferredFlush(env);

@@ -18,7 +18,7 @@ export function generateLogId(): number {
 export class LogModel {
   constructor(private db: D1Database) {}
 
-  createInsertStatement(log: ResolutionLog) {
+  createInsertStatement(log: ResolutionLog): D1PreparedStatement {
     const logId = log.id ?? generateLogId();
     return this.db.prepare(
       "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -40,6 +40,32 @@ export class LogModel {
         log.upstream || null,
         log.latency || null,
       );
+  }
+
+  /**
+   * Generates a prepared atomic UPSERT statement for domain_hourly_rollups.
+   * Increments the count if the record already exists for the (profile_id, hour_timestamp, domain, action) composite key.
+   *
+   * @param profileId - Profile identifier.
+   * @param hourTimestamp - Hour-aligned epoch timestamp in seconds.
+   * @param domain - Fully-qualified or normalized domain name.
+   * @param action - Resolution action ('PASS' | 'BLOCK' | 'REDIRECT' | 'FAIL').
+   * @param count - Increment count (pre-aggregated in memory).
+   * @returns D1PreparedStatement ready for batch execution.
+   */
+  createDomainRollupUpsertStatement(
+    profileId: string,
+    hourTimestamp: number,
+    domain: string,
+    action: string,
+    count: number
+  ): D1PreparedStatement {
+    return this.db.prepare(`
+      INSERT INTO domain_hourly_rollups (profile_id, hour_timestamp, domain, action, count)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(profile_id, hour_timestamp, domain, action)
+      DO UPDATE SET count = count + excluded.count
+    `).bind(profileId, hourTimestamp, domain, action, count);
   }
 
   async insert(log: ResolutionLog): Promise<boolean> {
@@ -171,6 +197,7 @@ export class LogModel {
 
   async deleteByOwner(ownerId: string): Promise<boolean> {
     const results = await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
@@ -182,6 +209,7 @@ export class LogModel {
   async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 20000): Promise<number> {
     // Purge expired rollups first (small table, sub-millisecond execution)
     await this.db.batch([
+      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
       this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp)
@@ -248,6 +276,11 @@ export class LogModel {
         const threshold = Math.floor(Date.now() / 1000 - (effectiveDays * 24 * 3600));
 
         // Purge expired rollups matching retention policy
+        statements.push(
+          this.db.prepare(
+            "DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
+          ).bind(profile.id, threshold)
+        );
         statements.push(
           this.db.prepare(
             "DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
@@ -631,21 +664,97 @@ export class LogModel {
     return results;
   }
 
-  async getTopAllowed(profileId: string, since: number, until: number, accessPointId?: string) {
+  /**
+   * Retrieves top allowed domains for a given time range.
+   *
+   * Performance optimization:
+   * When no device/access point filter is present, queries pre-aggregated `domain_hourly_rollups`
+   * using covering index `idx_domain_rollups_query` (profile_id, action, hour_timestamp, domain, count),
+   * avoiding multi-million row table scans over raw logs.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param accessPointId - Optional device filter.
+   * @returns Array of top allowed domain records ordered by count descending.
+   */
+  async getTopAllowed(
+    profileId: string,
+    since: number,
+    until: number,
+    accessPointId?: string
+  ): Promise<{ domain: string; count: number }[]> {
+    if (!accessPointId) {
+      const sinceHour = Math.floor(since / 3600) * 3600;
+      const { results } = await this.db.prepare(`
+        SELECT domain, SUM(count) as count
+        FROM domain_hourly_rollups
+        WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 10
+      `).bind(profileId, sinceHour, until).all<{ domain: string; count: number }>();
+
+      if (results && results.length > 0) {
+        return results;
+      }
+    }
+
     let queryStr = "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS'";
-    let params: any[] = [profileId, since, until];
-    if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
+    const params: any[] = [profileId, since, until];
+    if (accessPointId) {
+      queryStr += " AND access_point_id = ?";
+      params.push(accessPointId);
+    }
     queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
-    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string, count: number }>();
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string; count: number }>();
     return results;
   }
 
-  async getTopBlocked(profileId: string, since: number, until: number, accessPointId?: string) {
+  /**
+   * Retrieves top blocked domains for a given time range.
+   *
+   * Performance optimization:
+   * When no device/access point filter is present, queries pre-aggregated `domain_hourly_rollups`
+   * using covering index `idx_domain_rollups_query` (profile_id, action, hour_timestamp, domain, count),
+   * avoiding multi-million row table scans over raw logs.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param accessPointId - Optional device filter.
+   * @returns Array of top blocked domain records ordered by count descending.
+   */
+  async getTopBlocked(
+    profileId: string,
+    since: number,
+    until: number,
+    accessPointId?: string
+  ): Promise<{ domain: string; count: number }[]> {
+    if (!accessPointId) {
+      const sinceHour = Math.floor(since / 3600) * 3600;
+      const { results } = await this.db.prepare(`
+        SELECT domain, SUM(count) as count
+        FROM domain_hourly_rollups
+        WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ?
+        GROUP BY domain
+        ORDER BY count DESC
+        LIMIT 10
+      `).bind(profileId, sinceHour, until).all<{ domain: string; count: number }>();
+
+      if (results && results.length > 0) {
+        return results;
+      }
+    }
+
     let queryStr = "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'BLOCK'";
-    let params: any[] = [profileId, since, until];
-    if (accessPointId) { queryStr += " AND access_point_id = ?"; params.push(accessPointId); }
+    const params: any[] = [profileId, since, until];
+    if (accessPointId) {
+      queryStr += " AND access_point_id = ?";
+      params.push(accessPointId);
+    }
     queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
-    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string, count: number }>();
+    const { results } = await this.db.prepare(queryStr).bind(...params).all<{ domain: string; count: number }>();
     return results;
   }
 
