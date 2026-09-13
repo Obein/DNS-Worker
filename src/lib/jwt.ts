@@ -31,9 +31,21 @@ export function stringToUint8Array(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
-export async function importJwtSecret(secretHex: string): Promise<CryptoKey> {
-  // If the secret is stored as hex, we decode it first
-  const secretBytes = new Uint8Array(secretHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+const JWT_KEY_SALT = "DNS_WORKER_JWT_KEY_SALT_v1";
+
+/**
+ * Derives a CryptoKey for JWT signing and verification.
+ * Fixes hex parsing vulnerabilities where invalid hex characters evaluated to NaN (and implicitly 0 in Uint8Array),
+ * or non-hex inputs could cause length mismatches / null pointer exceptions.
+ * Derives a consistent 256-bit raw key by hashing secret + fixed salt using SHA-256.
+ *
+ * @param secret - Raw secret string or hex secret configured in environment
+ * @returns CryptoKey for HMAC-SHA512 signing/verification
+ */
+export async function importJwtSecret(secret: string): Promise<CryptoKey> {
+  const saltedData = new TextEncoder().encode(`${secret}:${JWT_KEY_SALT}`);
+  const secretBytes = await crypto.subtle.digest("SHA-256", saltedData);
+
   return crypto.subtle.importKey(
     "raw",
     secretBytes,
