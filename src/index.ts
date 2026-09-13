@@ -15,6 +15,7 @@ import { handleSystemRequest } from './api/system';
 import { handleDoHRequest } from './api/doh';
 import { handleScheduled } from './cron';
 import { handleMapDataRequest } from './api/mapData';
+import { isUsableJwtSecret } from './lib/jwt';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -45,7 +46,7 @@ export default {
         } catch (e) {
           isDbMissing = true;
         }
-        const isJwtSecretMissing = !env.JWT_SECRET;
+        const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
 
         if (isDbMissing || isJwtSecretMissing) {
           return new Response(JSON.stringify({
@@ -156,7 +157,7 @@ export default {
           } catch (e) {
             isDbMissing = true;
           }
-          const isJwtSecretMissing = !env.JWT_SECRET;
+          const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
 
           let configStr = "{}";
           try {

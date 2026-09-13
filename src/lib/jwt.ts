@@ -31,6 +31,27 @@ export function stringToUint8Array(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
+/**
+ * Placeholder values from the READMEs and .env.serverfull. A deployment that kept
+ * one of these has a publicly known secret, so its tokens can be forged no matter
+ * how the signing key is derived.
+ */
+const PLACEHOLDER_JWT_SECRETS = new Set([
+  "your_secure_random_string_here",
+  "您的随机安全JWT密钥",
+  "您的隨機安全JWT金鑰",
+  "replace_with_a_secure_random_jwt_secret_string_32chars_min",
+]);
+
+/**
+ * Whether JWT_SECRET is present and is not a documentation placeholder.
+ */
+export function isUsableJwtSecret(secret: string | undefined | null): secret is string {
+  if (typeof secret !== "string") return false;
+  const trimmed = secret.trim();
+  return trimmed.length > 0 && !PLACEHOLDER_JWT_SECRETS.has(trimmed);
+}
+
 const JWT_KEY_SALT = "DNS_WORKER_JWT_KEY_SALT_v1";
 
 /**
