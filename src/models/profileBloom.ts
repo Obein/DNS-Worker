@@ -1,5 +1,5 @@
 import { D1Database } from "@cloudflare/workers-types";
-import { BloomFilter } from "../utils/bloom";
+import { BloomFilter, BLOOM_CHUNK_SIZE } from "../utils/bloom";
 
 export class ProfileBloomModel {
   constructor(private db: D1Database) {}
@@ -15,7 +15,6 @@ export class ProfileBloomModel {
   }
 
   async upsertProfileBloom(profileId: string, bloomFilter: ArrayBuffer, now: number): Promise<boolean> {
-    const CHUNK_SIZE = 512 * 1024; // 512KB per chunk
     const uint8Array = new Uint8Array(bloomFilter);
     const statements = [];
 
@@ -24,10 +23,10 @@ export class ProfileBloomModel {
       this.db.prepare("DELETE FROM profile_blooms WHERE profile_id = ?").bind(profileId)
     );
 
-    // Insert new chunks
+    // Insert new chunks (1.5MB per chunk, <= 2MB D1 limit)
     let chunkIndex = 0;
-    for (let offset = 0; offset < uint8Array.length; offset += CHUNK_SIZE) {
-      const chunkData = uint8Array.slice(offset, offset + CHUNK_SIZE).buffer as ArrayBuffer;
+    for (let offset = 0; offset < uint8Array.length; offset += BLOOM_CHUNK_SIZE) {
+      const chunkData = uint8Array.slice(offset, offset + BLOOM_CHUNK_SIZE).buffer as ArrayBuffer;
       statements.push(
         this.db.prepare(
           "INSERT INTO profile_blooms (profile_id, chunk_index, bloom_filter_chunk, updated_at) VALUES (?, ?, ?, ?)"
@@ -95,7 +94,6 @@ export class ProfileBloomModel {
   }
 
   async upsertStagingBloom(profileId: string, bloomFilter: ArrayBuffer, now: number): Promise<boolean> {
-    const CHUNK_SIZE = 512 * 1024;
     const uint8Array = new Uint8Array(bloomFilter);
     const statements = [];
 
@@ -103,9 +101,10 @@ export class ProfileBloomModel {
       this.db.prepare("DELETE FROM profile_blooms_staging WHERE profile_id = ?").bind(profileId)
     );
 
+    // Insert new chunks (1.5MB per chunk, <= 2MB D1 limit)
     let chunkIndex = 0;
-    for (let offset = 0; offset < uint8Array.length; offset += CHUNK_SIZE) {
-      const chunkData = uint8Array.slice(offset, offset + CHUNK_SIZE).buffer as ArrayBuffer;
+    for (let offset = 0; offset < uint8Array.length; offset += BLOOM_CHUNK_SIZE) {
+      const chunkData = uint8Array.slice(offset, offset + BLOOM_CHUNK_SIZE).buffer as ArrayBuffer;
       statements.push(
         this.db.prepare(
           "INSERT INTO profile_blooms_staging (profile_id, chunk_index, bloom_filter_chunk, updated_at) VALUES (?, ?, ?, ?)"
