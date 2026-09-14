@@ -17,6 +17,7 @@ export interface UserInfo {
   pin_enabled?: boolean;
   session_lock_timeout?: number;
   max_log_retention_days?: number;
+  jwt_secret_warning?: boolean;
 }
 
 export interface ActivityEntry {

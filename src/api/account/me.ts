@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../types";
-import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString } from "../../lib/auth";
+import { createBlankRefreshTokenCookie, readRefreshTokenCookie, parseRefreshTokenString, isUsableJwtSecret, isStrongJwtSecret } from "../../lib/auth";
 import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
 import { PasskeyModel } from "../../models/passkey";
@@ -51,6 +51,10 @@ export async function handleMeRequest(
         hasRecoveryKeys = true;
       }
 
+      const jwtSecretWarning = user.role === 'admin'
+        ? isUsableJwtSecret(env.JWT_SECRET) && !isStrongJwtSecret(env.JWT_SECRET)
+        : false;
+
       return new Response(JSON.stringify({
         id: user.id,
         username: dbUser?.username || "",
@@ -67,6 +71,7 @@ export async function handleMeRequest(
         pin_enabled: !!(dbUser?.pin_hash),
         session_lock_timeout: dbUser?.session_lock_timeout ?? 15,
         max_log_retention_days: user.role === 'admin' ? adminMaxRetention : normalUserMax,
+        jwt_secret_warning: jwtSecretWarning,
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 

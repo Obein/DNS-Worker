@@ -81,7 +81,7 @@ async function runTests() {
   const env: Env = {
     DB: db,
     ASSETS: null as any,
-    JWT_SECRET: 'test_jwt_secret',
+    JWT_SECRET: 'test_jwt_secret_serverfull_suite_000000',
     FAIL_OPEN_UPSTREAM: 'https://security.cloudflare-dns.com/dns-query',
     SERVERFULL_DEFAULT_PROFILE_KEY: 'testkey123'
   };

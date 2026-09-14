@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Divider, Tag, Intent } from "@blueprintjs/core";
-import { ShieldCheck } from "lucide-react";
+import { Divider, Tag, Intent, Callout } from "@blueprintjs/core";
+import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
 
@@ -148,6 +148,19 @@ export const AccountView: React.FC = () => {
           </Tag>
         )}
       </div>
+
+      {/* Non-blocking Security Warning for Weak JWT_SECRET (Admin only) */}
+      {me?.role === "admin" && me?.jwt_secret_warning && (
+        <Callout
+          intent={Intent.WARNING}
+          icon={<AlertTriangle size={18} />}
+          title={t("account.jwtSecretWarningTitle")}
+        >
+          <div className="text-sm leading-relaxed mt-1">
+            {t("account.jwtSecretWarningDesc")}
+          </div>
+        </Callout>
+      )}
 
       {/* Personal Info + Password */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

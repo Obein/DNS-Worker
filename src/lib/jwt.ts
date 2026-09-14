@@ -31,6 +31,42 @@ export function stringToUint8Array(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
+/** Minimum accepted JWT_SECRET length. The built-in generator produces 64 characters. */
+export const MIN_JWT_SECRET_LENGTH = 32;
+
+/**
+ * Placeholder values from the READMEs and .env.serverfull. A deployment that kept
+ * one of these has a publicly known secret, so its tokens can be forged no matter
+ * how the signing key is derived. Checked explicitly because length alone does not
+ * catch them all: the .env.serverfull placeholder is 58 characters.
+ */
+const PLACEHOLDER_JWT_SECRETS = new Set([
+  "your_secure_random_string_here",
+  "您的随机安全JWT密钥",
+  "您的隨機安全JWT金鑰",
+  "replace_with_a_secure_random_jwt_secret_string_32chars_min",
+]);
+
+/**
+ * Whether JWT_SECRET is present and is not a documentation placeholder.
+ * Does not block on string length to allow legacy deployments to continue operating.
+ */
+export function isUsableJwtSecret(secret: string | undefined | null): secret is string {
+  if (typeof secret !== "string") return false;
+  const trimmed = secret.trim();
+  return trimmed.length > 0 && !PLACEHOLDER_JWT_SECRETS.has(trimmed);
+}
+
+/**
+ * Checks whether JWT_SECRET meets the recommended cryptographic length (>= 32 characters).
+ * Shorter secrets are still usable to avoid breaking legacy deployments, but will trigger
+ * a non-blocking warning in the administration dashboard and startup logs.
+ */
+export function isStrongJwtSecret(secret: string | undefined | null): boolean {
+  if (!isUsableJwtSecret(secret)) return false;
+  return secret.trim().length >= MIN_JWT_SECRET_LENGTH;
+}
+
 const JWT_KEY_SALT = "DNS_WORKER_JWT_KEY_SALT_v1";
 
 /**
