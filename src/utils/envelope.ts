@@ -1,29 +1,42 @@
+/**
+ * Resolves the highest configured KEK version (e.g. "v1", "v2", "v101") from environment variables.
+ * Scans all environment keys matching KEK_v<N> or KEK_V<N> dynamically without hardcoded version caps.
+ * Returns null if no KEK is configured, disabling envelope encryption.
+ *
+ * @param env - Cloudflare Workers environment bindings or Node.js process.env object
+ * @returns Active KEK version string (e.g. "v1") or null if no KEK configured
+ */
 export function getActiveKekVersion(env: any): string | null {
-  if (!env) return null;
+  if (!env || typeof env !== "object") return null;
   let maxVer = 0;
-  for (let ver = 1; ver <= 100; ver++) {
-    const val = env[`KEK_v${ver}`] || env[`KEK_V${ver}`];
-    if (val !== undefined && val !== null && val !== "") {
-      if (ver > maxVer) {
-        maxVer = ver;
+  for (const key of Object.keys(env)) {
+    const match = key.match(/^KEK_[vV](\d+)$/);
+    if (match) {
+      const val = env[key];
+      if (val !== undefined && val !== null && val !== "") {
+        const ver = parseInt(match[1], 10);
+        if (!isNaN(ver) && ver > maxVer) {
+          maxVer = ver;
+        }
       }
     }
   }
   if (maxVer > 0) return `v${maxVer}`;
-  if (env.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
-    return "v0";
-  }
   return null;
 }
 
+/**
+ * Retrieves the raw KEK secret string for a given version.
+ *
+ * @param version - KEK version string (e.g. "v1")
+ * @param env - Cloudflare Workers environment bindings or Node.js process.env object
+ * @returns Raw KEK secret string or null if not found
+ */
 export function getKekSecret(version: string, env: any): string | null {
   if (!env) return null;
   const val = env[`KEK_${version}`] || env[`KEK_${version.toUpperCase()}`];
   if (val && typeof val === "string" && val.trim() !== "") {
     return val;
-  }
-  if ((version === "v0" || version === "default") && env.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
-    return env.JWT_SECRET;
   }
   return null;
 }
