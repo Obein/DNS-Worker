@@ -106,6 +106,10 @@ PRESET_UPSTREAMS = """
     "url": "https://family.cloudflare-dns.com/dns-query"
   },
   {
+    "label": "Cloudflare",
+    "url": "https://cloudflare-dns.com/dns-query"
+  },
+  {
     "label": "settings.presetQuad9",
     "url": "https://dns.quad9.net/dns-query"
   },
@@ -132,6 +136,10 @@ PRESET_UPSTREAMS = """
   {
     "label": "Cloudflare Security (1.1.1.2)",
     "url": "tcp://1.1.1.2:53"
+  },
+  {
+    "label": "Cloudflare (1.1.1.1)",
+    "url": "tcp://1.1.1.1:53"
   },
   {
     "label": "Quad9 ECS (9.9.9.11)",
