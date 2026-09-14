@@ -50,13 +50,17 @@ export {
   invalidatePreauthSession,
   recordFailedPreauthAttempt
 } from "./preauth";
+import { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH } from "./jwt";
+export { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH };
 
 /**
  * Gets or creates the JWT secret from system settings.
  */
 export async function getOrCreateJwtSecret(env: Env): Promise<string> {
-  if (!env.JWT_SECRET) {
-    throw new Error("JWT_SECRET environment variable is missing.");
+  if (!isUsableJwtSecret(env.JWT_SECRET)) {
+    throw new Error(
+      `JWT_SECRET is missing or is a documentation placeholder.`
+    );
   }
   return env.JWT_SECRET;
 }

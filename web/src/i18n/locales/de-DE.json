@@ -507,6 +507,8 @@
   "account": {
     "title": "Kontoeinstellungen",
     "subtitle": "Verwalten Sie Ihre Sicherheitsanmeldedaten und Systembenutzer.",
+    "jwtSecretWarningTitle": "Sicherheitshinweis: Schwaches JWT-Secret",
+    "jwtSecretWarningDesc": "Das aktuelle JWT_SECRET ist kürzer als 32 Zeichen, was potenzielle Sicherheitsrisiken birgt. Bitte konfigurieren Sie die Umgebungsvariable KEK_v1, bevor Sie JWT_SECRET rotieren, um sicherzustellen, dass vorhandene Umschlag-verschlüsselte TOTP- und Wiederherstellungsschlüssel entschlüsselbar bleiben.",
     "roleAdmin": "Systemadministrator",
     "roleUser": "Benutzer",
     "personalInfo": "Persönliche Informationen",

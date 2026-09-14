@@ -507,6 +507,8 @@
   "account": {
     "title": "アカウント設定",
     "subtitle": "セキュリティ資格情報とシステムユーザーを管理します。",
+    "jwtSecretWarningTitle": "セキュリティ警告：JWTシークレットの強度が不足しています",
+    "jwtSecretWarningDesc": "現在の JWT_SECRET は32文字未満であり、セキュリティ上の潜在的なリスクがあります。エンベロープ暗号化された既存のTOTPおよびリカバリキーの復号を維持するため、JWT_SECRET をローテーションする前に環境変数 KEK_v1 を設定してください。",
     "roleAdmin": "システム管理者",
     "roleUser": "ユーザー",
     "personalInfo": "個人情報",

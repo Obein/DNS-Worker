@@ -508,6 +508,8 @@
   "account": {
     "title": "Account Settings",
     "subtitle": "Manage your security credentials and system users.",
+    "jwtSecretWarningTitle": "Security Notice: Weak JWT Secret",
+    "jwtSecretWarningDesc": "The current JWT_SECRET is shorter than 32 characters, which introduces potential security risks. Please configure the KEK_v1 environment variable before rotating JWT_SECRET to ensure existing envelope-encrypted TOTP and recovery keys remain decryptable.",
     "roleAdmin": "Administrator",
     "roleUser": "User",
     "personalInfo": "Personal Info",

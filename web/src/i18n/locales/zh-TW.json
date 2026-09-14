@@ -508,6 +508,8 @@
   "account": {
     "title": "帳號設定",
     "subtitle": "管理您的安全憑據和系統用戶。",
+    "jwtSecretWarningTitle": "安全提示：JWT 金鑰強度較弱",
+    "jwtSecretWarningDesc": "目前 JWT_SECRET 長度小於 32 位元字元，存在潛在安全隱患。請先設定環境變數 KEK_v1 完成憑證信封加密遷移，然後再輪換 JWT_SECRET，以防止既有加密的 TOTP 或復原金鑰無法解密。",
     "roleAdmin": "系統管理員",
     "roleUser": "用戶",
     "personalInfo": "個人資訊",

@@ -507,6 +507,8 @@
   "account": {
     "title": "Cài đặt tài khoản",
     "subtitle": "Quản lý thông tin bảo mật và người dùng hệ thống của bạn.",
+    "jwtSecretWarningTitle": "Cảnh báo bảo mật: Mã bí mật JWT yếu",
+    "jwtSecretWarningDesc": "JWT_SECRET hiện tại có ít hơn 32 ký tự, tiềm ẩn rủi ro bảo mật. Vui lòng cấu hình biến môi trường KEK_v1 trước khi xoay vòng JWT_SECRET để đảm bảo các khóa TOTP và khóa khôi phục được mã hóa phong bì vẫn có thể giải mã được.",
     "roleAdmin": "Quản trị viên hệ thống",
     "roleUser": "Người dùng",
     "personalInfo": "Thông tin cá nhân",

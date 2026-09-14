@@ -507,6 +507,8 @@
   "account": {
     "title": "Ajustes de cuenta",
     "subtitle": "Gestiona tus credenciales de seguridad y usuarios del sistema.",
+    "jwtSecretWarningTitle": "Aviso de seguridad: Secreto JWT débil",
+    "jwtSecretWarningDesc": "El JWT_SECRET actual tiene menos de 32 caracteres, lo que presenta riesgos potenciales de seguridad. Configure la variable de entorno KEK_v1 antes de rotar JWT_SECRET para garantizar que las claves TOTP y de recuperación cifradas por sobre sigan siendo descifrables.",
     "roleAdmin": "Administrador del sistema",
     "roleUser": "Usuario",
     "personalInfo": "Información personal",
