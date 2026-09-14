@@ -14,6 +14,6 @@
     "checkJs": false,
     "noEmit": true
   },
-  "include": ["src/**/*", "migrations/**/*"],
+  "include": ["src/**/*", "migrations/**/*", "scripts/**/*"],
   "exclude": ["node_modules", "web/**/*"]
 }

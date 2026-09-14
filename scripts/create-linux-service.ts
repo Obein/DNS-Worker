@@ -1,18 +1,29 @@
 #!/usr/bin/env node
 /**
- * @file create-linux-service.cjs
- * @description Generates and installs systemd service for DNS Worker on Linux.
+ * @file create-linux-service.ts
+ * @description Generates and installs a systemd service for DNS Worker (Serverfull Mode) on Linux systems.
  */
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { execSync } = require('node:child_process');
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
-const PROJECT_DIR = path.resolve(__dirname, '..');
+// Support both ESM and CJS path resolution
+const currentDir = typeof __dirname !== 'undefined'
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
+
+const PROJECT_DIR = path.resolve(currentDir, '..');
 const SERVICE_NAME = 'dns-worker.service';
 const SERVICE_PATH = `/etc/systemd/system/${SERVICE_NAME}`;
 
-function findTsxCli() {
+/**
+ * Discovers the appropriate tsx executable path within the project.
+ *
+ * @returns Executable path or command string for tsx
+ */
+function findTsxCli(): string {
   const localTsxMjs = path.join(PROJECT_DIR, 'node_modules', 'tsx', 'dist', 'cli.mjs');
   if (fs.existsSync(localTsxMjs)) {
     return localTsxMjs;
@@ -24,7 +35,12 @@ function findTsxCli() {
   return 'npx tsx';
 }
 
-function generateServiceContent() {
+/**
+ * Generates the systemd unit file content with proper paths, capabilities, and security hardening.
+ *
+ * @returns Complete systemd unit file string
+ */
+function generateServiceContent(): string {
   const nodePath = process.execPath;
   const tsxCli = findTsxCli();
 
@@ -34,6 +50,10 @@ function generateServiceContent() {
   } else {
     execStart = `${tsxCli} src/serverfull/index.ts`;
   }
+
+  const envServerfullPath = path.join(PROJECT_DIR, '.env.serverfull');
+  const envPath = path.join(PROJECT_DIR, '.env');
+  const devVarsPath = path.join(PROJECT_DIR, '.dev.vars');
 
   return `[Unit]
 Description=DNS Worker Serverfull Service (UDP DNS, DoT & Web)
@@ -45,8 +65,9 @@ WorkingDirectory=${PROJECT_DIR}
 ExecStart=${execStart}
 Restart=always
 RestartSec=5
-EnvironmentFile=-${path.join(PROJECT_DIR, '.env')}
-EnvironmentFile=-${path.join(PROJECT_DIR, '.dev.vars')}
+EnvironmentFile=-${envServerfullPath}
+EnvironmentFile=-${envPath}
+EnvironmentFile=-${devVarsPath}
 LimitNOFILE=65535
 
 # Grant capability to bind ports 53 and 853 without full root privileges
@@ -63,7 +84,10 @@ WantedBy=multi-user.target
 `;
 }
 
-function main() {
+/**
+ * Main entry point for generating and installing the Linux systemd service.
+ */
+function main(): void {
   console.log('======================================================');
   console.log('       DNS Worker - Linux Systemd Service Setup       ');
   console.log('======================================================\n');

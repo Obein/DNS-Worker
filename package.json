@@ -8,7 +8,7 @@
     "start": "npm run build && wrangler dev",
     "start:serverfull": "npm run build && tsx src/serverfull/index.ts",
     "serverfull": "npm run build && tsx src/serverfull/index.ts",
-    "service-create:linux": "node scripts/create-linux-service.cjs",
+    "service-create:linux": "tsx scripts/create-linux-service.ts",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",
