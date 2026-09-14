@@ -27,8 +27,10 @@ export function getActiveKekVersion(env: any): string | null {
 
 /**
  * Retrieves the raw KEK secret string for a given version.
+ * Note: If version is "v0" or "default" and no explicit KEK_v0 is set, falls back to env.JWT_SECRET
+ * for backward compatibility with legacy deployments that encrypted credentials using JWT_SECRET.
  *
- * @param version - KEK version string (e.g. "v1")
+ * @param version - KEK version string (e.g. "v1", "v0")
  * @param env - Cloudflare Workers environment bindings or Node.js process.env object
  * @returns Raw KEK secret string or null if not found
  */
@@ -37,6 +39,10 @@ export function getKekSecret(version: string, env: any): string | null {
   const val = env[`KEK_${version}`] || env[`KEK_${version.toUpperCase()}`];
   if (val && typeof val === "string" && val.trim() !== "") {
     return val;
+  }
+  // Backward compatibility: fallback to JWT_SECRET for legacy v0/default data
+  if ((version === "v0" || version === "default") && env.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
+    return env.JWT_SECRET;
   }
   return null;
 }
@@ -159,45 +165,71 @@ export async function encryptEnvelope(
 
 /**
  * Decrypts envelope encrypted data using the stored DEK and KEK.
+ * If decryption fails using the specified KEK version (e.g. missing KEK or rotated environment),
+ * it falls back to trying KEK "v0" (derived from JWT_SECRET) to preserve backward compatibility for legacy deployments.
  */
 export async function decryptEnvelope(
   dataEncryptedStr: string,
   dekEncryptedStr: string,
   env: any
 ): Promise<string> {
-  const dataEncrypted: EnvelopeEncryptedData = JSON.parse(dataEncryptedStr);
-  const dekEncrypted: EnvelopeEncryptedDek = JSON.parse(dekEncryptedStr);
-
-  const kekSecret = getKekSecret(dekEncrypted.kek_version, env);
-  if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
-    throw new Error(`Required KEK version ${dekEncrypted.kek_version} is missing or invalid in environment variables`);
+  let dataEncrypted: EnvelopeEncryptedData;
+  let dekEncrypted: EnvelopeEncryptedDek;
+  try {
+    dataEncrypted = JSON.parse(dataEncryptedStr);
+    dekEncrypted = JSON.parse(dekEncryptedStr);
+  } catch (parseErr) {
+    throw new Error(`Failed to parse envelope payload: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`);
   }
 
-  const kekKey = await importKek(kekSecret);
+  const attemptDecrypt = async (kekVersion: string): Promise<string> => {
+    const kekSecret = getKekSecret(kekVersion, env);
+    if (!kekSecret || typeof kekSecret !== "string" || kekSecret.trim() === "") {
+      throw new Error(`Required KEK version ${kekVersion} is missing or invalid in environment variables`);
+    }
 
-  // 1. Decrypt the DEK using the KEK
-  const encryptedDekBytes = fromBase64(dekEncrypted.ciphertext);
-  const dekIv = fromBase64(dekEncrypted.iv);
-  const decryptedDekBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: dekIv },
-    kekKey,
-    encryptedDekBytes
-  );
+    const kekKey = await importKek(kekSecret);
 
-  const dekBytes = new Uint8Array(decryptedDekBuffer);
-  const dekKey = await importDek(dekBytes);
+    // 1. Decrypt the DEK using the KEK
+    const encryptedDekBytes = fromBase64(dekEncrypted.ciphertext);
+    const dekIv = fromBase64(dekEncrypted.iv);
+    const decryptedDekBuffer = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: dekIv },
+      kekKey,
+      encryptedDekBytes
+    );
 
-  // 2. Decrypt the data using the decrypted DEK
-  const encryptedDataBytes = fromBase64(dataEncrypted.ciphertext);
-  const dataIv = fromBase64(dataEncrypted.iv);
-  const decryptedDataBuffer = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: dataIv },
-    dekKey,
-    encryptedDataBytes
-  );
+    const dekBytes = new Uint8Array(decryptedDekBuffer);
+    const dekKey = await importDek(dekBytes);
 
-  const decoder = new TextDecoder();
-  return decoder.decode(decryptedDataBuffer);
+    // 2. Decrypt the data using the decrypted DEK
+    const encryptedDataBytes = fromBase64(dataEncrypted.ciphertext);
+    const dataIv = fromBase64(dataEncrypted.iv);
+    const decryptedDataBuffer = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: dataIv },
+      dekKey,
+      encryptedDataBytes
+    );
+
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedDataBuffer);
+  };
+
+  try {
+    return await attemptDecrypt(dekEncrypted.kek_version);
+  } catch (primaryErr) {
+    // If decryption failed or KEK was missing, and the failed version wasn't already "v0",
+    // fallback to "v0" (JWT_SECRET) for legacy compatibility.
+    if (dekEncrypted.kek_version !== "v0" && env?.JWT_SECRET && typeof env.JWT_SECRET === "string" && env.JWT_SECRET.trim() !== "") {
+      try {
+        return await attemptDecrypt("v0");
+      } catch (fallbackErr) {
+        // Both primary and fallback failed, throw primary error
+        throw primaryErr;
+      }
+    }
+    throw primaryErr;
+  }
 }
 
 /**
@@ -211,8 +243,14 @@ export async function rotateEnvelopeDek(
 ): Promise<string | null> {
   if (!env) return null;
 
-  const dekEncrypted: EnvelopeEncryptedDek = JSON.parse(dekEncryptedStr);
-  const currentKekVersion = dekEncrypted.kek_version; // e.g. "v1"
+  let dekEncrypted: EnvelopeEncryptedDek;
+  try {
+    dekEncrypted = JSON.parse(dekEncryptedStr);
+  } catch {
+    return null;
+  }
+
+  const currentKekVersion = dekEncrypted.kek_version; // e.g. "v0" or "v1"
   const currentVersionNumber = parseInt(currentKekVersion.replace(/^v/, ""), 10);
   if (isNaN(currentVersionNumber)) {
     return null;

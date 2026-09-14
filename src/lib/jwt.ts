@@ -48,13 +48,23 @@ const PLACEHOLDER_JWT_SECRETS = new Set([
 ]);
 
 /**
- * Whether JWT_SECRET is present, is not a documentation placeholder, and is long
- * enough to be usable.
+ * Whether JWT_SECRET is present and is not a documentation placeholder.
+ * Does not block on string length to allow legacy deployments to continue operating.
  */
 export function isUsableJwtSecret(secret: string | undefined | null): secret is string {
   if (typeof secret !== "string") return false;
   const trimmed = secret.trim();
-  return trimmed.length >= MIN_JWT_SECRET_LENGTH && !PLACEHOLDER_JWT_SECRETS.has(trimmed);
+  return trimmed.length > 0 && !PLACEHOLDER_JWT_SECRETS.has(trimmed);
+}
+
+/**
+ * Checks whether JWT_SECRET meets the recommended cryptographic length (>= 32 characters).
+ * Shorter secrets are still usable to avoid breaking legacy deployments, but will trigger
+ * a non-blocking warning in the administration dashboard and startup logs.
+ */
+export function isStrongJwtSecret(secret: string | undefined | null): boolean {
+  if (!isUsableJwtSecret(secret)) return false;
+  return secret.trim().length >= MIN_JWT_SECRET_LENGTH;
 }
 
 const JWT_KEY_SALT = "DNS_WORKER_JWT_KEY_SALT_v1";

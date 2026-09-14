@@ -507,6 +507,8 @@
   "account": {
     "title": "계정 설정",
     "subtitle": "보안 자격 증명 및 시스템 사용자를 관리합니다.",
+    "jwtSecretWarningTitle": "보안 알림: 취약한 JWT 시크릿",
+    "jwtSecretWarningDesc": "현재 JWT_SECRET 길이가 32자 미만이어서 잠재적인 보안 위험이 있습니다. 봉투 암호화된 기존 TOTP 및 복구 키의 복호화가 가능하도록 JWT_SECRET을 교체하기 전에 KEK_v1 환경 변수를 먼저 구성하십시오.",
     "roleAdmin": "시스템 관리자",
     "roleUser": "사용자",
     "personalInfo": "개인 정보",

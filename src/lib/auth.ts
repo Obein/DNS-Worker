@@ -50,7 +50,8 @@ export {
   invalidatePreauthSession,
   recordFailedPreauthAttempt
 } from "./preauth";
-import { isUsableJwtSecret, MIN_JWT_SECRET_LENGTH } from "./jwt";
+import { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH } from "./jwt";
+export { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH };
 
 /**
  * Gets or creates the JWT secret from system settings.
@@ -58,7 +59,7 @@ import { isUsableJwtSecret, MIN_JWT_SECRET_LENGTH } from "./jwt";
 export async function getOrCreateJwtSecret(env: Env): Promise<string> {
   if (!isUsableJwtSecret(env.JWT_SECRET)) {
     throw new Error(
-      `JWT_SECRET is missing, is a documentation placeholder, or is shorter than ${MIN_JWT_SECRET_LENGTH} characters.`
+      `JWT_SECRET is missing or is a documentation placeholder.`
     );
   }
   return env.JWT_SECRET;

@@ -13,6 +13,7 @@ import { HttpServer } from './http';
 import { flushLogBatch } from '../pipeline/logBatcher';
 import worker from '../index';
 import { ExecutionContext } from '../types';
+import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 
 async function bootstrap(): Promise<void> {
   console.log('------------------------------------------------------');
@@ -24,6 +25,13 @@ async function bootstrap(): Promise<void> {
 
   // 2. Load environment variables & configurations
   const { config, env } = getServerfullConfig();
+
+  // Non-blocking security check for legacy short JWT_SECRET
+  if (isUsableJwtSecret(env.JWT_SECRET) && !isStrongJwtSecret(env.JWT_SECRET)) {
+    console.warn('\n[SECURITY WARNING] JWT_SECRET is shorter than 32 characters.');
+    console.warn('  Please configure KEK_v1 in your environment before rotating JWT_SECRET');
+    console.warn('  to prevent existing encrypted credentials from becoming unrecoverable.\n');
+  }
 
   // 3. Initialize SQLite D1 adapter and execute schema migrations
   const db = initServerfullDb(config.dbPath);

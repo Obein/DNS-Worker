@@ -507,6 +507,8 @@
   "account": {
     "title": "Paramètres du compte",
     "subtitle": "Gérez vos identifiants de sécurité et les utilisateurs du système.",
+    "jwtSecretWarningTitle": "Avis de sécurité : Secret JWT faible",
+    "jwtSecretWarningDesc": "Le JWT_SECRET actuel comporte moins de 32 caractères, ce qui présente des risques potentiels pour la sécurité. Veuillez configurer la variable d'environnement KEK_v1 avant de renouveler JWT_SECRET afin de garantir que les clés TOTP et de récupération chiffrées par enveloppe restent déchiffrables.",
     "roleAdmin": "Administrateur système",
     "roleUser": "Utilisateur",
     "personalInfo": "Informations personnelles",

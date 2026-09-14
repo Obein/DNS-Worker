@@ -18,6 +18,8 @@
     "db:migrate:dev": "wrangler d1 migrations apply dns_worker_db --local",
     "db:migrate:prod": "echo \"y\" | wrangler d1 migrations apply dns_worker_db --remote",
     "db:status": "wrangler d1 execute dns_worker_db --local --command='SELECT name FROM sqlite_master WHERE type=\"table\"'",
+    "test": "tsx test/test_legacy_compat.ts",
+    "test:compat": "tsx test/test_legacy_compat.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "ui:dev": "cd web && npm run dev",
