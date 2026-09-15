@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "{{groups}}번째 그룹의 체크섬 오류입니다. 확인 후 다시 시도하세요",
     "backToPasskey": "Passkey 인증으로 돌아가기",
     "recoveryKeyRequired": "비상 복구 키를 입력하세요",
-    "totpFormatError": "유효한 6자리 코드를 입력하세요"
+    "totpFormatError": "유효한 6자리 코드를 입력하세요",
+    "registrationDisabledTitle": "회원가입 비활성화됨",
+    "registrationDisabledDesc": "현재 신규 사용자 등록이 일시 중지되었습니다. 계정 발급은 시스템 관리자에게 문의하세요.",
+    "backToLogin": "로그인으로 돌아가기"
   },
   "setup": {
     "title": "설치 가이드",
@@ -244,6 +247,12 @@
     "linuxDesc": "로컬에서 가벼운 DNS 프록시를 실행하여 DoH를 통해 요청을 암호화하고 Obex로 전달합니다.",
     "linuxStep1": "다음 스크립트를 실행하여 cloudflared를 설치하고 systemd 서비스를 생성합니다 (127.0.0.1:53 감시).",
     "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "라우터의 DoH 서버로 설정하면 네트워크의 모든 기기에서 이 리졸버를 사용할 수 있습니다.",
+    "routerosStep1": "RouterOS 터미널에서 실행하세요 (RouterOS 7):",
+    "routerosNote": "라우터가 전달한 쿼리는 개별 기기가 아닌 라우터로 로그에 표시됩니다. 기기별 로그가 필요하면 각 기기를 직접 설정하세요.",
+    "routerosDocs": "MikroTik DNS 문서",
     "accessPointsCardTitle": "액세스 포인트",
     "currentAccessPoint": "현재 액세스 포인트",
     "selectAccessPointToConfigure": "구성할 액세스 포인트 선택"
@@ -693,7 +702,8 @@
     "verifyIdentity": "보안 본인 확인",
     "verifyIdentityDesc": "계정 보안을 위해 계속 진행하기 전에 본인 확인을 완료하세요.",
     "usePasskeyInstead": "패스키로 인증",
-    "changePasswordWithPasskey": "패스키 인증 후 비밀번호 변경"
+    "changePasswordWithPasskey": "패스키 인증 후 비밀번호 변경",
+    "enableRegistration": "신규 사용자 가입 허용"
   },
   "intro": {
     "item1Title": "Obex 보호 DNS",

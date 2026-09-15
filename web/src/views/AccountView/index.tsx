@@ -211,6 +211,8 @@ export const AccountView: React.FC = () => {
               users={users}
               currentUserId={me.id}
               onRefresh={fetchUsers}
+              registrationEnabled={sysSettings.registration_enabled !== "false"}
+              onRefreshSettings={fetchSystemSettings}
             />
           </div>
 

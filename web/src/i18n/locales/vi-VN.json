@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Lỗi tổng kiểm tra ở nhóm {{groups}}, vui lòng kiểm tra và thử lại",
     "backToPasskey": "Quay lại xác thực Passkey",
     "recoveryKeyRequired": "Vui lòng nhập khóa khôi phục của bạn",
-    "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số"
+    "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số",
+    "registrationDisabledTitle": "Đăng ký đã bị tắt",
+    "registrationDisabledDesc": "Tính năng đăng ký người dùng mới hiện đang tạm khóa. Vui lòng liên hệ quản trị viên hệ thống để nhận tài khoản.",
+    "backToLogin": "Quay lại đăng nhập"
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
@@ -244,6 +247,12 @@
     "linuxDesc": "Chạy một proxy DNS nhẹ tại địa phương, mã hóa và chuyển tiếp các yêu cầu phân giải đến Obex thông qua DoH.",
     "linuxStep1": "Chạy đoạn mã sau để cài đặt cloudflared và tạo dịch vụ systemd (lắng nghe tại 127.0.0.1:53).",
     "linuxStep2": "Thay đổi DNS hệ thống thành 127.0.0.1.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "Dùng trình phân giải này cho mọi thiết bị trong mạng bằng cách đặt nó làm máy chủ DoH của router.",
+    "routerosStep1": "Chạy trong terminal RouterOS (RouterOS 7):",
+    "routerosNote": "Các truy vấn do router chuyển tiếp sẽ hiển thị trong nhật ký là router, không phải từng thiết bị. Hãy cấu hình trực tiếp trên thiết bị nếu bạn cần nhật ký theo từng thiết bị.",
+    "routerosDocs": "Tài liệu DNS của MikroTik",
     "accessPointsCardTitle": "Điểm truy cập",
     "currentAccessPoint": "Điểm truy cập hiện tại",
     "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình"
@@ -693,7 +702,8 @@
     "verifyIdentity": "Xác minh bảo mật",
     "verifyIdentityDesc": "Để bảo vệ tài khoản của bạn, vui lòng xác minh danh tính trước khi tiếp tục.",
     "usePasskeyInstead": "Xác thực bằng Passkey",
-    "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu"
+    "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu",
+    "enableRegistration": "Cho phép đăng ký người dùng mới"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",

@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Ошибка контрольной суммы в группе {{groups}}, проверьте и повторите попытку",
     "backToPasskey": "Вернуться к аутентификации по Passkey",
     "recoveryKeyRequired": "Пожалуйста, введите ваш ключ восстановления",
-    "totpFormatError": "Пожалуйста, введите действительный 6-значный код"
+    "totpFormatError": "Пожалуйста, введите действительный 6-значный код",
+    "registrationDisabledTitle": "Регистрация отключена",
+    "registrationDisabledDesc": "Регистрация новых пользователей в настоящее время закрыта. Обратитесь к администратору для получения учетной записи.",
+    "backToLogin": "Вернуться ко входу"
   },
   "setup": {
     "title": "Руководство по установке",
@@ -244,6 +247,12 @@
     "linuxDesc": "Локальный DNS прокси для шифрования запросов.",
     "linuxStep1": "Запустите скрипт для установки cloudflared и создания systemd-сервиса (слушает 127.0.0.1:53).",
     "linuxStep2": "Установите системный DNS на 127.0.0.1.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "Используйте этот резолвер для всех устройств в сети, указав его в качестве DoH-сервера роутера.",
+    "routerosStep1": "Выполните в терминале RouterOS (RouterOS 7):",
+    "routerosNote": "Запросы, пересылаемые роутером, отображаются в журналах как запросы роутера, а не отдельных устройств. Если нужны журналы по устройствам, настройте устройства напрямую.",
+    "routerosDocs": "Документация MikroTik по DNS",
     "accessPointsCardTitle": "Точки доступа",
     "currentAccessPoint": "Текущая точка доступа",
     "selectAccessPointToConfigure": "Выберите точку доступа для настройки"
@@ -693,7 +702,8 @@
     "verifyIdentity": "Проверка безопасности",
     "verifyIdentityDesc": "Для защиты учетной записи подтвердите свою личность перед продолжением.",
     "usePasskeyInstead": "Подтвердить с помощью Passkey",
-    "changePasswordWithPasskey": "Подтвердить через Passkey и изменить пароль"
+    "changePasswordWithPasskey": "Подтвердить через Passkey и изменить пароль",
+    "enableRegistration": "Разрешить регистрацию пользователей"
   },
   "intro": {
     "item1Title": "Защищенный DNS Worker",

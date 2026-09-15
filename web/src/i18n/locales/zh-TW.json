@@ -169,7 +169,10 @@
     "recoveryChecksumErrorDesc": "第 {{groups}} 組校驗碼錯誤，請核對後重試",
     "backToPasskey": "返回通行密鑰驗證",
     "recoveryKeyRequired": "請輸入應急恢復密鑰",
-    "totpFormatError": "請輸入有效的 6 位驗證碼"
+    "totpFormatError": "請輸入有效的 6 位驗證碼",
+    "registrationDisabledTitle": "註冊已停用",
+    "registrationDisabledDesc": "目前系統已暫停開放新使用者註冊，請聯絡系統管理員取得帳號。",
+    "backToLogin": "返回登入"
   },
   "setup": {
     "title": "安裝指南",
@@ -245,6 +248,12 @@
     "linuxDesc": "在本地執行輕量級 DNS 代理，透過 DoH 將解析請求加密轉發至 Obex。",
     "linuxStep1": "執行以下腳本安裝 cloudflared 並建立 systemd 服務（監聽 127.0.0.1:53）。",
     "linuxStep2": "將系統 DNS 修改為 127.0.0.1。",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "將其設定為路由器的 DoH 伺服器，即可讓網路中的所有裝置使用此解析器。",
+    "routerosStep1": "在 RouterOS 終端機中執行（RouterOS 7）：",
+    "routerosNote": "經路由器轉發的查詢在日誌中會顯示為路由器，而非個別裝置。如需依裝置查看日誌，請直接在裝置上設定。",
+    "routerosDocs": "MikroTik DNS 文件",
     "accessPointsCardTitle": "接入點",
     "currentAccessPoint": "目前接入點",
     "selectAccessPointToConfigure": "選擇接入點以設定"
@@ -694,7 +703,8 @@
     "verifyIdentity": "安全身分核驗",
     "verifyIdentityDesc": "為了保護您的帳戶安全，執行此敏感操作前請先驗證您的身分。",
     "usePasskeyInstead": "使用通行金鑰驗證",
-    "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼"
+    "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼",
+    "enableRegistration": "開放新使用者註冊"
   },
   "intro": {
     "item1Title": "Obex 保護性 DNS",

@@ -16,7 +16,9 @@ interface AuthConfig {
   turnstile_site_key: string;
   turnstile_enabled_signup: boolean;
   turnstile_enabled_login: boolean;
+  optional_session_expiration_days?: number;
   has_users?: boolean;
+  registration_enabled?: boolean;
 }
 
 /**
@@ -87,6 +89,35 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
     handleCopySignupRecoveryKeys,
     handleSignupSubmit
   } = useSignupWizard({ authConfig, turnstileReady, onSuccess });
+
+  if (authConfig && authConfig.has_users !== false && authConfig.registration_enabled === false) {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="flex flex-col items-center">
+          <img
+            src={LogoIcon}
+            alt="DNS Worker Logo"
+            className="w-20 h-20 object-contain"
+          />
+          <H3 className="font-bold tracking-tight text-2xl mt-4">
+            {t("auth.signup")}
+          </H3>
+        </div>
+        <Callout intent={Intent.WARNING} icon="lock" title={t("auth.registrationDisabledTitle", "注册已停用")}>
+          {t("auth.registrationDisabledDesc", "当前系统已暂停开放新用户注册，请联系系统管理员分配账号。")}
+        </Callout>
+        <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-center items-center text-sm">
+          <button
+            onClick={onToggleMode}
+            className="text-blue-600 dark:text-blue-400 font-semibold hover:underline bg-transparent border-none cursor-pointer flex items-center gap-1"
+          >
+            <ArrowLeft size={16} />
+            {t("auth.backToLogin", "返回登录")}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -36,10 +36,17 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
 
   const { username, password, turnstileToken } = await request.json() as any;
   const settingsModel = new SystemSettingsModel(env.DB);
-  const [secretKey, enabled] = await Promise.all([
+  const [secretKey, enabled, registrationEnabled, isDbEmpty] = await Promise.all([
     settingsModel.get('turnstile_secret_key'),
-    settingsModel.get('turnstile_enabled_signup')
+    settingsModel.get('turnstile_enabled_signup'),
+    settingsModel.get('registration_enabled'),
+    userModel.isEmpty()
   ]);
+
+  // 停用注册拦截：如果库中已有用户且管理员停用了自主注册，禁止注册
+  if (!isDbEmpty && registrationEnabled === 'false') {
+    return new Response("registration_disabled", { status: 403 });
+  }
 
   if (enabled === 'true' && secretKey) {
     if (!await verifyTurnstile(turnstileToken, secretKey, clientIp)) {
@@ -61,7 +68,7 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
   const cf = (request as any).cf;
   const timezone = cf?.timezone || request.headers.get("CF-Timezone") || null;
   try {
-    const role = (await userModel.isEmpty()) ? 'admin' : 'user';
+    const role = isDbEmpty ? 'admin' : 'user';
     await userModel.create({ id: userId, username, passwordHash: hashedPassword, role, timezone, passwordVersion: 2 });
     const { latitude, longitude } = getRequestCoordinates(request);
     if (latitude === null || longitude === null) {

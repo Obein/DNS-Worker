@@ -17,6 +17,7 @@ interface AuthConfig {
   turnstile_enabled_login: boolean;
   optional_session_expiration_days?: number;
   has_users?: boolean;
+  registration_enabled?: boolean;
 }
 
 /**
@@ -200,7 +201,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         />
       )}
 
-      {loginStep === 1 && (
+      {loginStep === 1 && (authConfig?.has_users === false || authConfig?.registration_enabled !== false) && (
         <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-center items-center text-sm">
           <button
             onClick={onToggleMode}

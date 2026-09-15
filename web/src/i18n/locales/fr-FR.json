@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Erreur de somme de contrôle dans le groupe {{groups}}, veuillez vérifier et réessayer",
     "backToPasskey": "Retour à la vérification par Passkey",
     "recoveryKeyRequired": "Veuillez entrer votre clé de récupération",
-    "totpFormatError": "Veuillez entrer un code valide à 6 chiffres"
+    "totpFormatError": "Veuillez entrer un code valide à 6 chiffres",
+    "registrationDisabledTitle": "Inscription désactivée",
+    "registrationDisabledDesc": "L'inscription de nouveaux utilisateurs est actuellement fermée. Veuillez contacter un administrateur pour obtenir un compte.",
+    "backToLogin": "Retour à la connexion"
   },
   "setup": {
     "title": "Guide d'installation",
@@ -244,6 +247,12 @@
     "linuxDesc": "Exécutez un proxy DNS local léger pour envoyer les requêtes DNS chiffrées par DoH à Obex.",
     "linuxStep1": "Exécutez le script suivant pour installer cloudflared et créer un service systemd (écoute sur 127.0.0.1:53).",
     "linuxStep2": "Modifiez le DNS du système pour 127.0.0.1.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "Utilisez ce résolveur pour tous les appareils de votre réseau en le définissant comme serveur DoH du routeur.",
+    "routerosStep1": "À exécuter dans le terminal RouterOS (RouterOS 7) :",
+    "routerosNote": "Les requêtes transmises par le routeur apparaissent dans les journaux comme provenant du routeur, et non des appareils individuels. Configurez les appareils directement si vous avez besoin de journaux par appareil.",
+    "routerosDocs": "Documentation DNS de MikroTik",
     "accessPointsCardTitle": "Points d'accès",
     "currentAccessPoint": "Point d'accès actuel",
     "selectAccessPointToConfigure": "Sélectionner le point d'accès à configurer"
@@ -693,7 +702,8 @@
     "verifyIdentity": "Vérification de sécurité",
     "verifyIdentityDesc": "Pour protéger votre compte, veuillez vérifier votre identité avant de continuer.",
     "usePasskeyInstead": "Authentifier avec Passkey",
-    "changePasswordWithPasskey": "Vérifier avec Passkey et modifier"
+    "changePasswordWithPasskey": "Vérifier avec Passkey et modifier",
+    "enableRegistration": "Activer l'inscription des utilisateurs"
   },
   "intro": {
     "item1Title": "DNS Worker de protection",

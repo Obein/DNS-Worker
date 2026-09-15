@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   Elevation,
@@ -10,22 +10,31 @@ import {
   FormGroup,
   InputGroup,
   HTMLSelect,
-  Tag
+  Tag,
+  Switch
 } from "@blueprintjs/core";
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { PASSWORD_REGEX, USERNAME_REGEX, hashPasswordClient } from "../../../utils/auth";
 import type { UserInfo } from "../../../services";
-import { createUser, deleteUser } from "../../../services";
+import { createUser, deleteUser, updateSystemSettings } from "../../../services";
 
 export interface UserManagementCardProps {
   users: UserInfo[];
   currentUserId: string;
   onRefresh: () => void;
+  registrationEnabled?: boolean;
+  onRefreshSettings?: () => void;
 }
 
-export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, currentUserId, onRefresh }) => {
+export const UserManagementCard: React.FC<UserManagementCardProps> = ({
+  users,
+  currentUserId,
+  onRefresh,
+  registrationEnabled = true,
+  onRefreshSettings,
+}) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
@@ -33,6 +42,27 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
   const [newUserRole, setNewUserRole] = useState<'admin' | 'user'>('user');
   const [createLoading, setCreateLoading] = useState(false);
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
+  const [isRegistrationEnabled, setIsRegistrationEnabled] = useState(registrationEnabled);
+  const [toggleLoading, setToggleLoading] = useState(false);
+
+  useEffect(() => {
+    setIsRegistrationEnabled(registrationEnabled);
+  }, [registrationEnabled]);
+
+  const handleToggleRegistration = async (checked: boolean) => {
+    setIsRegistrationEnabled(checked);
+    setToggleLoading(true);
+    try {
+      await updateSystemSettings({ registration_enabled: String(checked) });
+      onRefreshSettings?.();
+    } catch (e: any) {
+      console.error(e);
+      setIsRegistrationEnabled(!checked);
+      alert(e.message || t("common.errorNetwork", "Network error"));
+    } finally {
+      setToggleLoading(false);
+    }
+  };
 
   const handleCreateUser = async () => {
     if (!USERNAME_REGEX.test(newUsername)) { alert(t("account.formatTipUsername")); return; }
@@ -63,12 +93,21 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({ users, c
 
   return (
     <>
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ShieldCheck size={20} className="text-red-500" />
           <H4 style={{ margin: 0 }}>{t("account.userManagement")}</H4>
         </div>
-        <Button className="whitespace-nowrap" icon={<UserPlus size={16} />} intent={Intent.SUCCESS} text={t("account.createUser")} onClick={() => setIsDialogOpen(true)} />
+        <div className="flex items-center gap-4 flex-wrap">
+          <Switch
+            label={t("account.enableRegistration", "开放新用户注册")}
+            checked={isRegistrationEnabled}
+            disabled={toggleLoading}
+            onChange={(e) => handleToggleRegistration(e.currentTarget.checked)}
+            className="mb-0"
+          />
+          <Button className="whitespace-nowrap" icon={<UserPlus size={16} />} intent={Intent.SUCCESS} text={t("account.createUser")} onClick={() => setIsDialogOpen(true)} />
+        </div>
       </div>
       <Card elevation={Elevation.ONE} className="p-0 overflow-hidden overflow-x-auto">
         <HTMLTable interactive striped className="w-full">

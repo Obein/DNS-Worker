@@ -23,7 +23,12 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
   const handleSaveSysSettings = async () => {
     setSysLoading(true);
     try {
-      await updateSystemSettings(sysSettings);
+      await updateSystemSettings({
+        turnstile_site_key: sysSettings.turnstile_site_key || "",
+        turnstile_secret_key: sysSettings.turnstile_secret_key || "",
+        turnstile_enabled_signup: sysSettings.turnstile_enabled_signup || "false",
+        turnstile_enabled_login: sysSettings.turnstile_enabled_login || "false",
+      });
       alert(t("common.saveSuccess", "Settings saved"));
       onRefresh();
     } catch (e) {
