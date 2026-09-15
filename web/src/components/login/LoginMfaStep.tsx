@@ -93,10 +93,10 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
 
           <div className="space-y-1">
             <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100 m-0">
-              {t("auth.passkeyVerification", "通行密钥验证")}
+              {t("auth.passkeyVerification", "Passkey Verification")}
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mx-auto leading-relaxed">
-              {t("auth.passkeyPromptDesc", "使用已注册的设备生物识别或硬件安全密钥进行验证")}
+              {t("auth.passkeyPromptDesc", "Use your registered device's biometric or hardware security key to verify")}
             </p>
           </div>
 
@@ -121,7 +121,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
               className="font-semibold py-6 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center space-x-2"
             >
               <Key size={20} className="inline mr-1.5" />
-              <span>{t("auth.verifyWithPasskey", "使用通行密钥验证")}</span>
+              <span>{t("auth.verifyWithPasskey", "Verify with Passkey")}</span>
             </Button>
 
             {requiresTotp && (
@@ -134,7 +134,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
                 onClick={() => handleSwitchMode("totp")}
                 className="font-medium text-blue-600 dark:text-blue-400 py-2.5 rounded-xl transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30"
               >
-                {t("auth.otherOptions", "其他选项")}
+                {t("auth.otherOptions", "Other Options")}
               </Button>
             )}
 
@@ -145,7 +145,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
                 className="text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:underline bg-transparent border-none cursor-pointer p-0 font-normal inline-flex items-center gap-1"
               >
                 <KeyRound size={12} />
-                <span>{t("auth.totpUseRecovery", "使用恢复密钥")}</span>
+                <span>{t("auth.totpUseRecovery", "Use Recovery Key")}</span>
               </button>
             </div>
           </div>
@@ -156,8 +156,8 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
       {mfaMethod === "totp" && (
         <div className="space-y-4">
           <FormGroup
-            label={t("account.totp.title", "数字验证器 (TOTP)")}
-            helperText={t("auth.totpPrompt", "请输入身份验证应用中的 6 位动态验证码")}
+            label={t("account.totp.title", "Time-based One-time Password (TOTP)")}
+            helperText={t("auth.totpPrompt", "Please enter the 6-digit code from your authentication app")}
           >
             <div className="pt-2">
               <DigitInput
@@ -188,7 +188,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
               loading={loading}
               className="font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20"
             >
-              {t("auth.loginBtn", "登录")}
+              {t("auth.loginBtn", "Login")}
             </Button>
 
             {hasPasskey && (
@@ -201,7 +201,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
                 onClick={() => handleSwitchMode("passkey")}
                 className="font-medium text-blue-600 dark:text-blue-400 py-2.5 rounded-xl transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30"
               >
-                {t("auth.otherOptions", "其他选项")}
+                {t("auth.otherOptions", "Other Options")}
               </Button>
             )}
 
@@ -212,7 +212,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
                 className="text-xs text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:underline bg-transparent border-none cursor-pointer p-0 font-normal inline-flex items-center gap-1"
               >
                 <KeyRound size={12} />
-                <span>{t("auth.totpUseRecovery", "使用恢复密钥")}</span>
+                <span>{t("auth.totpUseRecovery", "Use Recovery Key")}</span>
               </button>
             </div>
           </div>
@@ -223,8 +223,8 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
       {mfaMethod === "recovery" && (
         <div className="space-y-4">
           <FormGroup
-            label={t("account.totp.recoveryKeysTitle", "应急恢复密钥")}
-            helperText={t("auth.recoveryPrompt", "请输入 30 位应急恢复密钥（5 组，每组 6 位数字）")}
+            label={t("account.totp.recoveryKeysTitle", "Recovery Keys")}
+            helperText={t("auth.recoveryPrompt", "Please enter your 30-character recovery key (5 groups of 6 digits)")}
           >
             <div className="pt-2">
               <RecoveryKeyInput
@@ -254,7 +254,7 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
               loading={loading}
               className="font-bold py-6 rounded-xl shadow-lg shadow-blue-500/20"
             >
-              {t("auth.loginBtn", "登录")}
+              {t("auth.loginBtn", "Login")}
             </Button>
 
             <div className="text-center pt-1">
@@ -264,8 +264,8 @@ export const LoginMfaStep: React.FC<LoginMfaStepProps> = ({
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline bg-transparent border-none cursor-pointer p-0 font-normal"
               >
                 {hasPasskey
-                  ? t("auth.backToPasskey", "返回通行密钥验证")
-                  : t("auth.totpUseApp", "使用身份验证器")}
+                  ? t("auth.backToPasskey", "Back to Passkey Verification")
+                  : t("auth.totpUseApp", "Use Authentication App")}
               </button>
             </div>
           </div>
