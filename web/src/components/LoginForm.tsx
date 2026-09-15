@@ -112,7 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {getStepTitle()}
         </H3>
         <p className="text-gray-500 mt-2 text-center text-sm leading-relaxed">
-          {loginStep === 1 ? t("auth.welcomeBack") : username}
+          {loginStep === 1 ? t("auth.protectInternet") : username}
         </p>
       </div>
 
