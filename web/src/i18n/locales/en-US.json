@@ -245,6 +245,12 @@
     "linuxDesc": "Run a local DNS proxy to forward queries to Obex via DoH.",
     "linuxStep1": "Run this script to install cloudflared and setup systemd service (listening on 127.0.0.1:53).",
     "linuxStep2": "Change your system DNS to 127.0.0.1.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "Use this resolver for every device on your network by setting it as the router's DoH server.",
+    "routerosStep1": "Run in the RouterOS terminal (RouterOS 7):",
+    "routerosNote": "Queries forwarded by the router show up in the logs as the router, not as individual devices. Set up devices directly if you need per-device logs.",
+    "routerosDocs": "MikroTik DNS documentation",
     "accessPointsCardTitle": "Access Points",
     "currentAccessPoint": "Current Access Point",
     "selectAccessPointToConfigure": "Select Access Point to Configure"

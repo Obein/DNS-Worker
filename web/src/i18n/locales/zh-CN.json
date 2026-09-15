@@ -245,6 +245,12 @@
     "linuxDesc": "在本地运行轻量级 DNS 代理，通过 DoH 将解析请求加密转发至 Obex。",
     "linuxStep1": "运行以下脚本安装 cloudflared 并创建 systemd 服务（监听 127.0.0.1:53）。",
     "linuxStep2": "将系统 DNS 修改为 127.0.0.1。",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "将其设置为路由器的 DoH 服务器，即可让网络中的所有设备使用此解析器。",
+    "routerosStep1": "在 RouterOS 终端中运行（RouterOS 7）：",
+    "routerosNote": "经路由器转发的查询在日志中显示为路由器，而不是各个设备。如需按设备查看日志，请直接在设备上配置。",
+    "routerosDocs": "MikroTik DNS 文档",
     "accessPointsCardTitle": "接入点",
     "currentAccessPoint": "当前接入点",
     "selectAccessPointToConfigure": "选择接入点以配置"
