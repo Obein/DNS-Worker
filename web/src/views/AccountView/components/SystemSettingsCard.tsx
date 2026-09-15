@@ -23,7 +23,12 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
   const handleSaveSysSettings = async () => {
     setSysLoading(true);
     try {
-      await updateSystemSettings(sysSettings);
+      await updateSystemSettings({
+        turnstile_site_key: sysSettings.turnstile_site_key || "",
+        turnstile_secret_key: sysSettings.turnstile_secret_key || "",
+        turnstile_enabled_signup: sysSettings.turnstile_enabled_signup || "false",
+        turnstile_enabled_login: sysSettings.turnstile_enabled_login || "false",
+      });
       alert(t("common.saveSuccess", "Settings saved"));
       onRefresh();
     } catch (e) {
@@ -71,13 +76,6 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
             <H4 className="text-sm font-bold opacity-70 text-green-500">
               {t("account.featureToggle", "Feature Toggle")}
             </H4>
-            <Switch
-              label={t("account.enableRegistration", "开放新用户注册")}
-              checked={sysSettings.registration_enabled !== "false"}
-              onChange={(e) =>
-                setSysSettings({ ...sysSettings, registration_enabled: String(e.currentTarget.checked) })
-              }
-            />
             <Switch
               label={t("account.enableTurnstileSignup", "Enable verification on Signup")}
               checked={sysSettings.turnstile_enabled_signup === "true"}
