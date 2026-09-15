@@ -142,14 +142,19 @@ export class UserCoreModel {
   /**
    * Checks whether the users table is completely empty (no users registered).
    *
-   * @returns True if there are 0 users in the database.
+   * Security consideration (CWE-636 Fail-Closed):
+   * When the query fails, we must NEVER assume the database is empty, as that
+   * could lead to privilege escalation (e.g. assigning 'admin' role to new signups).
+   *
+   * @returns True if there are confirmed 0 users in the database, false otherwise.
    */
   async isEmpty(): Promise<boolean> {
     try {
       const count = await this.db.prepare("SELECT COUNT(*) as count FROM users").first<number>('count');
       return (count ?? 0) === 0;
-    } catch {
-      return true;
+    } catch (err) {
+      console.error("[UserModel] isEmpty: query failed, failing closed (assuming users exist):", err);
+      return false;
     }
   }
 }
