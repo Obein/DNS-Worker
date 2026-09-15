@@ -232,7 +232,7 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
         )}
 
         {authMethod === "passkey" && (
-          <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
+          <Callout intent={Intent.PRIMARY}>
             <span className="text-xs">
               {t(
                 "account.passkey.changePwNotice",
