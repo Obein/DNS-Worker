@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs, Tab, H5, Button, Icon, Intent, Tag, Callout } from "@blueprintjs/core";
-import { Globe, AppWindowMac, Monitor, Terminal, Smartphone } from "lucide-react";
+import { Globe, AppWindowMac, Monitor, Terminal, Smartphone, Router, ExternalLink } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import type {  RegionConfigItem  } from "../../../config/regions";
@@ -187,6 +187,51 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
             <div className="mt-4">
               <p className="text-sm font-bold">{t("setup.linuxStep2")}</p>
             </div>
+          </div>
+        }
+      />
+
+      <Tab
+        id="routeros"
+        title={
+          <span>
+            <Router size={16} className="inline mr-2" />
+            {t("setup.routeros")}
+          </span>
+        }
+        panel={
+          <div className="space-y-4 md:ml-4 mt-4 md:mt-0">
+            <H5 className="font-bold">{t("setup.routerosTitle")}</H5>
+            <p className="text-sm">{t("setup.routerosDesc")}</p>
+
+            <div className="mt-4">
+              <p className="text-sm font-bold mb-2">{t("setup.routerosStep1")}</p>
+              <div className="relative group">
+                <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-xs font-mono border border-gray-200 dark:border-gray-700">
+                  <code>{`/ip dns set use-doh-server="${window.location.origin}/${profileKey}" verify-doh-cert=yes`}</code>
+                </pre>
+                <Button
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  icon="duplicate"
+                  minimal
+                  small
+                  onClick={() => {
+                    copyToClipboard(`/ip dns set use-doh-server="${window.location.origin}/${profileKey}" verify-doh-cert=yes`);
+                  }}
+                />
+              </div>
+            </div>
+
+            <p className="text-sm">{t("setup.routerosNote")}</p>
+
+            <a
+              href="https://help.mikrotik.com/docs/spaces/ROS/pages/37748767/DNS"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+            >
+              <ExternalLink size={10} /> {t("setup.routerosDocs")}
+            </a>
           </div>
         }
       />

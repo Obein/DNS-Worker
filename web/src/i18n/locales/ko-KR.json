@@ -244,6 +244,12 @@
     "linuxDesc": "로컬에서 가벼운 DNS 프록시를 실행하여 DoH를 통해 요청을 암호화하고 Obex로 전달합니다.",
     "linuxStep1": "다음 스크립트를 실행하여 cloudflared를 설치하고 systemd 서비스를 생성합니다 (127.0.0.1:53 감시).",
     "linuxStep2": "시스템 DNS를 127.0.0.1로 변경합니다.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "라우터의 DoH 서버로 설정하면 네트워크의 모든 기기에서 이 리졸버를 사용할 수 있습니다.",
+    "routerosStep1": "RouterOS 터미널에서 실행하세요 (RouterOS 7):",
+    "routerosNote": "라우터가 전달한 쿼리는 개별 기기가 아닌 라우터로 로그에 표시됩니다. 기기별 로그가 필요하면 각 기기를 직접 설정하세요.",
+    "routerosDocs": "MikroTik DNS 문서",
     "accessPointsCardTitle": "액세스 포인트",
     "currentAccessPoint": "현재 액세스 포인트",
     "selectAccessPointToConfigure": "구성할 액세스 포인트 선택"

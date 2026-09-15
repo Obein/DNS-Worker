@@ -244,6 +244,12 @@
     "linuxDesc": "Ejecuta un proxy DNS local ligero para enviar las consultas DNS cifradas mediante DoH a Obex.",
     "linuxStep1": "Ejecuta el siguiente script para instalar cloudflared y crear un servicio systemd (escucha en 127.0.0.1:53).",
     "linuxStep2": "Cambia el DNS del sistema a 127.0.0.1.",
+    "routeros": "MikroTik",
+    "routerosTitle": "MikroTik RouterOS",
+    "routerosDesc": "Usa este resolvedor en todos los dispositivos de tu red configurándolo como servidor DoH del router.",
+    "routerosStep1": "Ejecuta en la terminal de RouterOS (RouterOS 7):",
+    "routerosNote": "Las consultas reenviadas por el router aparecen en los registros como el router, no como dispositivos individuales. Configura los dispositivos directamente si necesitas registros por dispositivo.",
+    "routerosDocs": "Documentación de DNS de MikroTik",
     "accessPointsCardTitle": "Puntos de acceso",
     "currentAccessPoint": "Punto de acceso actual",
     "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar"
