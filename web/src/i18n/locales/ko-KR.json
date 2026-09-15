@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "{{groups}}번째 그룹의 체크섬 오류입니다. 확인 후 다시 시도하세요",
     "backToPasskey": "Passkey 인증으로 돌아가기",
     "recoveryKeyRequired": "비상 복구 키를 입력하세요",
-    "totpFormatError": "유효한 6자리 코드를 입력하세요"
+    "totpFormatError": "유효한 6자리 코드를 입력하세요",
+    "registrationDisabledTitle": "회원가입 비활성화됨",
+    "registrationDisabledDesc": "현재 신규 사용자 등록이 일시 중지되었습니다. 계정 발급은 시스템 관리자에게 문의하세요.",
+    "backToLogin": "로그인으로 돌아가기"
   },
   "setup": {
     "title": "설치 가이드",
@@ -699,7 +702,8 @@
     "verifyIdentity": "보안 본인 확인",
     "verifyIdentityDesc": "계정 보안을 위해 계속 진행하기 전에 본인 확인을 완료하세요.",
     "usePasskeyInstead": "패스키로 인증",
-    "changePasswordWithPasskey": "패스키 인증 후 비밀번호 변경"
+    "changePasswordWithPasskey": "패스키 인증 후 비밀번호 변경",
+    "enableRegistration": "신규 사용자 가입 허용"
   },
   "intro": {
     "item1Title": "Obex 보호 DNS",

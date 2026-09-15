@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Erreur de somme de contrôle dans le groupe {{groups}}, veuillez vérifier et réessayer",
     "backToPasskey": "Retour à la vérification par Passkey",
     "recoveryKeyRequired": "Veuillez entrer votre clé de récupération",
-    "totpFormatError": "Veuillez entrer un code valide à 6 chiffres"
+    "totpFormatError": "Veuillez entrer un code valide à 6 chiffres",
+    "registrationDisabledTitle": "Inscription désactivée",
+    "registrationDisabledDesc": "L'inscription de nouveaux utilisateurs est actuellement fermée. Veuillez contacter un administrateur pour obtenir un compte.",
+    "backToLogin": "Retour à la connexion"
   },
   "setup": {
     "title": "Guide d'installation",
@@ -699,7 +702,8 @@
     "verifyIdentity": "Vérification de sécurité",
     "verifyIdentityDesc": "Pour protéger votre compte, veuillez vérifier votre identité avant de continuer.",
     "usePasskeyInstead": "Authentifier avec Passkey",
-    "changePasswordWithPasskey": "Vérifier avec Passkey et modifier"
+    "changePasswordWithPasskey": "Vérifier avec Passkey et modifier",
+    "enableRegistration": "Activer l'inscription des utilisateurs"
   },
   "intro": {
     "item1Title": "DNS Worker de protection",

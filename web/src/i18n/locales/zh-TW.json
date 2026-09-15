@@ -169,7 +169,10 @@
     "recoveryChecksumErrorDesc": "第 {{groups}} 組校驗碼錯誤，請核對後重試",
     "backToPasskey": "返回通行密鑰驗證",
     "recoveryKeyRequired": "請輸入應急恢復密鑰",
-    "totpFormatError": "請輸入有效的 6 位驗證碼"
+    "totpFormatError": "請輸入有效的 6 位驗證碼",
+    "registrationDisabledTitle": "註冊已停用",
+    "registrationDisabledDesc": "目前系統已暫停開放新使用者註冊，請聯絡系統管理員取得帳號。",
+    "backToLogin": "返回登入"
   },
   "setup": {
     "title": "安裝指南",
@@ -700,7 +703,8 @@
     "verifyIdentity": "安全身分核驗",
     "verifyIdentityDesc": "為了保護您的帳戶安全，執行此敏感操作前請先驗證您的身分。",
     "usePasskeyInstead": "使用通行金鑰驗證",
-    "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼"
+    "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼",
+    "enableRegistration": "開放新使用者註冊"
   },
   "intro": {
     "item1Title": "Obex 保護性 DNS",

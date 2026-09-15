@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "第 {{groups}} グループのチェックサムエラーです。確認して再試行してください",
     "backToPasskey": "パスキー認証に戻る",
     "recoveryKeyRequired": "緊急リカバリキーを入力してください",
-    "totpFormatError": "有効な 6 桁のコードを入力してください"
+    "totpFormatError": "有効な 6 桁のコードを入力してください",
+    "registrationDisabledTitle": "登録は停止されています",
+    "registrationDisabledDesc": "現在、新規ユーザーの登録は停止されています。アカウントの取得についてはシステム管理者にお問い合わせください。",
+    "backToLogin": "ログインに戻る"
   },
   "setup": {
     "title": "インストールガイド",
@@ -699,7 +702,8 @@
     "verifyIdentity": "セキュリティ本人確認",
     "verifyIdentityDesc": "アカウントの安全のため、この操作を実行する前に本人確認を行ってください。",
     "usePasskeyInstead": "パスキーで認証",
-    "changePasswordWithPasskey": "パスキーで認証してパスワードを変更"
+    "changePasswordWithPasskey": "パスキーで認証してパスワードを変更",
+    "enableRegistration": "新規ユーザー登録を許可"
   },
   "intro": {
     "item1Title": "Obex 保護DNS",

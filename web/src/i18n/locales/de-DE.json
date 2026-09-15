@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Prüfsummenfehler in Gruppe {{groups}}, bitte überprüfen und erneut versuchen",
     "backToPasskey": "Zurück zur Passkey-Verifizierung",
     "recoveryKeyRequired": "Bitte geben Sie Ihren Wiederherstellungsschlüssel ein",
-    "totpFormatError": "Bitte geben Sie einen gültigen 6-stelligen Code ein"
+    "totpFormatError": "Bitte geben Sie einen gültigen 6-stelligen Code ein",
+    "registrationDisabledTitle": "Registrierung deaktiviert",
+    "registrationDisabledDesc": "Die Registrierung neuer Benutzer ist derzeit deaktiviert. Bitte wenden Sie sich an den Systemadministrator.",
+    "backToLogin": "Zurück zur Anmeldung"
   },
   "setup": {
     "title": "Installationsanleitung",
@@ -699,7 +702,8 @@
     "verifyIdentity": "Sicherheitsbestätigung",
     "verifyIdentityDesc": "Um Ihr Konto zu schützen, bestätigen Sie bitte Ihre Identität.",
     "usePasskeyInstead": "Mit Passkey bestätigen",
-    "changePasswordWithPasskey": "Mit Passkey bestätigen & ändern"
+    "changePasswordWithPasskey": "Mit Passkey bestätigen & ändern",
+    "enableRegistration": "Benutzerregistrierung aktivieren"
   },
   "intro": {
     "item1Title": "Obex Schutz-DNS",

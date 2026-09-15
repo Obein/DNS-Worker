@@ -18,6 +18,7 @@ export interface AuthConfig {
   turnstile_enabled_login: boolean;
   optional_session_expiration_days?: number;
   has_users?: boolean;
+  registration_enabled?: boolean;
 }
 
 /**

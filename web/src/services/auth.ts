@@ -14,6 +14,8 @@ export interface AuthConfig {
   turnstile_enabled_login?: boolean;
   turnstile_enabled_signup?: boolean;
   optional_session_expiration_days?: number;
+  has_users?: boolean;
+  registration_enabled?: boolean;
 }
 
 export interface PreloginPayload {

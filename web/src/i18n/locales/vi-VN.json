@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Lỗi tổng kiểm tra ở nhóm {{groups}}, vui lòng kiểm tra và thử lại",
     "backToPasskey": "Quay lại xác thực Passkey",
     "recoveryKeyRequired": "Vui lòng nhập khóa khôi phục của bạn",
-    "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số"
+    "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số",
+    "registrationDisabledTitle": "Đăng ký đã bị tắt",
+    "registrationDisabledDesc": "Tính năng đăng ký người dùng mới hiện đang tạm khóa. Vui lòng liên hệ quản trị viên hệ thống để nhận tài khoản.",
+    "backToLogin": "Quay lại đăng nhập"
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
@@ -699,7 +702,8 @@
     "verifyIdentity": "Xác minh bảo mật",
     "verifyIdentityDesc": "Để bảo vệ tài khoản của bạn, vui lòng xác minh danh tính trước khi tiếp tục.",
     "usePasskeyInstead": "Xác thực bằng Passkey",
-    "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu"
+    "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu",
+    "enableRegistration": "Cho phép đăng ký người dùng mới"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",

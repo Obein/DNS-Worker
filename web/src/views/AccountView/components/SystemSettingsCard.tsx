@@ -72,6 +72,13 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({ initialS
               {t("account.featureToggle", "Feature Toggle")}
             </H4>
             <Switch
+              label={t("account.enableRegistration", "开放新用户注册")}
+              checked={sysSettings.registration_enabled !== "false"}
+              onChange={(e) =>
+                setSysSettings({ ...sysSettings, registration_enabled: String(e.currentTarget.checked) })
+              }
+            />
+            <Switch
               label={t("account.enableTurnstileSignup", "Enable verification on Signup")}
               checked={sysSettings.turnstile_enabled_signup === "true"}
               onChange={(e) =>

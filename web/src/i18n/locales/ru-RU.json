@@ -168,7 +168,10 @@
     "recoveryChecksumErrorDesc": "Ошибка контрольной суммы в группе {{groups}}, проверьте и повторите попытку",
     "backToPasskey": "Вернуться к аутентификации по Passkey",
     "recoveryKeyRequired": "Пожалуйста, введите ваш ключ восстановления",
-    "totpFormatError": "Пожалуйста, введите действительный 6-значный код"
+    "totpFormatError": "Пожалуйста, введите действительный 6-значный код",
+    "registrationDisabledTitle": "Регистрация отключена",
+    "registrationDisabledDesc": "Регистрация новых пользователей в настоящее время закрыта. Обратитесь к администратору для получения учетной записи.",
+    "backToLogin": "Вернуться ко входу"
   },
   "setup": {
     "title": "Руководство по установке",
@@ -699,7 +702,8 @@
     "verifyIdentity": "Проверка безопасности",
     "verifyIdentityDesc": "Для защиты учетной записи подтвердите свою личность перед продолжением.",
     "usePasskeyInstead": "Подтвердить с помощью Passkey",
-    "changePasswordWithPasskey": "Подтвердить через Passkey и изменить пароль"
+    "changePasswordWithPasskey": "Подтвердить через Passkey и изменить пароль",
+    "enableRegistration": "Разрешить регистрацию пользователей"
   },
   "intro": {
     "item1Title": "Защищенный DNS Worker",

@@ -169,7 +169,10 @@
     "recoveryChecksumErrorDesc": "Checksum error in group {{groups}}, please check and try again",
     "backToPasskey": "Back to Passkey verification",
     "recoveryKeyRequired": "Please enter your recovery key",
-    "totpFormatError": "Please enter a valid 6-digit code"
+    "totpFormatError": "Please enter a valid 6-digit code",
+    "registrationDisabledTitle": "Registration Disabled",
+    "registrationDisabledDesc": "New user registration is currently closed. Please contact a system administrator to obtain an account.",
+    "backToLogin": "Back to login"
   },
   "setup": {
     "title": "Setup Guide",
@@ -700,7 +703,8 @@
     "verifyIdentity": "Security Verification",
     "verifyIdentityDesc": "To protect your account security, please verify your identity before proceeding.",
     "usePasskeyInstead": "Authenticate with Passkey",
-    "changePasswordWithPasskey": "Verify with Passkey & Update"
+    "changePasswordWithPasskey": "Verify with Passkey & Update",
+    "enableRegistration": "Enable user registration"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",
