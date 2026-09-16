@@ -172,8 +172,8 @@
     "registrationDisabledTitle": "Đăng ký đã bị tắt",
     "registrationDisabledDesc": "Tính năng đăng ký người dùng mới hiện đang tạm khóa. Vui lòng liên hệ quản trị viên hệ thống để nhận tài khoản.",
     "backToLogin": "Quay lại đăng nhập",
-    "jwtSecretPreset": "Đã phát hiện JWT_SECRET mặc định. Vui lòng sửa đổi JWT_SECRET đặt sẵn trong wrangler.toml hoặc biến môi trường.",
-    "jwtSecretMissing": "Thiếu JWT_SECRET. Vui lòng định cấu hình khóa bảo mật trong wrangler.toml hoặc biến môi trường.",
+    "jwtSecretPreset": "Đã phát hiện JWT_SECRET mặc định. Vui lòng sửa đổi JWT_SECRET đặt sẵn trong các biến môi trường trước khi triển khai.",
+    "jwtSecretMissing": "Thiếu JWT_SECRET. Vui lòng định cấu hình khóa bảo mật trong các biến môi trường trước khi triển khai.",
     "jwtSecretInvalid": "Định dạng JWT_SECRET không hợp lệ, vui lòng kiểm tra cấu hình."
   },
   "setup": {

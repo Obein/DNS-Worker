@@ -10,3 +10,4 @@ package-lock.json
 data/
 *.sqlite*
 dev-dist
+.dev.vars

@@ -172,8 +172,8 @@
     "registrationDisabledTitle": "Registrierung deaktiviert",
     "registrationDisabledDesc": "Die Registrierung neuer Benutzer ist derzeit deaktiviert. Bitte wenden Sie sich an den Systemadministrator.",
     "backToLogin": "Zurück zur Anmeldung",
-    "jwtSecretPreset": "Standard-JWT_SECRET erkannt. Bitte ändern Sie das voreingestellte JWT_SECRET in wrangler.toml oder Umgebungsvariablen.",
-    "jwtSecretMissing": "JWT_SECRET fehlt. Bitte konfigurieren Sie einen sicheren Schlüssel in wrangler.toml oder Umgebungsvariablen.",
+    "jwtSecretPreset": "Standard-JWT_SECRET erkannt. Bitte ändern Sie das voreingestellte JWT_SECRET in den Umgebungsvariablen vor der Bereitstellung.",
+    "jwtSecretMissing": "JWT_SECRET fehlt. Bitte konfigurieren Sie einen sicheren Schlüssel in den Umgebungsvariablen vor der Bereitstellung.",
     "jwtSecretInvalid": "Ungültiges JWT_SECRET-Format, bitte überprüfen Sie die Konfiguration."
   },
   "setup": {

@@ -59,7 +59,9 @@ head_sampling_rate = 0.001
 
 [vars]
 # Runtime configuration values exposed to the Worker.
-# JWT_SECRET = "replace_with_a_secure_random_jwt_secret_string_32chars_min"
+# Recommended: configure JWT_SECRET via Worker Secrets / Environment Variables
+# (e.g. `npx wrangler secret put JWT_SECRET` or via dashboard) to keep secrets out of git.
+# JWT_SECRET = ""
 # Default upstream for fail-open emergency fallback
 FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
