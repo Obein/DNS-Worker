@@ -1,5 +1,7 @@
 import { Env } from '../types';
 import { cacheUtils } from '../utils/cache';
+import { getPresetEchFrontingDomains } from '../utils/ech/constants';
+
 
 /**
  * Handles system/utility routes like /api/clientinfo and /api/substitute
@@ -111,6 +113,11 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
   if (url.pathname === '/api/presets/filters') {
     const filters = env.PRESET_EXTERNAL_FILTERS ? JSON.parse(env.PRESET_EXTERNAL_FILTERS) : [];
     return new Response(JSON.stringify(filters), { headers: { 'Content-Type': 'application/json' } });
+  }
+
+  if (url.pathname === '/api/presets/ech-fronting-domains') {
+    const domains = getPresetEchFrontingDomains(env);
+    return new Response(JSON.stringify(domains), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname.startsWith('/api/icon/')) {

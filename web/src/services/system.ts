@@ -76,3 +76,10 @@ export async function getPresetFilters(): Promise<any[]> {
   return res.json();
 }
 
+export async function getPresetEchFrontingDomains(): Promise<string[]> {
+  const res = await fetch("/api/presets/ech-fronting-domains");
+  if (!res.ok) throw new Error("Failed to fetch preset ECH fronting domains");
+  return res.json();
+}
+
+
