@@ -1,17 +1,26 @@
+# Cloudflare Worker project name.
 name = "dns-worker"
+# TypeScript entry point for the Worker.
 main = "src/index.ts"
+# Runtime compatibility date used by Cloudflare Workers.
 compatibility_date = "2026-02-28"
+# Enable Node.js-compatible APIs required by the application.
 compatibility_flags = ["nodejs_compat"]
 # account_id = ""
+# Minify the deployed Worker bundle.
 minify = true
 # workers_dev = false
+# Disable preview URLs for deployed versions.
 preview_urls = false
 
 [build]
+# Build the project before deployment.
 command = "npm run build"
 
 [assets]
+# Local directory containing static files.
 directory = "./static"
+# Binding name used to access static assets from the Worker.
 binding = "ASSETS"
 
 # D1 Database for Profiles, Rules and Logs
@@ -22,6 +31,7 @@ database_name = "dns_worker_db"
 database_id = "13d8c24f-064a-40d6-8b10-fa70bb3f79ab"
 
 [triggers]
+# Run scheduled maintenance tasks every minute.
 crons = ["* * * * *"]
 
 [placement]
@@ -35,15 +45,21 @@ crons = ["* * * * *"]
 mode = "off"
 
 [observability]
+# Enable Worker observability features.
 enabled = true
+# Sample one percent of invocations.
 head_sampling_rate = 0.01
 
 [observability.logs]
+# Enable invocation log collection.
 enabled = true
 invocation_logs = true
+# Sample one in every one thousand log events.
 head_sampling_rate = 0.001
 
 [vars]
+# Runtime configuration values exposed to the Worker.
+JWT_SECRET = "replace_with_a_secure_random_jwt_secret_string_32chars_min"
 # Default upstream for fail-open emergency fallback
 FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
