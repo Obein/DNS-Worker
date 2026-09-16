@@ -28,7 +28,7 @@ export const AccessPointCard: React.FC<AccessPointCardProps> = ({
     <Section
       title={t("setup.accessPointsCardTitle", "接入点")}
       icon={<MonitorSmartphone size={16} />}
-      className="relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
+      className="group relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
     >
       <StepStampWatermark step={1} />
       <SectionCard>

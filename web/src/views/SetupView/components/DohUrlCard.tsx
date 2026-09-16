@@ -21,7 +21,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
     <Section
       title={t("setup.accessPointTitle", "Access DoH URL")}
       icon="globe"
-      className="relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
+      className="group relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
       rightElement={
         <PopoverNext
           placement="bottom-end"

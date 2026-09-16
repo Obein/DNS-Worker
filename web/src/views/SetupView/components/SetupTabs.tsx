@@ -31,7 +31,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+    <div className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
       <StepStampWatermark step={3} />
       <Tabs
         id="setup-tabs"
