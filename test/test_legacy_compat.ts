@@ -38,6 +38,18 @@ async function runTests() {
   const returnedSecret = await getOrCreateJwtSecret(envShort);
   assert.strictEqual(returnedSecret, shortSecret, "getOrCreateJwtSecret should return short secret without throwing");
 
+  // getOrCreateJwtSecret should throw specific error codes for missing vs preset
+  await assert.rejects(
+    async () => getOrCreateJwtSecret({ JWT_SECRET: "" } as any),
+    /jwt_secret_missing/,
+    "Should throw jwt_secret_missing for empty secret"
+  );
+  await assert.rejects(
+    async () => getOrCreateJwtSecret({ JWT_SECRET: placeholder } as any),
+    /jwt_secret_preset/,
+    "Should throw jwt_secret_preset for preset placeholder secret"
+  );
+
   // 2. getActiveKekVersion behavior
   console.log('2. Validating getActiveKekVersion...');
   assert.strictEqual(getActiveKekVersion({ JWT_SECRET: "anything" }), null, "Should return null when no KEK_v* exists");

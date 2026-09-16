@@ -35,12 +35,10 @@ export function stringToUint8Array(str: string): Uint8Array {
 export const MIN_JWT_SECRET_LENGTH = 32;
 
 /**
- * Placeholder values from the READMEs and .env.serverfull. A deployment that kept
- * one of these has a publicly known secret, so its tokens can be forged no matter
- * how the signing key is derived. Checked explicitly because length alone does not
- * catch them all: the .env.serverfull placeholder is 58 characters.
+ * Placeholder values from documentation, wrangler.toml, and template files.
+ * A deployment that kept one of these has a publicly known secret.
  */
-const PLACEHOLDER_JWT_SECRETS = new Set([
+export const PLACEHOLDER_JWT_SECRETS = new Set([
   "your_secure_random_string_here",
   "您的随机安全JWT密钥",
   "您的隨機安全JWT金鑰",
@@ -48,13 +46,39 @@ const PLACEHOLDER_JWT_SECRETS = new Set([
 ]);
 
 /**
+ * Checks whether the JWT secret is missing or empty.
+ */
+export function isMissingJwtSecret(secret: string | undefined | null): boolean {
+  if (typeof secret !== "string") return true;
+  return secret.trim().length === 0;
+}
+
+/**
+ * Checks whether the JWT secret is a default preset or documentation placeholder.
+ */
+export function isPresetJwtSecret(secret: string | undefined | null): boolean {
+  if (typeof secret !== "string") return false;
+  return PLACEHOLDER_JWT_SECRETS.has(secret.trim());
+}
+
+/**
+ * Returns detailed status of JWT_SECRET configuration:
+ * - "valid": Configured with a non-preset string
+ * - "preset": Configured with a documentation or default template preset string
+ * - "missing": Not configured or empty string
+ */
+export function getJwtSecretStatus(secret: string | undefined | null): "valid" | "preset" | "missing" {
+  if (isMissingJwtSecret(secret)) return "missing";
+  if (isPresetJwtSecret(secret)) return "preset";
+  return "valid";
+}
+
+/**
  * Whether JWT_SECRET is present and is not a documentation placeholder.
  * Does not block on string length to allow legacy deployments to continue operating.
  */
 export function isUsableJwtSecret(secret: string | undefined | null): secret is string {
-  if (typeof secret !== "string") return false;
-  const trimmed = secret.trim();
-  return trimmed.length > 0 && !PLACEHOLDER_JWT_SECRETS.has(trimmed);
+  return getJwtSecretStatus(secret) === "valid";
 }
 
 /**

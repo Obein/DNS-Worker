@@ -172,7 +172,10 @@
     "totpFormatError": "Please enter a valid 6-digit code",
     "registrationDisabledTitle": "Registration Disabled",
     "registrationDisabledDesc": "New user registration is currently closed. Please contact a system administrator to obtain an account.",
-    "backToLogin": "Back to login"
+    "backToLogin": "Back to login",
+    "jwtSecretPreset": "Default preset JWT_SECRET detected. Please modify the preset JWT_SECRET in wrangler.toml or environment variables before deploying.",
+    "jwtSecretMissing": "JWT_SECRET is missing. Please configure a secure key in wrangler.toml or environment variables before deploying.",
+    "jwtSecretInvalid": "JWT_SECRET format is invalid, please check configuration."
   },
   "setup": {
     "title": "Setup Guide",

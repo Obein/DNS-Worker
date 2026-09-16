@@ -171,7 +171,10 @@
     "totpFormatError": "有効な 6 桁のコードを入力してください",
     "registrationDisabledTitle": "登録は停止されています",
     "registrationDisabledDesc": "現在、新規ユーザーの登録は停止されています。アカウントの取得についてはシステム管理者にお問い合わせください。",
-    "backToLogin": "ログインに戻る"
+    "backToLogin": "ログインに戻る",
+    "jwtSecretPreset": "デフォルトの JWT_SECRET が検出されました。wrangler.toml または環境変数でプリセットの JWT_SECRET を変更してください。",
+    "jwtSecretMissing": "JWT_SECRET が見つかりません。wrangler.toml または環境変数で安全なキーを設定してください。",
+    "jwtSecretInvalid": "JWT_SECRET の形式が無効です。設定を確認してください。"
   },
   "setup": {
     "title": "インストールガイド",

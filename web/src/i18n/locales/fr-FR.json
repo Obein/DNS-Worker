@@ -171,7 +171,10 @@
     "totpFormatError": "Veuillez entrer un code valide à 6 chiffres",
     "registrationDisabledTitle": "Inscription désactivée",
     "registrationDisabledDesc": "L'inscription de nouveaux utilisateurs est actuellement fermée. Veuillez contacter un administrateur pour obtenir un compte.",
-    "backToLogin": "Retour à la connexion"
+    "backToLogin": "Retour à la connexion",
+    "jwtSecretPreset": "JWT_SECRET par défaut détecté. Veuillez modifier le JWT_SECRET prédéfini dans wrangler.toml ou les variables d'environnement.",
+    "jwtSecretMissing": "JWT_SECRET manquant. Veuillez configurer une clé sécurisée dans wrangler.toml ou les variables d'environnement.",
+    "jwtSecretInvalid": "Format JWT_SECRET non valide, veuillez vérifier la configuration."
   },
   "setup": {
     "title": "Guide d'installation",

@@ -171,7 +171,10 @@
     "totpFormatError": "유효한 6자리 코드를 입력하세요",
     "registrationDisabledTitle": "회원가입 비활성화됨",
     "registrationDisabledDesc": "현재 신규 사용자 등록이 일시 중지되었습니다. 계정 발급은 시스템 관리자에게 문의하세요.",
-    "backToLogin": "로그인으로 돌아가기"
+    "backToLogin": "로그인으로 돌아가기",
+    "jwtSecretPreset": "기본 JWT_SECRET이 감지되었습니다. wrangler.toml 또는 환경 변수에서 기본 JWT_SECRET을 수정한 후 다시 배포해 주세요.",
+    "jwtSecretMissing": "JWT_SECRET이 누락되었습니다. wrangler.toml 또는 환경 변수에서 안전한 키를 설정해 주세요.",
+    "jwtSecretInvalid": "JWT_SECRET 형식이 잘못되었습니다. 구성을 확인해 주세요."
   },
   "setup": {
     "title": "설치 가이드",
