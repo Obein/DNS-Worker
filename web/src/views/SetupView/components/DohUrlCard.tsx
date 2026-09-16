@@ -2,6 +2,7 @@ import React from "react";
 import { Section, SectionCard, Button, PopoverNext, H5, Intent } from "@blueprintjs/core";
 import { ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { StepStampWatermark } from "./StepStampWatermark";
 
 export interface DohUrlCardProps {
   dohUrl: string;
@@ -20,6 +21,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
     <Section
       title={t("setup.accessPointTitle", "Access DoH URL")}
       icon="globe"
+      className="relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
       rightElement={
         <PopoverNext
           placement="bottom-end"
@@ -51,6 +53,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
         </PopoverNext>
       }
     >
+      <StepStampWatermark step={2} />
       <SectionCard>
         <div className="w-full bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <span className="font-mono text-blue-600 dark:text-blue-400 break-all text-xs sm:text-sm">{dohUrl}</span>
