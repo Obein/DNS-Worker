@@ -67,10 +67,16 @@ export default {
         currentUser = await getCurrentUser(request, env);
 
         const isPublicRoute = [
-          '/api/auth/login', '/api/auth/signup', '/api/auth/prelogin', '/api/auth/check-username',
+          '/api/auth/login', 
+          '/api/auth/signup', 
+          '/api/auth/prelogin', 
+          '/api/auth/check-username',
           '/api/auth/unlock-session',
-          '/api/clientinfo', '/api/regions'
-        ].includes(url.pathname) || url.pathname.startsWith('/api/icon/');
+          '/api/clientinfo',
+          '/api/regions'
+        ].includes(url.pathname) || 
+        url.pathname.startsWith('/api/icon/') || 
+        url.pathname.startsWith('/api/presets/');
         const isMobileConfigRoute = url.pathname.endsWith('/mobileconfig');
 
         // Check authentication boundary
@@ -101,8 +107,7 @@ export default {
           url.pathname === '/api/clientinfo' ||
           url.pathname === '/api/regions' ||
           url.pathname === '/api/substitute' ||
-          url.pathname === '/api/presets/upstreams' ||
-          url.pathname === '/api/presets/filters' ||
+          url.pathname.startsWith('/api/presets/') ||
           url.pathname.startsWith('/api/icon/')
         ) {
           return handleSystemRequest(request, env);
