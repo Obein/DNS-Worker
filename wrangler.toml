@@ -59,7 +59,7 @@ head_sampling_rate = 0.001
 
 [vars]
 # Runtime configuration values exposed to the Worker.
-JWT_SECRET = "replace_with_a_secure_random_jwt_secret_string_32chars_min"
+# JWT_SECRET = "replace_with_a_secure_random_jwt_secret_string_32chars_min"
 # Default upstream for fail-open emergency fallback
 FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
