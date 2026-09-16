@@ -50,17 +50,34 @@ export {
   invalidatePreauthSession,
   recordFailedPreauthAttempt
 } from "./preauth";
-import { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH } from "./jwt";
-export { isUsableJwtSecret, isStrongJwtSecret, MIN_JWT_SECRET_LENGTH };
+import {
+  isUsableJwtSecret,
+  isStrongJwtSecret,
+  isPresetJwtSecret,
+  isMissingJwtSecret,
+  getJwtSecretStatus,
+  MIN_JWT_SECRET_LENGTH
+} from "./jwt";
+export {
+  isUsableJwtSecret,
+  isStrongJwtSecret,
+  isPresetJwtSecret,
+  isMissingJwtSecret,
+  getJwtSecretStatus,
+  MIN_JWT_SECRET_LENGTH
+};
 
 /**
- * Gets or creates the JWT secret from system settings.
+ * Gets or creates the JWT secret from environment configuration.
+ * Differentiates between missing JWT_SECRET and unedited preset JWT_SECRET.
  */
 export async function getOrCreateJwtSecret(env: Env): Promise<string> {
-  if (!isUsableJwtSecret(env.JWT_SECRET)) {
-    throw new Error(
-      `JWT_SECRET is missing or is a documentation placeholder.`
-    );
+  const status = getJwtSecretStatus(env.JWT_SECRET);
+  if (status === "missing") {
+    throw new Error("jwt_secret_missing");
   }
-  return env.JWT_SECRET;
+  if (status === "preset") {
+    throw new Error("jwt_secret_preset");
+  }
+  return env.JWT_SECRET!;
 }

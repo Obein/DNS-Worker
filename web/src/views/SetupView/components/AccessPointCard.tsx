@@ -3,6 +3,7 @@ import { Section, SectionCard, Button, HTMLSelect, Intent, Tag } from "@blueprin
 import { MonitorSmartphone, Settings2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { AccessPoint } from "../../../types/auth";
+import { StepStampWatermark } from "./StepStampWatermark";
 
 export interface AccessPointCardProps {
   accessPoints: AccessPoint[];
@@ -27,7 +28,9 @@ export const AccessPointCard: React.FC<AccessPointCardProps> = ({
     <Section
       title={t("setup.accessPointsCardTitle", "接入点")}
       icon={<MonitorSmartphone size={16} />}
+      className="group relative overflow-hidden [&_.bp6-section-header]:relative [&_.bp6-section-header]:z-10 [&_.bp6-section-card]:relative [&_.bp6-section-card]:z-10"
     >
+      <StepStampWatermark step={1} />
       <SectionCard>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1.5 w-full sm:w-auto">

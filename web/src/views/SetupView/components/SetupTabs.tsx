@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import type {  RegionConfigItem  } from "../../../config/regions";
 import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
+import { StepStampWatermark } from "./StepStampWatermark";
 
 export interface SetupTabsProps {
   isMobile: boolean;
@@ -30,24 +31,26 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   const { t } = useTranslation();
 
   return (
-    <Tabs
-      id="setup-tabs"
-      renderActiveTabPanelOnly={true}
-      vertical={!isMobile} // 移动端使用水平 Tab
-      size="large"
-      className={clsx(
-        "bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm setup-tabs-container",
-        isMobile && [
-          "[&_.bp6-tab-list]:overflow-x-auto!",
-          "[&_.bp6-tab-list]:flex-nowrap!",
-          "[&_.bp6-tab-list]:pb-1",
-          "[&_.bp6-tab-list]:scrollbar-none",
-          "[&_.bp6-tab-list]:[-ms-overflow-style:none]",
-          "[&_.bp6-tab-list::-webkit-scrollbar]:hidden",
-          "[&_.bp6-tab]:shrink-0",
-        ]
-      )}
-    >
+    <div className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
+      <StepStampWatermark step={3} />
+      <Tabs
+        id="setup-tabs"
+        renderActiveTabPanelOnly={true}
+        vertical={!isMobile} // 移动端使用水平 Tab
+        size="large"
+        className={clsx(
+          "p-4 md:p-6 setup-tabs-container relative z-10 bg-transparent",
+          isMobile && [
+            "[&_.bp6-tab-list]:overflow-x-auto!",
+            "[&_.bp6-tab-list]:flex-nowrap!",
+            "[&_.bp6-tab-list]:pb-1",
+            "[&_.bp6-tab-list]:scrollbar-none",
+            "[&_.bp6-tab-list]:[-ms-overflow-style:none]",
+            "[&_.bp6-tab-list::-webkit-scrollbar]:hidden",
+            "[&_.bp6-tab]:shrink-0",
+          ]
+        )}
+      >
       <Tab
         id="browsers"
         title={
@@ -277,5 +280,6 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
         }
       />
     </Tabs>
+    </div>
   );
 };

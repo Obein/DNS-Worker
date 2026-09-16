@@ -1,12 +1,13 @@
 import { Env } from '../types';
 import { cacheUtils } from '../utils/cache';
+import { getPresetEchFrontingDomains } from '../utils/ech/constants';
 
 /**
  * Handles system/utility routes like /api/clientinfo and /api/substitute
  */
 export async function handleSystemRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const cache = (caches as any).default;
+  const cache = typeof caches !== 'undefined' ? (caches as any).default : null;
 
   if (url.pathname === '/api/clientinfo') {
     const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
@@ -111,6 +112,11 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
   if (url.pathname === '/api/presets/filters') {
     const filters = env.PRESET_EXTERNAL_FILTERS ? JSON.parse(env.PRESET_EXTERNAL_FILTERS) : [];
     return new Response(JSON.stringify(filters), { headers: { 'Content-Type': 'application/json' } });
+  }
+
+  if (url.pathname === '/api/presets/ech-fronting-domains') {
+    const domains = getPresetEchFrontingDomains(env);
+    return new Response(JSON.stringify(domains), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname.startsWith('/api/icon/')) {

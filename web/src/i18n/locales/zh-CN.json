@@ -172,7 +172,10 @@
     "totpFormatError": "请输入有效的 6 位验证码",
     "registrationDisabledTitle": "注册已停用",
     "registrationDisabledDesc": "当前系统已暂停开放新用户注册，请联系系统管理员获取账号。",
-    "backToLogin": "返回登录"
+    "backToLogin": "返回登录",
+    "jwtSecretPreset": "检测到正在使用预设的 JWT_SECRET，请在环境变量中修改并替换为自定义安全密钥后重新部署。",
+    "jwtSecretMissing": "缺少 JWT_SECRET，请在环境变量中配置安全密钥后重新部署。",
+    "jwtSecretInvalid": "JWT_SECRET 密钥格式无效，请检查配置。"
   },
   "setup": {
     "title": "安装指南",

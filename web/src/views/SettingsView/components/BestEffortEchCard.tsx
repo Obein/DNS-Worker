@@ -16,6 +16,7 @@ import {
 import { Lock, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ProfileSettings } from "../types";
+import { getPresetEchFrontingDomains } from "../../../services/system";
 
 export interface BestEffortEchCardProps {
   settings: ProfileSettings;
@@ -33,6 +34,23 @@ const PRESET_FRONTING_DOMAINS = [
 
 export const BestEffortEchCard: React.FC<BestEffortEchCardProps> = ({ settings, setSettings }) => {
   const { t } = useTranslation();
+  const [presetDomains, setPresetDomains] = React.useState(PRESET_FRONTING_DOMAINS);
+
+  React.useEffect(() => {
+    getPresetEchFrontingDomains()
+      .then((domains) => {
+        if (Array.isArray(domains) && domains.length > 0) {
+          setPresetDomains(
+            domains.map((item: any) =>
+              typeof item === "string"
+                ? { domain: item, isPreferred: item === "cloudflare-ech.com" }
+                : { domain: item.domain, isPreferred: !!item.isPreferred }
+            )
+          );
+        }
+      })
+      .catch((e) => console.warn("Failed to fetch preset ECH fronting domains from API", e));
+  }, []);
 
   const isEnabled = typeof settings.best_effort_ech === "boolean"
     ? settings.best_effort_ech
@@ -64,7 +82,7 @@ export const BestEffortEchCard: React.FC<BestEffortEchCardProps> = ({ settings, 
 
   const frontingMenu = (
     <Menu className="min-w-72">
-      {PRESET_FRONTING_DOMAINS.map((item) => (
+      {presetDomains.map((item) => (
         <MenuItem
           key={item.domain}
           text={item.domain}

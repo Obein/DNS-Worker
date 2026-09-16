@@ -229,6 +229,23 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
   if (bodyText === "password_leaked") {
     return t("auth.passwordLeaked", "Your password has been leaked.");
   }
+  if (
+    bodyText === "jwt_secret_preset" ||
+    bodyText.includes("jwt_secret_preset") ||
+    bodyText.includes("is a documentation placeholder")
+  ) {
+    return t("auth.jwtSecretPreset", "检测到正在使用预设的 JWT_SECRET，请在环境变量中修改并替换为自定义安全密钥后重新部署。");
+  }
+  if (
+    bodyText === "jwt_secret_missing" ||
+    bodyText.includes("jwt_secret_missing") ||
+    bodyText.includes("JWT_SECRET is missing")
+  ) {
+    return t("auth.jwtSecretMissing", "缺少 JWT_SECRET，请在环境变量中配置安全密钥后重新部署。");
+  }
+  if (bodyText === "jwt_secret_invalid") {
+    return t("auth.jwtSecretInvalid", "JWT_SECRET 密钥格式无效，请检查配置。");
+  }
 
   // If bodyText is short and doesn't contain HTML markup, return it directly
   if (bodyText && bodyText.length < 200 && !bodyText.includes("<") && !bodyText.includes(">")) {

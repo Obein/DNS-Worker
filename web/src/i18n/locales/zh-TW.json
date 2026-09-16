@@ -172,7 +172,10 @@
     "totpFormatError": "請輸入有效的 6 位驗證碼",
     "registrationDisabledTitle": "註冊已停用",
     "registrationDisabledDesc": "目前系統已暫停開放新使用者註冊，請聯絡系統管理員取得帳號。",
-    "backToLogin": "返回登入"
+    "backToLogin": "返回登入",
+    "jwtSecretPreset": "檢測到正在使用預設的 JWT_SECRET，請在環境變數中修改並替換為自訂安全金鑰後重新部署。",
+    "jwtSecretMissing": "缺少 JWT_SECRET，請在環境變數中配置安全金鑰後重新部署。",
+    "jwtSecretInvalid": "JWT_SECRET 金鑰格式無效，請檢查設定。"
   },
   "setup": {
     "title": "安裝指南",

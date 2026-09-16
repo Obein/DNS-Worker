@@ -16,6 +16,7 @@ export interface Env {
   INACTIVITY_THRESHOLD_DAYS?: string | number;
   PRESET_UPSTREAMS?: string;
   PRESET_EXTERNAL_FILTERS?: string;
+  PRESET_ECH_FRONTING_DOMAINS?: string;
   BLOOM_FALSE_POSITIVE_RATE?: string | number;
   THROTTLE_ACTIVE_SEC?: string | number;
   SYNC_PROFILE_INTERVAL_SEC?: string | number;
