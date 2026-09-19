@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import assert from "node:assert";
 import { cacheUtils } from "../src/utils/cache";
 import { pipelineCache } from "../src/pipeline/cache";

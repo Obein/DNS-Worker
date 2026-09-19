@@ -1,7 +1,7 @@
 import { Env, User, ExecutionContext } from "../../types";
 import { ListModel } from "../../models/list";
 import { ProfileModel } from "../../models/profile";
-import { syncNextListForProfile, syncAllListsForProfile } from "../../utils/sync";
+import { syncNextListForProfile, syncAllListsForProfile, rebuildProfileBloom } from "../../utils/sync";
 import { isSafeUrl } from "../../utils/validator";
 import { pipeline } from "../../pipeline";
 
@@ -112,9 +112,12 @@ export async function handleProfileListsRequest(
   if (request.method === 'DELETE') {
     const { id } = await request.json() as { id: number };
     await listModel.deleteList(id, profileId);
-    // 触发重构合并 (没有 pending 列表，syncNextListForProfile 会直接运行 combineAndPromote)
-    ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-    ctx.waitUntil(pipeline.clearCache(profileId, true, env));
+    // 触发纯内存重构合并，并在落库后清除缓存，彻底消除竞态条件与 pending 阻塞
+    ctx.waitUntil(
+      rebuildProfileBloom(profileId, env, ctx)
+        .then(() => pipeline.clearCache(profileId, true, env))
+        .catch((e) => console.error(`[Lists] Bloom rebuild after delete failed for ${profileId}:`, e))
+    );
     return new Response(null, { status: 204 });
   }
 

@@ -118,14 +118,16 @@ export const pipelineCache = {
     
     // 清理 L2 (本地数据中心 Cache API)
     try {
-      const cache = (caches as any).default;
-      const tasks: Promise<any>[] = [
-        cacheUtils.delete(cache, `profile_v6:${profileId}`)
-      ];
-      if (clearBloom) {
-        tasks.push(cache.delete(`https://obex.local/bloom-bin/${profileId}`));
+      if (typeof caches !== "undefined" && caches && (caches as any).default) {
+        const cache = (caches as any).default;
+        const tasks: Promise<any>[] = [
+          cacheUtils.delete(cache, `profile_v6:${profileId}`)
+        ];
+        if (clearBloom) {
+          tasks.push(cache.delete(`https://obex.local/bloom-bin/${profileId}`));
+        }
+        await Promise.all(tasks);
       }
-      await Promise.all(tasks);
     } catch (e) {
       console.error("Failed to clear cache API:", e);
     }
