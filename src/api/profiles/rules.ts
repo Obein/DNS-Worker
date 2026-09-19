@@ -64,7 +64,7 @@ export async function handleProfileRulesRequest(
       let insertedCount = 0;
       if (rulesToInsert.length > 0) {
         insertedCount = await ruleModel.addRulesBulk(profileId, rulesToInsert);
-        ctx.waitUntil(pipeline.clearCache(profileId, false));
+        ctx.waitUntil(pipeline.clearCache(profileId, false, env));
       }
 
       return new Response(JSON.stringify({ success: true, count: insertedCount }), {
@@ -83,7 +83,7 @@ export async function handleProfileRulesRequest(
       return new Response("Rule for this domain already exists", { status: 400 });
     }
     await ruleModel.addRule(profileId, rule);
-    ctx.waitUntil(pipeline.clearCache(profileId, false));
+    ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(null, { status: 201 });
   }
 
@@ -98,14 +98,14 @@ export async function handleProfileRulesRequest(
       return new Response("Rule for this domain already exists", { status: 400 });
     }
     await ruleModel.updateRule(rule.id, profileId, rule);
-    ctx.waitUntil(pipeline.clearCache(profileId, false));
+    ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(null, { status: 200 });
   }
 
   if (request.method === 'DELETE') {
     const { id } = await request.json() as any;
     await ruleModel.deleteRule(id, profileId);
-    ctx.waitUntil(pipeline.clearCache(profileId, false));
+    ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(null, { status: 204 });
   }
 

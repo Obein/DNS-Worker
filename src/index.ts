@@ -64,7 +64,7 @@ export default {
         }
 
         // Authenticate request
-        currentUser = await getCurrentUser(request, env);
+        currentUser = await getCurrentUser(request, env, ctx);
 
         const isPublicRoute = [
           '/api/auth/login', 

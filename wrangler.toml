@@ -62,6 +62,12 @@ head_sampling_rate = 0.001
 # Recommended: configure JWT_SECRET via Worker Secrets / Environment Variables
 # (e.g. `npx wrangler secret put JWT_SECRET` or via dashboard) to keep secrets out of git.
 # JWT_SECRET = ""
+# (Optional) Cloudflare Zone Cache Purge by Tag.
+# When configured, profile config and bloom cache updates will be purged globally across all Cloudflare data centers by Cache-Tag.
+# CF_ZONE_ID can be configured here or in environment variables; CF_PURGE_TOKEN should be stored in Worker Secrets (e.g. `npx wrangler secret put CF_PURGE_TOKEN`).
+# Requires an API token with "Zone -> Cache Purge -> Purge" permission.
+# CF_ZONE_ID = ""
+# CF_PURGE_TOKEN = ""
 # Default upstream for fail-open emergency fallback
 FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
@@ -107,6 +113,10 @@ BLOOM_MEM_TTL=600000
 SYNC_TIMEOUT_MS=30000
 # Number of days of inactivity before an account is cleared by cron jobs
 INACTIVITY_THRESHOLD_DAYS=180
+# Throttle interval for updating session "last active" status in D1 (in seconds)
+SESSION_LAST_ACTIVE_UPDATE_INTERVAL=60
+# In-memory authentication micro-cache TTL for dashboard requests (in seconds)
+AUTH_CACHE_TTL_SEC=30
 # Throttle interval for updating profile "last active" status (in seconds)
 THROTTLE_ACTIVE_SEC=3600
 # Minimum interval between automated blocklist profile syncs (in seconds)

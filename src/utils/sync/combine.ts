@@ -1,4 +1,4 @@
-import { ExecutionContext } from "../../types";
+import { Env, ExecutionContext } from "../../types";
 import { BloomFilter } from "../bloom";
 import { pipelineCache } from "../../pipeline/cache";
 import { ProfileModel } from "../../models/profile";
@@ -21,7 +21,8 @@ export async function combineAndPromote(
   ctx: ExecutionContext,
   now: number,
   maxDomains: number,
-  falsePositiveRate: number
+  falsePositiveRate: number,
+  env?: Env
 ): Promise<void> {
   const lists = await listModel.getLists(profileId);
   const activeLists = lists.filter((l) => !!l.enabled);
@@ -60,6 +61,6 @@ export async function combineAndPromote(
   await profileModel.updateListUpdatedAt(profileId, now);
 
   if (ctx && typeof ctx.waitUntil === "function") {
-    ctx.waitUntil(pipelineCache.clear(profileId));
+    ctx.waitUntil(pipelineCache.clear(profileId, true, env));
   }
 }

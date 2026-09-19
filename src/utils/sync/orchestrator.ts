@@ -67,7 +67,8 @@ export async function syncNextListForProfile(
         ctx,
         now,
         maxDomains,
-        falsePositiveRate
+        falsePositiveRate,
+        env
       );
       return;
     }
@@ -97,7 +98,8 @@ export async function syncNextListForProfile(
         ctx,
         now,
         maxDomains,
-        falsePositiveRate
+        falsePositiveRate,
+        env
       );
       console.log(
         `[Sync] Profile ${profileId}: all ${activeUpdatedLists.length} list(s) processed — ` +
@@ -169,7 +171,8 @@ export async function syncAllListsForProfile(
       ctx,
       now,
       maxDomains,
-      falsePositiveRate
+      falsePositiveRate,
+      env
     );
     console.log(`[Sync] Profile ${profileId}: manual sync cycle complete.`);
   } catch (e) {
@@ -177,4 +180,40 @@ export async function syncAllListsForProfile(
     // 防止单点故障永久阻塞
     await profileModel.updateListUpdatedAt(profileId, now);
   }
+}
+
+/**
+ * 快速重构并合并 Profile 的布隆过滤器（纯内存合并，不触发外部网络下载）。
+ * 适用场景：删除规则列表、切换列表启用/禁用状态等仅改变参与合并的集合、而不改变列表本身内容的场景。
+ */
+export async function rebuildProfileBloom(
+  profileId: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
+  const listModel = new ListModel(env.DB);
+  const listBloomModel = new ListBloomModel(env.DB);
+  const profileBloomModel = new ProfileBloomModel(env.DB);
+  const profileModel = new ProfileModel(env.DB);
+
+  const profile = await profileModel.getById(profileId);
+  const priorListUpdatedAt = profile?.list_updated_at ?? 0;
+
+  await combineAndPromote(
+    profileId,
+    listModel,
+    listBloomModel,
+    profileBloomModel,
+    profileModel,
+    ctx,
+    Math.floor(Date.now() / 1000),
+    Number(env.MAX_SYNC_DOMAINS) || 1000000,
+    Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
+    env
+  );
+
+  // combineAndPromote 会将 list_updated_at 标记为当前时间戳（类似于完成了一个全量同步周期）。
+  // 由于本次仅为列表删除后的本地重构合并，并未真正重新下载更新所有列表，因此需恢复先前的 list_updated_at；
+  // 否则 Cron 定时任务会误认为刚刚完成了全量更新，从而推迟常规的周期性刷新。
+  await profileModel.updateListUpdatedAt(profileId, priorListUpdatedAt);
 }

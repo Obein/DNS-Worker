@@ -89,7 +89,8 @@ export const pipelineConfig = {
         ctx.waitUntil(cache.put(bloomInternalUrl, new Response(uint8, {
           headers: { 
             'Content-Type': 'application/octet-stream',
-            'Cache-Control': 'public, max-age=604800' 
+            'Cache-Control': 'public, max-age=604800',
+            'Cache-Tag': `bloom-${profileId}`
           }
         })));
       }
@@ -99,7 +100,7 @@ export const pipelineConfig = {
       
       configCache.set(profileId, { ...config, timestamp: Date.now() });
       // 写入 L2 Cache API 配置缓存 (24 小时长效缓存，配置变更时有主动淘汰)
-      ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400));
+      ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400, [`profile-${profileId}`]));
       
       track('load_config_full_sync');
       return { ...config, bloom };

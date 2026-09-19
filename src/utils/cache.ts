@@ -14,14 +14,18 @@ export const cacheUtils = {
     return response.json();
   },
 
-  async set(cache: Cache | null | undefined, key: string, data: any, ttlSeconds: number): Promise<void> {
+  async set(cache: Cache | null | undefined, key: string, data: any, ttlSeconds: number, tags: string[] = []): Promise<void> {
     if (!cache) return;
     const url = this.generateCacheUrl(key);
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Cache-Control": `public, max-age=${ttlSeconds}`
+    };
+    if (tags && tags.length > 0) {
+      headers["Cache-Tag"] = tags.join(",");
+    }
     const response = new Response(JSON.stringify(data), {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": `public, max-age=${ttlSeconds}`
-      }
+      headers
     });
     return cache.put(url, response);
   },

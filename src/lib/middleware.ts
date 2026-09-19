@@ -1,4 +1,4 @@
-import { Env, User } from '../types';
+import { Env, ExecutionContext, User } from '../types';
 import { getOrCreateJwtSecret, readCsrfCookie } from './auth';
 import { importJwtSecret, verifyJWT } from './jwt';
 import { SessionModel } from '../models/session';
@@ -37,11 +37,22 @@ interface CachedAuthUser {
 }
 const authUserMemoryCache = new Map<string, CachedAuthUser>();
 
+/**
+ * In-memory activity tracking to prevent premature PIN locking
+ * and throttle D1 writes even when DB writes fail or are delayed.
+ */
+interface SessionActivityRecord {
+  lastObserved: number;
+  lastWriteAttempt: number;
+}
+const sessionActivityMemory = new Map<string, SessionActivityRecord>();
+
 export function invalidateAuthUserCache(sessionId: string): void {
   authUserMemoryCache.delete(sessionId);
+  sessionActivityMemory.delete(sessionId);
 }
 
-export async function getCurrentUser(request: Request, env: Env): Promise<User | null> {
+export async function getCurrentUser(request: Request, env: Env, ctx?: ExecutionContext): Promise<User | null> {
   const authHeader = request.headers.get("Authorization") || "";
   let accessToken = "";
   if (authHeader.startsWith("Bearer ")) {
@@ -63,52 +74,83 @@ export async function getCurrentUser(request: Request, env: Env): Promise<User |
       // Check 10-second micro-cache to collapse parallel dashboard requests into 1 D1 read
       const cached = authUserMemoryCache.get(payload.sessionId);
       if (cached && cached.expiresAt > Date.now()) {
+        const activity = sessionActivityMemory.get(payload.sessionId);
+        if (activity) {
+          activity.lastObserved = Math.floor(Date.now() / 1000);
+        }
         return cached.user;
       }
 
-      // Validate session in database (enforce statefulness and idle timeout)
+      // Validate session & user in database via single atomic JOIN query (halves D1 reads)
       const sessionModel = new SessionModel(env.DB);
-      const session = await sessionModel.getSession(payload.sessionId);
+      const session = await sessionModel.getSessionWithUser(payload.sessionId);
       if (!session) {
         authUserMemoryCache.delete(payload.sessionId);
+        sessionActivityMemory.delete(payload.sessionId);
         return null;
       }
 
+      const sessionId = session.id || session.session_id || payload.sessionId;
       const now = Math.floor(Date.now() / 1000);
       const lastActive = session.last_active_at || session.created_at;
+      const activityRecord = sessionActivityMemory.get(payload.sessionId);
+      const effectiveLastActive = Math.max(lastActive, activityRecord?.lastObserved ?? 0);
 
-      // Single Source of Truth inactivity check on server
-      const userModel = new UserModel(env.DB, env);
-      const dbUser = await userModel.getById(payload.userId);
-
-      if (dbUser && dbUser.pin_hash && !session.is_paused) {
-        const timeoutSeconds = (dbUser.session_lock_timeout || 15) * 60;
-        if (now - lastActive > timeoutSeconds) {
-          await sessionModel.pauseSession(session.id);
+      // Single Source of Truth inactivity check on server (fields from JOINed users table)
+      if (session.pin_hash && !session.is_paused) {
+        const timeoutSeconds = (session.session_lock_timeout || 15) * 60;
+        if (now - effectiveLastActive > timeoutSeconds) {
+          try {
+            await sessionModel.pauseSession(sessionId);
+          } catch (e) {
+            console.error("[Auth] Failed to update pauseSession in D1:", e);
+          }
           session.is_paused = 1;
         }
       }
 
       if (session.is_paused) {
-        const pausedUser: User = { id: payload.userId, username: dbUser?.username || "", role: payload.role as any, isPaused: true, sessionId: payload.sessionId };
+        const pausedUser: User = { id: payload.userId, username: session.username || "", role: (session.role || payload.role) as any, isPaused: true, sessionId: payload.sessionId };
         return pausedUser;
       }
 
-      // Throttle DB updates: only update if at least 10 seconds have elapsed since last active time
-      if (now - lastActive > 10) {
-        await sessionModel.updateLastActive(session.id, now);
+      // Throttle DB updates: only update if at least intervalSec have elapsed since last write attempt
+      const lastWriteAttempt = activityRecord?.lastWriteAttempt ?? lastActive;
+      const intervalSec = parseInt(String(env.SESSION_LAST_ACTIVE_UPDATE_INTERVAL || "60"), 10) || 60;
+
+      let newWriteAttempt = lastWriteAttempt;
+      if (now - lastWriteAttempt > intervalSec) {
+        newWriteAttempt = now;
+        const writePromise = sessionModel
+          .updateLastActive(sessionId, now)
+          .catch((e) => console.error("[Auth] session last-active write failed:", e));
+
+        if (ctx && typeof ctx.waitUntil === "function") {
+          ctx.waitUntil(writePromise);
+        }
       }
 
-      const validatedUser: User = { id: payload.userId, username: dbUser?.username || "", role: payload.role as any, sessionId: payload.sessionId };
+      // Update in-memory activity tracking (cap size at 1000)
+      if (sessionActivityMemory.size > 1000) {
+        const oldestKey = sessionActivityMemory.keys().next().value;
+        if (oldestKey) sessionActivityMemory.delete(oldestKey);
+      }
+      sessionActivityMemory.set(payload.sessionId, {
+        lastObserved: now,
+        lastWriteAttempt: newWriteAttempt
+      });
 
-      // Cache for 10 seconds (cap size at 100)
+      const validatedUser: User = { id: payload.userId, username: session.username || "", role: (session.role || payload.role) as any, sessionId: payload.sessionId };
+
+      // Micro-cache user authentication (default 30 seconds, configurable via AUTH_CACHE_TTL_SEC)
+      const cacheTtlSec = parseInt(String(env.AUTH_CACHE_TTL_SEC || "30"), 10) || 30;
       if (authUserMemoryCache.size > 100) {
         const oldestKey = authUserMemoryCache.keys().next().value;
         if (oldestKey) authUserMemoryCache.delete(oldestKey);
       }
       authUserMemoryCache.set(payload.sessionId, {
         user: validatedUser,
-        expiresAt: Date.now() + 10_000
+        expiresAt: Date.now() + cacheTtlSec * 1000
       });
 
       return validatedUser;
