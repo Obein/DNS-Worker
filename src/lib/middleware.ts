@@ -2,7 +2,6 @@ import { Env, ExecutionContext, User } from '../types';
 import { getOrCreateJwtSecret, readCsrfCookie } from './auth';
 import { importJwtSecret, verifyJWT } from './jwt';
 import { SessionModel } from '../models/session';
-import { UserModel } from '../models/user';
 
 /**
  * Applies standard security headers and Content-Security-Policy (CSP) with a nonce.
