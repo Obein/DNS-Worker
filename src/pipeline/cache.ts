@@ -50,10 +50,7 @@ export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: nu
  * 需配置 CF_ZONE_ID 与 CF_PURGE_TOKEN (具备 Zone -> Cache Purge 权限)。
  * 若未配置或调用失败，仅记录日志，不阻断主业务流程。
  */
-async function purgeTags(env?: Env, tags: string[] = []): Promise<void> {
-  if (!env || !env.CF_ZONE_ID || !env.CF_PURGE_TOKEN || tags.length === 0) {
-    return;
-  }
+async function purgeTags(env: Env, tags: string[]): Promise<void> {
   try {
     const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${env.CF_ZONE_ID}/purge_cache`, {
       method: "POST",
@@ -133,7 +130,7 @@ export const pipelineCache = {
     }
 
     // 清理 L2 全球边缘节点 (Cloudflare Zone Cache Purge by Tag)
-    if (targetEnv) {
+    if (targetEnv && targetEnv.CF_ZONE_ID && targetEnv.CF_PURGE_TOKEN) {
       const tags = [`profile-${profileId}`];
       if (clearBloom) {
         tags.push(`bloom-${profileId}`);
