@@ -30,6 +30,8 @@ export interface Env {
   NORMAL_USER_MAX_LOG_RETENTION_DAYS?: string | number;
   NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS?: string | number;
   FAIL_OPEN_UPSTREAM?: string;
+  CF_ZONE_ID?: string;
+  CF_PURGE_TOKEN?: string;
   [key: string]: any;
 }
 

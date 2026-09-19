@@ -85,7 +85,7 @@ export async function handleProfileListsRequest(
       if (itemsToInsert.length > 0) {
         insertedCount = await listModel.addListsBulk(profileId, itemsToInsert);
         ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-        ctx.waitUntil(pipeline.clearCache(profileId));
+        ctx.waitUntil(pipeline.clearCache(profileId, true, env));
       }
 
       return new Response(JSON.stringify({ success: true, count: insertedCount }), {
@@ -105,7 +105,7 @@ export async function handleProfileListsRequest(
     await listModel.addList(profileId, listUrl);
     // 只触发新添加列表的同步 (syncNextListForProfile 会挑选未同步的最旧列表，即此新列表)
     ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, true, env));
     return new Response(null, { status: 201 });
   }
 
@@ -114,7 +114,7 @@ export async function handleProfileListsRequest(
     await listModel.deleteList(id, profileId);
     // 触发重构合并 (没有 pending 列表，syncNextListForProfile 会直接运行 combineAndPromote)
     ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-    ctx.waitUntil(pipeline.clearCache(profileId));
+    ctx.waitUntil(pipeline.clearCache(profileId, true, env));
     return new Response(null, { status: 204 });
   }
 

@@ -98,7 +98,7 @@ export async function handleProfilesCoreRequest(
       const { name } = await request.json() as { name: string };
       if (!name || !PROFILE_NAME_REGEX.test(name)) return new Response("Invalid Profile Name format", { status: 400 });
       await profileModel.updateName(profileId, name);
-      ctx.waitUntil(pipeline.clearCache(profileId));
+      ctx.waitUntil(pipeline.clearCache(profileId, true, env));
       return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -115,7 +115,7 @@ export async function handleProfilesCoreRequest(
   if (pathParts[3] === 'rotate_key' && request.method === 'POST') {
     const newKey = generateId(12);
     await profileModel.rotateKey(profileId, newKey);
-    ctx.waitUntil(pipeline.clearCache(profileId, false));
+    ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(JSON.stringify({ profile_key: newKey }), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -199,7 +199,7 @@ export async function handleProfilesCoreRequest(
     }
 
     // 设置变更仅清除配置缓存，保留 2.5MB 布隆过滤器缓存
-    await pipeline.clearCache(profileId, false);
+    ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
   }
 

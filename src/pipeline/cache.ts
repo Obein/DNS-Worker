@@ -1,4 +1,4 @@
-import { ProfileSettings, Rule } from "../types";
+import { Env, ProfileSettings, Rule } from "../types";
 import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
 
@@ -45,8 +45,65 @@ export const dnsCache = new SizeCappedMap<string, any>(500);
 // Profile Key 到 Profile 元数据映射缓存 (L1 内存缓存，限制最多 100 个 Key)
 export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(100);
 
+/**
+ * 通过 Cloudflare Zone Cache Purge API 全球按 Tag 主动失效缓存。
+ * 需配置 CF_ZONE_ID 与 CF_PURGE_TOKEN (具备 Zone -> Cache Purge 权限)。
+ * 若未配置或调用失败，仅记录日志，不阻断主业务流程。
+ */
+async function purgeTags(env?: Env, tags: string[] = []): Promise<void> {
+  if (!env || !env.CF_ZONE_ID || !env.CF_PURGE_TOKEN || tags.length === 0) {
+    return;
+  }
+  try {
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${env.CF_ZONE_ID}/purge_cache`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.CF_PURGE_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tags }),
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`[Cache] Global cache purge failed (HTTP ${res.status}):`, errorText);
+    }
+  } catch (e: any) {
+    console.error("[Cache] Global cache purge error:", e?.message || e);
+  }
+}
+
 export const pipelineCache = {
-  async clear(profileId: string, clearBloom: boolean = true) {
+  /**
+   * 清理指定 Profile 的各级缓存。
+   * 包含 L1 内存缓存、L2 本地数据中心 Cache API，以及 (若配置了 env) L2 全球边缘节点 Cache-Tag 失效。
+   *
+   * 签名支持多种重载形式，确保向后完全兼容：
+   * - clear(profileId)
+   * - clear(profileId, clearBloom)
+   * - clear(profileId, env)
+   * - clear(profileId, clearBloom, env)
+   * - clear(profileId, env, clearBloom)
+   */
+  async clear(
+    profileId: string,
+    clearBloomOrEnv: boolean | Env = true,
+    envOrClearBloom?: Env | boolean
+  ): Promise<void> {
+    let clearBloom = true;
+    let targetEnv: Env | undefined;
+
+    if (typeof clearBloomOrEnv === "boolean") {
+      clearBloom = clearBloomOrEnv;
+      if (envOrClearBloom && typeof envOrClearBloom === "object") {
+        targetEnv = envOrClearBloom as Env;
+      }
+    } else if (clearBloomOrEnv && typeof clearBloomOrEnv === "object") {
+      targetEnv = clearBloomOrEnv as Env;
+      if (typeof envOrClearBloom === "boolean") {
+        clearBloom = envOrClearBloom;
+      }
+    }
+
     // 清理 L1 (内存)
     configCache.delete(profileId);
     if (clearBloom) {
@@ -59,7 +116,7 @@ export const pipelineCache = {
       }
     }
     
-    // 清理 L2 (Cache API)
+    // 清理 L2 (本地数据中心 Cache API)
     try {
       const cache = (caches as any).default;
       const tasks: Promise<any>[] = [
@@ -71,6 +128,15 @@ export const pipelineCache = {
       await Promise.all(tasks);
     } catch (e) {
       console.error("Failed to clear cache API:", e);
+    }
+
+    // 清理 L2 全球边缘节点 (Cloudflare Zone Cache Purge by Tag)
+    if (targetEnv) {
+      const tags = [`profile-${profileId}`];
+      if (clearBloom) {
+        tags.push(`bloom-${profileId}`);
+      }
+      await purgeTags(targetEnv, tags);
     }
   }
 };

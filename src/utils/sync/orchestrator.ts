@@ -67,7 +67,8 @@ export async function syncNextListForProfile(
         ctx,
         now,
         maxDomains,
-        falsePositiveRate
+        falsePositiveRate,
+        env
       );
       return;
     }
@@ -97,7 +98,8 @@ export async function syncNextListForProfile(
         ctx,
         now,
         maxDomains,
-        falsePositiveRate
+        falsePositiveRate,
+        env
       );
       console.log(
         `[Sync] Profile ${profileId}: all ${activeUpdatedLists.length} list(s) processed — ` +
@@ -169,7 +171,8 @@ export async function syncAllListsForProfile(
       ctx,
       now,
       maxDomains,
-      falsePositiveRate
+      falsePositiveRate,
+      env
     );
     console.log(`[Sync] Profile ${profileId}: manual sync cycle complete.`);
   } catch (e) {
