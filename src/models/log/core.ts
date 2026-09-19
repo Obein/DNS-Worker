@@ -234,7 +234,7 @@ export class LogCoreModel {
    * @param maxRows - Maximum number of raw log rows to delete (default 20,000).
    * @returns Total number of rows deleted.
    */
-  async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 20000): Promise<number> {
+  async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 1000): Promise<number> {
     // Purge expired rollups first (small tables, sub-millisecond execution)
     await this.db.batch([
       this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
@@ -244,7 +244,7 @@ export class LogCoreModel {
     ]);
 
     let totalDeleted = 0;
-    const batchSize = 10000;
+    const batchSize = Math.min(1000, maxRows);
     while (totalDeleted < maxRows) {
       const currentBatch = Math.min(batchSize, maxRows - totalDeleted);
       const result = await this.db.prepare(`

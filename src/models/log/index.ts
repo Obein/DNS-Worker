@@ -60,12 +60,12 @@ export class LogModel {
     return this.core.deleteByOwner(ownerId);
   }
 
-  async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 20000): Promise<number> {
+  async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 1000): Promise<number> {
     return this.core.cleanup(profileId, olderThanTimestamp, maxRows);
   }
 
-  async cleanupGlobal(maxRetentionDays = 30): Promise<void> {
-    return this.retention.cleanupGlobal(maxRetentionDays);
+  async cleanupGlobal(maxRetentionDays = 30, batchLimit = 1000, dailyBudget = 20000): Promise<void> {
+    return this.retention.cleanupGlobal(maxRetentionDays, batchLimit, dailyBudget);
   }
 
   async getLatestRollupHour(profileId: string): Promise<number | null> {
@@ -80,8 +80,8 @@ export class LogModel {
     return this.aggregation.getLatestDestinationRollupHour(profileId);
   }
 
-  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number): Promise<number> {
-    return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec);
+  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 2): Promise<number> {
+    return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec, minDomainCount);
   }
 
   async getSummary(

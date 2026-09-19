@@ -34,6 +34,9 @@ export interface Env {
   CF_PURGE_TOKEN?: string;
   SESSION_LAST_ACTIVE_UPDATE_INTERVAL?: string | number;
   AUTH_CACHE_TTL_SEC?: string | number;
+  LOG_CLEANUP_BATCH_LIMIT?: string | number;
+  LOG_CLEANUP_DAILY_BUDGET?: string | number;
+  DOMAIN_ROLLUP_MIN_COUNT?: string | number;
   [key: string]: any;
 }
 
