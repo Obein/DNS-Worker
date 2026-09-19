@@ -113,6 +113,10 @@ BLOOM_MEM_TTL=600000
 SYNC_TIMEOUT_MS=30000
 # Number of days of inactivity before an account is cleared by cron jobs
 INACTIVITY_THRESHOLD_DAYS=180
+# Throttle interval for updating session "last active" status in D1 (in seconds)
+SESSION_LAST_ACTIVE_UPDATE_INTERVAL=60
+# In-memory authentication micro-cache TTL for dashboard requests (in seconds)
+AUTH_CACHE_TTL_SEC=30
 # Throttle interval for updating profile "last active" status (in seconds)
 THROTTLE_ACTIVE_SEC=3600
 # Minimum interval between automated blocklist profile syncs (in seconds)

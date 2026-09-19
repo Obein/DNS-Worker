@@ -32,6 +32,8 @@ export interface Env {
   FAIL_OPEN_UPSTREAM?: string;
   CF_ZONE_ID?: string;
   CF_PURGE_TOKEN?: string;
+  SESSION_LAST_ACTIVE_UPDATE_INTERVAL?: string | number;
+  AUTH_CACHE_TTL_SEC?: string | number;
   [key: string]: any;
 }
 
