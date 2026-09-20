@@ -64,7 +64,13 @@ async function runTests() {
       assert.strictEqual(limitParam, 300, "perProfileLimit should be 300 (900 / 3)");
     }
 
-    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile.");
+    const domainRollupDeletes = executedQueries.filter(q => q.query.includes("DELETE FROM domain_hourly_rollups"));
+    assert.strictEqual(domainRollupDeletes.length, 3, "Should generate domain rollup delete for each profile");
+    for (const stmt of domainRollupDeletes) {
+      assert(stmt.query.includes("action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL')"), "Must use action IN to enable primary key B-Tree range scan");
+    }
+
+    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile, domain rollups indexed.");
   }
 
   // 2. Test LogAggregationModel.aggregateHourlyRollups with minDomainCount
