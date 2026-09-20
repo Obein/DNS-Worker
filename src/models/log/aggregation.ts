@@ -62,9 +62,10 @@ export class LogAggregationModel {
    *
    * @param sinceSec - Optional start timestamp. If omitted, bridges from system_settings or defaults to preceding hour.
    * @param untilSec - Optional end timestamp. Defaults to start of current hour (only completed hours).
+   * @param minDomainCount - Minimum query count threshold for domain rollups (default 2).
    * @returns Total number of rollup records inserted or updated.
    */
-  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number): Promise<number> {
+  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 2): Promise<number> {
     const now = Math.floor(Date.now() / 1000);
     const currentHourStart = Math.floor(now / 3600) * 3600;
     const effectiveUntil = untilSec !== undefined ? Math.min(untilSec, currentHourStart) : currentHourStart;
@@ -158,6 +159,7 @@ export class LogAggregationModel {
           );
 
           // 4. Domain hourly rollups (aggregated offline per hour to save real-time D1 write quotas)
+          // Filters out noise domains with query count < minDomainCount to save write quotas
           statements.push(
             this.db.prepare(`
               INSERT OR REPLACE INTO domain_hourly_rollups (profile_id, action, hour_timestamp, domain, count)
@@ -170,7 +172,8 @@ export class LogAggregationModel {
               FROM logs
               WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
               GROUP BY action, domain
-            `).bind(profile.id, hourStart, profile.id, hourStart, hourEnd)
+              HAVING COUNT(*) >= ?
+            `).bind(profile.id, hourStart, profile.id, hourStart, hourEnd, minDomainCount)
           );
         }
       }

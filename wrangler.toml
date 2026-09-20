@@ -22,6 +22,8 @@ command = "npm run build"
 directory = "./static"
 # Binding name used to access static assets from the Worker.
 binding = "ASSETS"
+# Route HTML entry points through Worker first to ensure security headers and window.DNS_WORKER_CONFIG are injected
+run_worker_first = ["/", "/index.html"]
 
 # D1 Database for Profiles, Rules and Logs
 [[d1_databases]]
@@ -121,6 +123,12 @@ AUTH_CACHE_TTL_SEC=30
 THROTTLE_ACTIVE_SEC=3600
 # Minimum interval between automated blocklist profile syncs (in seconds)
 SYNC_PROFILE_INTERVAL_SEC=86400
+# Maximum log rows deleted per cron cleanup run across all profiles (prevents write quota exhaustion)
+LOG_CLEANUP_BATCH_LIMIT=1000
+# Daily budget for log row deletions across all profiles (default: 20000, 20% of 100k daily write quota)
+LOG_CLEANUP_DAILY_BUDGET=20000
+# Minimum query count threshold for domain hourly rollup aggregation (filters single-query noise domains)
+DOMAIN_ROLLUP_MIN_COUNT=2
 
 # Preset Upstream Services
 PRESET_UPSTREAMS = """

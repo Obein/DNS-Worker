@@ -46,9 +46,18 @@ export async function handleScheduled(
         const maxRetentionDays = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''
           ? Number(env.MAX_LOG_RETENTION_DAYS)
           : 30;
-        await logModel.cleanupGlobal(maxRetentionDays);
+        const cleanupBatchLimit = env.LOG_CLEANUP_BATCH_LIMIT !== undefined && env.LOG_CLEANUP_BATCH_LIMIT !== ''
+          ? Number(env.LOG_CLEANUP_BATCH_LIMIT)
+          : 1000;
+        const cleanupDailyBudget = env.LOG_CLEANUP_DAILY_BUDGET !== undefined && env.LOG_CLEANUP_DAILY_BUDGET !== ''
+          ? Number(env.LOG_CLEANUP_DAILY_BUDGET)
+          : 20000;
+        await logModel.cleanupGlobal(maxRetentionDays, cleanupBatchLimit, cleanupDailyBudget);
 
-        const aggregated = await logModel.aggregateHourlyRollups();
+        const minDomainCount = env.DOMAIN_ROLLUP_MIN_COUNT !== undefined && env.DOMAIN_ROLLUP_MIN_COUNT !== ''
+          ? Number(env.DOMAIN_ROLLUP_MIN_COUNT)
+          : 2;
+        const aggregated = await logModel.aggregateHourlyRollups(undefined, undefined, minDomainCount);
         if (aggregated > 0) {
           console.log(`[Cron] Hourly rollup aggregation: aggregated ${aggregated} record(s).`);
         }
