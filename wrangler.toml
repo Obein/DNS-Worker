@@ -22,6 +22,8 @@ command = "npm run build"
 directory = "./static"
 # Binding name used to access static assets from the Worker.
 binding = "ASSETS"
+# Route HTML entry points through Worker first to ensure security headers and window.DNS_WORKER_CONFIG are injected
+run_worker_first = ["/", "/index.html"]
 
 # D1 Database for Profiles, Rules and Logs
 [[d1_databases]]
