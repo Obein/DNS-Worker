@@ -25,8 +25,9 @@ export interface ConnectOptions {
  * @returns An object containing readable and writable Web Streams and a close method.
  */
 export async function connectUniversal(options: ConnectOptions): Promise<UniversalSocket> {
-  // Check if running under Node.js runtime
-  const isNode = typeof process !== 'undefined' && !!process.versions?.node;
+  // Check if running under Cloudflare Workers / Pages runtime vs. native Node.js
+  const isCloudflare = (typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers') || typeof WebSocketPair !== 'undefined';
+  const isNode = !isCloudflare && typeof process !== 'undefined' && !!process.versions?.node;
 
   if (isNode) {
     if (options.secureTransport === 'on') {
