@@ -53,6 +53,9 @@ export function ipv4ToNumeric(ip: string): number | null {
  */
 export function ipv6ToBigInt(ip: string): bigint | null {
   let cleanIp = ip.trim().toLowerCase();
+  if (cleanIp.startsWith("[") && cleanIp.endsWith("]")) {
+    cleanIp = cleanIp.slice(1, -1);
+  }
 
   // Extract mapped IPv4 part if present
   let ipv4Part = "";

@@ -53,6 +53,7 @@ export async function verifyUserReauth(
       return { success: false, error: "Passkey not found", reason: "passkey_not_found" };
     }
 
+    const requestUrl = new URL(request.url);
     try {
       const { signCount } = await verifyAuthenticationResponse({
         clientDataJSON: payload.passkeyAssertion.response.clientDataJSON,
@@ -61,7 +62,7 @@ export async function verifyUserReauth(
         publicKeySpki: passkey.public_key,
         algorithm: passkey.algorithm,
         expectedChallenge: cachedState.challenge,
-        expectedOrigin: request.headers.get("origin") || `https://${cachedState.rpId}`,
+        expectedOrigin: `${requestUrl.protocol}//${requestUrl.host}`,
         expectedRpId: cachedState.rpId,
         previousSignCount: passkey.sign_count
       });

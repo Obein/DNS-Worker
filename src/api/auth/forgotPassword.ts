@@ -179,7 +179,7 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
           publicKeySpki: passkey.public_key,
           algorithm: passkey.algorithm,
           expectedChallenge: state.passkeyChallenge,
-          expectedOrigin: request.headers.get("origin") || `https://${state.rpId}`,
+          expectedOrigin: `${url.protocol}//${url.host}`,
           expectedRpId: state.rpId,
           previousSignCount: passkey.sign_count
         });

@@ -25,23 +25,15 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
     
     if (!profile) return new Response("Profile Not Found", { status: 404 });
 
-    // 特殊处理：mobileconfig 下载允许免登录访问
-    const isMobileConfig = pathParts[3] === 'mobileconfig' && request.method === 'GET';
-    
-    if (!isMobileConfig) {
-      if (!user) return new Response("Unauthorized", { status: 401 });
-      if (!RBAC.canAccessProfile(user, profile)) return new Response("Profile Not Found", { status: 404 });
-    }
+    if (!user) return new Response("Unauthorized", { status: 401 });
+    if (!RBAC.canAccessProfile(user, profile)) return new Response("Profile Not Found", { status: 404 });
 
     const subResource = pathParts[3];
 
     // Delegate to sub-router based on the path
-    if (!subResource || ['rotate_key', 'settings', 'test', 'mobileconfig'].includes(subResource)) {
+    if (!subResource || ['rotate_key', 'settings', 'test'].includes(subResource)) {
       return handleProfilesCoreRequest(request, env, user, profile, pathParts, ctx);
     }
-
-    // Since it's a sub-resource other than mobileconfig, user must be authenticated
-    if (!user) return new Response("Unauthorized", { status: 401 });
 
     switch (subResource) {
       case 'access_points':

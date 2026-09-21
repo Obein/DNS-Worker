@@ -33,11 +33,6 @@ export default {
         return handleMapDataRequest(request, env, ctx);
       }
 
-      // Auth API Routes (Unauthenticated)
-      if (url.pathname.startsWith('/api/auth/')) {
-        return handleAuthRequest(request, env);
-      }
-
       // Business API Router
       if (url.pathname.startsWith('/api/')) {
         let isDbMissing = false;
@@ -71,24 +66,28 @@ export default {
           '/api/auth/signup', 
           '/api/auth/prelogin', 
           '/api/auth/check-username',
+          '/api/auth/config',
+          '/api/auth/refresh',
+          '/api/auth/logout',
           '/api/auth/unlock-session',
           '/api/clientinfo',
           '/api/regions'
         ].includes(url.pathname) || 
         url.pathname.startsWith('/api/icon/') || 
-        url.pathname.startsWith('/api/presets/');
-        const isMobileConfigRoute = url.pathname.endsWith('/mobileconfig');
+        url.pathname.startsWith('/api/presets/') ||
+        url.pathname.startsWith('/api/auth/forgot-password');
 
         // Check authentication boundary
-        if (!currentUser && !isPublicRoute && !isMobileConfigRoute) {
+        if (!currentUser && !isPublicRoute) {
           return new Response("Unauthorized", { status: 401 });
         }
 
-        // Handle paused sessions: block all routes except unlock and logout
+        // Handle paused sessions: block all routes except unlock, logout, and refresh
         if (currentUser && currentUser.isPaused) {
           const isAllowedWhilePaused = [
             '/api/auth/unlock-session',
-            '/api/auth/logout'
+            '/api/auth/logout',
+            '/api/auth/refresh'
           ].includes(url.pathname);
           if (!isAllowedWhilePaused) {
             return new Response("session_paused", { status: 403 });
@@ -103,6 +102,9 @@ export default {
         }
 
         // Route requests to handlers
+        if (url.pathname.startsWith('/api/auth/')) {
+          return handleAuthRequest(request, env);
+        }
         if (
           url.pathname === '/api/clientinfo' ||
           url.pathname === '/api/regions' ||
