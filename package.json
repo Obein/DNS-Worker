@@ -12,7 +12,7 @@
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",
-    "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:*",
+    "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:* --external:node:*",
     "postinstall": "npm run ui:install",
     "db:setup": "wrangler d1 create dns_worker_db",
     "db:migrate:dev": "wrangler d1 migrations apply dns_worker_db --local",
