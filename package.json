@@ -1,13 +1,29 @@
 {
   "name": "dns-worker",
-  "version": "1.0",
+  "version": "1.0.0",
   "private": false,
-  "description": "Protective DoH Resolver based on Cloudflare Workers",
+  "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
+  "main": "./dist/serverfull.mjs",
+  "bin": {
+    "dns-worker": "./dist/serverfull.mjs",
+    "obexdns": "./dist/serverfull.mjs"
+  },
+  "files": [
+    "dist/",
+    "static/",
+    "migrations/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "scripts": {
     "dev": "npm run db:migrate:dev && concurrently \"npm run ui:dev\" \"wrangler dev\"",
     "start": "npm run build && wrangler dev",
-    "start:serverfull": "npm run build && tsx src/serverfull/index.ts",
-    "serverfull": "npm run build && tsx src/serverfull/index.ts",
+    "start:serverfull": "npm run build:serverfull && node dist/serverfull.mjs",
+    "serverfull": "npm run build:serverfull && node dist/serverfull.mjs",
+    "build:serverfull": "npm run ui:build && npx esbuild src/serverfull/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/serverfull.mjs --banner:js=\"#!/usr/bin/env node\" --external:node:sqlite",
     "service-create:linux": "tsx scripts/create-linux-service.ts",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",

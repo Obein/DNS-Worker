@@ -28,15 +28,42 @@ export class UdpDnsServer {
       try {
         this.socket = dgram.createSocket('udp4');
 
-        this.socket.on('error', (err: Error) => {
-          console.error('[UDP DNS] Socket error:', err);
-        });
+        const startupErrorHandler = (err: any) => {
+          try { this.socket?.close(); } catch {}
+          this.socket = null;
+
+          if (err.code === 'EADDRINUSE') {
+            console.error(`\n[Port Conflict] UDP port ${this.options.port} is already in use.`);
+            console.error('  Possible causes:');
+            console.error('    - Linux: systemd-resolved is listening on port 53 (stop it or configure DNSStubListener=no).');
+            console.error('    - Another DNS server (bind9, dnsmasq, AdGuard Home) is running.');
+            console.error('  Solutions:');
+            console.error(`    - Use --dns-port <port> (e.g. --dns-port 5353) to specify an alternate port.`);
+            console.error(`    - Or use --disable-udp to run only the Web Dashboard & DoH.\n`);
+          } else if (err.code === 'EACCES') {
+            console.error(`\n[Permission Denied] Permission denied binding to UDP port ${this.options.port}.`);
+            console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
+            console.error('  Solutions:');
+            console.error('    - Run with sudo (e.g. sudo npx dns-worker).');
+            console.error('    - Or use --dns-port 5353 to bind to an unprivileged port.\n');
+          } else {
+            console.error('[UDP DNS] Failed to bind socket:', err.message || err);
+          }
+
+          reject(err);
+        };
+
+        this.socket.once('error', startupErrorHandler);
 
         this.socket.on('message', async (msg: Buffer, rinfo: dgram.RemoteInfo) => {
           await this.handleMessage(msg, rinfo);
         });
 
         this.socket.bind(this.options.port, this.options.host, () => {
+          this.socket?.removeListener('error', startupErrorHandler);
+          this.socket?.on('error', (err: Error) => {
+            console.error('[UDP DNS] Socket runtime error:', err);
+          });
           this.isRunning = true;
           console.log(`[UDP DNS] Classic DNS listening on udp://${this.options.host}:${this.options.port}`);
           resolve();

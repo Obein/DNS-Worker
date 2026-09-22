@@ -9,6 +9,7 @@ import path from 'node:path';
 import { Buffer } from 'node:buffer';
 import worker from '../index';
 import { Env, ExecutionContext } from '../types';
+import { getPackageRoot } from './config';
 
 export interface HttpServerOptions {
   port: number;
@@ -36,7 +37,7 @@ export class HttpServer {
   private isRunning: boolean = false;
 
   constructor(private options: HttpServerOptions) {
-    const staticDir = options.staticDir || path.join(process.cwd(), 'static');
+    const staticDir = options.staticDir || path.join(getPackageRoot(), 'static');
 
     // Attach static asset provider to env.ASSETS
     this.options.env.ASSETS = {
@@ -81,11 +82,33 @@ export class HttpServer {
         await this.handleHttpRequest(req, res);
       });
 
-      this.server.on('error', (err: Error) => {
-        console.error('[HTTP Server] Error:', err);
-      });
+      const startupErrorHandler = (err: any) => {
+        this.server = null;
+
+        if (err.code === 'EADDRINUSE') {
+          console.error(`\n[Port Conflict] HTTP port ${port} is already in use.`);
+          console.error('  Solution:');
+          console.error(`    - Use -p, --port <port> (e.g. --port ${port + 1}) to specify an alternate HTTP port.`);
+          console.error(`    - Or set the PORT environment variable (e.g. PORT=${port + 1}).\n`);
+        } else if (err.code === 'EACCES') {
+          console.error(`\n[Permission Denied] Permission denied binding to HTTP port ${port}.`);
+          console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
+          console.error('  Solution:');
+          console.error(`    - Run with sudo, or use --port 3000 to bind to an unprivileged port.\n`);
+        } else {
+          console.error('[HTTP Server] Failed to start:', err.message || err);
+        }
+
+        reject(err);
+      };
+
+      this.server.once('error', startupErrorHandler);
 
       this.server.listen(port, host, () => {
+        this.server?.removeListener('error', startupErrorHandler);
+        this.server?.on('error', (err: Error) => {
+          console.error('[HTTP Server] Runtime error:', err);
+        });
         this.isRunning = true;
         console.log(`[HTTP Server] Web Dashboard & DoH listening on http://${host}:${port}`);
         resolve();
