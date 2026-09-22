@@ -4,8 +4,9 @@
  * Starts Classic UDP DNS, DoT (DNS over TLS), HTTP Web Dashboard & DoH, and scheduled cron jobs.
  */
 
+import { parseArgs } from 'node:util';
 import { initNodeGlobals } from './cache';
-import { getServerfullConfig } from './config';
+import { getServerfullConfig, ServerfullCliArgs } from './config';
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
@@ -15,7 +16,86 @@ import worker from '../index';
 import { ExecutionContext } from '../types';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 
+function checkNodeVersion(): void {
+  const [major, minor] = process.versions.node.split('.').map(Number);
+  if (major < 22 || (major === 22 && minor < 5)) {
+    console.error('\n[DNS Worker] Error: Node.js >= 22.5.0 is required (found v' + process.versions.node + ').');
+    console.error('Please upgrade Node.js to version 22.5.0 or higher to use built-in SQLite (node:sqlite).\n');
+    process.exit(1);
+  }
+}
+
+function printHelp(): void {
+  console.log(`
+DNS Worker (Serverfull Mode) - Privacy-first DNS & DoH Resolver
+
+Usage:
+  dns-worker [options]
+  npx dns-worker [options]
+
+Options:
+  -p, --port <number>          Web Dashboard & DoH HTTP port (default: 3000)
+  --dns-port <number>          Classic UDP DNS port (default: 53)
+  --dot-port <number>          DoT (DNS over TLS) port (default: 853)
+  -h, --host <address>         Network address to bind (default: 0.0.0.0)
+  --db <path>                  SQLite database file path (default: ./data/dns_worker.sqlite)
+  --default-profile <key>      Default Profile Key or Access Point Token for standard queries
+  --disable-udp                Disable Classic UDP DNS server
+  --disable-dot                Disable DoT server
+  -v, --version                Display version number
+  --help                       Display this help message
+
+Environment Variables:
+  PORT / SERVERFULL_HTTP_PORT    Web Dashboard & DoH port
+  DNS_PORT / SERVERFULL_UDP_PORT Classic UDP DNS port
+  DOT_PORT / SERVERFULL_DOT_PORT DoT port
+  DB_PATH / SERVERFULL_DB_PATH   SQLite database file path
+  JWT_SECRET                     JWT secret key (recommended >= 32 characters)
+  SERVERFULL_TLS_KEY_PATH        Path to TLS private key for DoT
+  SERVERFULL_TLS_CERT_PATH       Path to TLS certificate for DoT
+`);
+}
+
+function parseCli(): ServerfullCliArgs {
+  try {
+    const { values } = parseArgs({
+      options: {
+        port: { type: 'string', short: 'p' },
+        'dns-port': { type: 'string' },
+        'dot-port': { type: 'string' },
+        host: { type: 'string', short: 'h' },
+        db: { type: 'string' },
+        'default-profile': { type: 'string' },
+        'disable-udp': { type: 'boolean' },
+        'disable-dot': { type: 'boolean' },
+        help: { type: 'boolean' },
+        version: { type: 'boolean', short: 'v' }
+      },
+      allowPositionals: true
+    });
+
+    if (values.help) {
+      printHelp();
+      process.exit(0);
+    }
+
+    if (values.version) {
+      console.log('dns-worker v1.0.0');
+      process.exit(0);
+    }
+
+    return values as ServerfullCliArgs;
+  } catch (err: any) {
+    console.error(`[DNS Worker] CLI Argument Error: ${err.message}`);
+    console.error('Run "dns-worker --help" for available options.\n');
+    process.exit(1);
+  }
+}
+
 async function bootstrap(): Promise<void> {
+  checkNodeVersion();
+  const cliArgs = parseCli();
+
   console.log('------------------------------------------------------');
   console.log('       Initializing DNS Worker (Serverfull Mode)      ');
   console.log('------------------------------------------------------');
@@ -24,7 +104,7 @@ async function bootstrap(): Promise<void> {
   initNodeGlobals();
 
   // 2. Load environment variables & configurations
-  const { config, env } = getServerfullConfig();
+  const { config, env } = getServerfullConfig(cliArgs);
 
   // Non-blocking security check for legacy short JWT_SECRET
   if (isUsableJwtSecret(env.JWT_SECRET) && !isStrongJwtSecret(env.JWT_SECRET)) {
@@ -38,21 +118,21 @@ async function bootstrap(): Promise<void> {
   env.DB = db;
 
   // 4. Initialize servers
-  const udpServer = new UdpDnsServer({
+  const udpServer = !config.disableUdp ? new UdpDnsServer({
     port: config.udpPort,
     host: config.host,
     defaultProfileKey: config.defaultProfileKey,
     env
-  });
+  }) : null;
 
-  const dotServer = new DotDnsServer({
+  const dotServer = !config.disableDot ? new DotDnsServer({
     port: config.dotPort,
     host: config.host,
     tlsKeyPath: config.tlsKeyPath,
     tlsCertPath: config.tlsCertPath,
     defaultProfileKey: config.defaultProfileKey,
     env
-  });
+  }) : null;
 
   const httpServer = new HttpServer({
     port: config.httpPort,
@@ -61,8 +141,8 @@ async function bootstrap(): Promise<void> {
   });
 
   // 5. Start all server transports
-  await udpServer.start();
-  await dotServer.start();
+  if (udpServer) await udpServer.start();
+  if (dotServer) await dotServer.start();
   await httpServer.start();
 
   // 6. Start scheduled cron jobs (every 60 seconds)
@@ -90,8 +170,16 @@ async function bootstrap(): Promise<void> {
   console.log('======================================================');
   console.log('   DNS Worker (Serverfull Mode) Started Successfully  ');
   console.log('======================================================');
-  console.log(`  * Classic UDP DNS :  udp://${config.host}:${config.udpPort}`);
-  console.log(`  * DoT (TLS DNS)   :  tls://${config.host}:${config.dotPort}`);
+  if (udpServer) {
+    console.log(`  * Classic UDP DNS :  udp://${config.host}:${config.udpPort}`);
+  } else {
+    console.log(`  * Classic UDP DNS :  Disabled (--disable-udp)`);
+  }
+  if (dotServer && config.tlsKeyPath && config.tlsCertPath) {
+    console.log(`  * DoT (TLS DNS)   :  tls://${config.host}:${config.dotPort}`);
+  } else {
+    console.log(`  * DoT (TLS DNS)   :  Disabled / Not Configured`);
+  }
   console.log(`  * Web UI & DoH    :  http://${config.host}:${config.httpPort}`);
   console.log(`  * SQLite Database :  ${config.dbPath}`);
   console.log('======================================================');
@@ -102,8 +190,8 @@ async function bootstrap(): Promise<void> {
     clearInterval(cronTimer);
 
     await Promise.all([
-      udpServer.stop(),
-      dotServer.stop(),
+      udpServer?.stop(),
+      dotServer?.stop(),
       httpServer.stop()
     ]);
 
@@ -129,6 +217,6 @@ async function bootstrap(): Promise<void> {
 }
 
 bootstrap().catch((err) => {
-  console.error('[Serverfull] Fatal startup error:', err);
+  console.error('[Serverfull] Fatal startup error:', err.message || err);
   process.exit(1);
 });

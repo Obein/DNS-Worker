@@ -6,7 +6,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { Env } from '../types';
+
+export interface ServerfullCliArgs {
+  port?: string;
+  'dns-port'?: string;
+  'dot-port'?: string;
+  host?: string;
+  db?: string;
+  'default-profile'?: string;
+  'disable-udp'?: boolean;
+  'disable-dot'?: boolean;
+}
 
 export interface ServerfullConfig {
   tlsKeyPath: string;
@@ -17,6 +29,33 @@ export interface ServerfullConfig {
   host: string;
   dbPath: string;
   defaultProfileKey: string;
+  disableUdp: boolean;
+  disableDot: boolean;
+  packageRoot: string;
+}
+
+/**
+ * Resolves the root directory of the installed package (where static/ and migrations/ live).
+ */
+export function getPackageRoot(): string {
+  try {
+    const currentDir = path.dirname(fileURLToPath(import.meta.url));
+    // 1. If running bundled (e.g. dist/serverfull.mjs -> root has migrations and static)
+    if (fs.existsSync(path.join(currentDir, 'migrations')) && fs.existsSync(path.join(currentDir, 'static'))) {
+      return currentDir;
+    }
+    // 2. One level up from dist/
+    const parent = path.resolve(currentDir, '..');
+    if (fs.existsSync(path.join(parent, 'migrations')) && fs.existsSync(path.join(parent, 'static'))) {
+      return parent;
+    }
+    // 3. Two levels up (from src/serverfull/)
+    const grandParent = path.resolve(currentDir, '../..');
+    if (fs.existsSync(path.join(grandParent, 'migrations')) && fs.existsSync(path.join(grandParent, 'static'))) {
+      return grandParent;
+    }
+  } catch {}
+  return process.cwd();
 }
 
 /**
@@ -60,8 +99,10 @@ export function loadEnvFiles(rootDir: string = process.cwd()): void {
 /**
  * Loads Serverfull-specific options and builds the standard Env interface.
  */
-export function getServerfullConfig(): { config: ServerfullConfig; env: Env } {
+export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: ServerfullConfig; env: Env } {
   loadEnvFiles();
+
+  const packageRoot = getPackageRoot();
 
   // Support both SERVERFULL_TLS_KEY_PATH and SERFULL_TLS_KEY_PATH
   const tlsKeyPath = process.env.SERVERFULL_TLS_KEY_PATH || process.env.SERFULL_TLS_KEY_PATH || '';
@@ -72,12 +113,14 @@ export function getServerfullConfig(): { config: ServerfullConfig; env: Env } {
                       process.env.SERFULL_TLS_CERT_PATH ||
                       process.env.SERFULL_TLS_PUB_PATH || '';
 
-  const udpPort = parseInt(process.env.SERVERFULL_UDP_PORT || process.env.DNS_PORT || '53', 10);
-  const dotPort = parseInt(process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
-  const httpPort = parseInt(process.env.SERVERFULL_HTTP_PORT || process.env.PORT || '3000', 10);
-  const host = process.env.SERVERFULL_HOST || process.env.SERVERFULL_BIND_ADDRESS || '0.0.0.0';
-  const dbPath = process.env.SERVERFULL_DB_PATH || process.env.DB_PATH || path.join(process.cwd(), 'data', 'dns_worker.sqlite');
-  const defaultProfileKey = process.env.SERVERFULL_DEFAULT_PROFILE_KEY || process.env.DEFAULT_PROFILE_KEY || '';
+  const udpPort = parseInt(cliArgs?.['dns-port'] || process.env.SERVERFULL_UDP_PORT || process.env.DNS_PORT || '53', 10);
+  const dotPort = parseInt(cliArgs?.['dot-port'] || process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
+  const httpPort = parseInt(cliArgs?.port || process.env.SERVERFULL_HTTP_PORT || process.env.PORT || '3000', 10);
+  const host = cliArgs?.host || process.env.SERVERFULL_HOST || process.env.SERVERFULL_BIND_ADDRESS || '0.0.0.0';
+  const dbPath = cliArgs?.db || process.env.SERVERFULL_DB_PATH || process.env.DB_PATH || path.join(process.cwd(), 'data', 'dns_worker.sqlite');
+  const defaultProfileKey = cliArgs?.['default-profile'] || process.env.SERVERFULL_DEFAULT_PROFILE_KEY || process.env.DEFAULT_PROFILE_KEY || '';
+  const disableUdp = Boolean(cliArgs?.['disable-udp'] || process.env.SERVERFULL_DISABLE_UDP === 'true');
+  const disableDot = Boolean(cliArgs?.['disable-dot'] || process.env.SERVERFULL_DISABLE_DOT === 'true');
 
   const config: ServerfullConfig = {
     tlsKeyPath,
@@ -87,7 +130,10 @@ export function getServerfullConfig(): { config: ServerfullConfig; env: Env } {
     httpPort,
     host,
     dbPath,
-    defaultProfileKey
+    defaultProfileKey,
+    disableUdp,
+    disableDot,
+    packageRoot
   };
 
   const env: Env = {

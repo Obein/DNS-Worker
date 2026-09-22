@@ -55,11 +55,34 @@ export class DotDnsServer {
           this.handleConnection(socket);
         });
 
-        this.server.on('error', (err: Error) => {
-          console.error('[DoT] Server error:', err);
-        });
+        const startupErrorHandler = (err: any) => {
+          this.server = null;
+
+          if (err.code === 'EADDRINUSE') {
+            console.error(`\n[Port Conflict] DoT port ${port} is already in use.`);
+            console.error('  Solution:');
+            console.error(`    - Use --dot-port <port> (e.g. --dot-port 8853) to specify an alternate DoT port.`);
+            console.error(`    - Or use --disable-dot to disable DoT.\n`);
+          } else if (err.code === 'EACCES') {
+            console.error(`\n[Permission Denied] Permission denied binding to DoT port ${port}.`);
+            console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
+            console.error('  Solution:');
+            console.error('    - Run with sudo (e.g. sudo npx dns-worker).');
+            console.error(`    - Or use --dot-port 8853 to bind to an unprivileged port.\n`);
+          } else {
+            console.error('[DoT] Server error:', err.message || err);
+          }
+
+          reject(err);
+        };
+
+        this.server.once('error', startupErrorHandler);
 
         this.server.listen(port, host, () => {
+          this.server?.removeListener('error', startupErrorHandler);
+          this.server?.on('error', (err: Error) => {
+            console.error('[DoT] Runtime error:', err);
+          });
           this.isRunning = true;
           console.log(`[DoT] DNS over TLS listening on tls://${host}:${port}`);
           resolve();

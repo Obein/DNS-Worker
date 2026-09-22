@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { D1Database, D1PreparedStatement, D1Result, D1ExecResult, D1DatabaseSession } from '@cloudflare/workers-types';
+import { getPackageRoot } from './config';
 
 export class NodeD1PreparedStatement implements D1PreparedStatement {
   private params: any[] = [];
@@ -197,7 +198,7 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
 /**
  * Initializes SQLite database for Serverfull mode with WAL mode and runs pending migrations.
  */
-export function initServerfullDb(dbPath: string, rootDir: string = process.cwd()): NodeD1Database {
+export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoot()): NodeD1Database {
   const dir = path.dirname(dbPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
