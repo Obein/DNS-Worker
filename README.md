@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
   <h1>DNS Worker</h1>
   <p>Protective DNS resolver based on Cloudflare Workers & D1</p>
   <p>Protect your first hop on the internet</p>
@@ -59,31 +59,31 @@ DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS conn
 
 | User Login |
 |:---:|
-| ![Login](docs/screenshots/dns.obex-login.webp) |
+| ![Login](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-login.webp) |
 
 | Setup Guide | Endpoints |
 |:---:|:---:|
-| ![Setup](docs/screenshots/dns.obex-setup.webp) | ![Endpoints](docs/screenshots/dns.obex-endpoints.webp) |
+| ![Setup](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-setup.webp) | ![Endpoints](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) |
 
 | Real-time Analytics | Request Destinations |
 |:---:|:---:|
-| ![Stats](docs/screenshots/dns.obex-stats.webp) | ![Destinations](docs/screenshots/dns.obex-stats_dest.webp) |
+| ![Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
 | Rule Management | External Filters |
 |:---:|:---:|
-| ![Rules](docs/screenshots/dns.obex-rules.webp) | ![Filters](docs/screenshots/dns.obex-filter.webp) |
+| ![Rules](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) | ![Filters](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) |
 
 | Resolution Logs | Log Detail |
 |:---:|:---:|
-| ![Resolution Logs](docs/screenshots/dns.obex-log.webp) | ![Log Detail](docs/screenshots/dns.obex-log_detail.webp) |
+| ![Resolution Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![Log Detail](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log_detail.webp) |
 
 | Profile Settings | Profile Select |
 |:---:|:---:|
-| ![Settings](docs/screenshots/dns.obex-settings.webp) | ![Profile Select](docs/screenshots/dns.obex-profile_select.webp) |
+| ![Settings](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-settings.webp) | ![Profile Select](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-profile_select.webp) |
 
 | Mobile Logs | Mobile Stats |
 |:---:|:---:|
-| ![Mobile Logs](docs/screenshots/dns.obex-mobile_log.webp) | ![Mobile Stats](docs/screenshots/dns.obex-mobile_stats.webp) |
+| ![Mobile Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) | ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
 
 ---
 

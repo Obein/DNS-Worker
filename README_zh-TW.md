@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
   <h1>DNS Worker</h1>
   <p>基於 Cloudflare Workers & D1 的 Protective DNS 解析服務</p>
   <p>保護您的網際網路第一跳</p>
@@ -61,31 +61,31 @@ DoH (RFC 8484) 是一種透過加密的 HTTPS 連線進行 DNS 查詢的協定�
 
 | 使用者登入 |
 |:---:|
-| ![登入](docs/screenshots/dns.obex-login.webp) |
+| ![登入](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-login.webp) |
 
 | 安裝引導 | 端點配置 |
 |:---:|:---:|
-| ![設置引導](docs/screenshots/dns.obex-setup.webp) | ![端點配置](docs/screenshots/dns.obex-endpoints.webp) |
+| ![設置引導](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-setup.webp) | ![端點配置](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) |
 
 | 分析統計 | 解析目的地 |
 |:---:|:---:|
-| ![統計分析](docs/screenshots/dns.obex-stats.webp) | ![解析目的地](docs/screenshots/dns.obex-stats_dest.webp) |
+| ![統計分析](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![解析目的地](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
 | 本地規則管理 | 外部攔截清單 |
 |:---:|:---:|
-| ![規則設置](docs/screenshots/dns.obex-rules.webp) | ![過濾清單](docs/screenshots/dns.obex-filter.webp) |
+| ![規則設置](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) | ![過濾清單](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) |
 
 | 解析日誌 | 日誌詳情 |
 |:---:|:---:|
-| ![解析日誌](docs/screenshots/dns.obex-log.webp) | ![日誌詳情](docs/screenshots/dns.obex-log_detail.webp) |
+| ![解析日誌](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![日誌詳情](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log_detail.webp) |
 
 | 配置選項 | 配置選擇 |
 |:---:|:---:|
-| ![高級設置](docs/screenshots/dns.obex-settings.webp) | ![配置選擇](docs/screenshots/dns.obex-profile_select.webp) |
+| ![高級設置](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-settings.webp) | ![配置選擇](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-profile_select.webp) |
 
 | 行動端日誌 | 行動端統計 |
 |:---:|:---:|
-| ![行動端日誌](docs/screenshots/dns.obex-mobile_log.webp) | ![行動端統計](docs/screenshots/dns.obex-mobile_stats.webp) |
+| ![行動端日誌](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) | ![行動端統計](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
 
 ---
 
