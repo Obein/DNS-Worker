@@ -40,6 +40,16 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
       key: "status",
       header: t("filtering.tableStatus"),
       render: (list: FilterList): React.ReactNode => {
+        // A disabled list contributes nothing to the merged bloom, so reporting
+        // it by sync freshness would contradict the switch in the details dialog.
+        if (!list.enabled) {
+          return (
+            <Tag intent={Intent.NONE} minimal>
+              {t("filtering.statusDisabled", "Disabled")}
+            </Tag>
+          );
+        }
+
         const hasError = !!list.sync_error;
         const hasSynced = !!list.last_synced_at;
         

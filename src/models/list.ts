@@ -43,6 +43,28 @@ export class ListModel {
     return inserted;
   }
 
+  /**
+   * Enables or disables a list without deleting it. Disabled lists are skipped
+   * by the sync orchestrator and excluded when the merged profile bloom is
+   * rebuilt, so toggling one off removes its domains from filtering while
+   * keeping the subscription and its sync history.
+   */
+  async setEnabled(id: number, profileId: string, enabled: boolean): Promise<boolean> {
+    const result = await this.db
+      .prepare("UPDATE lists SET enabled = ? WHERE id = ? AND profile_id = ?")
+      .bind(enabled ? 1 : 0, id, profileId)
+      .run();
+    return result.success;
+  }
+
+  /** Fetches a single list belonging to a profile, or null when absent. */
+  async getListById(id: number, profileId: string): Promise<List | null> {
+    return await this.db
+      .prepare("SELECT * FROM lists WHERE id = ? AND profile_id = ?")
+      .bind(id, profileId)
+      .first<List | null>();
+  }
+
   async deleteList(id: number, profileId: string): Promise<boolean> {
     const result = await this.db.prepare("DELETE FROM lists WHERE id = ? AND profile_id = ?").bind(id, profileId).run();
     return result.success;
