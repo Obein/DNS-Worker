@@ -65,7 +65,7 @@ export async function syncSingleList(
     );
   }
 
-  // 无论成功还是失败，都更新 last_synced_at 并保持 enabled 启用
-  await listModel.updateListSyncStatus(list.id, now, 1, syncError);
+  // 无论成功还是失败，都更新 last_synced_at 并记录 syncError，保持列表原有的 enabled 状态（避免并发切换为禁用后被强制覆盖）
+  await listModel.updateListSyncStatus(list.id, now, null, syncError);
   return syncError;
 }

@@ -29,6 +29,21 @@ export class ListBloomModel {
     return results.every(r => r.success);
   }
 
+  /**
+   * Whether any bloom chunk is stored for this list.
+   *
+   * getListBloom concatenates every chunk (~2.4MB for a 1M-domain list), which
+   * is far too much work to answer a yes/no question - and doing it for several
+   * lists concurrently would blow past the memory ceiling combineAndPromote
+   * maintains by loading one list at a time.
+   */
+  async hasListBloom(listId: number): Promise<boolean> {
+    const row = await this.db.prepare(
+      "SELECT 1 AS present FROM list_blooms WHERE list_id = ? LIMIT 1"
+    ).bind(listId).first<{ present: number }>();
+    return !!row;
+  }
+
   async getListBloom(listId: number): Promise<ArrayBuffer | null> {
     const { results } = await this.db.prepare(
       "SELECT bloom_filter_chunk FROM list_blooms WHERE list_id = ? ORDER BY chunk_index ASC"

@@ -10,7 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
-import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists } from "../../services";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, toggleProfileList, addProfileRule } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -115,6 +115,47 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     }
   };
 
+  /**
+   * Enables or disables a list. The worker rebuilds the merged profile bloom
+   * from the lists still active, so filtering reflects the change without a
+   * re-download.
+   */
+  const setListEnabled = async (id: number, enabled: boolean) => {
+    try {
+      await toggleProfileList(profileId, id, enabled);
+      setSelectedList((prev) => (prev && prev.id === id ? { ...prev, enabled } : prev));
+      toasterRef?.current?.show({
+        message: enabled
+          ? t("filtering.listEnabledToast", "List enabled - rebuilding filter")
+          : t("filtering.listDisabledToast", "List disabled - rebuilding filter"),
+        intent: Intent.PRIMARY,
+        icon: enabled ? "tick" : "disable",
+      });
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    }
+  };
+
+  /**
+   * Adds an ALLOW rule for a domain an external list blocks. The resolver
+   * checks the allow list before consulting the bloom filter, so the exception
+   * wins - and because rules live outside lists, it survives the next sync.
+   */
+  const allowDomain = async (domain: string) => {
+    await addProfileRule(profileId, { type: "ALLOW", pattern: domain });
+    toasterRef?.current?.show({
+      message: t("filtering.allowRuleAdded", "Exception added for {{domain}}", { domain }),
+      intent: Intent.SUCCESS,
+      icon: "tick",
+    });
+  };
+
   const deleteList = async (id: number) => {
     try {
       await deleteCustomProfileList(profileId, id);
@@ -213,7 +254,15 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
 
       <ListsTable lists={lists} onSelect={setSelectedList} />
 
-      <ListDetailsDialog selectedList={selectedList} onClose={() => setSelectedList(null)} onCopy={copyToClipboard} onDelete={deleteList} />
+      <ListDetailsDialog
+        profileId={profileId}
+        selectedList={selectedList}
+        onClose={() => setSelectedList(null)}
+        onCopy={copyToClipboard}
+        onDelete={deleteList}
+        onToggleEnabled={setListEnabled}
+        onAllowDomain={allowDomain}
+      />
     </div>
   );
 };
