@@ -59,6 +59,20 @@ export function getPackageRoot(): string {
 }
 
 /**
+ * Resolves package version from package.json if available.
+ */
+export function getPackageVersion(): string {
+  try {
+    const pkgPath = path.join(getPackageRoot(), 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {}
+  return '1.0.0';
+}
+
+/**
  * Parses simple KEY=VALUE dotenv files.
  */
 function loadDotEnv(filePath: string): void {

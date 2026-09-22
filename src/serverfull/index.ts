@@ -6,7 +6,7 @@
 
 import { parseArgs } from 'node:util';
 import { initNodeGlobals } from './cache';
-import { getServerfullConfig, ServerfullCliArgs } from './config';
+import { getPackageVersion, getServerfullConfig, ServerfullCliArgs } from './config';
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
@@ -26,8 +26,9 @@ function checkNodeVersion(): void {
 }
 
 function printHelp(): void {
+  const version = getPackageVersion();
   console.log(`
-DNS Worker (Serverfull Mode) - Privacy-first DNS & DoH Resolver
+DNS Worker v${version} (Serverfull Mode) - Privacy-first DNS & DoH Resolver
 
 Usage:
   dns-worker [options]
@@ -80,7 +81,7 @@ function parseCli(): ServerfullCliArgs {
     }
 
     if (values.version) {
-      console.log('dns-worker v1.0.0');
+      console.log(`dns-worker v${getPackageVersion()}`);
       process.exit(0);
     }
 
@@ -97,7 +98,7 @@ async function bootstrap(): Promise<void> {
   const cliArgs = parseCli();
 
   console.log('------------------------------------------------------');
-  console.log('       Initializing DNS Worker (Serverfull Mode)      ');
+  console.log(`       Initializing DNS Worker v${getPackageVersion()} (Serverfull)   `);
   console.log('------------------------------------------------------');
 
   // 1. Initialize in-memory Web Cache and HTMLRewriter polyfills

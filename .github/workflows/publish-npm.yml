@@ -1,0 +1,50 @@
+name: Publish to npm
+
+permissions:
+  contents: read
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Build and Publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Sync package.json version from Git tag
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          echo "Current ref: $TAG_NAME"
+          case "$TAG_NAME" in
+            v*)
+              VERSION="${TAG_NAME#v}"
+              echo "Syncing package.json version to: $VERSION"
+              npm version "$VERSION" --no-git-tag-version --allow-same-version
+              ;;
+            *)
+              echo "Ref name does not start with 'v', keeping package.json version: $(node -p "require('./package.json').version")"
+              ;;
+          esac
+
+      - name: Build Web Dashboard and Serverfull bundle
+        run: npm run build:serverfull
+
+      - name: Publish package to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
