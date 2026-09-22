@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Intent } from "@blueprintjs/core";
 
@@ -15,13 +15,10 @@ const generateSecureSecret = (): string => {
 
 export const JwtGenerator: React.FC = () => {
   const { t } = useTranslation();
-  const [generatedSecret, setGeneratedSecret] = useState<string>("");
+  // Lazy initializer: generated once on first render rather than via a
+  // mount effect, which rendered an empty field for one frame.
+  const [generatedSecret, setGeneratedSecret] = useState<string>(generateSecureSecret);
   const [copied, setCopied] = useState(false);
-
-  // Initialize on mount
-  useEffect(() => {
-    setGeneratedSecret(generateSecureSecret());
-  }, []);
 
   const handleRegenerate = () => {
     setGeneratedSecret(generateSecureSecret());
