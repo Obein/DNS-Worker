@@ -35,7 +35,9 @@ export async function handleProfileListsRequest(
         return new Response("Invalid list id", { status: 400 });
       }
 
-      const domain = (new URL(request.url).searchParams.get('domain') || '').trim().toLowerCase();
+      const rawDomain = (new URL(request.url).searchParams.get('domain') || '').trim().toLowerCase();
+      // Strip trailing dots (e.g. FQDN "example.com.") to match DNS labels correctly
+      const domain = rawDomain.replace(/\.+$/, '');
       if (!domain || domain.length > 253 || !/^[a-z0-9._-]+$/.test(domain)) {
         return new Response("Invalid or missing domain parameter", { status: 400 });
       }
@@ -50,7 +52,17 @@ export async function handleProfileListsRequest(
         });
       }
 
-      const bloom = BloomFilter.fromUint8Array(new Uint8Array(buffer));
+      let bloom: BloomFilter;
+      try {
+        bloom = BloomFilter.fromUint8Array(new Uint8Array(buffer));
+      } catch (err) {
+        console.error(`[Lists] Failed to deserialize bloom filter for list #${listId}:`, err);
+        return new Response(JSON.stringify({ domain, blocked: false, synced: false, error: "Corrupted filter" }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
       let candidate: string = domain;
       let matched: string | null = null;
       while (candidate) {

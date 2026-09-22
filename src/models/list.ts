@@ -70,13 +70,26 @@ export class ListModel {
     return result.success;
   }
 
-  async updateListSyncStatus(id: number, now: number | null, enabled: number, syncError: string | null = null): Promise<boolean> {
-    const result = await this.db.prepare(
-      "UPDATE lists SET last_synced_at = ?, enabled = ?, sync_error = ? WHERE id = ?"
-    )
-      .bind(now, enabled, syncError, id)
-      .run();
-    return result.success;
+  /**
+   * Updates list sync status. If enabled is null or undefined,
+   * the current enabled status in the database is preserved.
+   */
+  async updateListSyncStatus(id: number, now: number | null, enabled?: number | null, syncError: string | null = null): Promise<boolean> {
+    if (enabled !== undefined && enabled !== null) {
+      const result = await this.db.prepare(
+        "UPDATE lists SET last_synced_at = ?, enabled = ?, sync_error = ? WHERE id = ?"
+      )
+        .bind(now, enabled, syncError, id)
+        .run();
+      return result.success;
+    } else {
+      const result = await this.db.prepare(
+        "UPDATE lists SET last_synced_at = ?, sync_error = ? WHERE id = ?"
+      )
+        .bind(now, syncError, id)
+        .run();
+      return result.success;
+    }
   }
 
   async resetListSyncStatus(profileId: string): Promise<boolean> {

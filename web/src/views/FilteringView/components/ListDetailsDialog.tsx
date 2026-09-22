@@ -52,8 +52,14 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   };
 
   const runCheck = async () => {
-    const domain = query.trim().toLowerCase();
+    let domain = query.trim().toLowerCase();
     if (!domain || !selectedList) return;
+
+    // Clean user input: strip protocol (http:// or https://), path, port, and trailing dots
+    domain = domain.replace(/^https?:\/\//, '').split('/')[0].split(':')[0].replace(/\.+$/, '');
+    if (!domain) return;
+    setQuery(domain);
+
     // Tag this request. Closing the dialog mid-flight and reopening it on a
     // different list would otherwise let the late response paint list A's
     // verdict under list B's header.
