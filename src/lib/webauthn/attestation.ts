@@ -145,14 +145,24 @@ export async function verifyRegistrationResponse(
     throw new Error("WebAuthn challenge mismatch");
   }
 
-  // Verify origin matches hostname or exact origin
-  const clientOrigin = new URL(clientData.origin).hostname;
-  const expectedOriginHost = expectedOrigin.includes("://")
-    ? new URL(expectedOrigin).hostname
-    : expectedOrigin;
-  if (clientOrigin.toLowerCase() !== expectedOriginHost.toLowerCase()) {
+  const clientOriginUrl = new URL(clientData.origin);
+  const expectedOriginUrl = expectedOrigin.includes("://")
+    ? new URL(expectedOrigin)
+    : new URL(`https://${expectedOrigin}`);
+
+  if (clientOriginUrl.hostname.toLowerCase() !== expectedOriginUrl.hostname.toLowerCase()) {
     throw new Error(
-      `WebAuthn origin mismatch: expected ${expectedOriginHost}, received ${clientOrigin}`
+      `WebAuthn origin mismatch: expected ${expectedOriginUrl.hostname}, received ${clientOriginUrl.hostname}`
+    );
+  }
+
+  const isLocalhost = clientOriginUrl.hostname === "localhost" || clientOriginUrl.hostname === "127.0.0.1";
+  if (!isLocalhost && clientOriginUrl.protocol !== "https:") {
+    throw new Error(`WebAuthn requires HTTPS origin, received: ${clientOriginUrl.protocol}`);
+  }
+  if (clientOriginUrl.protocol !== expectedOriginUrl.protocol) {
+    throw new Error(
+      `WebAuthn protocol mismatch: expected ${expectedOriginUrl.protocol}, received ${clientOriginUrl.protocol}`
     );
   }
 

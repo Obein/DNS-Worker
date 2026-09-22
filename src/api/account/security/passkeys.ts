@@ -59,9 +59,8 @@ export async function handlePasskeysRequest(
     }
 
     const challenge = generateWebAuthnChallenge();
-    const originHeader = request.headers.get("origin");
-    const host = originHeader ? new URL(originHeader).hostname : request.headers.get("host")?.split(":")[0] || new URL(request.url).hostname;
-    const rpId = host;
+    const requestUrl = new URL(request.url);
+    const rpId = requestUrl.hostname;
     const cache = (caches as any).default;
     await cacheUtils.set(cache, `webauthn_auth_challenge:${user.id}`, { challenge, rpId }, 300);
 
@@ -86,9 +85,8 @@ export async function handlePasskeysRequest(
   if (subAction === "register" && pathParts[4] === "options" && request.method === "POST") {
     const existingPasskeys = await passkeyModel.listByUser(user.id);
     const challenge = generateWebAuthnChallenge();
-    const originHeader = request.headers.get("origin");
-    const host = originHeader ? new URL(originHeader).hostname : request.headers.get("host")?.split(":")[0] || new URL(request.url).hostname;
-    const rpId = host;
+    const requestUrl = new URL(request.url);
+    const rpId = requestUrl.hostname;
     const cache = (caches as any).default;
     await cacheUtils.set(cache, `webauthn_reg_challenge:${user.id}`, { challenge, rpId }, 300);
 
@@ -143,12 +141,14 @@ export async function handlePasskeysRequest(
       return new Response("Invalid credential data", { status: 400 });
     }
 
+    const requestUrl = new URL(request.url);
+    const expectedOrigin = `${requestUrl.protocol}//${requestUrl.host}`;
     try {
       const parsed = await verifyRegistrationResponse({
         clientDataJSON: credential.response.clientDataJSON,
         attestationObject: credential.response.attestationObject,
         expectedChallenge: cachedState.challenge,
-        expectedOrigin: request.headers.get("origin") || `https://${cachedState.rpId}`,
+        expectedOrigin,
         expectedRpId: cachedState.rpId
       });
 

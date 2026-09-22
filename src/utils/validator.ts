@@ -11,7 +11,7 @@
  * - Common URL parsing bypass techniques (user info in URLs)
  */
 
-import { isIPv4, isIPv6, createCidrMatcher } from "./cidr";
+import { isIPv4, isIPv6, ipv6ToBigInt, createCidrMatcher } from "./cidr";
 import { parseDnsStamp } from "./dnsStamp";
 
 export { isIPv4, isIPv6 } from "./cidr";
@@ -122,7 +122,10 @@ const isPrivateOrReservedIp: (ip: string) => boolean = createCidrMatcher(PRIVATE
 export function isPublicInternetIP(ip: string): boolean {
   if (!ip || typeof ip !== "string") return false;
 
-  const cleanIp = ip.trim();
+  let cleanIp = ip.trim();
+  if (cleanIp.startsWith("[") && cleanIp.endsWith("]")) {
+    cleanIp = cleanIp.slice(1, -1);
+  }
 
   // If IPv4-mapped IPv6 (e.g. ::ffff:192.168.1.1)
   if (cleanIp.includes(":") && cleanIp.includes(".")) {
@@ -135,6 +138,14 @@ export function isPublicInternetIP(ip: string): boolean {
   // Validate that it's a valid IPv4 or IPv6
   if (!isIPv4(cleanIp) && !isIPv6(cleanIp)) {
     return false;
+  }
+
+  // Check IPv4-mapped IPv6 in hex format (e.g. ::ffff:7f00:1 canonicalized from ::ffff:127.0.0.1)
+  const ipv6Val = ipv6ToBigInt(cleanIp);
+  if (ipv6Val !== null && (ipv6Val >> 32n) === 0xffffn) {
+    const ipv4Num = Number(ipv6Val & 0xffffffffn);
+    const ipv4Str = `${(ipv4Num >>> 24) & 0xff}.${(ipv4Num >>> 16) & 0xff}.${(ipv4Num >>> 8) & 0xff}.${ipv4Num & 0xff}`;
+    return !isPrivateOrReservedIp(ipv4Str);
   }
 
   return !isPrivateOrReservedIp(cleanIp);
@@ -167,13 +178,14 @@ export function isSafeUrl(urlString: string): boolean {
     }
 
     const url = new URL(parseableUrl);
+    const rawHostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
 
-    if (FORBIDDEN_HOSTNAMES.includes(url.hostname.toLowerCase())) {
+    if (FORBIDDEN_HOSTNAMES.includes(rawHostname) || FORBIDDEN_HOSTNAMES.includes(url.hostname.toLowerCase())) {
       return false;
     }
 
     // Check if hostname is an IP and matches forbidden ranges
-    if ((isIPv4(url.hostname) || isIPv6(url.hostname)) && !isPublicInternetIP(url.hostname)) {
+    if ((isIPv4(rawHostname) || isIPv6(rawHostname)) && !isPublicInternetIP(rawHostname)) {
       return false;
     }
 

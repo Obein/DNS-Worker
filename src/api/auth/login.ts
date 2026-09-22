@@ -232,8 +232,8 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
             publicKeySpki: passkey.public_key,
             algorithm: passkey.algorithm,
             expectedChallenge: preauthState.passkeyChallenge,
-            expectedOrigin: request.headers.get("origin") || `https://${preauthState.rpId || 'localhost'}`,
-            expectedRpId: preauthState.rpId || new URL(request.url).hostname,
+            expectedOrigin: `${url.protocol}//${url.host}`,
+            expectedRpId: preauthState.rpId || url.hostname,
             previousSignCount: passkey.sign_count
           });
 

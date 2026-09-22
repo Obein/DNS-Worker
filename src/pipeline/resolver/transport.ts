@@ -45,6 +45,11 @@ export async function readFramedDnsResponse(
       chunks.push(value);
       totalBytes += value.length;
 
+      // RFC 1035 Section 4.2.2: Max DNS TCP message is 65535 bytes + 2 bytes prefix
+      if (totalBytes > 65537) {
+        throw new Error("DNS upstream message exceeded maximum RFC frame length (65535 bytes)");
+      }
+
       if (expectedBodyLength === null && totalBytes >= 2) {
         const b0 = chunks[0][0];
         const b1 = chunks[0].length > 1 ? chunks[0][1] : chunks[1][0];
