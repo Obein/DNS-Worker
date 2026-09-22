@@ -199,6 +199,42 @@ export async function rebuildProfileBloom(
   const profile = await profileModel.getById(profileId);
   const priorListUpdatedAt = profile?.list_updated_at ?? 0;
 
+  // A list can be enabled while it has no bloom yet - added disabled in bulk, or
+  // its last sync failed. combineAndPromote would skip it silently, so fetch it
+  // first. hasListBloom is an existence probe: getListBloom would concatenate
+  // every chunk of every list just to answer a boolean.
+  const activeLists = (await listModel.getLists(profileId)).filter((l) => !!l.enabled);
+  const presence = await Promise.all(
+    activeLists.map((l) =>
+      listBloomModel
+        .hasListBloom(l.id)
+        // Treat an unreadable row as present rather than downloading on a
+        // transient D1 error; cron will catch it on its next pass.
+        .catch(() => true)
+    )
+  );
+
+  // Sync the list that is actually missing, rather than delegating to
+  // syncNextListForProfile: a list whose sync errored carries a recent
+  // last_synced_at, so that picker would fetch a healthy list ahead of it.
+  // One per call keeps this bounded; cron handles any others.
+  const missingIndex = presence.findIndex((present) => !present);
+  if (missingIndex !== -1) {
+    const missing = activeLists[missingIndex];
+    try {
+      await syncSingleList(
+        profileId,
+        missing,
+        env,
+        listModel,
+        listBloomModel,
+        Math.floor(Date.now() / 1000)
+      );
+    } catch (e) {
+      console.error(`[Sync] fetch of list ${missing.id} during rebuild failed:`, e);
+    }
+  }
+
   await combineAndPromote(
     profileId,
     listModel,
