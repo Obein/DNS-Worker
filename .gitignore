@@ -11,3 +11,4 @@ data/
 *.sqlite*
 dev-dist
 .dev.vars
+temp_*
