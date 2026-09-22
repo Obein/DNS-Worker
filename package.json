@@ -1,6 +1,6 @@
 {
   "name": "dns-worker",
-  "version": "1.0.0",
+  "version": "1.0.24",
   "private": false,
   "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
   "main": "./dist/serverfull.mjs",

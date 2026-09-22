@@ -8,6 +8,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (leave blank to auto-detect from latest Git tag)'
+        required: false
+        type: string
 
 jobs:
   publish:
@@ -16,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,20 +33,39 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Sync package.json version from Git tag
+      - name: Determine and sync package version
         run: |
-          TAG_NAME="${{ github.ref_name }}"
-          echo "Current ref: $TAG_NAME"
-          case "$TAG_NAME" in
-            v*)
-              VERSION="${TAG_NAME#v}"
-              echo "Syncing package.json version to: $VERSION"
-              npm version "$VERSION" --no-git-tag-version --allow-same-version
-              ;;
-            *)
-              echo "Ref name does not start with 'v', keeping package.json version: $(node -p "require('./package.json').version")"
-              ;;
-          esac
+          VERSION=""
+
+          # 1. If manually provided via workflow_dispatch input
+          if [ -n "${{ inputs.version }}" ]; then
+            INPUT_VER="${{ inputs.version }}"
+            VERSION="${INPUT_VER#v}"
+            echo "Using version from workflow input: $VERSION"
+
+          # 2. If triggered by a Git tag push (e.g. refs/tags/v1.0.24)
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION="${TAG_NAME#v}"
+            echo "Using version from tag push: $VERSION"
+
+          # 3. If triggered on a branch (e.g. main) via workflow_dispatch without input,
+          #    auto-detect the latest Git tag
+          else
+            LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+            if [ -n "$LATEST_TAG" ]; then
+              VERSION="${LATEST_TAG#v}"
+              echo "Auto-detected latest tag from Git: $VERSION (from $LATEST_TAG)"
+            fi
+          fi
+
+          # Apply version if detected
+          if [ -n "$VERSION" ]; then
+            echo "Syncing package.json version to: $VERSION"
+            npm version "$VERSION" --no-git-tag-version --allow-same-version
+          else
+            echo "Could not determine version from tag; keeping package.json version: $(node -p "require('./package.json').version")"
+          fi
 
       - name: Build Web Dashboard and Serverfull bundle
         run: npm run build:serverfull
