@@ -686,3 +686,11 @@ self.onmessage = async (e: MessageEvent<WorkerMessageRequest>) => {
     } as WorkerMessageResponse);
   }
 };
+
+self.onerror = (err) => {
+  console.error('[SQLite Worker] Uncaught worker runtime error:', err);
+};
+
+self.onunhandledrejection = (e) => {
+  console.error('[SQLite Worker] Unhandled promise rejection in worker:', e.reason);
+};

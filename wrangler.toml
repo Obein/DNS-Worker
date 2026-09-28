@@ -22,24 +22,8 @@ command = "npm run build"
 directory = "./static"
 # Binding name used to access static assets from the Worker.
 binding = "ASSETS"
-# Enable Single Page Application (SPA) fallback
-not_found_handling = "single-page-application"
-# Route HTML entry points through Worker first to ensure security headers and window.DNS_WORKER_CONFIG are injected
-run_worker_first = [
-  "/",
-  "/index.html",
-  "/stats",
-  "/logs",
-  "/rules",
-  "/filters",
-  "/settings",
-  "/setup",
-  "/account",
-  "/admin",
-  "/login",
-  "/signup",
-  "/forgot-password"
-]
+# Force the Worker to run first for all incoming requests (API, DoH, SPA rewriting)
+run_worker_first = true
 
 # D1 Database for Profiles, Rules and Logs
 [[d1_databases]]
