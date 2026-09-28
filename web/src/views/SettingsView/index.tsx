@@ -8,7 +8,6 @@ import { UpstreamCard } from "./components/UpstreamCard";
 import { DefaultPolicyCard } from "./components/DefaultPolicyCard";
 import { LogRetentionCard } from "./components/LogRetentionCard";
 import { LocalRetentionCard } from "./components/LocalRetentionCard";
-import { E2eeCard } from "./components/E2eeCard";
 import { AdvancedEcsCard } from "./components/AdvancedEcsCard";
 import { BestEffortEchCard } from "./components/BestEffortEchCard";
 import { DnsTestCard } from "./components/DnsTestCard";
@@ -251,7 +250,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         <DefaultPolicyCard settings={settings} setSettings={handleSettingsChange} />
         <LogRetentionCard settings={settings} setSettings={handleSettingsChange} isAdmin={currentUser?.role === "admin"} maxRetentionDays={currentUser?.max_log_retention_days ?? (currentUser?.role === "admin" ? 30 : 7)} />
         <LocalRetentionCard profileId={profileId} toasterRef={toasterRef} />
-        <E2eeCard profileId={profileId} toasterRef={toasterRef} />
         <AdvancedEcsCard settings={settings} setSettings={handleSettingsChange} />
         <BestEffortEchCard settings={settings} setSettings={handleSettingsChange} />
       </div>
