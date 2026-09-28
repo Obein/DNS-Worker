@@ -29,7 +29,8 @@ const MIME_TYPES: Record<string, string> = {
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
-  '.webmanifest': 'application/manifest+json'
+  '.webmanifest': 'application/manifest+json',
+  '.wasm': 'application/wasm'
 };
 
 export class HttpServer {
@@ -61,7 +62,10 @@ export class HttpServer {
               status: 200,
               headers: {
                 'Content-Type': contentType,
-                'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
+                'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable',
+                'Cross-Origin-Opener-Policy': 'same-origin',
+                'Cross-Origin-Embedder-Policy': 'credentialless',
+                'Cross-Origin-Resource-Policy': 'same-origin'
               }
             });
           }

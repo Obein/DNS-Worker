@@ -152,7 +152,7 @@ export default {
       // Static Assets Hosting with Single Page App (SPA) fallback
       try {
         let response = await (env as any).ASSETS.fetch(request);
-        if (response.status === 404) {
+        if (response.status === 404 && !url.pathname.startsWith('/assets/')) {
           response = await (env as any).ASSETS.fetch(new Request(url.origin + '/', request));
         }
 

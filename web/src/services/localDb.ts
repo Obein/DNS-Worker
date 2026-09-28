@@ -8,6 +8,7 @@ import type { LogEntry } from '../views/LogsView/types';
 import type { AnalyticsData } from '../views/AnalyticsView/types';
 import { profileFetch } from './profiles';
 import { e2ee } from './e2ee';
+import SqliteWorker from '../workers/sqlite.worker?worker';
 
 export interface LocalStorageInfo {
   totalRows: number;
@@ -61,29 +62,39 @@ class LocalDbService {
   private pendingRequests = new Map<string, { resolve: (val: any) => void; reject: (err: any) => void }>();
   private initPromise: Promise<boolean> | null = null;
   private isOpfs = false;
+  private workerFailed = false;
 
   private getWorker(): Worker {
     if (!this.worker) {
-      this.worker = new Worker(new URL('../workers/sqlite.worker.ts', import.meta.url), {
-        type: 'module'
-      });
+      try {
+        this.worker = new SqliteWorker();
 
-      this.worker.onmessage = (e: MessageEvent) => {
-        const { id, success, data, error } = e.data;
-        const pending = this.pendingRequests.get(id);
-        if (pending) {
-          this.pendingRequests.delete(id);
-          if (success) {
-            pending.resolve(data);
-          } else {
-            pending.reject(new Error(error || 'Worker execution error'));
+        this.worker.onmessage = (e: MessageEvent) => {
+          const { id, success, data, error } = e.data;
+          const pending = this.pendingRequests.get(id);
+          if (pending) {
+            this.pendingRequests.delete(id);
+            if (success) {
+              pending.resolve(data);
+            } else {
+              pending.reject(new Error(error || 'Worker execution error'));
+            }
           }
-        }
-      };
+        };
 
-      this.worker.onerror = (err) => {
-        console.error('[LocalDb] Worker fatal error:', err);
-      };
+        this.worker.onerror = (err) => {
+          console.error('[LocalDb] Worker fatal error:', err);
+          this.workerFailed = true;
+          for (const [, pending] of this.pendingRequests.entries()) {
+            pending.reject(new Error('SQLite Worker error: ' + ((err as any)?.message || 'Load failure')));
+          }
+          this.pendingRequests.clear();
+        };
+      } catch (err) {
+        console.error('[LocalDb] Failed to instantiate worker:', err);
+        this.workerFailed = true;
+        throw err;
+      }
     }
     return this.worker;
   }
@@ -102,11 +113,18 @@ class LocalDbService {
    * Initializes the client SQLite WASM engine and OPFS storage.
    */
   async init(): Promise<boolean> {
+    if (this.workerFailed) return false;
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
       try {
-        const res = await this.sendRequest<{ ready: boolean; isOpfs: boolean }>('INIT');
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('SQLite Worker init timed out (3.5s)')), 3500)
+        );
+        const res = await Promise.race([
+          this.sendRequest<{ ready: boolean; isOpfs: boolean }>('INIT'),
+          timeoutPromise,
+        ]);
         this.isOpfs = res.isOpfs;
         console.log(`[LocalDb] Initialized (OPFS storage: ${this.isOpfs ? 'ENABLED' : 'IN-MEMORY'})`);
 
@@ -118,7 +136,8 @@ class LocalDbService {
 
         return res.ready;
       } catch (err) {
-        console.error('[LocalDb] Failed to initialize SQLite engine:', err);
+        console.warn('[LocalDb] SQLite engine unavailable, falling back to server:', err);
+        this.workerFailed = true;
         return false;
       }
     })();
