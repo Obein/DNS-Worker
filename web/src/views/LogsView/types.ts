@@ -17,6 +17,11 @@ export interface LogEntry {
   access_point_name?: string;
   upstream?: string;
   latency?: number;
+  dest_country_code?: string | null;
+  dest_country?: string | null;
+  dest_isp?: string | null;
+  is_encrypted?: number;
+  encrypted_payload?: string | null;
 }
 
 export interface LogsViewProps {

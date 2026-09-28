@@ -1,6 +1,7 @@
 import React from "react";
 import { Section, SectionCard, Tag, Intent, Spinner } from "@blueprintjs/core";
-import { Activity } from "lucide-react";
+import { Activity, Lock } from "lucide-react";
+import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../../utils/date";
 import type { LogEntry } from "../../types";
@@ -18,6 +19,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   loading,
 }) => {
   const { t } = useTranslation();
+  const isEncryptedLocked = selectedLog.is_encrypted === 1 && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
 
   return (
     <Section title={t("logs.basicInfo")} icon={<Activity size={16} />} className="shadow-none! rounded-lg!">
@@ -27,18 +29,44 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             label={t("logs.detailDomain")}
             value={
               <div className="flex items-center gap-2 justify-end font-bold">
-                <img
-                  src={`/api/icon/${selectedLog.domain.replace(/^\*\./, "")}.ico`}
-                  className="w-4 h-4 rounded-sm"
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-                <span>{selectedLog.domain}</span>
+                {isEncryptedLocked ? (
+                  <Lock size={14} className="text-amber-500" />
+                ) : (
+                  <img
+                    src={`/api/icon/${selectedLog.domain.replace(/^\*\./, "")}.ico`}
+                    className="w-4 h-4 rounded-sm"
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                  />
+                )}
+                <span className={clsx({ "italic text-gray-400 dark:text-gray-500": isEncryptedLocked })}>
+                  {isEncryptedLocked ? t("logs.encryptedRecord", "[加密记录]") : selectedLog.domain}
+                </span>
               </div>
             }
             bold
           />
+          {selectedLog.is_encrypted === 1 && (
+            <DetailItem
+              label={t("settings.e2eeTitle", "端到端加密")}
+              value={
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Lock size={13} className={isEncryptedLocked ? "text-amber-500" : "text-emerald-500"} />
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isEncryptedLocked ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                    )}
+                  >
+                    {isEncryptedLocked
+                      ? t("logs.lockedRecord", "已加密 (未解锁)")
+                      : t("logs.decryptedLocal", "端到端加密 (已本地解密)")}
+                  </span>
+                </div>
+              }
+            />
+          )}
           <DetailItem label={t("logs.detailType")} value={selectedLog.record_type} />
           <DetailItem
             label={t("logs.detailLatency")}

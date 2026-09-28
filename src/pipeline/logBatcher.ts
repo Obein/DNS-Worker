@@ -1,7 +1,46 @@
-import { D1PreparedStatement } from "@cloudflare/workers-types";
+import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { Env, ExecutionContext, ProfileSettings, ResolutionLog } from "../types";
 import { LogModel, generateLogId } from "../models/log";
 import { cacheUtils } from "../utils/cache";
+import { encryptSensitiveLogData } from "../lib/crypto/e2ee";
+
+/** In-memory cache for profile E2EE public keys with 5-minute TTL */
+const profileKeyCache = new Map<string, { key: JsonWebKey | null; expiresAt: number }>();
+
+/**
+ * Retrieves the E2EE public key for a profile, using an in-memory cache to avoid repeated D1 reads.
+ */
+export async function getProfileLogPublicKey(
+  db: D1Database,
+  profileId: string
+): Promise<JsonWebKey | null> {
+  const now = Date.now();
+  const cached = profileKeyCache.get(profileId);
+  if (cached && cached.expiresAt > now) {
+    return cached.key;
+  }
+
+  try {
+    const row = await db
+      .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ?")
+      .bind(profileId)
+      .first<{ public_key: string }>();
+
+    const key = row?.public_key ? (JSON.parse(row.public_key) as JsonWebKey) : null;
+    profileKeyCache.set(profileId, { key, expiresAt: now + 5 * 60 * 1000 });
+    return key;
+  } catch (err) {
+    console.error(`[E2EE] Failed to fetch log public key for profile ${profileId}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Invalidates the in-memory E2EE public key cache for a profile.
+ */
+export function invalidateProfileLogKeyCache(profileId: string): void {
+  profileKeyCache.delete(profileId);
+}
 
 /** In-memory batch queue of logs waiting to be flushed to D1 */
 const logBatchQueue: ResolutionLog[] = [];
@@ -107,7 +146,51 @@ export async function flushLogBatch(env: Env): Promise<void> {
   const logModel = new LogModel(env.DB);
   const statements: D1PreparedStatement[] = [];
 
+  // Group logs by profile to batch E2EE public key lookup
+  const profileIds = Array.from(new Set(logsToFlush.map((l) => l.profile_id)));
+  const keyMap = new Map<string, JsonWebKey | null>();
+  await Promise.all(
+    profileIds.map(async (pid) => {
+      const pubKey = await getProfileLogPublicKey(env.DB, pid);
+      if (pubKey) keyMap.set(pid, pubKey);
+    })
+  );
+
   for (const log of logsToFlush) {
+    const pubKey = keyMap.get(log.profile_id);
+    if (pubKey) {
+      try {
+        const encrypted = await encryptSensitiveLogData(pubKey, {
+          domain: log.domain,
+          client_ip: log.client_ip,
+          geo_country: log.geo_country,
+          answer: log.answer,
+          dest_geoip: log.dest_geoip,
+          dest_country_code: log.dest_country_code,
+          dest_country: log.dest_country,
+          dest_isp: log.dest_isp,
+          ecs: log.ecs,
+          upstream: log.upstream,
+          reason: log.reason,
+        });
+
+        log.is_encrypted = 1;
+        log.encrypted_payload = encrypted;
+        log.domain = "";
+        log.client_ip = "";
+        log.geo_country = "";
+        log.answer = undefined;
+        log.dest_geoip = undefined;
+        log.dest_country_code = null;
+        log.dest_country = null;
+        log.dest_isp = null;
+        log.ecs = undefined;
+        log.upstream = undefined;
+        log.reason = undefined;
+      } catch (encErr) {
+        console.error(`[LogBatcher] Encryption failed for profile ${log.profile_id}:`, encErr);
+      }
+    }
     statements.push(logModel.createInsertStatement(log));
   }
 

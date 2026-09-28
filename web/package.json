@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@blueprintjs/core": "^6.18.0",
+    "@sqlite.org/sqlite-wasm": "^3.53.4-build1",
     "@types/qrcode": "^1.5.6",
     "@vnedyalk0v/react19-simple-maps": "^2.0.10",
     "clsx": "^2.1.1",

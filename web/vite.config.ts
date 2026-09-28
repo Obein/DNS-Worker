@@ -36,6 +36,10 @@ export default defineConfig({
   ],
   server: {
     host: '127.0.0.1',
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8787',
@@ -50,6 +54,12 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  optimizeDeps: {
+    exclude: ['@sqlite.org/sqlite-wasm'],
+  },
+  worker: {
+    format: 'es',
   },
   build: {
     outDir: '../static',

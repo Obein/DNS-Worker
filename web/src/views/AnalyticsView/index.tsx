@@ -24,7 +24,7 @@ import { processTrendData } from "./utils";
 import { getFlagEmoji } from "../../utils/getFlagEmoji";
 import { MetricCard } from "./components/MetricCard";
 import { RankTable } from "./components/RankTable";
-import { getProfileAccessPoints, getProfileDetails, getProfileAnalytics } from "../../services";
+import { getProfileAccessPoints, getProfileDetails, getProfileAnalytics, localDb } from "../../services";
 import type { AccessPoint } from "../../services";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -77,12 +77,60 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
 
   const fetchData = async (selectedRange: TimeRange, customStart?: string, customEnd?: string, apIdFilter?: string | null) => {
     setLoading(true);
+
+    const now = Math.floor(Date.now() / 1000);
+    let since = now - 86400;
+    let until = now;
+    let bucketSec = 3600;
+
+    if (selectedRange === "custom" && customStart && customEnd) {
+      since = Math.floor(new Date(customStart).getTime() / 1000);
+      until = Math.floor(new Date(customEnd).getTime() / 1000);
+      const span = until - since;
+      bucketSec = span <= 7200 ? 60 : span <= 172800 ? 3600 : 86400;
+    } else {
+      switch (selectedRange) {
+        case "10m": since = now - 600; bucketSec = 60; break;
+        case "1h": since = now - 3600; bucketSec = 60; break;
+        case "24h": since = now - 86400; bucketSec = 3600; break;
+        case "7d": since = now - 604800; bucketSec = 86400; break;
+        case "30d": since = now - 2592000; bucketSec = 86400; break;
+        default: since = now - 86400; bucketSec = 3600; break;
+      }
+    }
+
+    // ── Step 1: Attempt Local-First SQLite aggregation ──
+    try {
+      const isDbReady = await localDb.init();
+      if (isDbReady) {
+        // Delta sync missing logs from server in background
+        try {
+          await localDb.syncProfileLogs(profileId, undefined, since);
+        } catch (syncErr) {
+          console.warn("[AnalyticsView] Delta sync error (continuing with cached):", syncErr);
+        }
+
+        const localAnalytics = await localDb.queryAnalytics({
+          profileId,
+          since,
+          until,
+          bucketSec,
+          accessPointId: apIdFilter || undefined,
+        });
+
+        setData(localAnalytics);
+        setLoading(false);
+        return;
+      }
+    } catch (localErr) {
+      console.warn("[AnalyticsView] Local SQLite aggregation failed, falling back to server:", localErr);
+    }
+
+    // ── Step 2: Fallback to Server Fetch ──
     try {
       let queryParams = `?range=${selectedRange}`;
       if (selectedRange === "custom" && customStart && customEnd) {
-        const startTs = Math.floor(new Date(customStart).getTime() / 1000);
-        const endTs = Math.floor(new Date(customEnd).getTime() / 1000);
-        queryParams += `&start=${startTs}&end=${endTs}`;
+        queryParams += `&start=${since}&end=${until}`;
       }
       if (apIdFilter) {
         queryParams += `&access_point_id=${apIdFilter}`;

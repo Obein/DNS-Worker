@@ -166,6 +166,8 @@ export interface ResolutionLog {
   latency?: number;
   ecs?: string;
   upstream?: string;
+  is_encrypted?: number;
+  encrypted_payload?: string | null;
 }
 
 export interface LogHourlyRollup {

@@ -1,6 +1,8 @@
 import React from "react";
 import { Card, Tag, Intent } from "@blueprintjs/core";
 import { clsx } from "clsx";
+import { useTranslation } from "react-i18next";
+import { Lock } from "lucide-react";
 import type {  LogEntry  } from "../types";
 
 export interface LogsListProps {
@@ -20,10 +22,15 @@ export const LogsList: React.FC<LogsListProps> = ({
   prevLatestTimestamp,
   realtimeRefresh,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-3 py-4">
       {logs.map((log, idx) => {
         const isNew = realtimeRefresh && prevLatestTimestamp !== null && log.timestamp > prevLatestTimestamp;
+        const isEncryptedLocked = log.is_encrypted === 1 && (!log.domain || log.domain === "[Encrypted]");
+        const isEncryptedUnlocked = log.is_encrypted === 1 && log.domain && log.domain !== "[Encrypted]";
+
         return (
           <Card
             key={log.id}
@@ -40,14 +47,23 @@ export const LogsList: React.FC<LogsListProps> = ({
           >
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2 min-w-0">
-              <img
-                src={`/api/icon/${log.domain.replace(/^\*\./, "")}.ico`}
-                className="w-4 h-4 rounded-sm shrink-0"
-                alt=""
-                referrerPolicy="no-referrer"
-                onError={(e) => (e.currentTarget.style.opacity = "0")}
-              />
-              <span className="font-bold text-sm truncate">{log.domain}</span>
+              {isEncryptedLocked ? (
+                <Lock size={14} className="text-amber-500 shrink-0" />
+              ) : (
+                <img
+                  src={`/api/icon/${log.domain.replace(/^\*\./, "")}.ico`}
+                  className="w-4 h-4 rounded-sm shrink-0"
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={(e) => (e.currentTarget.style.opacity = "0")}
+                />
+              )}
+              <span className={clsx("font-bold text-sm truncate", { "italic text-gray-400 dark:text-gray-500": isEncryptedLocked })}>
+                {isEncryptedLocked ? t("logs.encryptedRecord", "[加密记录]") : log.domain}
+              </span>
+              {isEncryptedUnlocked && (
+                <Lock size={12} className="text-emerald-500 shrink-0 opacity-80" />
+              )}
             </div>
             <Tag
               minimal
