@@ -103,14 +103,8 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     try {
       const isDbReady = await localDb.init();
       if (isDbReady) {
-        // Delta sync missing logs from server in background
-        try {
-          await localDb.syncProfileLogs(profileId, undefined, since);
-        } catch (syncErr) {
-          console.warn("[AnalyticsView] Delta sync error (continuing with cached):", syncErr);
-        }
-
-        const localAnalytics = await localDb.queryAnalytics({
+        // 1. Immediately query and display cached analytics (0ms latency)
+        let localAnalytics = await localDb.queryAnalytics({
           profileId,
           since,
           until,
@@ -118,7 +112,29 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           accessPointId: apIdFilter || undefined,
         });
 
-        setData(localAnalytics);
+        const hasData = localAnalytics.summary.some((s) => s.count > 0);
+        if (hasData) {
+          setData(localAnalytics);
+          setLoading(false);
+        }
+
+        // 2. Delta sync missing logs from server in background
+        try {
+          const inserted = await localDb.syncProfileLogs(profileId, undefined, since);
+          if (inserted > 0 || !hasData) {
+            localAnalytics = await localDb.queryAnalytics({
+              profileId,
+              since,
+              until,
+              bucketSec,
+              accessPointId: apIdFilter || undefined,
+            });
+            setData(localAnalytics);
+          }
+        } catch (syncErr) {
+          console.warn("[AnalyticsView] Delta sync error (continuing with cached):", syncErr);
+        }
+
         setLoading(false);
         return;
       }

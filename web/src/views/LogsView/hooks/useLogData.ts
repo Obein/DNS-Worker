@@ -109,19 +109,10 @@ export function useLogData({
       try {
         const isDbReady = await localDb.init();
         if (isDbReady && !controller.signal.aborted) {
-          if (isInitial) {
-            // Delta sync from server in background to ensure local SQLite has recent logs
-            try {
-              await localDb.syncProfileLogs(profileId, undefined, since);
-            } catch (syncErr) {
-              console.warn("[useLogData] Incremental sync error (continuing with cached):", syncErr);
-            }
-          }
-
-          if (controller.signal.aborted) return;
-
           const before = !isInitial && logs.length > 0 ? logs[logs.length - 1].timestamp : undefined;
-          const localResult = await localDb.queryLogs({
+
+          // 1. Immediately query local SQLite for instant, zero-latency rendering
+          let localResult = await localDb.queryLogs({
             profileId,
             search: searchQuery || undefined,
             action: statusFilter || undefined,
@@ -137,33 +128,111 @@ export function useLogData({
 
           if (controller.signal.aborted) return;
 
-          usedLocalDb = true;
-          const logsData = localResult.rows;
-
-          if (isInitial) {
-            if (isAutoRefresh) {
-              const oldLatest = logsRef.current.length > 0 ? logsRef.current[0].timestamp : null;
-              setPrevLatestTimestamp(oldLatest);
+          // If local SQLite has cached rows, display them immediately (0ms visual latency)
+          if (localResult.rows.length > 0) {
+            usedLocalDb = true;
+            if (isInitial) {
+              if (isAutoRefresh) {
+                const oldLatest = logsRef.current.length > 0 ? logsRef.current[0].timestamp : null;
+                setPrevLatestTimestamp(oldLatest);
+              } else {
+                setPrevLatestTimestamp(null);
+              }
+              setLogs(localResult.rows);
+              setHasMore(realtimeRefresh ? false : localResult.rows.length >= limit);
+              if (localResult.stats) {
+                setStats(localResult.stats);
+              }
+              setLoading(false);
             } else {
-              setPrevLatestTimestamp(null);
+              setLogs((prev) => [...prev, ...localResult.rows]);
+              setHasMore(realtimeRefresh ? false : localResult.rows.length >= limit);
+              setLoadingMore(false);
             }
-            setLogs(logsData);
-            setHasMore(realtimeRefresh ? false : logsData.length >= limit);
-            if (localResult.stats) {
-              setStats(localResult.stats);
-            }
-          } else {
-            setLogs((prev) => [...prev, ...logsData]);
-            setHasMore(realtimeRefresh ? false : logsData.length >= limit);
           }
 
-          if (logsData && logsData.length > 0) {
-            const domains = Array.from(new Set(logsData.map((log: LogEntry) => log.domain)));
-            if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-              navigator.serviceWorker.controller.postMessage({
-                type: "PREFETCH_ICONS",
-                domains,
-              });
+          // 2. Perform delta sync from server in background (or initial sync if local DB was empty)
+          if (isInitial) {
+            try {
+              const inserted = await localDb.syncProfileLogs(profileId, undefined, since, controller.signal);
+              if (!controller.signal.aborted && (inserted > 0 || localResult.rows.length === 0)) {
+                // Re-query local database to reflect newly synced records
+                localResult = await localDb.queryLogs({
+                  profileId,
+                  search: searchQuery || undefined,
+                  action: statusFilter || undefined,
+                  accessPointId: accessPointIdFilter || undefined,
+                  destCountry: destCountryFilter || undefined,
+                  isp: ispFilter || undefined,
+                  since,
+                  until,
+                  before: undefined,
+                  limit,
+                  offset: 0
+                });
+
+                if (controller.signal.aborted) return;
+
+                usedLocalDb = true;
+                if (isAutoRefresh) {
+                  const oldLatest = logsRef.current.length > 0 ? logsRef.current[0].timestamp : null;
+                  setPrevLatestTimestamp(oldLatest);
+                } else {
+                  setPrevLatestTimestamp(null);
+                }
+                setLogs(localResult.rows);
+                setHasMore(realtimeRefresh ? false : localResult.rows.length >= limit);
+                if (localResult.stats) {
+                  setStats(localResult.stats);
+                }
+              }
+            } catch (syncErr: any) {
+              if (syncErr.name !== "AbortError") {
+                console.warn("[useLogData] Incremental sync error (continuing with cached):", syncErr);
+              }
+            }
+          } else if (before !== undefined && before > since && localResult.rows.length < limit) {
+            // Backfill older logs when scrolling down past cached boundary
+            try {
+              const backfilled = await localDb.backfillLogs(profileId, before, since, limit, controller.signal);
+              if (!controller.signal.aborted && backfilled.length > 0) {
+                const moreLocal = await localDb.queryLogs({
+                  profileId,
+                  search: searchQuery || undefined,
+                  action: statusFilter || undefined,
+                  accessPointId: accessPointIdFilter || undefined,
+                  destCountry: destCountryFilter || undefined,
+                  isp: ispFilter || undefined,
+                  since,
+                  until,
+                  before,
+                  limit,
+                  offset: 0
+                });
+                if (!controller.signal.aborted) {
+                  usedLocalDb = true;
+                  setLogs((prev) => [...prev, ...moreLocal.rows]);
+                  setHasMore(realtimeRefresh ? false : moreLocal.rows.length >= limit);
+                }
+              }
+            } catch (backfillErr: any) {
+              if (backfillErr.name !== "AbortError") {
+                console.warn("[useLogData] Backfill error:", backfillErr);
+              }
+            }
+          }
+
+          if (localResult.rows.length > 0 || usedLocalDb) {
+            usedLocalDb = true;
+            const logsData = localResult.rows;
+            if (logsData && logsData.length > 0) {
+              const domains = Array.from(new Set(logsData.map((log: LogEntry) => log.domain)));
+              if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                  type: "PREFETCH_ICONS",
+                  domains,
+                });
+              }
             }
           }
         }

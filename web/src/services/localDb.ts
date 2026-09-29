@@ -160,78 +160,143 @@ class LocalDbService {
     return this.sendRequest<SyncWatermark | null>('GET_WATERMARK', { profileId });
   }
 
+  /** In-flight synchronization promises per profile to deduplicate concurrent requests */
+  private inFlightSyncs = new Map<string, Promise<number>>();
+
   /**
    * Synchronizes latest logs from the server into local SQLite.
    * Only fetches delta intervals missing from the local database.
+   * Capped to maxPages (default 3 = 300 logs) to avoid blocking UI or burning network quota.
+   *
+   * @param profileId - Profile identifier.
+   * @param onProgress - Optional progress callback.
+   * @param targetSince - Optional historical boundary for initial load.
+   * @param signal - Optional AbortSignal to cancel requests.
+   * @returns Promise resolving to the number of newly inserted logs.
    */
   async syncProfileLogs(
     profileId: string,
     onProgress?: (syncedCount: number, total: number) => void,
-    targetSince?: number
+    targetSince?: number,
+    signal?: AbortSignal
   ): Promise<number> {
-    await this.init();
-    const watermark = await this.getWatermark(profileId);
-
-    const now = Math.floor(Date.now() / 1000);
-    // If local DB already has data, sync from (latest_timestamp - 60s) to guard against clock skew/in-flight inserts
-    // If completely empty or targetSince is earlier, ensure we cover up to targetSince or last 7 days
-    let since = watermark && watermark.latest_timestamp > 0
-      ? Math.max(0, watermark.latest_timestamp - 60)
-      : Math.floor(now - 7 * 86400);
-
-    if (targetSince !== undefined && targetSince < since) {
-      since = targetSince;
+    if (this.inFlightSyncs.has(profileId)) {
+      return this.inFlightSyncs.get(profileId)!;
     }
 
-    let totalInserted = 0;
-    let currentBefore: number | undefined = undefined;
-    let hasMore = true;
+    const syncPromise = (async () => {
+      await this.init();
+      if (signal?.aborted) return 0;
 
-    // Pull logs in pages of 100 until reaching the watermark point
-    while (hasMore) {
-      let url = `/api/profiles/${profileId}/logs?start=${since}&end=${now}&limit=100`;
-      if (currentBefore !== undefined) {
-        url += `&before=${currentBefore}`;
-      }
+      const watermark = await this.getWatermark(profileId);
+      const now = Math.floor(Date.now() / 1000);
 
-      const res = await profileFetch(url);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch logs from server: ${await res.text()}`);
-      }
+      let since: number;
+      // Cap sync to at most 3 batches (300 logs) per run to guarantee responsiveness
+      const maxPages = 3;
 
-      const rawLogs: LogEntry[] = await res.json();
-      if (!rawLogs || rawLogs.length === 0) {
-        break;
-      }
-
-      // Decrypt any encrypted logs before inserting into local SQLite
-      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
-
-      // Insert this batch into local SQLite
-      const { inserted } = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-        profileId,
-        logs
-      });
-
-      totalInserted += inserted;
-      if (onProgress) {
-        onProgress(totalInserted, totalInserted);
-      }
-
-      if (logs.length < 100) {
-        hasMore = false;
+      if (watermark && watermark.latest_timestamp > 0) {
+        // Incremental delta sync: only fetch records newer than latest local timestamp (-60s clock skew buffer)
+        since = Math.max(0, watermark.latest_timestamp - 60);
       } else {
-        // Find the oldest timestamp in this batch for cursor pagination
-        const oldestInBatch = logs[logs.length - 1].timestamp;
-        if (oldestInBatch <= since || (currentBefore !== undefined && oldestInBatch >= currentBefore)) {
+        // Initial sync for empty local database: fetch up to targetSince or last 24h
+        since = targetSince !== undefined ? targetSince : Math.floor(now - 86400);
+      }
+
+      let totalInserted = 0;
+      let currentBefore: number | undefined = undefined;
+      let hasMore = true;
+      let pageCount = 0;
+
+      // Pull logs in pages of 100 until reaching the watermark point or maxPages limit
+      while (hasMore && pageCount < maxPages) {
+        if (signal?.aborted) break;
+
+        let url = `/api/profiles/${profileId}/logs?start=${since}&end=${now}&limit=100`;
+        if (currentBefore !== undefined) {
+          url += `&before=${currentBefore}`;
+        }
+
+        const res = await profileFetch(url, { signal });
+        if (!res.ok) {
+          throw new Error(`Failed to fetch logs from server: ${await res.text()}`);
+        }
+
+        const rawLogs: LogEntry[] = await res.json();
+        if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
+          break;
+        }
+
+        // Decrypt any encrypted logs before inserting into local SQLite
+        const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+
+        // Insert this batch into local SQLite
+        const { inserted } = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+          profileId,
+          logs
+        });
+
+        totalInserted += inserted;
+        pageCount++;
+        if (onProgress) {
+          onProgress(totalInserted, totalInserted);
+        }
+
+        if (logs.length < 100) {
           hasMore = false;
         } else {
-          currentBefore = oldestInBatch;
+          // Find the oldest timestamp in this batch for cursor pagination
+          const oldestInBatch = Number(logs[logs.length - 1].timestamp);
+          if (
+            isNaN(oldestInBatch) ||
+            oldestInBatch <= since ||
+            (currentBefore !== undefined && oldestInBatch >= currentBefore)
+          ) {
+            hasMore = false;
+          } else {
+            currentBefore = oldestInBatch;
+          }
         }
       }
-    }
 
-    return totalInserted;
+      return totalInserted;
+    })();
+
+    this.inFlightSyncs.set(profileId, syncPromise);
+    try {
+      return await syncPromise;
+    } finally {
+      this.inFlightSyncs.delete(profileId);
+    }
+  }
+
+  /**
+   * Backfills older logs from the server into local SQLite (e.g. when scrolling down).
+   * Fetches at most 1 page (up to 100 logs) older than `before` down to `since`.
+   */
+  async backfillLogs(
+    profileId: string,
+    before: number,
+    since: number,
+    limit: number = 50,
+    signal?: AbortSignal
+  ): Promise<LogEntry[]> {
+    await this.init();
+    if (signal?.aborted) return [];
+
+    const url = `/api/profiles/${profileId}/logs?start=${since}&end=${before}&limit=${Math.min(limit, 100)}&before=${before}`;
+    const res = await profileFetch(url, { signal });
+    if (!res.ok) return [];
+
+    const rawLogs: LogEntry[] = await res.json();
+    if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) return [];
+
+    const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+    await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+      profileId,
+      logs
+    });
+    return logs;
   }
 
   /**

@@ -214,7 +214,7 @@ function handleSyncBatch(payload: {
         insertStmt.bind([
           profileId,
           log.timestamp,
-          log.id,
+          log.id !== undefined && log.id !== null ? log.id : (log.timestamp * 1000 + Math.floor(Math.random() * 1000)),
           log.domain || '',
           log.record_type || 'A',
           log.action || 'PASS',
