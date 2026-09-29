@@ -171,6 +171,17 @@ async function initDatabase(): Promise<boolean> {
         );
       `);
 
+      // Clean up stale logs with empty client_ip from prior bug to trigger a fresh sync
+      try {
+        const checkObj = db.selectObject("SELECT count(*) as count FROM local_logs WHERE client_ip = '' OR client_ip IS NULL;") as { count?: number };
+        if (checkObj && Number(checkObj.count) > 0) {
+          console.log(`[SQLite Worker] Cleaning ${checkObj.count} stale logs with empty client_ip for clean resync`);
+          db.exec("DELETE FROM local_logs WHERE client_ip = '' OR client_ip IS NULL; DELETE FROM sync_watermarks;");
+        }
+      } catch (e) {
+        console.warn('[SQLite Worker] Clean stale logs check skipped:', e);
+      }
+
       return isOpfs;
     } catch (err: any) {
       console.error('[SQLite Worker] Fatal initialization error:', err);
@@ -477,7 +488,7 @@ function handleQueryAnalytics(params: WorkerAnalyticsParams) {
   const clientStmt = db.prepare(`
     SELECT client_ip, COALESCE(geo_country, 'Unknown') as geo_country, count(*) as count 
     FROM local_logs 
-    WHERE ${baseWhere} 
+    WHERE ${baseWhere} AND client_ip IS NOT NULL AND client_ip != ''
     GROUP BY client_ip 
     ORDER BY count DESC 
     LIMIT 10;

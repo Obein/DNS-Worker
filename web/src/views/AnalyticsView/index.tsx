@@ -329,13 +329,20 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
             <tbody>
               {data?.clients.map((c, i) => (
                 <tr key={i}>
-                  <td className="font-mono text-xs">{c.client_ip}</td>
+                  <td className="font-mono text-xs">{c.client_ip || "-"}</td>
                   <td>
                     <Tag minimal>{getFlagEmoji(c.geo_country)}</Tag>
                   </td>
                   <td className="text-right font-bold">{c.count}</td>
                 </tr>
               ))}
+              {(!data?.clients || data.clients.length === 0) && (
+                <tr>
+                  <td colSpan={3} className="text-center py-8 opacity-50">
+                    {t("analytics.noData")}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </HTMLTable>
         </Section>
