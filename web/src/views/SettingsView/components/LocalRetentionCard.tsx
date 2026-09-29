@@ -35,12 +35,13 @@ export const LocalRetentionCard: React.FC<LocalRetentionCardProps> = ({ profileI
   const loadStorageInfo = useCallback(async () => {
     try {
       await localDb.init();
-      setIsOpfs(localDb.getIsOpfs());
       const info = await localDb.getStorageInfo();
+      setIsOpfs(info?.isOpfs ?? localDb.getIsOpfs());
       const profileStat = info.profileStats.find((s) => s.profile_id === profileId);
       setRowCount(profileStat ? profileStat.count : 0);
     } catch (err) {
       console.error("[LocalRetentionCard] Failed to load storage info:", err);
+      setIsOpfs(localDb.getIsOpfs());
       setRowCount(0);
     }
   }, [profileId]);

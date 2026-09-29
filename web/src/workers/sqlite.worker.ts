@@ -87,19 +87,39 @@ async function initDatabase(): Promise<boolean> {
     try {
       const sqlite3 = await sqlite3InitModule();
 
-      // 1. Try to initialize persistent OPFS database
-      if ('opfs' in sqlite3) {
+      // 1. Try persistent OPFS storage
+      // First attempt: Standard OpfsDb (supports multi-tab concurrency when cross-origin isolated)
+      if (sqlite3.oo1?.OpfsDb) {
         try {
           db = new sqlite3.oo1.OpfsDb('/obex_local_logs.sqlite3', 'c');
           isOpfs = true;
-          console.log('[SQLite Worker] Successfully opened OPFS persistent database');
+          console.log('[SQLite Worker] Successfully opened OPFS persistent database via OpfsDb');
         } catch (opfsErr) {
-          console.warn('[SQLite Worker] OPFS initialization failed, falling back to in-memory:', opfsErr);
-          db = new sqlite3.oo1.DB('/obex_local_logs_mem.sqlite3', 'c');
-          isOpfs = false;
+          console.warn('[SQLite Worker] OpfsDb initialization failed, trying OpfsSAHPool:', opfsErr);
+          db = null;
         }
-      } else {
-        console.warn('[SQLite Worker] OPFS not supported in this browser, using in-memory SQLite');
+      }
+
+      // Second attempt: OpfsSAHPool VFS (works in dedicated workers without requiring SharedArrayBuffer or COOP/COEP)
+      if (!db && typeof sqlite3.installOpfsSAHPoolVfs === 'function') {
+        try {
+          const poolUtil = await sqlite3.installOpfsSAHPoolVfs({
+            name: 'obex-sahpool',
+            clearOnInit: false,
+            initialCapacity: 10,
+          });
+          db = new poolUtil.OpfsSAHPoolDb('/obex_local_logs.sqlite3');
+          isOpfs = true;
+          console.log('[SQLite Worker] Successfully opened OPFS persistent database via OpfsSAHPool');
+        } catch (sahErr) {
+          console.warn('[SQLite Worker] OpfsSAHPool initialization failed:', sahErr);
+          db = null;
+        }
+      }
+
+      // Third attempt / fallback: In-memory SQLite (e.g. Incognito/Private mode or unsupported browser)
+      if (!db) {
+        console.warn('[SQLite Worker] OPFS persistence unavailable (incognito/restricted mode), falling back to in-memory SQLite');
         db = new sqlite3.oo1.DB('/obex_local_logs_mem.sqlite3', 'c');
         isOpfs = false;
       }

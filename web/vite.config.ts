@@ -127,6 +127,9 @@ export default defineConfig({
             if (id.includes('recharts') || id.includes('victory-vendor')) {
               return undefined;
             }
+            if (id.includes('@sqlite.org/sqlite-wasm')) {
+              return undefined;
+            }
             if (id.includes('i18next')) {
               return 'vendor-i18next';
             }

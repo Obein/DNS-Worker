@@ -119,7 +119,7 @@ class LocalDbService {
     this.initPromise = (async () => {
       try {
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('SQLite Worker init timed out (3.5s)')), 3500)
+          setTimeout(() => reject(new Error('SQLite Worker init timed out (12s)')), 12000)
         );
         const res = await Promise.race([
           this.sendRequest<{ ready: boolean; isOpfs: boolean }>('INIT'),
