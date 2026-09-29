@@ -178,16 +178,10 @@ export async function handleProfilesCoreRequest(
     const newDays = newSettings.log_retention_days;
     if (newDays != null && Number(newDays) < oldDays) {
       if (Number(newDays) === 0) {
-        // 关闭日志时彻底清空当前配置的历史日志与聚合记录
+        // 关闭日志时彻底清空当前配置的历史日志
         ctx.waitUntil((async () => {
           try {
-            await env.DB.batch([
-              env.DB.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId),
-            ]);
+            await env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId).run();
           } catch (e: any) {
             console.error("[Profile] Failed to purge logs on retention disable:", e?.message || e);
           }

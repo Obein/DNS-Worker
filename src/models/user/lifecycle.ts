@@ -37,55 +37,7 @@ export class UserLifecycleModel {
     const thirtyDaysAgo = now - 30 * 24 * 3600;
     const ninetyDaysAgo = now - 90 * 24 * 3600;
 
-    // 1. 超过 30 天无解析记录的账户，其所有关联查询日志、预聚合时序及 DNS 配置将被自动清理
-    const deleteRollupsStmt = this.db.prepare(`
-      DELETE FROM log_hourly_rollups
-      WHERE profile_id IN (
-        SELECT id FROM profiles
-        WHERE owner_id IN (
-          SELECT id FROM users
-          WHERE role = 'user'
-            AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
-        )
-      )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
-
-    const deleteClientRollupsStmt = this.db.prepare(`
-      DELETE FROM client_hourly_rollups
-      WHERE profile_id IN (
-        SELECT id FROM profiles
-        WHERE owner_id IN (
-          SELECT id FROM users
-          WHERE role = 'user'
-            AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
-        )
-      )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
-
-    const deleteDestinationRollupsStmt = this.db.prepare(`
-      DELETE FROM destination_hourly_rollups
-      WHERE profile_id IN (
-        SELECT id FROM profiles
-        WHERE owner_id IN (
-          SELECT id FROM users
-          WHERE role = 'user'
-            AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
-        )
-      )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
-
-    const deleteDomainRollupsStmt = this.db.prepare(`
-      DELETE FROM domain_hourly_rollups
-      WHERE profile_id IN (
-        SELECT id FROM profiles
-        WHERE owner_id IN (
-          SELECT id FROM users
-          WHERE role = 'user'
-            AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
-        )
-      )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
-
+    // 1. 超过 30 天无解析记录的账户，其所有关联查询日志及 DNS 配置将被自动清理
     const deleteLogsStmt = this.db.prepare(`
       DELETE FROM logs
       WHERE profile_id IN (
@@ -104,7 +56,6 @@ export class UserLifecycleModel {
         SELECT id FROM users 
         WHERE role = 'user' 
           AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
-        )
       )
     `).bind(thirtyDaysAgo, thirtyDaysAgo);
 
@@ -120,18 +71,14 @@ export class UserLifecycleModel {
     `).bind(ninetyDaysAgo);
 
     const results = await this.db.batch([
-      deleteRollupsStmt,
-      deleteClientRollupsStmt,
-      deleteDestinationRollupsStmt,
-      deleteDomainRollupsStmt,
       deleteLogsStmt,
       deleteProfilesStmt,
       deleteUsersStmt
     ]);
 
     return {
-      clearedProfiles: results[5].meta.changes || 0,
-      deletedUsers: results[6].meta.changes || 0
+      clearedProfiles: results[1].meta.changes || 0,
+      deletedUsers: results[2].meta.changes || 0
     };
   }
 }

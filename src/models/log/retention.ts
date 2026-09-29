@@ -28,8 +28,6 @@ export class LogRetentionModel {
    *      capping total deletions at dailyBudget per UTC day to prevent exhausting
    *      Cloudflare D1 daily write quota (100k writes/day).
    *
-   * Also purges expired entries from domain, log, client, and destination rollups.
-   *
    * @param maxRetentionDays - Hard cap on log retention days (default 30).
    * @param batchLimit - Maximum total log rows deleted across all profiles in this run (default 1000).
    * @param dailyBudget - Maximum total log rows deleted across all profiles per day (default 20000).
@@ -77,7 +75,6 @@ export class LogRetentionModel {
       const effectiveBatchLimit = dailyBudget > 0 ? Math.min(batchLimit, remainingBudget) : batchLimit;
       const perProfileLimit = Math.max(1, Math.floor(effectiveBatchLimit / profiles.length));
 
-      const rollupStatements: D1PreparedStatement[] = [];
       const logDeleteStatements: D1PreparedStatement[] = [];
 
       for (const profile of profiles) {
@@ -96,28 +93,6 @@ export class LogRetentionModel {
         const effectiveDays = Math.min(days, maxRetentionDays);
         const threshold = Math.floor(Date.now() / 1000 - effectiveDays * 24 * 3600);
 
-        // Purge expired rollups matching retention policy
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL') AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-
         // Delete bounded number of rows per profile per hourly cron run if budget remains
         if (canDeleteLogs && effectiveBatchLimit > 0) {
           logDeleteStatements.push(
@@ -130,16 +105,8 @@ export class LogRetentionModel {
         }
       }
 
-      // Execute rollup deletions in chunks
-      const CHUNK_SIZE = 50;
-      if (rollupStatements.length > 0) {
-        for (let i = 0; i < rollupStatements.length; i += CHUNK_SIZE) {
-          const chunk = rollupStatements.slice(i, i + CHUNK_SIZE);
-          await this.db.batch(chunk);
-        }
-      }
-
       // Execute log deletions in chunks and track affected rows
+      const CHUNK_SIZE = 50;
       let newlyDeletedLogs = 0;
       if (logDeleteStatements.length > 0) {
         for (let i = 0; i < logDeleteStatements.length; i += CHUNK_SIZE) {

@@ -212,20 +212,17 @@ export class LogCoreModel {
   }
 
   /**
-   * Deletes all logs and associated hourly rollups belonging to all profiles of an owner.
+   * Deletes all logs belonging to all profiles of an owner.
    *
    * @param ownerId - User identifier.
-   * @returns Promise resolving to true if all delete batches succeeded.
+   * @returns Promise resolving to true if delete succeeded.
    */
   async deleteByOwner(ownerId: string): Promise<boolean> {
-    const results = await this.db.batch([
-      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM logs WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId)
-    ]);
-    return results.every((r) => r.success);
+    const result = await this.db
+      .prepare("DELETE FROM logs WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)")
+      .bind(ownerId)
+      .run();
+    return result.success;
   }
 
   /**
@@ -233,18 +230,10 @@ export class LogCoreModel {
    *
    * @param profileId - Profile identifier.
    * @param olderThanTimestamp - Unix epoch timestamp threshold in seconds.
-   * @param maxRows - Maximum number of raw log rows to delete (default 20,000).
+   * @param maxRows - Maximum number of raw log rows to delete (default 1000).
    * @returns Total number of rows deleted.
    */
   async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 1000): Promise<number> {
-    // Purge expired rollups first (small tables, sub-millisecond execution)
-    await this.db.batch([
-      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL') AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp)
-    ]);
-
     let totalDeleted = 0;
     const batchSize = Math.min(1000, maxRows);
     while (totalDeleted < maxRows) {
