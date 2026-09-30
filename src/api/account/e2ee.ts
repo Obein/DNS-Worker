@@ -88,7 +88,7 @@ export async function handleAccountE2eeRequest(
       return new Response("Missing passkey_id parameter", { status: 400 });
     }
 
-    const passkey = await passkeyModel.getById(passkeyId, user.id);
+    const passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
     if (!passkey) {
       return new Response("Passkey not found or unauthorized", { status: 403 });
     }
@@ -96,7 +96,7 @@ export async function handleAccountE2eeRequest(
     const wrapped = await env.DB.prepare(
       "SELECT encrypted_sk, iv FROM user_passkey_wrapped_keys WHERE passkey_id = ?"
     )
-      .bind(passkeyId)
+      .bind(passkey.id)
       .first<{ encrypted_sk: string; iv: string }>();
 
     if (!wrapped) {
@@ -125,7 +125,13 @@ export async function handleAccountE2eeRequest(
       });
     }
 
-    const passkey = await passkeyModel.getById(passkeyId, user.id);
+    let passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
+    if (!passkey) {
+      const userPasskeys = await passkeyModel.listByUser(user.id);
+      if (userPasskeys.length > 0) {
+        passkey = userPasskeys[0];
+      }
+    }
     if (!passkey) {
       return new Response("Passkey not found or unauthorized", { status: 403 });
     }
@@ -142,7 +148,7 @@ export async function handleAccountE2eeRequest(
       stmts.push(
         env.DB.prepare(
           "INSERT INTO user_passkey_wrapped_keys (passkey_id, profile_id, encrypted_sk, iv, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(passkey_id) DO UPDATE SET encrypted_sk = excluded.encrypted_sk, iv = excluded.iv, created_at = excluded.created_at"
-        ).bind(passkeyId, primaryProfileId, encryptedSk, iv, now)
+        ).bind(passkey.id, primaryProfileId, encryptedSk, iv, now)
       );
 
       // 2. Set public keys for all user profiles
@@ -188,7 +194,13 @@ export async function handleAccountE2eeRequest(
       return new Response("Missing required fields (passkeyId, encryptedSk, iv)", { status: 400 });
     }
 
-    const passkey = await passkeyModel.getById(passkeyId, user.id);
+    let passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
+    if (!passkey) {
+      const userPasskeys = await passkeyModel.listByUser(user.id);
+      if (userPasskeys.length > 0) {
+        passkey = userPasskeys[0];
+      }
+    }
     if (!passkey) {
       return new Response("Passkey not found or unauthorized", { status: 403 });
     }
@@ -203,7 +215,7 @@ export async function handleAccountE2eeRequest(
     await env.DB.prepare(
       "INSERT INTO user_passkey_wrapped_keys (passkey_id, profile_id, encrypted_sk, iv, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(passkey_id) DO UPDATE SET encrypted_sk = excluded.encrypted_sk, iv = excluded.iv, created_at = excluded.created_at"
     )
-      .bind(passkeyId, primaryProfileId, encryptedSk, iv, now)
+      .bind(passkey.id, primaryProfileId, encryptedSk, iv, now)
       .run();
 
     return Response.json({ success: true });

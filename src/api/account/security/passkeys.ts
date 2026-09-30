@@ -71,6 +71,7 @@ export async function handlePasskeysRequest(
       userVerification: "preferred",
       allowCredentials: existingPasskeys.map((p) => ({
         id: p.credential_id,
+        passkey_id: p.id,
         type: "public-key",
         transports: p.transports ? JSON.parse(p.transports) : undefined
       }))

@@ -240,9 +240,27 @@ class E2eeService {
 
     // Match credential ID to registered passkey if possible
     let passkeyId = credential.id;
+    const normalizeB64 = (s: string) => (s || "").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const credIdNorm = normalizeB64(credential.id);
+
     if (authOptions.allowCredentials && authOptions.allowCredentials.length > 0) {
-      const match = authOptions.allowCredentials.find((c: any) => c.id === credential.id);
+      const match = authOptions.allowCredentials.find((c: any) => normalizeB64(c.id) === credIdNorm);
       if (match?.passkey_id) passkeyId = match.passkey_id;
+    }
+
+    if (!passkeyId || passkeyId === credential.id) {
+      try {
+        const { getPasskeys } = await import("./account");
+        const passkeys = await getPasskeys();
+        const match = passkeys.find((p) => normalizeB64(p.credential_id) === credIdNorm);
+        if (match?.id) {
+          passkeyId = match.id;
+        } else if (passkeys.length > 0) {
+          passkeyId = passkeys[0].id;
+        }
+      } catch (err) {
+        console.warn("[E2EE] Could not load passkeys to match credential:", err);
+      }
     }
 
     return { kek: kekBytes, passkeyId };
