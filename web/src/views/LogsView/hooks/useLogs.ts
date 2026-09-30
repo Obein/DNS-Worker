@@ -39,6 +39,7 @@ export function useLogs({ profileId, toasterRef }: UseLogsParams) {
     scrollContainerRef: data.scrollContainerRef,
     isFetchingRef: data.isFetchingRef,
     fetchLogs: data.fetchLogs,
+    logsRef: data.logsRef,
   });
 
   const exportState = useLogExport({

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { LogEntry, TimeRange } from "../types";
-import { getProfileDetails, getProfileAnalytics, getProfileLogs, localDb } from "../../../services";
+import { getProfileDetails, getProfileAnalytics, getProfileLogs, localDb, logsWs } from "../../../services";
 
 const PAGE_SIZE = 50;
 const PAGE_SIZE_IN_REALTIME = 25;
@@ -69,47 +69,48 @@ export function useLogData({
       .catch((e) => console.error("Failed to fetch profile settings", e));
   }, [profileId]);
 
-  const fetchLogs = async (currentRange: TimeRange, isInitial: boolean = true, isAutoRefresh: boolean = false) => {
-    // Abort the previous request if it's still running
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // Create a new AbortController for this request
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-    isFetchingRef.current = true;
-
-    if (isInitial) setLoading(true);
-    else setLoadingMore(true);
-
-    try {
-      const limit = realtimeRefresh ? PAGE_SIZE_IN_REALTIME : PAGE_SIZE;
-
-      // Compute time boundaries
-      const now = Math.floor(Date.now() / 1000);
-      let since = now;
-      let until = now;
-      if (currentRange === "custom" && customRange.start && customRange.end) {
-        since = Math.floor(new Date(customRange.start).getTime() / 1000);
-        until = Math.floor(new Date(customRange.end).getTime() / 1000);
-      } else {
-        switch (currentRange) {
-          case "10m": since = now - 600; break;
-          case "1h": since = now - 3600; break;
-          case "24h": since = now - 86400; break;
-          case "7d": since = now - 604800; break;
-          case "30d": since = now - 2592000; break;
-          default: since = now - 86400; break;
-        }
+  const fetchLogs = useCallback(
+    async (currentRange: TimeRange, isInitial: boolean = true, isAutoRefresh: boolean = false) => {
+      // Abort the previous request if it's still running
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
 
-      // ── Step 1: Attempt Local-First SQLite execution ──
-      let usedLocalDb = false;
+      // Create a new AbortController for this request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      isFetchingRef.current = true;
+
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
       try {
-        const isDbReady = await localDb.init();
-        if (isDbReady && !controller.signal.aborted) {
-          const before = !isInitial && logs.length > 0 ? logs[logs.length - 1].timestamp : undefined;
+        const limit = realtimeRefresh ? PAGE_SIZE_IN_REALTIME : PAGE_SIZE;
+
+        // Compute time boundaries
+        const now = Math.floor(Date.now() / 1000);
+        let since = now;
+        let until = now;
+        if (currentRange === "custom" && customRange.start && customRange.end) {
+          since = Math.floor(new Date(customRange.start).getTime() / 1000);
+          until = Math.floor(new Date(customRange.end).getTime() / 1000);
+        } else {
+          switch (currentRange) {
+            case "10m": since = now - 600; break;
+            case "1h": since = now - 3600; break;
+            case "24h": since = now - 86400; break;
+            case "7d": since = now - 604800; break;
+            case "30d": since = now - 2592000; break;
+            default: since = now - 86400; break;
+          }
+        }
+
+        // ── Step 1: Attempt Local-First SQLite execution ──
+        let usedLocalDb = false;
+        try {
+          const isDbReady = await localDb.init();
+          if (isDbReady && !controller.signal.aborted) {
+            const before = !isInitial && logsRef.current.length > 0 ? logsRef.current[logsRef.current.length - 1].timestamp : undefined;
 
           // 1. Immediately query local SQLite for instant, zero-latency rendering
           let localResult = await localDb.queryLogs({
@@ -306,6 +307,10 @@ export function useLogData({
       }
 
       if (logsData && logsData.length > 0) {
+        if (realtimeRefresh) {
+          logsWs.updateCursor(logsData[0].timestamp, logsData[0].id);
+        }
+
         const domains = Array.from(new Set(logsData.map((log: LogEntry) => log.domain)));
         if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
@@ -326,12 +331,78 @@ export function useLogData({
         isFetchingRef.current = false;
       }
     }
-  };
+  }, [
+    profileId,
+    realtimeRefresh,
+    customRange.start,
+    customRange.end,
+    searchQuery,
+    statusFilter,
+    accessPointIdFilter,
+    destCountryFilter,
+    ispFilter,
+  ]);
+
+  // Real-time WebSocket log streaming listener
+  useEffect(() => {
+    if (!realtimeRefresh) return;
+
+    const unsubscribe = logsWs.onNewLogs((newLogs: LogEntry[]) => {
+      if (!newLogs || newLogs.length === 0) return;
+
+      const filteredNew = newLogs.filter((log) => {
+        if (statusFilter && log.action !== statusFilter) return false;
+        if (accessPointIdFilter && log.access_point_id !== accessPointIdFilter) return false;
+        if (destCountryFilter && (log.dest_country_code || log.dest_country) !== destCountryFilter) return false;
+        if (ispFilter && log.dest_isp !== ispFilter) return false;
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const domainMatch = log.domain?.toLowerCase().includes(q);
+          const ipMatch = log.client_ip?.toLowerCase().includes(q);
+          const reasonMatch = log.reason?.toLowerCase().includes(q);
+          if (!domainMatch && !ipMatch && !reasonMatch) return false;
+        }
+        return true;
+      });
+
+      if (filteredNew.length === 0) return;
+
+      const oldLatest = logsRef.current.length > 0 ? logsRef.current[0].timestamp : null;
+      setPrevLatestTimestamp(oldLatest);
+
+      setLogs((prev) => {
+        const existingIds = new Set(prev.map((l) => `${l.timestamp}-${l.id}`));
+        const uniqueNew = filteredNew.filter((l) => !existingIds.has(`${l.timestamp}-${l.id}`));
+        if (uniqueNew.length === 0) return prev;
+        return [...uniqueNew, ...prev].slice(0, PAGE_SIZE_IN_REALTIME);
+      });
+
+      setStats((prev) => {
+        if (!prev) return prev;
+        let addedPass = 0;
+        let addedBlock = 0;
+        let addedRedirect = 0;
+        for (const l of newLogs) {
+          if (l.action === "PASS") addedPass++;
+          else if (l.action === "BLOCK") addedBlock++;
+          else if (l.action === "REDIRECT") addedRedirect++;
+        }
+        return {
+          total: prev.total + newLogs.length,
+          pass: prev.pass + addedPass,
+          block: prev.block + addedBlock,
+          redirect: prev.redirect + addedRedirect,
+        };
+      });
+    });
+
+    return unsubscribe;
+  }, [realtimeRefresh, statusFilter, accessPointIdFilter, destCountryFilter, ispFilter, searchQuery]);
 
   const loadMore = useCallback(() => {
     if (realtimeRefresh) return;
     if (!loading && !loadingMore && hasMore) fetchLogs(range, false);
-  }, [loading, loadingMore, hasMore, range, profileId, statusFilter, accessPointIdFilter, destCountryFilter, ispFilter, searchQuery, logs, customRange, realtimeRefresh]);
+  }, [loading, loadingMore, hasMore, range, realtimeRefresh, fetchLogs]);
 
   const lastLogElementRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -352,7 +423,7 @@ export function useLogData({
     if (range === "custom" && (!customRange.start || !customRange.end)) return;
     const timer = setTimeout(() => fetchLogs(range, true), searchQuery ? 500 : 0);
     return () => clearTimeout(timer);
-  }, [profileId, range, statusFilter, accessPointIdFilter, destCountryFilter, ispFilter, searchQuery, customRange, realtimeRefresh]);
+  }, [range, customRange.start, customRange.end, searchQuery, fetchLogs]);
 
   return {
     logs,
@@ -366,5 +437,6 @@ export function useLogData({
     lastLogElementRef,
     fetchLogs,
     isFetchingRef,
+    logsRef,
   };
 }
