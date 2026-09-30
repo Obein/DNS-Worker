@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "Wiederherstellungsschlüssel",
       "unlockConfirm": "Privaten Schlüssel entsperren",
       "recoveryUnlockFailed": "Ungültiger Wiederherstellungsschlüssel oder Entschlüsselung fehlgeschlagen",
-      "generateKeypairBtn": "Schlüsselpaar generieren"
+      "generateKeypairBtn": "Schlüsselpaar generieren",
+      "enableSwitch": "Ende-zu-Ende-Verschlüsselung für Abfrageprotokolle aktivieren",
+      "enableSwitchDesc": "Verschlüsselt Domainnamen, Client-IPs, Antwortdatensätze und Upstream-Latenzen am Edge vor dem Speichern in der Cloud.",
+      "trustBoundaryTitle": "Sicherheits- und Vertrauensgrenzenhinweis",
+      "trustBoundaryDesc": "Der gesamte DNS-Abfrageverkehr läuft während der Auflösung zwangsläufig über den Hosting-Server (Cloudflare Workers Edge-Knoten oder Server-Runtime), wo Abfragen im Speicher verarbeitet und anschließend verschlüsselt gespeichert werden. Diese Funktion schützt ruhende Daten in der Cloud-Datenbank (D1 / Persistenzspeicher) vor Datenlecks; sie verbirgt den aktiven Netzwerkverkehr nicht vor dem verarbeitenden Hosting-Server."
     },
     "jwtSecretWarningTitle": "Sicherheitshinweis: Schwaches JWT-Secret",
     "jwtSecretWarningDesc": "Das aktuelle JWT_SECRET ist kürzer als 32 Zeichen, was potenzielle Sicherheitsrisiken birgt. Bitte konfigurieren Sie die Umgebungsvariable KEK_v1, bevor Sie JWT_SECRET rotieren, um sicherzustellen, dass vorhandene Umschlag-verschlüsselte TOTP- und Wiederherstellungsschlüssel entschlüsselbar bleiben.",

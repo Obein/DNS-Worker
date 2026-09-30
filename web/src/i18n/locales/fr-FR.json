@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "Clé de récupération",
       "unlockConfirm": "Déverrouiller la clé privée",
       "recoveryUnlockFailed": "Clé de récupération non valide ou échec du déchiffrement",
-      "generateKeypairBtn": "Générer la paire de clés"
+      "generateKeypairBtn": "Générer la paire de clés",
+      "enableSwitch": "Activer le chiffrement de bout en bout des journaux de requêtes",
+      "enableSwitchDesc": "Chiffre les noms de domaine, les adresses IP clientes, les réponses et la latence en périphérie avant stockage dans le cloud.",
+      "trustBoundaryTitle": "Avis sur les limites de sécurité et de confiance",
+      "trustBoundaryDesc": "Tout le trafic de requêtes DNS transite inévitablement par le serveur d'hébergement (nœuds Cloudflare Workers ou serveur autonome) lors de la résolution, où les requêtes sont traitées en mémoire avant d'être écrites sous forme chiffrée. Cette fonctionnalité protège les données au repos dans la base de données cloud (D1) ; elle ne masque pas le trafic réseau en direct au serveur d'hébergement qui traite la requête."
     },
     "jwtSecretWarningTitle": "Avis de sécurité : Secret JWT faible",
     "jwtSecretWarningDesc": "Le JWT_SECRET actuel comporte moins de 32 caractères, ce qui présente des risques potentiels pour la sécurité. Veuillez configurer la variable d'environnement KEK_v1 avant de renouveler JWT_SECRET afin de garantir que les clés TOTP et de récupération chiffrées par enveloppe restent déchiffrables.",

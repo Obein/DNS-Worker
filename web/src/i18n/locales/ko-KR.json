@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "복구 키",
       "unlockConfirm": "개인 키 잠금 해제",
       "recoveryUnlockFailed": "유효하지 않은 복구 키이거나 복호화에 실패했습니다",
-      "generateKeypairBtn": "키 쌍 생성"
+      "generateKeypairBtn": "키 쌍 생성",
+      "enableSwitch": "쿼리 로그 종단간 암호화 활성화",
+      "enableSwitchDesc": "도메인 이름, 클라이언트 IP, 응답 레코드 및 업스트림 지연 시간을 에지에서 암호화한 후 클라우드 스토리지에 저장합니다.",
+      "trustBoundaryTitle": "보안 및 신뢰 경계 안내",
+      "trustBoundaryDesc": "모든 DNS 쿼리 트래픽은 조회 시 호스팅 서버(Cloudflare Workers 에지 노드 또는 자체 호스팅 런타임)를 필연적으로 거치며, 메모리에서 처리된 후 암호화되어 기록됩니다. 이 기능은 클라우드 데이터베이스(D1 / 영구 저장소)의 저장 데이터를 보호하기 위한 것이며, 요청을 전달 및 처리하는 호스팅 서버로부터 실시간 트래픽을 숨기지는 않습니다."
     },
     "jwtSecretWarningTitle": "보안 알림: 취약한 JWT 시크릿",
     "jwtSecretWarningDesc": "현재 JWT_SECRET 길이가 32자 미만이어서 잠재적인 보안 위험이 있습니다. 봉투 암호화된 기존 TOTP 및 복구 키의 복호화가 가능하도록 JWT_SECRET을 교체하기 전에 KEK_v1 환경 변수를 먼저 구성하십시오.",

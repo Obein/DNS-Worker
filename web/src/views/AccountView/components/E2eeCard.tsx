@@ -22,14 +22,11 @@ import {
   ShieldCheck,
   KeyRound,
   RefreshCw,
-  FileText,
-  Filter,
-  Laptop,
-  Layers,
   Key,
   Copy,
   Check,
   ShieldAlert,
+  Info,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../types";
@@ -45,22 +42,9 @@ export interface E2eeCardProps {
 }
 
 /**
- * Data category item representation for extensible E2EE scopes.
- */
-export interface E2eeScopeItem {
-  id: "logs" | "rules" | "clients";
-  title: string;
-  desc: string;
-  icon: React.ReactNode;
-  status: "active" | "planned";
-  enabled: boolean;
-  interactive: boolean;
-}
-
-/**
  * E2eeCard manages Account-Level End-to-End Encryption (E2EE).
- * Provides hardware Passkey envelope encryption for DNS query logs
- * and retains architecture for future data scopes (rules, client metadata).
+ * Provides hardware Passkey envelope encryption for DNS query logs.
+ * Directly toggles query logs encryption without scope selection.
  */
 export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   const { t } = useTranslation();
@@ -290,46 +274,6 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
-  // Extensible Data Scopes definition
-  const scopes: E2eeScopeItem[] = [
-    {
-      id: "logs",
-      title: t("account.e2ee.scopeLogsTitle", "DNS 查询日志"),
-      desc: t(
-        "account.e2ee.scopeLogsDesc",
-        "在边缘加密 DNS 请求的域名、客户端 IP、解析记录及上游信息，防止云端日志被窃取或留存明文。"
-      ),
-      icon: <FileText size={16} className="text-emerald-500 shrink-0" />,
-      status: "active",
-      enabled: isLogsE2eeEnabled,
-      interactive: true,
-    },
-    {
-      id: "rules",
-      title: t("account.e2ee.scopeRulesTitle", "自定义规则与重定向"),
-      desc: t(
-        "account.e2ee.scopeRulesDesc",
-        "端到端加密自定义拦截/放行规则与 URL 重定向配置。"
-      ),
-      icon: <Filter size={16} className="text-blue-400 shrink-0" />,
-      status: "planned",
-      enabled: false,
-      interactive: false,
-    },
-    {
-      id: "clients",
-      title: t("account.e2ee.scopeClientsTitle", "设备别名与客户端元数据"),
-      desc: t(
-        "account.e2ee.scopeClientsDesc",
-        "端到端加密接入点设备名称、IP 别名与拓扑信息。"
-      ),
-      icon: <Laptop size={16} className="text-purple-400 shrink-0" />,
-      status: "planned",
-      enabled: false,
-      interactive: false,
-    },
-  ];
-
   return (
     <Card elevation={Elevation.ONE} className="space-y-6">
       <OverlayToaster ref={toasterRef} />
@@ -358,12 +302,27 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
         </div>
 
         {/* Global Description */}
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
           {t(
             "account.e2ee.desc",
-            "采用客户端 ECDH P-256 + AES-256-GCM 硬件信封加密技术。数据在边缘即刻加密，服务端仅存储不可逆密文，只有已授权硬件 Passkey 的设备可在本地解密并分析。"
+            "采用客户端 ECDH P-256 + AES-256-GCM 硬件信封加密技术。数据在边缘即刻加密，服务端仅存储不可逆密文，只有已授权硬件 Passkey 或恢复密钥的设备可在本地解密并分析。"
           )}
         </p>
+
+        {/* Security & Trust Boundary Notice */}
+        <Callout intent={Intent.WARNING} icon={<Info size={16} />} className="text-xs my-3">
+          <div className="space-y-1">
+            <p className="font-semibold m-0 text-amber-900 dark:text-amber-200">
+              {t("account.e2ee.trustBoundaryTitle", "安全与信任边界提示")}
+            </p>
+            <p className="m-0 text-amber-800 dark:text-amber-300">
+              {t(
+                "account.e2ee.trustBoundaryDesc",
+                "所有 DNS 查询流量在网络解析时必然会经过托管服务器（Cloudflare Workers 边缘节点或自建主机运行时），服务器在内存中处理解析后将记录加密写入。本功能仅用于保护云数据库（D1 / 持久化存储）免受静态数据泄露或离线分析，无法向正在处理转发请求的托管服务器隐藏实时网络流量。"
+              )}
+            </p>
+          </div>
+        </Callout>
 
         {loading ? (
           <div className="flex items-center justify-center p-6">
@@ -425,71 +384,38 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
           <div className="space-y-4">
             <Divider className="my-2" />
 
-            {/* Extensible Encrypted Data Scopes Section */}
-            <div>
-              <div className="flex items-center gap-1.5 mb-2">
-                <Layers size={15} className="text-emerald-500" />
-                <span className="font-semibold text-xs uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                  {t("account.e2ee.scopesTitle", "数据加密范围")}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                {t(
-                  "account.e2ee.scopesSubtitle",
-                  "选择通过硬件 Passkey 进行端到端加密保护的数据类型。"
-                )}
-              </p>
-
-              <div className="divide-y divide-gray-100 dark:divide-gray-800/80 rounded-lg border border-gray-100 dark:border-gray-800/80 p-3 bg-gray-50/50 dark:bg-gray-900/40 space-y-3">
-                {scopes.map((scope) => (
-                  <div
-                    key={scope.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 first:pt-0"
+            {/* Direct Master Switch Card */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/50">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                    {t("account.e2ee.enableSwitch", "启用查询日志端到端加密")}
+                  </span>
+                  <Tag
+                    intent={isLogsE2eeEnabled ? Intent.SUCCESS : Intent.NONE}
+                    minimal
+                    round
                   >
-                    <div className="flex items-start gap-2.5">
-                      <div className="mt-0.5">{scope.icon}</div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {scope.title}
-                          </span>
-                          {scope.status === "planned" && (
-                            <Tag minimal className="text-[10px]" intent={Intent.NONE}>
-                              {t("account.e2ee.statusPlanned", "规划中")}
-                            </Tag>
-                          )}
-                          {scope.status === "active" && (
-                            <Tag
-                              minimal
-                              className="text-[10px]"
-                              intent={scope.enabled ? Intent.SUCCESS : Intent.NONE}
-                            >
-                              {scope.enabled
-                                ? t("account.e2ee.statusActive", "已保护")
-                                : t("account.e2ee.disabled", "未加密")}
-                            </Tag>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {scope.desc}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="shrink-0 flex items-center justify-end">
-                      {scope.interactive ? (
-                        <Switch
-                          checked={scope.enabled}
-                          disabled={processing || loading}
-                          onChange={(e) => handleToggleLogs(e.currentTarget.checked)}
-                          className="mb-0"
-                        />
-                      ) : (
-                        <Switch checked={false} disabled className="mb-0 opacity-40" />
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    {isLogsE2eeEnabled
+                      ? t("account.e2ee.enabled", "已启用")
+                      : t("account.e2ee.disabled", "未启用")}
+                  </Tag>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 m-0">
+                  {t(
+                    "account.e2ee.enableSwitchDesc",
+                    "在客户端边缘加密 DNS 请求的域名、客户端 IP、解析记录及上游信息后再写入云端持久化存储。"
+                  )}
+                </p>
+              </div>
+              <div className="shrink-0 flex items-center">
+                <Switch
+                  checked={isLogsE2eeEnabled}
+                  disabled={processing || loading}
+                  onChange={(e) => handleToggleLogs(e.currentTarget.checked)}
+                  large
+                  className="mb-0"
+                />
               </div>
             </div>
 

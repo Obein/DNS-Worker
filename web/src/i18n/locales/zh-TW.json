@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "修復金鑰",
       "unlockConfirm": "解鎖私密金鑰",
       "recoveryUnlockFailed": "修復金鑰無效或解析失敗",
-      "generateKeypairBtn": "產生金鑰對"
+      "generateKeypairBtn": "產生金鑰對",
+      "enableSwitch": "啟用查詢日誌端到端加密",
+      "enableSwitchDesc": "在用戶端邊緣加密 DNS 請求的網域名稱、用戶端 IP、解析記錄及上游資訊後再寫入雲端持久化儲存。",
+      "trustBoundaryTitle": "安全與信任邊界提示",
+      "trustBoundaryDesc": "所有 DNS 查詢流量在網路解析時必然會經過託管伺服器（Cloudflare Workers 邊緣節點或自建主機執行階段），伺服器在執行階段記憶體中處理解析後將記錄加密寫入。本功能僅用於保護雲端持久化資料庫（D1 / 資料倉儲）免受靜態資料洩漏或離線分析，無法向正在處理轉發請求的託管伺服器隱藏即時網路流量。"
     },
     "jwtSecretWarningTitle": "安全提示：JWT 金鑰強度較弱",
     "jwtSecretWarningDesc": "目前 JWT_SECRET 長度小於 32 位元字元，存在潛在安全隱患。請先設定環境變數 KEK_v1 完成憑證信封加密遷移，然後再輪換 JWT_SECRET，以防止既有加密的 TOTP 或復原金鑰無法解密。",

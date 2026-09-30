@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "恢复密钥",
       "unlockConfirm": "解锁私钥",
       "recoveryUnlockFailed": "恢复密钥无效或解析失败",
-      "generateKeypairBtn": "生成密钥对"
+      "generateKeypairBtn": "生成密钥对",
+      "enableSwitch": "启用查询日志端到端加密",
+      "enableSwitchDesc": "在客户端边缘加密 DNS 请求的域名、客户端 IP、解析记录及上游信息后再写入云端持久化存储。",
+      "trustBoundaryTitle": "安全与信任边界提示",
+      "trustBoundaryDesc": "所有 DNS 查询流量在网络解析时必然会经过托管服务器（Cloudflare Workers 边缘节点或自建主机运行时），服务器在运行时内存中处理解析后将记录加密写入。本功能仅用于保护云端持久化数据库（D1 / 数据仓库）免受静态数据泄露或离线分析，无法向正在处理转发请求的托管服务器隐藏实时网络流量。"
     },
     "jwtSecretWarningTitle": "安全提示：JWT 密钥强度较弱",
     "jwtSecretWarningDesc": "当前 JWT_SECRET 长度小于 32 位字符，存在潜在安全隐患。请先配置环境变量 KEK_v1 完成凭据信封加密迁移，然后再轮换 JWT_SECRET，以防止存量加密的 TOTP 或恢复密钥无法解密。",

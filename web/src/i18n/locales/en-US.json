@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "Recovery Key",
       "unlockConfirm": "Unlock Private Key",
       "recoveryUnlockFailed": "Invalid Recovery Key or decryption failed",
-      "generateKeypairBtn": "Generate Keypair"
+      "generateKeypairBtn": "Generate Keypair",
+      "enableSwitch": "Enable Query Logs End-to-End Encryption",
+      "enableSwitchDesc": "Encrypts domain names, client IPs, response records, and upstream latency on the edge before persisting to cloud storage.",
+      "trustBoundaryTitle": "Security & Trust Boundary Notice",
+      "trustBoundaryDesc": "All DNS query traffic inevitably passes through the hosting server (Cloudflare Workers edge nodes or self-hosted server runtime) during resolution, where queries are processed in memory before being encrypted and saved. This feature strictly protects data at rest in the cloud database (D1 / persistent storage) from data leaks or offline analysis; it does not conceal active network traffic from the hosting server processing the request."
     },
     "jwtSecretWarningTitle": "Security Notice: Weak JWT Secret",
     "jwtSecretWarningDesc": "The current JWT_SECRET is shorter than 32 characters, which introduces potential security risks. Please configure the KEK_v1 environment variable before rotating JWT_SECRET to ensure existing envelope-encrypted TOTP and recovery keys remain decryptable.",

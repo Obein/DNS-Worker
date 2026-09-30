@@ -623,7 +623,11 @@
       "recoveryKeyInputLabel": "リカバリーキー",
       "unlockConfirm": "秘密鍵をロック解除",
       "recoveryUnlockFailed": "無効なリカバリーキー、または復号に失敗しました",
-      "generateKeypairBtn": "キーペアを生成"
+      "generateKeypairBtn": "キーペアを生成",
+      "enableSwitch": "クエリログのエンドツーエンド暗号化を有効化",
+      "enableSwitchDesc": "ドメイン名、クライアントIP、応答レコード、上流レイテンシをエッジで暗号化してからクラウドストレージに保存します。",
+      "trustBoundaryTitle": "セキュリティと信頼境界に関する注意事項",
+      "trustBoundaryDesc": "すべてのDNSクエリトラフィックは名前解決時にホスティングサーバー（Cloudflare Workersエッジノードまたは自ホストランタイム）を必ず通過し、メモリ上で処理された後に暗号化されて永続化されます。本機能はクラウドデータベース（D1 / 永続ストレージ）の保存データ漏洩を防ぐためのものであり、リクエストを処理するホスティングサーバーに対してリアルタイムトラフィックを隠蔽するものではありません。"
     },
     "jwtSecretWarningTitle": "セキュリティ警告：JWTシークレットの強度が不足しています",
     "jwtSecretWarningDesc": "現在の JWT_SECRET は32文字未満であり、セキュリティ上の潜在的なリスクがあります。エンベロープ暗号化された既存のTOTPおよびリカバリキーの復号を維持するため、JWT_SECRET をローテーションする前に環境変数 KEK_v1 を設定してください。",
