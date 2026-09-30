@@ -63,6 +63,27 @@ export async function handleProfilesCoreCollectionRequest(
       best_effort_ech: { enabled: false, fronting_domain: "cloudflare-ech.com" }
     };
     await profileModel.create({ id: newId, owner_id: user.id, name: body.name || "Unnamed Profile", settings: defaultSettings });
+
+    // Automatically inherit active account-level E2EE public key if enabled
+    try {
+      const existingLogKey = await env.DB.prepare(
+        "SELECT public_key FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
+      )
+        .bind(user.id)
+        .first<{ public_key: string }>();
+
+      if (existingLogKey?.public_key) {
+        const now = Math.floor(Date.now() / 1000);
+        await env.DB.prepare(
+          "INSERT INTO user_log_keys (profile_id, public_key, created_at) VALUES (?, ?, ?)"
+        )
+          .bind(newId, existingLogKey.public_key, now)
+          .run();
+      }
+    } catch (e) {
+      console.error("[Profiles] Failed to inherit E2EE log key for new profile:", e);
+    }
+
     return new Response(JSON.stringify({ id: newId }), { status: 201 });
   }
 

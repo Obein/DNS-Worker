@@ -11,7 +11,6 @@ import {
   Alert,
   OverlayToaster,
   Spinner,
-  HTMLSelect,
   Divider,
 } from "@blueprintjs/core";
 import {
@@ -26,8 +25,8 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../types";
-import { e2ee, getProfiles } from "../../../services";
-import type { ProfileE2eeStatus, Profile } from "../../../services";
+import { e2ee } from "../../../services";
+import type { ProfileE2eeStatus } from "../../../services";
 
 export interface E2eeCardProps {
   /** The current user profile and security state. */
@@ -58,45 +57,19 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   const { t } = useTranslation();
   const toasterRef = useRef<OverlayToaster | null>(null);
 
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [selectedProfileId, setSelectedProfileId] = useState<string>("");
   const [status, setStatus] = useState<ProfileE2eeStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [processing, setProcessing] = useState<boolean>(false);
   const [isDisableAlertOpen, setIsDisableAlertOpen] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
 
-  // 1. Fetch all user profiles on mount
-  useEffect(() => {
-    let isMounted = true;
-    getProfiles()
-      .then((data) => {
-        if (isMounted) {
-          setProfiles(data || []);
-          if (data && data.length > 0 && !selectedProfileId) {
-            setSelectedProfileId(data[0].id);
-          }
-        }
-      })
-      .catch((err) => {
-        console.error("[E2eeCard] Failed to fetch profiles:", err);
-      });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // 2. Load E2EE status for currently selected profile
-  const loadStatus = useCallback(async (profileId: string) => {
-    if (!profileId) {
-      setLoading(false);
-      return;
-    }
+  // 1. Load account-wide E2EE status
+  const loadStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await e2ee.getStatus(profileId);
+      const data = await e2ee.getUserStatus();
       setStatus(data);
-      setIsUnlocked(e2ee.isProfileUnlocked(profileId));
+      setIsUnlocked(e2ee.isUnlocked());
     } catch (err) {
       console.error("[E2eeCard] Failed to fetch E2EE status:", err);
     } finally {
@@ -105,29 +78,24 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   }, []);
 
   useEffect(() => {
-    if (selectedProfileId) {
-      loadStatus(selectedProfileId);
-    }
-  }, [selectedProfileId, loadStatus]);
+    loadStatus();
+  }, [loadStatus]);
 
   const hasPasskey = (user.passkeys_count && user.passkeys_count > 0) || (status?.userPasskeyCount || 0) > 0;
   const isLogsE2eeEnabled = Boolean(status?.enabled);
 
-  // 3. Handle toggle for DNS Query Logs encryption
+  // 2. Handle toggle for DNS Query Logs encryption across user account
   const handleToggleLogs = async (checked: boolean) => {
-    if (!selectedProfileId) return;
-
     if (checked) {
       setProcessing(true);
       try {
-        const passkeyId = status?.wrappedPasskeys[0] || "primary";
-        await e2ee.enableE2ee(selectedProfileId, passkeyId);
+        await e2ee.enableUserE2ee();
         toasterRef.current?.show({
           message: t("account.e2ee.enableSuccess", "端到端加密已成功启用"),
           intent: Intent.SUCCESS,
           icon: "lock",
         });
-        await loadStatus(selectedProfileId);
+        await loadStatus();
         onRefresh?.();
       } catch (err: any) {
         console.error("[E2eeCard] Failed to enable E2EE:", err);
@@ -145,16 +113,15 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   };
 
   const handleConfirmDisable = async () => {
-    if (!selectedProfileId) return;
     setProcessing(true);
     try {
-      await e2ee.disableE2ee(selectedProfileId);
+      await e2ee.disableUserE2ee();
       toasterRef.current?.show({
         message: t("account.e2ee.disableSuccess", "端到端加密已关闭"),
         intent: Intent.WARNING,
         icon: "unlock",
       });
-      await loadStatus(selectedProfileId);
+      await loadStatus();
       onRefresh?.();
     } catch (err: any) {
       console.error("[E2eeCard] Failed to disable E2EE:", err);
@@ -169,12 +136,11 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
     }
   };
 
-  // 4. Handle Passkey unlock on this device
+  // 3. Handle Passkey unlock on this device
   const handleUnlock = async () => {
-    if (!selectedProfileId) return;
     setProcessing(true);
     try {
-      const success = await e2ee.unlockProfile(selectedProfileId);
+      const success = await e2ee.unlockUser();
       if (success) {
         setIsUnlocked(true);
         toasterRef.current?.show({
@@ -260,27 +226,6 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
                 : t("account.e2ee.disabled", "未启用")}
             </Tag>
           </div>
-
-          {/* Profile Switcher for multi-profile users */}
-          {profiles.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs opacity-70">
-                {t("account.e2ee.profileSelect", "配置 Profile")}:
-              </span>
-              <HTMLSelect
-                value={selectedProfileId}
-                onChange={(e) => setSelectedProfileId(e.currentTarget.value)}
-                disabled={processing || loading}
-                className="text-xs"
-              >
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </HTMLSelect>
-            </div>
-          )}
         </div>
 
         {/* Global Description */}

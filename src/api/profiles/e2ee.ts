@@ -28,8 +28,13 @@ export async function handleProfileE2eeRequest(
       env.DB.prepare("SELECT public_key, created_at FROM user_log_keys WHERE profile_id = ?")
         .bind(profile.id)
         .first<{ public_key: string; created_at: number }>(),
-      env.DB.prepare("SELECT passkey_id FROM user_passkey_wrapped_keys WHERE profile_id = ?")
-        .bind(profile.id)
+      env.DB.prepare(`
+        SELECT upwk.passkey_id 
+        FROM user_passkey_wrapped_keys upwk
+        JOIN passkeys pk ON upwk.passkey_id = pk.id
+        WHERE pk.user_id = ?
+      `)
+        .bind(user.id)
         .all<{ passkey_id: string }>(),
       env.DB.prepare("SELECT profile_id FROM user_recovery_wrapped_keys WHERE profile_id = ?")
         .bind(profile.id)
@@ -62,9 +67,9 @@ export async function handleProfileE2eeRequest(
     }
 
     const wrapped = await env.DB.prepare(
-      "SELECT encrypted_sk, iv FROM user_passkey_wrapped_keys WHERE passkey_id = ? AND profile_id = ?"
+      "SELECT encrypted_sk, iv FROM user_passkey_wrapped_keys WHERE passkey_id = ?"
     )
-      .bind(passkeyId, profile.id)
+      .bind(passkeyId)
       .first<{ encrypted_sk: string; iv: string }>();
 
     if (!wrapped) {

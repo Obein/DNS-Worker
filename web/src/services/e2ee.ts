@@ -1,7 +1,7 @@
 /**
  * @file e2ee.ts
  * @description Client-side End-to-End Encryption (E2EE) Service for DNS logs.
- * Provides Passkey hardware-backed envelope encryption, key lifecycle management,
+ * Provides Passkey hardware-backed envelope encryption, user/account-level key lifecycle management,
  * and zero-knowledge log decryption.
  */
 
@@ -66,11 +66,47 @@ function base64UrlToUint8Array(base64Url: string): Uint8Array {
 }
 
 class E2eeService {
-  /** In-memory store for unlocked private keys (profileId -> JsonWebKey) */
+  /** In-memory store for unlocked private keys (profileId or "account" -> JsonWebKey) */
   private unlockedKeys = new Map<string, JsonWebKey>();
 
   /**
-   * Retrieves E2EE configuration and status for a profile.
+   * Retrieves account-level E2EE configuration and status.
+   */
+  async getUserStatus(): Promise<ProfileE2eeStatus> {
+    try {
+      const res = await fetch("/api/account/e2ee/status");
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Fallback
+    }
+
+    // Fallback: check profile list
+    try {
+      const profilesRes = await fetch("/api/profiles");
+      if (profilesRes.ok) {
+        const profiles = await profilesRes.json();
+        if (profiles && profiles.length > 0) {
+          return await this.getStatus(profiles[0].id);
+        }
+      }
+    } catch (err) {
+      console.warn("[E2EE] Fallback status check failed:", err);
+    }
+
+    return {
+      enabled: false,
+      publicKey: null,
+      wrappedPasskeys: [],
+      hasRecoveryKey: false,
+      userPasskeyCount: 0,
+      createdAt: null,
+    };
+  }
+
+  /**
+   * Retrieves E2EE configuration and status for a specific profile.
    */
   async getStatus(profileId: string): Promise<ProfileE2eeStatus> {
     const res = await profileFetch(`/api/profiles/${profileId}/e2ee/status`);
@@ -81,10 +117,24 @@ class E2eeService {
   }
 
   /**
-   * Checks whether the current session has unlocked the private key for this profile.
+   * Checks whether the current session has unlocked the private key for the account.
+   */
+  isUnlocked(): boolean {
+    if (this.unlockedKeys.size > 0) return true;
+    for (let i = 0; i < sessionStorage.length; i++) {
+      if (sessionStorage.key(i)?.startsWith("obex_e2ee_sk_")) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Checks whether the current session has unlocked the private key for this profile or account.
    */
   isProfileUnlocked(profileId: string): boolean {
-    return this.unlockedKeys.has(profileId) || !!sessionStorage.getItem(`obex_e2ee_sk_${profileId}`);
+    if (this.unlockedKeys.has(profileId) || !!sessionStorage.getItem(`obex_e2ee_sk_${profileId}`)) {
+      return true;
+    }
+    return this.isUnlocked();
   }
 
   /**
@@ -104,27 +154,43 @@ class E2eeService {
         sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
       }
     }
+    // Account-wide fallback if any key was unlocked in session
+    if (this.unlockedKeys.size > 0) {
+      return this.unlockedKeys.values().next().value || null;
+    }
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key?.startsWith("obex_e2ee_sk_")) {
+        try {
+          const jwk = JSON.parse(sessionStorage.getItem(key) || "");
+          this.unlockedKeys.set(profileId, jwk);
+          return jwk;
+        } catch {
+          // ignore
+        }
+      }
+    }
     return null;
   }
 
   /**
    * Stores the unlocked private key in session memory.
    */
-  private setPrivateKey(profileId: string, skJwk: JsonWebKey): void {
-    this.unlockedKeys.set(profileId, skJwk);
-    sessionStorage.setItem(`obex_e2ee_sk_${profileId}`, JSON.stringify(skJwk));
+  private setPrivateKey(profileOrAccountKey: string, skJwk: JsonWebKey): void {
+    this.unlockedKeys.set(profileOrAccountKey, skJwk);
+    sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, JSON.stringify(skJwk));
   }
 
   /**
    * Derives a 256-bit Key Encryption Key (KEK) using WebAuthn Passkey assertion.
    * Leverages WebAuthn PRF extension where available, with assertion signature hash fallback.
    */
-  async derivePasskeyKek(profileId: string): Promise<{ kek: Uint8Array; passkeyId?: string }> {
+  async derivePasskeyKek(saltScope: string = "account"): Promise<{ kek: Uint8Array; passkeyId?: string }> {
     const authOptions = await getPasskeyAuthOptions();
 
     // Prepare 32-byte salt for PRF extension
     const saltBytes = new Uint8Array(32);
-    const enc = new TextEncoder().encode(`obex-dns-log-e2ee-salt:${profileId}`);
+    const enc = new TextEncoder().encode(`obex-dns-log-e2ee-salt:${saltScope}`);
     saltBytes.set(enc.subarray(0, 32));
 
     const challengeBytes = base64UrlToUint8Array(authOptions.challenge);
@@ -183,11 +249,70 @@ class E2eeService {
   }
 
   /**
-   * Initializes and enables E2EE for a profile:
-   * 1. Derives KEK from the user's Passkey.
+   * Initializes and enables E2EE at the user/account level for all profiles:
+   * 1. Derives KEK from the user's Passkey with a single biometric prompt.
    * 2. Generates canonical Log KeyPair (PK_log, SK_log).
    * 3. Wraps SK_log with KEK using AES-256-GCM.
-   * 4. Uploads PK_log and wrapped SK_log to server.
+   * 4. Uploads PK_log and wrapped SK_log to server (/api/account/e2ee/init).
+   * 5. Caches unlocked SK in session storage.
+   */
+  async enableUserE2ee(passkeyIdOverride?: string): Promise<boolean> {
+    const { kek, passkeyId } = await this.derivePasskeyKek("account");
+    const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
+
+    // 1. Generate Log KeyPair
+    const keyPair = await crypto.subtle.generateKey(
+      { name: "ECDH", namedCurve: "P-256" },
+      true,
+      ["deriveKey", "deriveBits"]
+    );
+
+    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+    const privateKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+    // 2. Wrap SK_log with Passkey KEK
+    const kekKey = await crypto.subtle.importKey(
+      "raw",
+      kek as BufferSource,
+      { name: "AES-GCM" },
+      false,
+      ["encrypt"]
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+    const encryptedBuf = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      kekKey,
+      plaintext
+    );
+
+    const encryptedSk = toBase64(encryptedBuf);
+    const ivStr = toBase64(iv);
+
+    // 3. Upload to server
+    const res = await fetch("/api/account/e2ee/init", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publicKey: publicKeyJwk,
+        passkeyId: chosenPasskeyId,
+        encryptedSk,
+        iv: ivStr,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to enable user E2EE: ${await res.text()}`);
+    }
+
+    // Save in session for account
+    this.setPrivateKey("account", privateKeyJwk);
+    return true;
+  }
+
+  /**
+   * Initializes and enables E2EE for a profile (legacy wrapper).
    */
   async enableE2ee(profileId: string, passkeyId: string): Promise<boolean> {
     const { kek } = await this.derivePasskeyKek(profileId);
@@ -240,6 +365,58 @@ class E2eeService {
 
     // Save in session
     this.setPrivateKey(profileId, privateKeyJwk);
+    this.setPrivateKey("account", privateKeyJwk);
+    return true;
+  }
+
+  /**
+   * Unlocks the account's log private key using the device's Passkey with a single prompt.
+   */
+  async unlockUser(): Promise<boolean> {
+    const status = await this.getUserStatus();
+    if (!status.enabled) return false;
+
+    const { kek, passkeyId } = await this.derivePasskeyKek("account");
+
+    const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
+    if (!targetPasskeyId) {
+      throw new Error("No wrapped key found for this passkey");
+    }
+
+    let res = await fetch(`/api/account/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+    if (!res.ok) {
+      const profilesRes = await fetch("/api/profiles");
+      if (profilesRes.ok) {
+        const profiles = await profilesRes.json();
+        if (profiles && profiles.length > 0) {
+          res = await fetch(`/api/profiles/${profiles[0].id}/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+        }
+      }
+    }
+
+    if (!res.ok) {
+      throw new Error(`Failed to fetch wrapped key: ${await res.text()}`);
+    }
+
+    const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
+
+    // Unwrap SK_log
+    const kekKey = await crypto.subtle.importKey(
+      "raw",
+      kek as BufferSource,
+      { name: "AES-GCM" },
+      false,
+      ["decrypt"]
+    );
+
+    const decryptedBuf = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: fromBase64(iv) as BufferSource },
+      kekKey,
+      fromBase64(encryptedSk) as BufferSource
+    );
+
+    const privateKeyJwk = JSON.parse(new TextDecoder().decode(decryptedBuf)) as JsonWebKey;
+    this.setPrivateKey("account", privateKeyJwk);
     return true;
   }
 
@@ -257,9 +434,12 @@ class E2eeService {
       throw new Error("No wrapped key found for this passkey");
     }
 
-    const res = await profileFetch(
+    let res = await fetch(
       `/api/profiles/${profileId}/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`
     );
+    if (!res.ok) {
+      res = await fetch(`/api/account/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+    }
     if (!res.ok) {
       throw new Error(`Failed to fetch wrapped key: ${await res.text()}`);
     }
@@ -283,6 +463,27 @@ class E2eeService {
 
     const privateKeyJwk = JSON.parse(new TextDecoder().decode(decryptedBuf)) as JsonWebKey;
     this.setPrivateKey(profileId, privateKeyJwk);
+    this.setPrivateKey("account", privateKeyJwk);
+    return true;
+  }
+
+  /**
+   * Disables E2EE across the entire user account.
+   */
+  async disableUserE2ee(): Promise<boolean> {
+    const res = await fetch("/api/account/e2ee", {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to disable E2EE: ${await res.text()}`);
+    }
+    this.unlockedKeys.clear();
+    const toRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k?.startsWith("obex_e2ee_sk_")) toRemove.push(k);
+    }
+    toRemove.forEach((k) => sessionStorage.removeItem(k));
     return true;
   }
 
