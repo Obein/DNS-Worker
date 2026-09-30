@@ -195,7 +195,7 @@ class LocalDbService {
       let maxPages = 3;
 
       if (targetSince !== undefined) {
-        if (watermark && watermark.oldest_timestamp && watermark.oldest_timestamp <= targetSince) {
+        if (watermark && watermark.earliest_timestamp && watermark.earliest_timestamp <= targetSince) {
           // Historical data already covered down to targetSince; only do forward incremental sync
           since = Math.max(0, watermark.latest_timestamp - 60);
           maxPages = 5;
