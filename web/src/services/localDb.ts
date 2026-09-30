@@ -311,6 +311,23 @@ class LocalDbService {
   }
 
   /**
+   * Inserts a batch of log entries directly into local SQLite storage.
+   *
+   * @param profileId - Profile identifier
+   * @param logs - Array of LogEntry records to insert
+   * @returns Number of inserted rows
+   */
+  async batchInsertLogs(profileId: string, logs: LogEntry[]): Promise<number> {
+    if (!logs || logs.length === 0) return 0;
+    await this.init();
+    const res = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+      profileId,
+      logs
+    });
+    return res?.inserted || 0;
+  }
+
+  /**
    * Queries local logs from SQLite with pagination, search, and action filters.
    */
   async queryLogs(params: LocalQueryLogsParams): Promise<LocalQueryResult> {
