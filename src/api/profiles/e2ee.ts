@@ -25,9 +25,9 @@ export async function handleProfileE2eeRequest(
   // 1. GET /api/profiles/:id/e2ee/status
   if (subResource === "status" && request.method === "GET") {
     const [logKey, wrappedKeys, recoveryKey, passkeys] = await Promise.all([
-      env.DB.prepare("SELECT public_key, created_at FROM user_log_keys WHERE profile_id = ?")
+      env.DB.prepare("SELECT public_key, created_at, is_active FROM user_log_keys WHERE profile_id = ?")
         .bind(profile.id)
-        .first<{ public_key: string; created_at: number }>(),
+        .first<{ public_key: string; created_at: number; is_active?: number }>(),
       env.DB.prepare(`
         SELECT upwk.passkey_id 
         FROM user_passkey_wrapped_keys upwk
@@ -43,7 +43,8 @@ export async function handleProfileE2eeRequest(
     ]);
 
     return Response.json({
-      enabled: Boolean(logKey),
+      hasKeys: Boolean(logKey),
+      enabled: Boolean(logKey && (logKey.is_active === undefined || logKey.is_active === 1)),
       publicKey: logKey?.public_key || null,
       wrappedPasskeys: (wrappedKeys.results || []).map((w) => w.passkey_id),
       hasRecoveryKey: Boolean(recoveryKey),

@@ -25,15 +25,27 @@ export interface VerifyIdentityDialogProps {
   onVerify: (payload: VerifyIdentityPayload) => Promise<void>;
 }
 
-export type AuthMethod = "password" | "passkey" | "totp";
+export type AuthMethod = "password" | "passkey" | "totp" | "recovery_key";
+
+export interface VerifyIdentityDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user: UserInfo | null;
+  title?: string;
+  onVerify: (payload: VerifyIdentityPayload) => Promise<void>;
+  allowedMethods?: AuthMethod[];
+}
 
 /**
- * Computes default verification method prioritized by Passkey -> TOTP -> Password.
+ * Computes default verification method prioritized by Passkey -> Recovery Key -> TOTP -> Password.
  */
-const getInitialMethod = (user: UserInfo | null): AuthMethod => {
-  if (user?.passkeys_count && user.passkeys_count > 0) return "passkey";
-  if (user?.totp_enabled) return "totp";
-  return "password";
+const getInitialMethod = (user: UserInfo | null, allowedMethods?: AuthMethod[]): AuthMethod => {
+  const allowed = allowedMethods || ["passkey", "totp", "password"];
+  if (allowed.includes("passkey") && user?.passkeys_count && user.passkeys_count > 0) return "passkey";
+  if (allowed.includes("recovery_key")) return "recovery_key";
+  if (allowed.includes("totp") && user?.totp_enabled) return "totp";
+  if (allowed.includes("password")) return "password";
+  return allowed[0] || "password";
 };
 
 export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
@@ -41,19 +53,24 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
   onClose,
   user,
   title,
-  onVerify
+  onVerify,
+  allowedMethods
 }) => {
   const { t } = useTranslation();
 
-  const hasPasskey = !!(user?.passkeys_count && user.passkeys_count > 0);
-  const hasTotp = !!user?.totp_enabled;
+  const allowed = allowedMethods || ["passkey", "totp", "password"];
+  const hasPasskey = !!(user?.passkeys_count && user.passkeys_count > 0) && allowed.includes("passkey");
+  const hasTotp = !!user?.totp_enabled && allowed.includes("totp");
+  const hasPassword = allowed.includes("password");
+  const hasRecoveryKey = allowed.includes("recovery_key");
 
-  const defaultMethod = getInitialMethod(user);
+  const defaultMethod = getInitialMethod(user, allowedMethods);
 
   const [method, setMethod] = useState<AuthMethod>(defaultMethod);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [totpCode, setTotpCode] = useState("");
+  const [recoveryKey, setRecoveryKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -65,6 +82,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
     setPassword("");
     setShowPassword(false);
     setTotpCode("");
+    setRecoveryKey("");
     setError("");
   } else if (prevIsOpen && !isOpen) {
     setPrevIsOpen(false);
@@ -73,11 +91,13 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
   // Ensure selected method remains valid if user capabilities change dynamically
   useEffect(() => {
     if (method === "passkey" && !hasPasskey) {
-      setMethod(hasTotp ? "totp" : "password");
+      setMethod(hasRecoveryKey ? "recovery_key" : hasTotp ? "totp" : "password");
     } else if (method === "totp" && !hasTotp) {
-      setMethod(hasPasskey ? "passkey" : "password");
+      setMethod(hasPasskey ? "passkey" : hasRecoveryKey ? "recovery_key" : "password");
+    } else if (method === "recovery_key" && !hasRecoveryKey) {
+      setMethod(hasPasskey ? "passkey" : hasTotp ? "totp" : "password");
     }
-  }, [hasPasskey, hasTotp, method]);
+  }, [hasPasskey, hasTotp, hasRecoveryKey, method]);
 
   const handleVerifyPassword = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -141,6 +161,27 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
     }
   };
 
+  const handleVerifyRecoveryKey = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const key = recoveryKey.trim();
+    if (!key) {
+      setError(t("account.recoveryKey.keyRequired", "Recovery key is required"));
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      await onVerify({ recoveryKey: key });
+      onClose();
+    } catch (err: any) {
+      setError(formatApiErrorMessage(err, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const methodCount = (hasPasskey ? 1 : 0) + (hasRecoveryKey ? 1 : 0) + (hasTotp ? 1 : 0) + (hasPassword ? 1 : 0);
+
   return (
     <Dialog
       isOpen={isOpen}
@@ -158,7 +199,7 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
         </p>
 
         {/* Method Selector if multiple methods available */}
-        {(hasPasskey || hasTotp) && (
+        {methodCount > 1 && (
           <div className="flex justify-center mb-5 isolate" style={{ isolation: "isolate" }}>
             <div className="w-full bg-gray-100/70 dark:bg-gray-800/70 p-1 rounded-lg">
               <ButtonGroup fill variant="minimal" style={{ isolation: "isolate" }}>
@@ -171,6 +212,19 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
                     text={t("account.mfa.passkey", "Passkey")}
                     onClick={() => {
                       setMethod("passkey");
+                      setError("");
+                    }}
+                  />
+                )}
+                {hasRecoveryKey && (
+                  <Button
+                    small
+                    active={method === "recovery_key"}
+                    intent={method === "recovery_key" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<Key size={14} />}
+                    text={t("account.recoveryKey.verifyBtn", "Recovery Key")}
+                    onClick={() => {
+                      setMethod("recovery_key");
                       setError("");
                     }}
                   />
@@ -188,17 +242,19 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
                     }}
                   />
                 )}
-                <Button
-                  small
-                  active={method === "password"}
-                  intent={method === "password" ? Intent.PRIMARY : Intent.NONE}
-                  icon={<Lock size={14} />}
-                  text={t("account.mfa.password", "Password")}
-                  onClick={() => {
-                    setMethod("password");
-                    setError("");
-                  }}
-                />
+                {hasPassword && (
+                  <Button
+                    small
+                    active={method === "password"}
+                    intent={method === "password" ? Intent.PRIMARY : Intent.NONE}
+                    icon={<Lock size={14} />}
+                    text={t("account.mfa.password", "Password")}
+                    onClick={() => {
+                      setMethod("password");
+                      setError("");
+                    }}
+                  />
+                )}
               </ButtonGroup>
             </div>
           </div>
@@ -208,6 +264,30 @@ export const VerifyIdentityDialog: React.FC<VerifyIdentityDialogProps> = ({
           <Callout intent={Intent.DANGER} className="mb-4">
             {error}
           </Callout>
+        )}
+
+        {method === "recovery_key" && (
+          <form onSubmit={handleVerifyRecoveryKey} className="py-2 space-y-4">
+            <FormGroup label={t("account.recoveryKey.verifyPromptLabel", "原恢复密钥 (Original Recovery Key)")}>
+              <InputGroup
+                leftIcon="key"
+                type="text"
+                placeholder="123456-789012-345678-901234-567890"
+                value={recoveryKey}
+                onChange={(e) => setRecoveryKey(e.target.value)}
+                autoFocus
+                className="font-mono text-xs"
+              />
+            </FormGroup>
+            <Button
+              fill
+              intent={Intent.PRIMARY}
+              type="submit"
+              loading={loading}
+              disabled={!recoveryKey.trim()}
+              text={t("common.confirm", "Confirm")}
+            />
+          </form>
         )}
 
         {method === "passkey" && (

@@ -64,7 +64,11 @@ export async function startPasskeyRegistration(options: any): Promise<any> {
     excludeCredentials: (options.excludeCredentials || []).map((cred: any) => ({
       ...cred,
       id: base64UrlToBuffer(cred.id)
-    }))
+    })),
+    extensions: {
+      ...options.extensions,
+      prf: {}
+    } as any
   };
 
   const credential = (await navigator.credentials.create({
@@ -77,6 +81,7 @@ export async function startPasskeyRegistration(options: any): Promise<any> {
 
   const response = credential.response as AuthenticatorAttestationResponse;
   const transports = response.getTransports ? response.getTransports() : [];
+  const clientExtensionResults = credential.getClientExtensionResults ? credential.getClientExtensionResults() : undefined;
 
   return {
     id: credential.id,
@@ -85,7 +90,8 @@ export async function startPasskeyRegistration(options: any): Promise<any> {
       clientDataJSON: bufferToBase64Url(response.clientDataJSON),
       attestationObject: bufferToBase64Url(response.attestationObject),
       transports
-    }
+    },
+    clientExtensionResults
   };
 }
 
@@ -104,7 +110,8 @@ export async function startPasskeyAuthentication(options: any): Promise<any> {
     allowCredentials: (options.allowCredentials || []).map((cred: any) => ({
       ...cred,
       id: base64UrlToBuffer(cred.id)
-    }))
+    })),
+    extensions: options.extensions
   };
 
   const credential = (await navigator.credentials.get({
@@ -116,6 +123,7 @@ export async function startPasskeyAuthentication(options: any): Promise<any> {
   }
 
   const response = credential.response as AuthenticatorAssertionResponse;
+  const clientExtensionResults = credential.getClientExtensionResults ? credential.getClientExtensionResults() : undefined;
 
   return {
     id: credential.id,
@@ -125,6 +133,7 @@ export async function startPasskeyAuthentication(options: any): Promise<any> {
       authenticatorData: bufferToBase64Url(response.authenticatorData),
       signature: bufferToBase64Url(response.signature),
       userHandle: response.userHandle ? bufferToBase64Url(response.userHandle) : null
-    }
+    },
+    clientExtensionResults
   };
 }

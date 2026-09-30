@@ -14,7 +14,7 @@ import {
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { verifyPassword } from "../../utils/crypto";
-import { verifyTOTP, findMatchingRecoveryKey } from "../../lib/totp";
+import { verifyTOTP, findMatchingRecoveryKey, generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { PasskeyModel } from "../../models/passkey";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -203,11 +203,11 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
       }
     }
 
-    // 验证 MFA：Passkey 或 TOTP 或 恢复密钥
     let isTotpSuccess = false;
     let isRecoverySuccess = false;
     let isPasskeySuccess = false;
     let recoveryRemaining = 0;
+    let rotatedRecoveryKey: string | undefined = undefined;
 
     if (requiresMfa) {
       if (passkeyAssertion && preauthState.passkeyChallenge) {
@@ -262,9 +262,13 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
             return new Response(`Invalid recovery key. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, { status: 400 });
           }
         }
-        await userModel.consumeRecoveryKey(userId, matchIndex, storedHashes);
+        // 恢复密钥单次使用后立即轮换，旧密钥失效
+        const rotated = generateRecoveryKey();
+        const rotatedHash = await hashRecoveryKey(rotated);
+        await userModel.updateRecoveryKeys(userId, [{ hash: rotatedHash }] as any);
+        rotatedRecoveryKey = rotated;
         isRecoverySuccess = true;
-        recoveryRemaining = storedHashes.length - 1;
+        recoveryRemaining = 1;
       } else if (hasTotp && totpTokenHash) {
         const isValid = await verifyTOTP(user.totp_secret || '', totpTokenHash, totpSalt);
         if (!isValid) {
@@ -326,7 +330,7 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     headers.append("Set-Cookie", csrfCookie);
     headers.append("Set-Cookie", clearPreauthCookie());
     
-    return new Response(JSON.stringify({ success: true, accessToken, needsMigration }), { headers });
+    return new Response(JSON.stringify({ success: true, accessToken, needsMigration, rotatedRecoveryKey }), { headers });
   }
 
   return new Response("Not Found", { status: 404 });

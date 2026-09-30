@@ -38,17 +38,17 @@ export async function handleAccountE2eeRequest(
       passkeyModel.listByUser(user.id),
     ]);
 
-    let logKey: { public_key: string; created_at: number } | null = null;
+    let logKey: { public_key: string; created_at: number; is_active?: number } | null = null;
     let wrappedKeys: { passkey_id: string }[] = [];
     let recoveryKey: { profile_id: string } | null = null;
 
     if (profiles.length > 0) {
       const [keyRes, wrappedRes, recRes] = await Promise.all([
         env.DB.prepare(
-          "SELECT public_key, created_at FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
+          "SELECT public_key, created_at, is_active FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
         )
           .bind(user.id)
-          .first<{ public_key: string; created_at: number }>(),
+          .first<{ public_key: string; created_at: number; is_active?: number }>(),
         env.DB.prepare(`
           SELECT upwk.passkey_id 
           FROM user_passkey_wrapped_keys upwk
@@ -70,7 +70,8 @@ export async function handleAccountE2eeRequest(
     }
 
     return Response.json({
-      enabled: Boolean(logKey),
+      hasKeys: Boolean(logKey),
+      enabled: Boolean(logKey && (logKey.is_active === undefined || logKey.is_active === 1)),
       publicKey: logKey?.public_key || null,
       wrappedPasskeys: wrappedKeys.map((w) => w.passkey_id),
       hasRecoveryKey: Boolean(recoveryKey),
@@ -109,7 +110,26 @@ export async function handleAccountE2eeRequest(
     });
   }
 
-  // 3. POST /api/account/e2ee/init (Enable E2EE across all user profiles)
+  // 3. GET /api/account/e2ee/recovery-wrapped-key
+  if (subResource === "recovery-wrapped-key" && request.method === "GET") {
+    const wrapped = await env.DB.prepare(
+      "SELECT encrypted_sk, iv, salt FROM user_recovery_wrapped_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
+    )
+      .bind(user.id)
+      .first<{ encrypted_sk: string; iv: string; salt: string }>();
+
+    if (!wrapped) {
+      return new Response("Recovery wrapped key not found", { status: 404 });
+    }
+
+    return Response.json({
+      encryptedSk: wrapped.encrypted_sk,
+      iv: wrapped.iv,
+      salt: wrapped.salt,
+    });
+  }
+
+  // 4. POST /api/account/e2ee/init (Enable/Initialize E2EE across all user profiles)
   if (subResource === "init" && request.method === "POST") {
     let body: any;
     try {
@@ -119,21 +139,21 @@ export async function handleAccountE2eeRequest(
     }
 
     const { publicKey, passkeyId, encryptedSk, iv, recovery } = body;
-    if (!publicKey || !passkeyId || !encryptedSk || !iv) {
-      return new Response("Missing required fields (publicKey, passkeyId, encryptedSk, iv)", {
+    if (!publicKey || (!passkeyId && !recovery)) {
+      return new Response("Missing required fields (publicKey and either passkey or recovery)", {
         status: 400,
       });
     }
 
-    let passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
-    if (!passkey) {
-      const userPasskeys = await passkeyModel.listByUser(user.id);
-      if (userPasskeys.length > 0) {
-        passkey = userPasskeys[0];
+    let passkey: any = null;
+    if (passkeyId) {
+      passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
+      if (!passkey) {
+        const userPasskeys = await passkeyModel.listByUser(user.id);
+        if (userPasskeys.length > 0) {
+          passkey = userPasskeys[0];
+        }
       }
-    }
-    if (!passkey) {
-      return new Response("Passkey not found or unauthorized", { status: 403 });
     }
 
     const profiles = await profileModel.listByOwner(user.id);
@@ -144,18 +164,20 @@ export async function handleAccountE2eeRequest(
     const primaryProfileId = profiles.length > 0 ? profiles[0].id : null;
 
     if (primaryProfileId) {
-      // 1. Store wrapped key linked to primary profile
-      stmts.push(
-        env.DB.prepare(
-          "INSERT INTO user_passkey_wrapped_keys (passkey_id, profile_id, encrypted_sk, iv, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(passkey_id) DO UPDATE SET encrypted_sk = excluded.encrypted_sk, iv = excluded.iv, created_at = excluded.created_at"
-        ).bind(passkey.id, primaryProfileId, encryptedSk, iv, now)
-      );
+      // 1. Store wrapped key linked to primary profile if passkey provided
+      if (passkey && encryptedSk && iv) {
+        stmts.push(
+          env.DB.prepare(
+            "INSERT INTO user_passkey_wrapped_keys (passkey_id, profile_id, encrypted_sk, iv, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(passkey_id) DO UPDATE SET encrypted_sk = excluded.encrypted_sk, iv = excluded.iv, created_at = excluded.created_at"
+          ).bind(passkey.id, primaryProfileId, encryptedSk, iv, now)
+        );
+      }
 
       // 2. Set public keys for all user profiles
       for (const p of profiles) {
         stmts.push(
           env.DB.prepare(
-            "INSERT INTO user_log_keys (profile_id, public_key, created_at) VALUES (?, ?, ?) ON CONFLICT(profile_id) DO UPDATE SET public_key = excluded.public_key, created_at = excluded.created_at"
+            "INSERT INTO user_log_keys (profile_id, public_key, created_at, is_active) VALUES (?, ?, ?, 1) ON CONFLICT(profile_id) DO UPDATE SET public_key = excluded.public_key, created_at = excluded.created_at, is_active = 1"
           ).bind(p.id, publicKeyStr, now)
         );
 
@@ -180,7 +202,7 @@ export async function handleAccountE2eeRequest(
     return Response.json({ success: true });
   }
 
-  // 4. POST /api/account/e2ee/wrap (Wrap existing SK for newly registered passkey)
+  // 5. POST /api/account/e2ee/wrap (Wrap existing SK for newly registered passkey)
   if (subResource === "wrap" && request.method === "POST") {
     let body: any;
     try {
@@ -221,21 +243,75 @@ export async function handleAccountE2eeRequest(
     return Response.json({ success: true });
   }
 
-  // 5. DELETE /api/account/e2ee (Disable E2EE across all user profiles)
-  if (request.method === "DELETE" && (!subResource || subResource === "keys")) {
-    const profiles = await profileModel.listByOwner(user.id);
+  // 6. POST /api/account/e2ee/wrap-recovery (Update Recovery Key wrapped SK on rotation)
+  if (subResource === "wrap-recovery" && request.method === "POST") {
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return new Response("Invalid JSON body", { status: 400 });
+    }
 
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(user.id),
-      env.DB.prepare("DELETE FROM user_passkey_wrapped_keys WHERE passkey_id IN (SELECT id FROM passkeys WHERE user_id = ?)").bind(user.id),
-      env.DB.prepare("DELETE FROM user_recovery_wrapped_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(user.id),
-    ]);
+    const { encryptedSk, iv, salt } = body;
+    if (!encryptedSk || !iv || !salt) {
+      return new Response("Missing required fields (encryptedSk, iv, salt)", { status: 400 });
+    }
+
+    const profiles = await profileModel.listByOwner(user.id);
+    const now = Math.floor(Date.now() / 1000);
+    const stmts: any[] = [];
+    for (const p of profiles) {
+      stmts.push(
+        env.DB.prepare(
+          "INSERT INTO user_recovery_wrapped_keys (profile_id, encrypted_sk, iv, salt, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(profile_id) DO UPDATE SET encrypted_sk = excluded.encrypted_sk, iv = excluded.iv, salt = excluded.salt, created_at = excluded.created_at"
+        ).bind(p.id, encryptedSk, iv, salt, now)
+      );
+    }
+    if (stmts.length > 0) {
+      await env.DB.batch(stmts);
+    }
+    return Response.json({ success: true });
+  }
+
+  // 7. POST /api/account/e2ee/enable (Re-enable log encryption for new logs)
+  if (subResource === "enable" && request.method === "POST") {
+    const profiles = await profileModel.listByOwner(user.id);
+    await env.DB.prepare(
+      "UPDATE user_log_keys SET is_active = 1 WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)"
+    ).bind(user.id).run();
 
     for (const p of profiles) {
       invalidateProfileLogKeyCache(p.id);
     }
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, enabled: true });
+  }
+
+  // 8. DELETE /api/account/e2ee (Disable log encryption non-destructively, or purge if ?purge=true)
+  if (request.method === "DELETE" && (!subResource || subResource === "keys")) {
+    const url = new URL(request.url);
+    const purge = url.searchParams.get("purge") === "true";
+    const profiles = await profileModel.listByOwner(user.id);
+
+    if (purge) {
+      // Destructive purge explicitly requested by user
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(user.id),
+        env.DB.prepare("DELETE FROM user_passkey_wrapped_keys WHERE passkey_id IN (SELECT id FROM passkeys WHERE user_id = ?)").bind(user.id),
+        env.DB.prepare("DELETE FROM user_recovery_wrapped_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(user.id),
+      ]);
+    } else {
+      // Non-destructive toggle off: set is_active = 0 to stop encrypting new logs while keeping keys intact!
+      await env.DB.prepare(
+        "UPDATE user_log_keys SET is_active = 0 WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)"
+      ).bind(user.id).run();
+    }
+
+    for (const p of profiles) {
+      invalidateProfileLogKeyCache(p.id);
+    }
+
+    return Response.json({ success: true, purged: purge, enabled: false });
   }
 
   return new Response("Not Found", { status: 404 });

@@ -260,3 +260,105 @@ export async function unwrapPrivateKeyWithKek(
 
   return JSON.parse(new TextDecoder().decode(decryptedBuffer)) as JsonWebKey;
 }
+
+export interface RecoveryWrappedKeyData {
+  encryptedSk: string;
+  iv: string;
+  salt: string;
+}
+
+/**
+ * Derives a 256-bit Key Encryption Key (KEK) from a normalized plaintext Recovery Key using PBKDF2-HMAC-SHA256.
+ *
+ * @param plaintextRecoveryKey - Plaintext 30-digit or raw recovery key
+ * @param salt - 16-byte random salt
+ * @returns CryptoKey for AES-GCM
+ */
+export async function deriveRecoveryKek(
+  plaintextRecoveryKey: string,
+  salt: Uint8Array
+): Promise<CryptoKey> {
+  const subtle = crypto.subtle;
+  const normalized = plaintextRecoveryKey.replace(/[-\s]/g, "").toUpperCase().trim();
+  const data = new TextEncoder().encode(normalized);
+
+  const baseKey = await subtle.importKey(
+    "raw",
+    data,
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+
+  return subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt as BufferSource,
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Wraps (encrypts) the user's ECDH P-256 private key using a Recovery Key KEK.
+ *
+ * @param privateKeyJwk - User's private key in JWK format
+ * @param plaintextRecoveryKey - Plaintext recovery key
+ * @returns Base64 encoded encryptedSk, iv, and salt
+ */
+export async function wrapPrivateKeyWithRecoveryKey(
+  privateKeyJwk: JsonWebKey,
+  plaintextRecoveryKey: string
+): Promise<RecoveryWrappedKeyData> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const kek = await deriveRecoveryKek(plaintextRecoveryKey, salt);
+
+  const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+  const ciphertextBuffer = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    kek,
+    plaintext
+  );
+
+  return {
+    encryptedSk: toBase64(ciphertextBuffer),
+    iv: toBase64(iv),
+    salt: toBase64(salt),
+  };
+}
+
+/**
+ * Unwraps (decrypts) the user's ECDH P-256 private key using their Recovery Key.
+ *
+ * @param encryptedSkBase64 - Base64 encoded encrypted private key
+ * @param ivBase64 - Base64 encoded IV
+ * @param saltBase64 - Base64 encoded salt
+ * @param plaintextRecoveryKey - Plaintext recovery key entered by user
+ * @returns Decrypted JsonWebKey
+ */
+export async function unwrapPrivateKeyWithRecoveryKey(
+  encryptedSkBase64: string,
+  ivBase64: string,
+  saltBase64: string,
+  plaintextRecoveryKey: string
+): Promise<JsonWebKey> {
+  const salt = fromBase64(saltBase64);
+  const iv = fromBase64(ivBase64);
+  const ciphertext = fromBase64(encryptedSkBase64);
+  const kek = await deriveRecoveryKek(plaintextRecoveryKey, salt);
+
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv },
+    kek,
+    ciphertext
+  );
+
+  return JSON.parse(new TextDecoder().decode(decryptedBuffer)) as JsonWebKey;
+}
+

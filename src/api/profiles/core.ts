@@ -64,21 +64,35 @@ export async function handleProfilesCoreCollectionRequest(
     };
     await profileModel.create({ id: newId, owner_id: user.id, name: body.name || "Unnamed Profile", settings: defaultSettings });
 
-    // Automatically inherit active account-level E2EE public key if enabled
+    // Automatically inherit active account-level E2EE keys if configured
     try {
       const existingLogKey = await env.DB.prepare(
-        "SELECT public_key FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
+        "SELECT public_key, is_active FROM user_log_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
       )
         .bind(user.id)
-        .first<{ public_key: string }>();
+        .first<{ public_key: string; is_active?: number }>();
 
       if (existingLogKey?.public_key) {
         const now = Math.floor(Date.now() / 1000);
         await env.DB.prepare(
-          "INSERT INTO user_log_keys (profile_id, public_key, created_at) VALUES (?, ?, ?)"
+          "INSERT INTO user_log_keys (profile_id, public_key, created_at, is_active) VALUES (?, ?, ?, ?)"
         )
-          .bind(newId, existingLogKey.public_key, now)
+          .bind(newId, existingLogKey.public_key, now, existingLogKey.is_active ?? 1)
           .run();
+
+        const existingRecKey = await env.DB.prepare(
+          "SELECT encrypted_sk, iv, salt FROM user_recovery_wrapped_keys WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?) LIMIT 1"
+        )
+          .bind(user.id)
+          .first<{ encrypted_sk: string; iv: string; salt: string }>();
+
+        if (existingRecKey) {
+          await env.DB.prepare(
+            "INSERT INTO user_recovery_wrapped_keys (profile_id, encrypted_sk, iv, salt, created_at) VALUES (?, ?, ?, ?, ?)"
+          )
+            .bind(newId, existingRecKey.encrypted_sk, existingRecKey.iv, existingRecKey.salt, now)
+            .run();
+        }
       }
     } catch (e) {
       console.error("[Profiles] Failed to inherit E2EE log key for new profile:", e);

@@ -22,7 +22,7 @@ export async function getProfileLogPublicKey(
 
   try {
     const row = await db
-      .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ?")
+      .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ? AND (is_active IS NULL OR is_active = 1)")
       .bind(profileId)
       .first<{ public_key: string }>();
 

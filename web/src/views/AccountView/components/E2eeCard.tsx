@@ -12,6 +12,10 @@ import {
   OverlayToaster,
   Spinner,
   Divider,
+  Dialog,
+  Classes,
+  InputGroup,
+  FormGroup,
 } from "@blueprintjs/core";
 import {
   Lock,
@@ -22,11 +26,16 @@ import {
   Filter,
   Laptop,
   Layers,
+  Key,
+  Copy,
+  Check,
+  ShieldAlert,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../types";
 import { e2ee } from "../../../services";
 import type { ProfileE2eeStatus } from "../../../services";
+import { rotateRecoveryKey } from "../../../services/account";
 
 export interface E2eeCardProps {
   /** The current user profile and security state. */
@@ -62,6 +71,20 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   const [processing, setProcessing] = useState<boolean>(false);
   const [isDisableAlertOpen, setIsDisableAlertOpen] = useState<boolean>(false);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+
+  // Recovery Key unlock dialog state
+  const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState<boolean>(false);
+  const [recoveryKeyInput, setRecoveryKeyInput] = useState<string>("");
+  const [recoveryUnlockError, setRecoveryUnlockError] = useState<string>("");
+
+  // Recovery Key init keypair dialog state (for existing users with no keys)
+  const [initRecoveryDialogOpen, setInitRecoveryDialogOpen] = useState<boolean>(false);
+  const [initRecoveryKeyInput, setInitRecoveryKeyInput] = useState<string>("");
+  const [initRecoveryError, setInitRecoveryError] = useState<string>("");
+
+  // Auto-rotated recovery key modal state
+  const [rotatedKey, setRotatedKey] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<boolean>(false);
 
   // 1. Load account-wide E2EE status
   const loadStatus = useCallback(async () => {
@@ -161,6 +184,112 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
     }
   };
 
+  // 4. Handle Recovery Key unlock (Single-use auto-rotation)
+  const handleUnlockWithRecoveryKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = recoveryKeyInput.trim();
+    if (!key) return;
+
+    setProcessing(true);
+    setRecoveryUnlockError("");
+    try {
+      await e2ee.unlockWithRecoveryKey(key);
+
+      // Auto-rotate the Recovery Key immediately upon use
+      try {
+        const rotateRes = await rotateRecoveryKey({ recoveryKey: key });
+        await e2ee.wrapCurrentKeyForRecovery(rotateRes.recovery_key);
+        setRotatedKey(rotateRes.recovery_key);
+      } catch (rotateErr) {
+        console.warn("[E2eeCard] Recovery key auto-rotation failed:", rotateErr);
+      }
+
+      setIsUnlocked(true);
+      setIsRecoveryDialogOpen(false);
+      setRecoveryKeyInput("");
+      toasterRef.current?.show({
+        message: t("account.e2ee.unlockSuccess", "私钥已成功在此设备解锁"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await loadStatus();
+      onRefresh?.();
+    } catch (err: any) {
+      console.error("[E2eeCard] Recovery unlock failed:", err);
+      setRecoveryUnlockError(err.message || t("account.e2ee.recoveryUnlockFailed", "恢复密钥无效或解析失败"));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 5. Handle keypair generation with existing Passkey
+  const handleGenerateKeyWithPasskey = async () => {
+    setProcessing(true);
+    try {
+      await e2ee.enableUserE2ee();
+      toasterRef.current?.show({
+        message: t("account.e2ee.keypairGenSuccess", "已成功通过 Passkey 生成端到端密钥对并启用加密！"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await loadStatus();
+      onRefresh?.();
+    } catch (err: any) {
+      console.error("[E2eeCard] Generate key with Passkey failed:", err);
+      toasterRef.current?.show({
+        message: err.message || t("account.e2ee.keypairGenError", "通过 Passkey 生成密钥对失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // 6. Handle keypair generation with Recovery Key (Single-use auto-rotation)
+  const handleInitWithRecoveryKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = initRecoveryKeyInput.trim();
+    if (!key) return;
+
+    setProcessing(true);
+    setInitRecoveryError("");
+    try {
+      await e2ee.initUserE2eeWithRecoveryKey(key);
+
+      // Auto-rotate recovery key immediately upon use
+      try {
+        const rotateRes = await rotateRecoveryKey({ recoveryKey: key });
+        await e2ee.wrapCurrentKeyForRecovery(rotateRes.recovery_key);
+        setRotatedKey(rotateRes.recovery_key);
+      } catch (rotateErr) {
+        console.warn("[E2eeCard] Recovery key auto-rotation failed:", rotateErr);
+      }
+
+      setInitRecoveryDialogOpen(false);
+      setInitRecoveryKeyInput("");
+      setIsUnlocked(true);
+      toasterRef.current?.show({
+        message: t("account.e2ee.keypairGenSuccess", "端到端加密密钥对已成功生成！"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await loadStatus();
+      onRefresh?.();
+    } catch (err: any) {
+      console.error("[E2eeCard] Init keypair with recovery key failed:", err);
+      setInitRecoveryError(err.message || t("account.e2ee.initFailed", "生成端到端密钥对失败"));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleCopyRotatedKey = (k: string) => {
+    navigator.clipboard.writeText(k);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2000);
+  };
+
   // Extensible Data Scopes definition
   const scopes: E2eeScopeItem[] = [
     {
@@ -236,20 +365,62 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
           )}
         </p>
 
-        {/* Passkey Dependency Alert */}
-        {!hasPasskey ? (
-          <Callout intent={Intent.WARNING} icon="key" className="text-xs mt-3">
-            <p>
-              {t(
-                "account.e2ee.passkeyRequired",
-                "端到端加密需要硬件 Passkey (WebAuthn) 支持。请在上方「双重认证 (MFA)」设置中先添加至少一个 Passkey 凭据。"
-              )}
-            </p>
-          </Callout>
-        ) : loading ? (
+        {loading ? (
           <div className="flex items-center justify-center p-6">
             <Spinner size={20} />
           </div>
+        ) : !status?.hasKeys ? (
+          /* Prompt for existing users without keypairs */
+          <Callout intent={Intent.PRIMARY} icon="shield" className="my-3 text-xs">
+            <div className="space-y-3">
+              <div>
+                <h5 className="font-semibold text-sm mb-1 text-blue-900 dark:text-blue-100">
+                  {t("account.e2ee.noKeypairTitle", "尚未生成端到端加密密钥对")}
+                </h5>
+                <p className="text-xs text-blue-800 dark:text-blue-200 m-0">
+                  {t(
+                    "account.e2ee.noKeypairDesc",
+                    "端到端加密需要为您的账户生成专属的 ECDH P-256 密钥对。私钥将通过通行密钥 (Passkey) 或恢复密钥 (Recovery Key) 进行硬件/信封加密保护，服务端无法解密您的 DNS 记录。"
+                  )}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {hasPasskey ? (
+                  <Button
+                    intent={Intent.PRIMARY}
+                    small
+                    icon={<KeyRound size={14} />}
+                    text={t("account.e2ee.initPasskeyBtn", "验证现有 Passkey 生成密钥对")}
+                    loading={processing}
+                    onClick={handleGenerateKeyWithPasskey}
+                  />
+                ) : (
+                  <Button
+                    intent={Intent.PRIMARY}
+                    small
+                    icon={<Key size={14} />}
+                    text={t("account.e2ee.addPasskeyBtn", "添加 Passkey 以支持硬件加密")}
+                    onClick={() => {
+                      document.getElementById("passkeys-section")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                  />
+                )}
+
+                <Button
+                  intent={Intent.NONE}
+                  small
+                  icon={<Key size={14} />}
+                  text={t("account.e2ee.initRecoveryBtn", "通过恢复密钥生成密钥对")}
+                  onClick={() => {
+                    setInitRecoveryError("");
+                    setInitRecoveryKeyInput("");
+                    setInitRecoveryDialogOpen(true);
+                  }}
+                />
+              </div>
+            </div>
+          </Callout>
         ) : (
           <div className="space-y-4">
             <Divider className="my-2" />
@@ -322,50 +493,64 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
               </div>
             </div>
 
-            {/* Hardware Key & Device Status (shown when E2EE is enabled) */}
-            {isLogsE2eeEnabled && (
-              <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="opacity-70 flex items-center gap-1.5">
-                    <KeyRound size={13} />
-                    {t("account.e2ee.keyType", "加密算法")}:
-                  </span>
-                  <span className="font-mono">ECDH P-256 + AES-256-GCM</span>
-                </div>
+            {/* Hardware Key & Device Status (shown when keypair exists) */}
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="opacity-70 flex items-center gap-1.5">
+                  <KeyRound size={13} />
+                  {t("account.e2ee.keyType", "加密算法")}:
+                </span>
+                <span className="font-mono">ECDH P-256 + AES-256-GCM</span>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="opacity-70 flex items-center gap-1.5">
-                    <ShieldCheck size={13} />
-                    {t("account.e2ee.deviceState", "当前设备状态")}:
-                  </span>
-                  {isUnlocked ? (
-                    <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
-                      {t("account.e2ee.unlocked", "已在此设备解锁")}
-                    </Tag>
-                  ) : (
+              <div className="flex items-center justify-between">
+                <span className="opacity-70 flex items-center gap-1.5">
+                  <ShieldCheck size={13} />
+                  {t("account.e2ee.deviceState", "当前设备状态")}:
+                </span>
+                {isUnlocked ? (
+                  <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
+                    {t("account.e2ee.unlocked", "已在此设备解锁")}
+                  </Tag>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {hasPasskey && (
+                      <Button
+                        small
+                        minimal
+                        intent={Intent.PRIMARY}
+                        icon={<RefreshCw size={12} />}
+                        text={t("account.e2ee.unlockButton", "验证 Passkey 解锁")}
+                        loading={processing}
+                        onClick={handleUnlock}
+                      />
+                    )}
                     <Button
                       small
                       minimal
-                      intent={Intent.PRIMARY}
-                      icon={<RefreshCw size={12} />}
-                      text={t("account.e2ee.unlockButton", "验证 Passkey 解锁")}
-                      loading={processing}
-                      onClick={handleUnlock}
+                      intent={Intent.NONE}
+                      icon={<KeyRound size={12} />}
+                      text={t("account.e2ee.unlockRecoveryButton", "使用恢复密钥解锁")}
+                      onClick={() => {
+                        setRecoveryUnlockError("");
+                        setRecoveryKeyInput("");
+                        setIsRecoveryDialogOpen(true);
+                      }}
                     />
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="opacity-70">
-                    {t("account.e2ee.protectedPasskeys", "已授权 Passkey 凭据")}:
-                  </span>
-                  <span className="font-mono">
-                    {status?.wrappedPasskeys?.length || 1}{" "}
-                    {t("account.e2ee.devicesUnit", "个凭据")}
-                  </span>
-                </div>
+                  </div>
+                )}
               </div>
-            )}
+
+              <div className="flex items-center justify-between">
+                <span className="opacity-70">
+                  {t("account.e2ee.protectedPasskeys", "已授权 Passkey 凭据")}:
+                </span>
+                <span className="font-mono">
+                  {status?.wrappedPasskeys?.length || 0}{" "}
+                  {t("account.e2ee.devicesUnit", "个凭据")}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -388,6 +573,153 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
           )}
         </p>
       </Alert>
+
+      {/* Recovery Key Unlock Dialog */}
+      <Dialog
+        isOpen={isRecoveryDialogOpen}
+        onClose={() => setIsRecoveryDialogOpen(false)}
+        title={t("account.e2ee.unlockWithRecoveryTitle", "使用恢复密钥解锁")}
+        icon="key"
+        className="dark:bg-gray-900"
+      >
+        <form onSubmit={handleUnlockWithRecoveryKey}>
+          <div className={Classes.DIALOG_BODY}>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {t(
+                "account.e2ee.unlockWithRecoveryDesc",
+                "请输入 30 位紧急恢复密钥。注意：根据单次使用规则，恢复密钥验证成功后将立即自动轮换。"
+              )}
+            </p>
+            {recoveryUnlockError && (
+              <Callout intent={Intent.DANGER} className="mb-3 text-xs">
+                {recoveryUnlockError}
+              </Callout>
+            )}
+            <FormGroup
+              label={t("account.e2ee.recoveryKeyInputLabel", "恢复密钥")}
+              labelFor="recovery-key-input"
+            >
+              <InputGroup
+                id="recovery-key-input"
+                placeholder="123456-789012-345678-901234-567890"
+                value={recoveryKeyInput}
+                onChange={(e) => setRecoveryKeyInput(e.target.value)}
+                leftIcon="key"
+                className="font-mono text-xs"
+                autoFocus
+              />
+            </FormGroup>
+          </div>
+          <div className={Classes.DIALOG_FOOTER}>
+            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+              <Button onClick={() => setIsRecoveryDialogOpen(false)} text={t("common.cancel", "取消")} />
+              <Button
+                type="submit"
+                intent={Intent.PRIMARY}
+                loading={processing}
+                disabled={!recoveryKeyInput.trim()}
+                text={t("account.e2ee.unlockConfirm", "解锁私钥")}
+              />
+            </div>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Init Keypair with Recovery Key Dialog */}
+      <Dialog
+        isOpen={initRecoveryDialogOpen}
+        onClose={() => setInitRecoveryDialogOpen(false)}
+        title={t("account.e2ee.initWithRecoveryTitle", "通过恢复密钥生成密钥对")}
+        icon="key"
+        className="dark:bg-gray-900"
+      >
+        <form onSubmit={handleInitWithRecoveryKey}>
+          <div className={Classes.DIALOG_BODY}>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {t(
+                "account.e2ee.initWithRecoveryDesc",
+                "请输入您当前的 30 位紧急恢复密钥。系统将在本地生成 ECDH P-256 密钥对并通过该密钥信封加密。使用后恢复密钥将自动轮换以确保安全。"
+              )}
+            </p>
+            {initRecoveryError && (
+              <Callout intent={Intent.DANGER} className="mb-3 text-xs">
+                {initRecoveryError}
+              </Callout>
+            )}
+            <FormGroup
+              label={t("account.e2ee.recoveryKeyInputLabel", "当前恢复密钥")}
+              labelFor="init-recovery-key-input"
+            >
+              <InputGroup
+                id="init-recovery-key-input"
+                placeholder="123456-789012-345678-901234-567890"
+                value={initRecoveryKeyInput}
+                onChange={(e) => setInitRecoveryKeyInput(e.target.value)}
+                leftIcon="key"
+                className="font-mono text-xs"
+                autoFocus
+              />
+            </FormGroup>
+          </div>
+          <div className={Classes.DIALOG_FOOTER}>
+            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+              <Button onClick={() => setInitRecoveryDialogOpen(false)} text={t("common.cancel", "取消")} />
+              <Button
+                type="submit"
+                intent={Intent.PRIMARY}
+                loading={processing}
+                disabled={!initRecoveryKeyInput.trim()}
+                text={t("account.e2ee.generateKeypairBtn", "生成密钥对")}
+              />
+            </div>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Rotated Recovery Key Notification Modal */}
+      <Dialog
+        isOpen={!!rotatedKey}
+        onClose={() => setRotatedKey(null)}
+        title={t("account.recoveryKey.autoRotatedTitle", "恢复密钥已自动轮换")}
+        icon="warning-sign"
+        isCloseButtonShown={false}
+        canOutsideClickClose={false}
+        className="dark:bg-gray-900"
+      >
+        <div className={Classes.DIALOG_BODY}>
+          <Callout intent={Intent.WARNING} icon={<ShieldAlert size={16} />} className="mb-4 text-xs">
+            {t(
+              "account.recoveryKey.autoRotatedNotice",
+              "根据恢复密钥单次使用规则，您的原恢复密钥已失效，系统已为您生成全新 30 位紧急恢复密钥。请务必立即复制并妥善离线保存，关闭后将无法再次查看！"
+            )}
+          </Callout>
+
+          {rotatedKey && (
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono text-center text-lg font-bold tracking-widest select-all text-gray-900 dark:text-gray-100">
+                {rotatedKey}
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  intent={Intent.PRIMARY}
+                  icon={copiedKey ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                  text={copiedKey ? t("common.copied", "已复制") : t("common.copyKey", "复制新恢复密钥")}
+                  onClick={() => handleCopyRotatedKey(rotatedKey)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button
+              intent={Intent.SUCCESS}
+              onClick={() => setRotatedKey(null)}
+              text={t("account.recoveryKey.savedAndClose", "我已妥善保存并继续")}
+            />
+          </div>
+        </div>
+      </Dialog>
     </Card>
   );
 };

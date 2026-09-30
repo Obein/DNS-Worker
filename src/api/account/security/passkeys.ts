@@ -204,13 +204,12 @@ export async function handlePasskeysRequest(
         // If no recovery keys found or only legacy hashes exist, generate fresh recovery keys
         if (recoveryKeys.length === 0) {
           const plaintextKeys = generateRecoveryKeys();
-          const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
+          const storedItems = await Promise.all(
             plaintextKeys.map(async (k) => ({
-              key: k,
               hash: await hashRecoveryKey(k)
             }))
           );
-          await userModel.updateRecoveryKeys(user.id, storedItems);
+          await userModel.updateRecoveryKeys(user.id, storedItems as any);
           recoveryKeys = plaintextKeys;
         }
       }

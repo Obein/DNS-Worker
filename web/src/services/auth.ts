@@ -45,6 +45,7 @@ export interface LoginPayload {
 export interface LoginResponse {
   accessToken: string;
   needsMigration?: boolean;
+  rotatedRecoveryKey?: string;
 }
 
 export interface SignupPayload {
@@ -56,6 +57,7 @@ export interface SignupPayload {
 export interface SignupResponse {
   success: boolean;
   accessToken?: string;
+  recoveryKey?: string;
 }
 
 export async function getAuthConfig(): Promise<AuthConfig> {

@@ -11,6 +11,7 @@ import {
 } from "../../utils/auth";
 import { setAccessToken } from "../../utils/token";
 import { prelogin, login, ApiError, migratePassword } from "../../services";
+import { e2ee } from "../../services/e2ee";
 import { startPasskeyAuthentication } from "../../utils/webauthn";
 
 interface AuthConfig {
@@ -63,6 +64,7 @@ export const useLoginForm = ({
   // Status indicators
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rotatedRecoveryKey, setRotatedRecoveryKey] = useState<string | null>(null);
 
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -225,6 +227,17 @@ export const useLoginForm = ({
         const clientHash = await hashPasswordClient(password, username);
         await migratePassword(clientHash);
       }
+      if (data.rotatedRecoveryKey && credentials.recoveryKey) {
+        // Recovery key was used to login and automatically rotated!
+        try {
+          await e2ee.unlockWithRecoveryKey(credentials.recoveryKey);
+          await e2ee.wrapCurrentKeyForRecovery(data.rotatedRecoveryKey);
+        } catch (e) {
+          console.warn("[Login] Could not auto re-wrap E2EE key with rotated recovery key:", e);
+        }
+        setRotatedRecoveryKey(data.rotatedRecoveryKey);
+        return;
+      }
       onSuccess();
     } catch (err: any) {
       if (err instanceof ApiError) {
@@ -360,6 +373,11 @@ export const useLoginForm = ({
     setMfaMethod("passkey");
   };
 
+  const handleAcknowledgeRotatedKey = () => {
+    setRotatedRecoveryKey(null);
+    onSuccess();
+  };
+
   return {
     loginStep,
     username,
@@ -390,6 +408,8 @@ export const useLoginForm = ({
     handleSwitchToMfa,
     handlePasskeyLogin,
     handleBack,
-    resetToStep1
+    resetToStep1,
+    rotatedRecoveryKey,
+    handleAcknowledgeRotatedKey
   };
 };

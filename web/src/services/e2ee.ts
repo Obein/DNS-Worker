@@ -10,6 +10,7 @@ import { profileFetch } from "./profiles";
 import { getPasskeyAuthOptions } from "./account";
 
 export interface ProfileE2eeStatus {
+  hasKeys?: boolean;
   enabled: boolean;
   publicKey: string | null;
   wrappedPasskeys: string[];
@@ -226,16 +227,9 @@ class E2eeService {
       // 1. Hardware PRF secret
       kekBytes = new Uint8Array(extResults.prf.results.first);
     } else {
-      // 2. Deterministic hash fallback
-      const response = credential.response as AuthenticatorAssertionResponse;
-      const sig = new Uint8Array(response.signature);
-      const rawId = new Uint8Array(credential.rawId);
-      const combined = new Uint8Array(sig.length + rawId.length);
-      combined.set(sig, 0);
-      combined.set(rawId, sig.length);
-
-      const digest = await crypto.subtle.digest("SHA-256", combined);
-      kekBytes = new Uint8Array(digest);
+      throw new Error(
+        "Passkey authenticator does not support WebAuthn PRF extension. Please unlock using your Recovery Key."
+      );
     }
 
     // Match credential ID to registered passkey if possible
@@ -267,14 +261,231 @@ class E2eeService {
   }
 
   /**
-   * Initializes and enables E2EE at the user/account level for all profiles:
-   * 1. Derives KEK from the user's Passkey with a single biometric prompt.
-   * 2. Generates canonical Log KeyPair (PK_log, SK_log).
-   * 3. Wraps SK_log with KEK using AES-256-GCM.
-   * 4. Uploads PK_log and wrapped SK_log to server (/api/account/e2ee/init).
-   * 5. Caches unlocked SK in session storage.
+   * Derives a 256-bit Key Encryption Key (KEK) from a normalized plaintext Recovery Key using PBKDF2-HMAC-SHA256.
+   */
+  async deriveRecoveryKek(plaintextRecoveryKey: string, salt: Uint8Array): Promise<CryptoKey> {
+    const normalized = plaintextRecoveryKey.replace(/[-\s]/g, "").toUpperCase().trim();
+    const data = new TextEncoder().encode(normalized);
+
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      data,
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+
+    return crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt as BufferSource,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
+  }
+
+  /**
+   * Wraps (encrypts) the ECDH P-256 private key using a Recovery Key KEK.
+   */
+  async wrapPrivateKeyWithRecoveryKey(
+    privateKeyJwk: JsonWebKey,
+    plaintextRecoveryKey: string
+  ): Promise<{ encryptedSk: string; iv: string; salt: string }> {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const kek = await this.deriveRecoveryKek(plaintextRecoveryKey, salt);
+
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+    const ciphertextBuffer = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      kek,
+      plaintext
+    );
+
+    return {
+      encryptedSk: toBase64(ciphertextBuffer),
+      iv: toBase64(iv),
+      salt: toBase64(salt),
+    };
+  }
+
+  /**
+   * Unwraps (decrypts) the ECDH P-256 private key using a Recovery Key KEK.
+   */
+  async unwrapPrivateKeyWithRecoveryKey(
+    encryptedSkBase64: string,
+    ivBase64: string,
+    saltBase64: string,
+    plaintextRecoveryKey: string
+  ): Promise<JsonWebKey> {
+    const salt = fromBase64(saltBase64);
+    const iv = fromBase64(ivBase64);
+    const ciphertext = fromBase64(encryptedSkBase64);
+    const kek = await this.deriveRecoveryKek(plaintextRecoveryKey, salt);
+
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv as BufferSource },
+      kek,
+      ciphertext as BufferSource
+    );
+
+    return JSON.parse(new TextDecoder().decode(decryptedBuffer)) as JsonWebKey;
+  }
+
+  /**
+   * Initializes account-level E2EE using a fresh Recovery Key.
+   * Generates the ECDH P-256 key pair, wraps SK with Recovery Key KEK,
+   * uploads to /api/account/e2ee/init, and caches the unlocked SK in session storage.
+   */
+  async initUserE2eeWithRecoveryKey(plaintextRecoveryKey: string): Promise<boolean> {
+    // 1. Generate Log KeyPair
+    const keyPair = await crypto.subtle.generateKey(
+      { name: "ECDH", namedCurve: "P-256" },
+      true,
+      ["deriveKey", "deriveBits"]
+    );
+
+    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+    const privateKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+
+    // 2. Wrap SK with Recovery Key KEK
+    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(privateKeyJwk, plaintextRecoveryKey);
+
+    // 3. Upload to server
+    const res = await fetch("/api/account/e2ee/init", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publicKey: publicKeyJwk,
+        recovery: recoveryWrapped,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to initialize E2EE with recovery key: ${await res.text()}`);
+    }
+
+    // 4. Save in session for account
+    this.setPrivateKey("account", privateKeyJwk);
+    return true;
+  }
+
+  /**
+   * Unlocks the account's log private key using the plaintext 30-digit Recovery Key.
+   */
+  async unlockWithRecoveryKey(plaintextRecoveryKey: string): Promise<boolean> {
+    const res = await fetch("/api/account/e2ee/recovery-wrapped-key");
+    if (!res.ok) {
+      throw new Error(`Failed to fetch recovery wrapped key: ${await res.text()}`);
+    }
+
+    const { encryptedSk, iv, salt } = (await res.json()) as {
+      encryptedSk: string;
+      iv: string;
+      salt: string;
+    };
+
+    let privateKeyJwk: JsonWebKey;
+    try {
+      privateKeyJwk = await this.unwrapPrivateKeyWithRecoveryKey(
+        encryptedSk,
+        iv,
+        salt,
+        plaintextRecoveryKey
+      );
+    } catch {
+      throw new Error("Invalid Recovery Key or corrupted data");
+    }
+
+    this.setPrivateKey("account", privateKeyJwk);
+    return true;
+  }
+
+  /**
+   * Wraps the currently unlocked private key for a newly registered Passkey.
+   */
+  async wrapCurrentKeyForPasskey(passkeyId: string): Promise<boolean> {
+    const skJwk = this.getPrivateKey("account");
+    if (!skJwk) {
+      console.warn("[E2EE] Cannot wrap passkey: private key is not unlocked in this session");
+      return false;
+    }
+
+    try {
+      const { kek } = await this.derivePasskeyKek("account");
+      const kekKey = await crypto.subtle.importKey(
+        "raw",
+        kek as BufferSource,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt"]
+      );
+
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const plaintext = new TextEncoder().encode(JSON.stringify(skJwk));
+      const encryptedBuf = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        kekKey,
+        plaintext
+      );
+
+      const res = await fetch("/api/account/e2ee/wrap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passkeyId,
+          encryptedSk: toBase64(encryptedBuf),
+          iv: toBase64(iv),
+        }),
+      });
+
+      return res.ok;
+    } catch (err) {
+      console.warn("[E2EE] Failed to wrap passkey KEK:", err);
+      return false;
+    }
+  }
+
+  /**
+   * Re-wraps the currently unlocked private key with a newly rotated Recovery Key.
+   */
+  async wrapCurrentKeyForRecovery(newRecoveryKey: string): Promise<boolean> {
+    const skJwk = this.getPrivateKey("account");
+    if (!skJwk) {
+      console.warn("[E2EE] Cannot wrap recovery: private key is not unlocked in this session");
+      return false;
+    }
+
+    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(skJwk, newRecoveryKey);
+    const res = await fetch("/api/account/e2ee/wrap-recovery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(recoveryWrapped),
+    });
+
+    return res.ok;
+  }
+
+  /**
+   * Initializes and enables E2EE at the user/account level:
+   * If keypair already exists, re-enables encryption via /api/account/e2ee/enable.
+   * Otherwise, generates keypair and wraps with Passkey KEK.
    */
   async enableUserE2ee(passkeyIdOverride?: string): Promise<boolean> {
+    const status = await this.getUserStatus();
+    if (status.hasKeys) {
+      const res = await fetch("/api/account/e2ee/enable", { method: "POST" });
+      if (!res.ok) {
+        throw new Error(`Failed to enable user E2EE: ${await res.text()}`);
+      }
+      return true;
+    }
+
     const { kek, passkeyId } = await this.derivePasskeyKek("account");
     const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
 
@@ -392,13 +603,13 @@ class E2eeService {
    */
   async unlockUser(): Promise<boolean> {
     const status = await this.getUserStatus();
-    if (!status.enabled) return false;
+    if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
 
     const { kek, passkeyId } = await this.derivePasskeyKek("account");
 
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
     if (!targetPasskeyId) {
-      throw new Error("No wrapped key found for this passkey");
+      throw new Error("No wrapped key found for this passkey. Please unlock using your Recovery Key.");
     }
 
     let res = await fetch(`/api/account/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
@@ -443,13 +654,13 @@ class E2eeService {
    */
   async unlockProfile(profileId: string): Promise<boolean> {
     const status = await this.getStatus(profileId);
-    if (!status.enabled) return false;
+    if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
 
     const { kek, passkeyId } = await this.derivePasskeyKek(profileId);
 
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
     if (!targetPasskeyId) {
-      throw new Error("No wrapped key found for this passkey");
+      throw new Error("No wrapped key found for this passkey. Please unlock using your Recovery Key.");
     }
 
     let res = await fetch(
