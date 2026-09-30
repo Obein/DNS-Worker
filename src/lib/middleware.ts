@@ -58,6 +58,12 @@ export async function getCurrentUser(request: Request, env: Env, ctx?: Execution
   let accessToken = "";
   if (authHeader.startsWith("Bearer ")) {
     accessToken = authHeader.slice(7);
+  } else if (
+    request.headers.get("Upgrade")?.toLowerCase().includes("websocket") ||
+    new URL(request.url).pathname.endsWith("/ws")
+  ) {
+    const url = new URL(request.url);
+    accessToken = url.searchParams.get("token") || url.searchParams.get("access_token") || "";
   }
 
   if (!accessToken) {

@@ -217,6 +217,7 @@ export async function handleProfileLogsWs(
           if (!isClosed) {
             const payload: LogWsServerMessage = { type: 'PONG' };
             serverWs.send(JSON.stringify(payload));
+            void checkForNewLogs();
           }
           break;
         }

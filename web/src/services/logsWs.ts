@@ -7,6 +7,8 @@
 import type { LogEntry } from '../views/LogsView/types';
 import { localDb } from './localDb';
 import { e2ee } from './e2ee';
+import { getAccessToken, setAccessToken } from '../utils/token';
+import { refresh } from './auth';
 
 export interface LogWsMessage {
   type: 'NEW_LOGS' | 'SYNC_DATA' | 'PONG' | 'ERROR';
@@ -52,8 +54,21 @@ class LogsWsService {
     this.lastTimestamp = sinceTimestamp;
     this.lastId = lastId || 0;
 
+    const token = getAccessToken();
+    if (!token) {
+      void refresh()
+        .then((data) => {
+          setAccessToken(data.accessToken);
+          this.connect(profileId, sinceTimestamp, lastId);
+        })
+        .catch(() => {
+          this.scheduleReconnect();
+        });
+      return;
+    }
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/profiles/${encodeURIComponent(profileId)}/logs/ws`;
+    const wsUrl = `${protocol}//${window.location.host}/api/profiles/${encodeURIComponent(profileId)}/logs/ws?token=${encodeURIComponent(token)}`;
 
     try {
       this.ws = new WebSocket(wsUrl);
@@ -194,13 +209,13 @@ class LogsWsService {
         })
       );
 
-      // Start 10-second ping interval
+      // Start 5-second probe interval to keep connection alive and trigger low-overhead checks
       if (this.pingInterval) clearInterval(this.pingInterval);
       this.pingInterval = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'PING' }));
+          ws.send(JSON.stringify({ type: 'CHECK_NEW', sinceTimestamp: this.lastTimestamp, lastId: this.lastId }));
         }
-      }, 10000);
+      }, 5000);
     };
 
     ws.onmessage = async (event: MessageEvent) => {
@@ -265,7 +280,20 @@ class LogsWsService {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {
       if (this.activeProfileId) {
-        this.connect(this.activeProfileId, this.lastTimestamp, this.lastId);
+        if (this.reconnectAttempts === 1) {
+          void refresh()
+            .then((data) => {
+              setAccessToken(data.accessToken);
+            })
+            .catch(() => {})
+            .finally(() => {
+              if (this.activeProfileId) {
+                this.connect(this.activeProfileId, this.lastTimestamp, this.lastId);
+              }
+            });
+        } else {
+          this.connect(this.activeProfileId, this.lastTimestamp, this.lastId);
+        }
       }
     }, delay);
   }

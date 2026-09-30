@@ -146,6 +146,9 @@ export function useLogData({
                 }
                 setLogs(localResult.rows);
                 setHasMore(realtimeRefresh ? false : localResult.rows.length >= limit);
+                if (realtimeRefresh && localResult.rows.length > 0) {
+                  logsWs.updateCursor(localResult.rows[0].timestamp, localResult.rows[0].id);
+                }
                 if (localResult.stats) {
                   setStats(localResult.stats);
                 }
@@ -182,6 +185,9 @@ export function useLogData({
                   }
                   setLogs(localResult.rows);
                   setHasMore(realtimeRefresh ? false : localResult.rows.length >= limit);
+                  if (realtimeRefresh && localResult.rows.length > 0) {
+                    logsWs.updateCursor(localResult.rows[0].timestamp, localResult.rows[0].id);
+                  }
                   if (localResult.stats) {
                     setStats(localResult.stats);
                   }
