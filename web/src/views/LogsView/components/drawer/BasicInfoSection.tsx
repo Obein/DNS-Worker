@@ -72,9 +72,32 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             label={t("logs.detailLatency")}
             value={selectedLog.latency ? `${selectedLog.latency} ms` : "-"}
           />
-          {selectedLog.access_point_name && (
-            <DetailItem label={t("logs.detailAccessPoint")} value={selectedLog.access_point_name} />
-          )}
+          <DetailItem
+            label={t("logs.detailAccessPoint")}
+            value={
+              (() => {
+                const apName = detailedLog?.access_point_name || selectedLog.access_point_name;
+                const apId = detailedLog?.access_point_id || selectedLog.access_point_id;
+
+                if (apName) {
+                  return apId && apId !== apName ? (
+                    <span title={apId} className="cursor-help">
+                      {apName}
+                    </span>
+                  ) : (
+                    apName
+                  );
+                }
+                if (apId) {
+                  return <span className="font-mono text-xs">{apId}</span>;
+                }
+                if (loading) {
+                  return <Spinner size={12} />;
+                }
+                return "-";
+              })()
+            }
+          />
           <DetailItem
             label={t("logs.detailProfile")}
             value={

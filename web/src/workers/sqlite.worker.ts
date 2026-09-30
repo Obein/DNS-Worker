@@ -144,6 +144,7 @@ async function initDatabase(): Promise<boolean> {
           upstream TEXT,
           latency INTEGER,
           access_point_id TEXT,
+          access_point_name TEXT,
           dest_country_code TEXT,
           dest_country TEXT,
           dest_isp TEXT,
@@ -170,6 +171,13 @@ async function initDatabase(): Promise<boolean> {
           value TEXT NOT NULL
         );
       `);
+
+      // Migration: Add access_point_name column if missing from earlier schema versions
+      try {
+        db.exec("ALTER TABLE local_logs ADD COLUMN access_point_name TEXT;");
+      } catch {
+        // Ignored if column already exists
+      }
 
       // Clean up stale logs with empty client_ip from prior bug to trigger a fresh sync
       try {
@@ -212,9 +220,9 @@ function handleSyncBatch(payload: {
       INSERT OR REPLACE INTO local_logs (
         profile_id, timestamp, id, domain, record_type, action, reason,
         client_ip, geo_country, answer, dest_geoip, ecs, upstream, latency,
-        access_point_id, dest_country_code, dest_country, dest_isp,
+        access_point_id, access_point_name, dest_country_code, dest_country, dest_isp,
         is_encrypted, encrypted_payload
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `);
 
     try {
@@ -238,6 +246,7 @@ function handleSyncBatch(payload: {
           log.upstream || null,
           log.latency !== undefined ? log.latency : null,
           log.access_point_id || null,
+          log.access_point_name || null,
           log.dest_country_code || null,
           log.dest_country || null,
           log.dest_isp || null,
