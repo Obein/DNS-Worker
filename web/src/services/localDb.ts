@@ -192,15 +192,26 @@ class LocalDbService {
       const now = Math.floor(Date.now() / 1000);
 
       let since: number;
-      // Cap sync to at most 3 batches (300 logs) per run to guarantee responsiveness
-      const maxPages = 3;
+      let maxPages = 3;
 
-      if (watermark && watermark.latest_timestamp > 0) {
-        // Incremental delta sync: only fetch records newer than latest local timestamp (-60s clock skew buffer)
+      if (targetSince !== undefined) {
+        if (watermark && watermark.oldest_timestamp && watermark.oldest_timestamp <= targetSince) {
+          // Historical data already covered down to targetSince; only do forward incremental sync
+          since = Math.max(0, watermark.latest_timestamp - 60);
+          maxPages = 5;
+        } else {
+          // Backfill historical logs down to targetSince with higher page allowance (up to 2,000 logs)
+          since = targetSince;
+          maxPages = 20;
+        }
+      } else if (watermark && watermark.latest_timestamp > 0) {
+        // Standard incremental forward delta sync
         since = Math.max(0, watermark.latest_timestamp - 60);
+        maxPages = 5;
       } else {
-        // Initial sync for empty local database: fetch up to targetSince or last 24h
-        since = targetSince !== undefined ? targetSince : Math.floor(now - 86400);
+        // Initial sync for empty local database: default to last 24h
+        since = Math.floor(now - 86400);
+        maxPages = 10;
       }
 
       let totalInserted = 0;

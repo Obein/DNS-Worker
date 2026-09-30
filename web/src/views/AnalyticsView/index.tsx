@@ -99,12 +99,11 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
       }
     }
 
-    // ── Step 1: Attempt Local-First SQLite aggregation ──
+    // ── Step 1: Attempt Local-First SQLite aggregation for instant preview (0ms latency) ──
     try {
       const isDbReady = await localDb.init();
       if (isDbReady) {
-        // 1. Immediately query and display cached analytics (0ms latency)
-        let localAnalytics = await localDb.queryAnalytics({
+        const localAnalytics = await localDb.queryAnalytics({
           profileId,
           since,
           until,
@@ -112,37 +111,16 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           accessPointId: apIdFilter || undefined,
         });
 
-        const hasData = localAnalytics.summary.some((s) => s.count > 0);
-        if (hasData) {
+        if (localAnalytics.summary.some((s) => s.count > 0)) {
           setData(localAnalytics);
           setLoading(false);
         }
-
-        // 2. Delta sync missing logs from server in background
-        try {
-          const inserted = await localDb.syncProfileLogs(profileId, undefined, since);
-          if (inserted > 0 || !hasData) {
-            localAnalytics = await localDb.queryAnalytics({
-              profileId,
-              since,
-              until,
-              bucketSec,
-              accessPointId: apIdFilter || undefined,
-            });
-            setData(localAnalytics);
-          }
-        } catch (syncErr) {
-          console.warn("[AnalyticsView] Delta sync error (continuing with cached):", syncErr);
-        }
-
-        setLoading(false);
-        return;
       }
     } catch (localErr) {
-      console.warn("[AnalyticsView] Local SQLite aggregation failed, falling back to server:", localErr);
+      console.warn("[AnalyticsView] Local SQLite preview failed:", localErr);
     }
 
-    // ── Step 2: Fallback to Server Fetch ──
+    // ── Step 2: Fetch Authoritative Analytics from Server ──
     try {
       let queryParams = `?range=${selectedRange}`;
       if (selectedRange === "custom" && customStart && customEnd) {
@@ -151,28 +129,74 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
       if (apIdFilter) {
         queryParams += `&access_point_id=${apIdFilter}`;
       }
-      
-      const [summary, trend, topAllowed, topBlocked, clients, destinations] = await Promise.all([
-        getProfileAnalytics(profileId, "summary", queryParams),
-        getProfileAnalytics(profileId, "trend", queryParams),
-        getProfileAnalytics(profileId, "top_allowed", queryParams),
-        getProfileAnalytics(profileId, "top_blocked", queryParams),
-        getProfileAnalytics(profileId, "clients", queryParams),
-        getProfileAnalytics(profileId, "destinations", queryParams),
-      ]);
 
-      setData({
-        summary,
-        trend,
-        top_allowed: topAllowed,
-        top_blocked: topBlocked,
-        clients,
-        destinations,
-      });
+      // Fetch unified server analytics in a single fast call (D1 indexed aggregation)
+      let serverAnalytics: AnalyticsData | null = null;
+      try {
+        serverAnalytics = await getProfileAnalytics(profileId, "", queryParams);
+      } catch {
+        // Fallback to separate endpoints if unified endpoint fails
+        const [summary, trend, topAllowed, topBlocked, clients, destinations] = await Promise.all([
+          getProfileAnalytics(profileId, "summary", queryParams),
+          getProfileAnalytics(profileId, "trend", queryParams),
+          getProfileAnalytics(profileId, "top_allowed", queryParams),
+          getProfileAnalytics(profileId, "top_blocked", queryParams),
+          getProfileAnalytics(profileId, "clients", queryParams),
+          getProfileAnalytics(profileId, "destinations", queryParams),
+        ]);
+        serverAnalytics = {
+          summary,
+          trend,
+          top_allowed: topAllowed,
+          top_blocked: topBlocked,
+          clients,
+          destinations,
+        };
+      }
+
+      if (serverAnalytics) {
+        setData((prev) => {
+          // If local database has decrypted rankings (e.g. for E2EE), merge decrypted names
+          const hasLocalDecrypted =
+            prev &&
+            prev.top_allowed.some(
+              (d) => d.domain && d.domain !== "[Encrypted]" && d.domain !== "[Decryption Failed]"
+            );
+
+          return {
+            ...serverAnalytics!,
+            // Server trend is always authoritative and unclipped
+            trend: serverAnalytics!.trend || [],
+            summary: serverAnalytics!.summary || [],
+            top_allowed:
+              hasLocalDecrypted && prev?.top_allowed.length
+                ? prev.top_allowed
+                : serverAnalytics!.top_allowed || [],
+            top_blocked:
+              hasLocalDecrypted && prev?.top_blocked.length
+                ? prev.top_blocked
+                : serverAnalytics!.top_blocked || [],
+            clients:
+              hasLocalDecrypted && prev?.clients.length
+                ? prev.clients
+                : serverAnalytics!.clients || [],
+            destinations: serverAnalytics!.destinations || [],
+          };
+        });
+      }
     } catch (e) {
-      console.error("Failed to fetch analytics", e);
+      console.error("[AnalyticsView] Failed to fetch server analytics:", e);
     } finally {
       setLoading(false);
+    }
+
+    // ── Step 3: Background sync of raw logs within query range into local SQLite ──
+    try {
+      localDb.syncProfileLogs(profileId, undefined, since).catch((syncErr) => {
+        console.warn("[AnalyticsView] Background sync error:", syncErr);
+      });
+    } catch {
+      // Ignore background sync errors
     }
   };
 

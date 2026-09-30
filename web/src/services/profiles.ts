@@ -262,8 +262,9 @@ export async function clearProfileLogs(profileId: string): Promise<void> {
 
 export async function getProfileAnalytics(profileId: string, type: string, queryParams: string, options?: { signal?: AbortSignal }): Promise<any> {
   const query = queryParams.startsWith("?") ? queryParams.slice(1) : queryParams;
-  const res = await profileFetch(`/api/profiles/${profileId}/analytics/${type}?${query}`, { signal: options?.signal });
-  if (!res.ok) throw new Error(`Failed to fetch analytics for ${type}`);
+  const path = type ? `/${type}` : "";
+  const res = await profileFetch(`/api/profiles/${profileId}/analytics${path}?${query}`, { signal: options?.signal });
+  if (!res.ok) throw new Error(`Failed to fetch analytics${type ? ` for ${type}` : ""}`);
   return res.json();
 }
 
