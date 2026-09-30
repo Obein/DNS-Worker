@@ -166,19 +166,21 @@ class LocalDbService {
   /**
    * Synchronizes latest logs from the server into local SQLite.
    * Only fetches delta intervals missing from the local database.
-   * Capped to maxPages (default 3 = 300 logs) to avoid blocking UI or burning network quota.
+   * Capped to maxPages (default 2 = 200 logs) to avoid blocking UI or burning network quota.
    *
    * @param profileId - Profile identifier.
    * @param onProgress - Optional progress callback.
    * @param targetSince - Optional historical boundary for initial load.
    * @param signal - Optional AbortSignal to cancel requests.
+   * @param force - If true, bypasses the 15-second throttle cooldown.
    * @returns Promise resolving to the number of newly inserted logs.
    */
   async syncProfileLogs(
     profileId: string,
     onProgress?: (syncedCount: number, total: number) => void,
     targetSince?: number,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    force: boolean = false
   ): Promise<number> {
     if (this.inFlightSyncs.has(profileId)) {
       return this.inFlightSyncs.get(profileId)!;
@@ -191,27 +193,20 @@ class LocalDbService {
       const watermark = await this.getWatermark(profileId);
       const now = Math.floor(Date.now() / 1000);
 
-      let since: number;
-      let maxPages = 3;
+      // Throttling: If watermark exists and was synced within the last 15 seconds, avoid redundant network calls
+      if (!force && watermark && watermark.last_synced_at && (now - watermark.last_synced_at < 15)) {
+        return 0;
+      }
 
-      if (targetSince !== undefined) {
-        if (watermark && watermark.earliest_timestamp && watermark.earliest_timestamp <= targetSince) {
-          // Historical data already covered down to targetSince; only do forward incremental sync
-          since = Math.max(0, watermark.latest_timestamp - 60);
-          maxPages = 5;
-        } else {
-          // Backfill historical logs down to targetSince with higher page allowance (up to 2,000 logs)
-          since = targetSince;
-          maxPages = 20;
-        }
-      } else if (watermark && watermark.latest_timestamp > 0) {
-        // Standard incremental forward delta sync
+      let since: number;
+      const maxPages = 2; // Capped to 2 pages (200 logs) per sync pass to guarantee zero UI lock & no request spam
+
+      if (watermark && watermark.latest_timestamp > 0) {
+        // Incremental forward delta sync: fetch logs that arrived since the last watermark
         since = Math.max(0, watermark.latest_timestamp - 60);
-        maxPages = 5;
       } else {
-        // Initial sync for empty local database: default to last 24h
-        since = Math.floor(now - 86400);
-        maxPages = 10;
+        // Initial sync for empty local database: fetch at most 200 recent logs
+        since = targetSince !== undefined ? targetSince : Math.floor(now - 86400);
       }
 
       let totalInserted = 0;
@@ -293,7 +288,7 @@ class LocalDbService {
     signal?: AbortSignal
   ): Promise<LogEntry[]> {
     await this.init();
-    if (signal?.aborted) return [];
+    if (signal?.aborted || before <= since) return [];
 
     const url = `/api/profiles/${profileId}/logs?start=${since}&end=${before}&limit=${Math.min(limit, 100)}&before=${before}`;
     const res = await profileFetch(url, { signal });
