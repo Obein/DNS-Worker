@@ -62,7 +62,7 @@ export async function handleProfileLogsWs(
   env: Env,
   user: User | null,
   profile: Profile,
-  _ctx: ExecutionContext
+  ctx: ExecutionContext
 ): Promise<Response> {
   const upgradeHeader = request.headers.get('Upgrade');
   if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
@@ -90,6 +90,16 @@ export async function handleProfileLogsWs(
   let lastId = 0;
   let pollInterval: ReturnType<typeof setInterval> | null = null;
   let isChecking = false;
+
+  // Keep Cloudflare Workers isolate alive for the entire lifespan of this WebSocket
+  let socketCloseResolver: (() => void) | null = null;
+  const socketLifetimePromise = new Promise<void>((resolve) => {
+    socketCloseResolver = resolve;
+  });
+
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    ctx.waitUntil(socketLifetimePromise);
+  }
 
   /**
    * Probes for new logs since (lastTimestamp, lastId).
@@ -219,6 +229,7 @@ export async function handleProfileLogsWs(
   });
 
   const cleanup = (): void => {
+    if (isClosed) return;
     isClosed = true;
     if (pollInterval) {
       clearInterval(pollInterval);
@@ -228,6 +239,10 @@ export async function handleProfileLogsWs(
       serverWs.close();
     } catch {
       // Ignore if socket already closed
+    }
+    if (socketCloseResolver) {
+      socketCloseResolver();
+      socketCloseResolver = null;
     }
   };
 

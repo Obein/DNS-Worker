@@ -38,7 +38,11 @@ class LogsWsService {
    * @param lastId - Optional last known log ID for sub-second tie breaking
    */
   connect(profileId: string, sinceTimestamp: number, lastId?: number): void {
-    if (this.ws && this.activeProfileId === profileId && this.isConnected) {
+    if (
+      this.ws &&
+      this.activeProfileId === profileId &&
+      (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)
+    ) {
       this.updateCursor(sinceTimestamp, lastId);
       return;
     }
