@@ -394,7 +394,11 @@
     "noMatchingIsps": "一致するプロバイダが見つかりません",
     "loadingIsps": "プロバイダを読み込み中...",
     "loggingDisabledTitle": "ログ記録が無効です",
-    "loggingDisabledDesc": "このプロファイルのログ保存期間は「無効」に設定されています。クエリログは記録されません。ログを表示するには、設定でログ保存を有効にしてください。"
+    "loggingDisabledDesc": "このプロファイルのログ保存期間は「無効」に設定されています。クエリログは記録されません。ログを表示するには、設定でログ保存を有効にしてください。",
+    "detailIsClientEncrypted": "クライアント側暗号化",
+    "encryptedLocked": "はい（未解除）",
+    "encryptedDecrypted": "はい（ローカル復号済）",
+    "notEncrypted": "いいえ"
   },
   "filtering": {
     "title": "外部ブロックリスト",

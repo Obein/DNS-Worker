@@ -394,7 +394,11 @@
     "noMatchingIsps": "Aucun FAI correspondant trouvé",
     "loadingIsps": "Chargement des FAI...",
     "loggingDisabledTitle": "Journalisation désactivée",
-    "loggingDisabledDesc": "La conservation des journaux pour ce profil est définie sur 'Désactivé'. Aucun journal n'est enregistré. Pour afficher les journaux, activez la rétention dans les Paramètres."
+    "loggingDisabledDesc": "La conservation des journaux pour ce profil est définie sur 'Désactivé'. Aucun journal n'est enregistré. Pour afficher les journaux, activez la rétention dans les Paramètres.",
+    "detailIsClientEncrypted": "Chiffré côté client",
+    "encryptedLocked": "Oui (Verrouillé)",
+    "encryptedDecrypted": "Oui (Déchiffré localement)",
+    "notEncrypted": "Non"
   },
   "filtering": {
     "title": "Listes de blocage externes",

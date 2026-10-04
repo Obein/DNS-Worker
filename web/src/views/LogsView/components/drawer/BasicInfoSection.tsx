@@ -19,7 +19,8 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   loading,
 }) => {
   const { t } = useTranslation();
-  const isEncryptedLocked = selectedLog.is_encrypted === 1 && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
+  const isEncrypted = selectedLog.is_encrypted === 1 || Boolean(selectedLog.is_encrypted);
+  const isEncryptedLocked = isEncrypted && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
 
   return (
     <Section title={t("logs.basicInfo")} icon={<Activity size={16} />} className="shadow-none! rounded-lg!">
@@ -47,10 +48,10 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             }
             bold
           />
-          {selectedLog.is_encrypted === 1 && (
-            <DetailItem
-              label={t("settings.e2eeTitle", "端到端加密")}
-              value={
+          <DetailItem
+            label={t("logs.detailIsClientEncrypted", "是否用户端加密")}
+            value={
+              isEncrypted ? (
                 <div className="flex items-center gap-1.5 justify-end">
                   <Lock size={13} className={isEncryptedLocked ? "text-amber-500" : "text-emerald-500"} />
                   <span
@@ -60,13 +61,17 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     )}
                   >
                     {isEncryptedLocked
-                      ? t("logs.lockedRecord", "已加密 (未解锁)")
-                      : t("logs.decryptedLocal", "端到端加密 (已本地解密)")}
+                      ? t("logs.encryptedLocked", "是 (未解锁)")
+                      : t("logs.encryptedDecrypted", "是 (已本地解密)")}
                   </span>
                 </div>
-              }
-            />
-          )}
+              ) : (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {t("logs.notEncrypted", "否")}
+                </span>
+              )
+            }
+          />
           <DetailItem label={t("logs.detailType")} value={selectedLog.record_type} />
           <DetailItem
             label={t("logs.detailLatency")}

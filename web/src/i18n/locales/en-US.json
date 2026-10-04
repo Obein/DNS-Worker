@@ -394,7 +394,11 @@
     "noMatchingIsps": "No matching ISPs found",
     "loadingIsps": "Loading ISPs...",
     "loggingDisabledTitle": "Logging Disabled",
-    "loggingDisabledDesc": "Log retention for this profile is set to 'Disabled'. No query logs are recorded. To view logs, enable log retention in Settings."
+    "loggingDisabledDesc": "Log retention for this profile is set to 'Disabled'. No query logs are recorded. To view logs, enable log retention in Settings.",
+    "detailIsClientEncrypted": "Client-Side Encrypted",
+    "encryptedLocked": "Yes (Locked)",
+    "encryptedDecrypted": "Yes (Decrypted Locally)",
+    "notEncrypted": "No"
   },
   "filtering": {
     "title": "External Filters",

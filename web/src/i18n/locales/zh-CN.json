@@ -394,7 +394,11 @@
     "noMatchingIsps": "未找到匹配运营商",
     "loadingIsps": "正在加载运营商...",
     "loggingDisabledTitle": "日志记录已关闭",
-    "loggingDisabledDesc": "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中启用日志留存。"
+    "loggingDisabledDesc": "当前配置的日志留存已设置为“关闭”，系统不记录任何查询日志。如需查看，请在设置中启用日志留存。",
+    "detailIsClientEncrypted": "是否用户端加密",
+    "encryptedLocked": "是 (未解锁)",
+    "encryptedDecrypted": "是 (已本地解密)",
+    "notEncrypted": "否"
   },
   "filtering": {
     "title": "外部拦截列表",

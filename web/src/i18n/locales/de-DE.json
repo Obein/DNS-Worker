@@ -394,7 +394,11 @@
     "noMatchingIsps": "Keine passenden ISPs gefunden",
     "loadingIsps": "ISPs werden geladen...",
     "loggingDisabledTitle": "Protokollierung deaktiviert",
-    "loggingDisabledDesc": "Die Protokollaufbewahrung für dieses Profil ist auf „Deaktiviert“ gesetzt. Es werden keine Protokolle aufgezeichnet. Aktivieren Sie die Protokollaufbewahrung in den Einstellungen, um Protokolle anzuzeigen."
+    "loggingDisabledDesc": "Die Protokollaufbewahrung für dieses Profil ist auf „Deaktiviert“ gesetzt. Es werden keine Protokolle aufgezeichnet. Aktivieren Sie die Protokollaufbewahrung in den Einstellungen, um Protokolle anzuzeigen.",
+    "detailIsClientEncrypted": "Clientseitig verschlüsselt",
+    "encryptedLocked": "Ja (Gesperrt)",
+    "encryptedDecrypted": "Ja (Lokal entschlüsselt)",
+    "notEncrypted": "Nein"
   },
   "filtering": {
     "title": "Externe Blockierlisten",

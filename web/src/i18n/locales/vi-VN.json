@@ -394,7 +394,11 @@
     "noMatchingIsps": "Không tìm thấy ISP phù hợp",
     "loadingIsps": "Đang tải danh sách ISP...",
     "loggingDisabledTitle": "Ghi nhật ký đã bị tắt",
-    "loggingDisabledDesc": "Thời gian lưu giữ nhật ký cho hồ sơ này được đặt thành 'Tắt'. Không có nhật ký truy vấn nào được ghi lại. Để xem nhật ký, hãy bật lưu giữ nhật ký trong Cài đặt."
+    "loggingDisabledDesc": "Thời gian lưu giữ nhật ký cho hồ sơ này được đặt thành 'Tắt'. Không có nhật ký truy vấn nào được ghi lại. Để xem nhật ký, hãy bật lưu giữ nhật ký trong Cài đặt.",
+    "detailIsClientEncrypted": "Mã hóa phía máy khách",
+    "encryptedLocked": "Có (Đã khóa)",
+    "encryptedDecrypted": "Có (Đã giải mã cục bộ)",
+    "notEncrypted": "Không"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",

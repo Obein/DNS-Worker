@@ -394,7 +394,11 @@
     "noMatchingIsps": "No se encontraron ISPs coincidentes",
     "loadingIsps": "Cargando ISPs...",
     "loggingDisabledTitle": "Registro desactivado",
-    "loggingDisabledDesc": "La retención de registros para este perfil está configurada como 'Desactivado'. No se registran consultas. Para ver registros, habilite la retención en Configuración."
+    "loggingDisabledDesc": "La retención de registros para este perfil está configurada como 'Desactivado'. No se registran consultas. Para ver registros, habilite la retención en Configuración.",
+    "detailIsClientEncrypted": "¿Cifrado en el cliente?",
+    "encryptedLocked": "Sí (Bloqueado)",
+    "encryptedDecrypted": "Sí (Descifrado localmente)",
+    "notEncrypted": "No"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",
