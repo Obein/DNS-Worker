@@ -70,7 +70,8 @@ head_sampling_rate = 0.001
 # Requires an API token with "Zone -> Cache Purge -> Purge" permission.
 # CF_ZONE_ID = ""
 # CF_PURGE_TOKEN = ""
-# Default upstream for fail-open emergency fallback
+# Default upstream for fail-open emergency fallback.
+# Supports HTTPS (DoH, e.g. "https://security.cloudflare-dns.com/dns-query"), TLS/DoT (e.g. "tls://1.1.1.1" or "tls://dns.google:853"), TCP (e.g. "tcp://1.1.1.1:53"), and DNS Stamps ("sdns://...").
 FAIL_OPEN_UPSTREAM = "https://freedns.controld.com/no-ads-malware-typo"
 # Maximum number of access points allowed per profile
 MAX_ACCESS_POINTS_PER_PROFILE = 100

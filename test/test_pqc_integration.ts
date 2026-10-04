@@ -18,7 +18,7 @@ function fromBase64(b64: string): Uint8Array {
 
 // HKDF-SHA256 derivation matching src/lib/crypto/e2ee.ts
 async function deriveDekFromSharedSecret(sharedSecret: Uint8Array): Promise<CryptoKey> {
-  const subtle = globalThis.crypto.subtle;
+  const subtle = crypto.subtle;
   const hkdfKey = await subtle.importKey(
     "raw",
     sharedSecret as BufferSource,
@@ -43,7 +43,7 @@ async function deriveDekFromSharedSecret(sharedSecret: Uint8Array): Promise<Cryp
 
 // PBKDF2 Recovery Key KEK derivation matching src/lib/crypto/e2ee.ts
 async function deriveRecoveryKek(plaintextRecoveryKey: string, salt: Uint8Array): Promise<CryptoKey> {
-  const subtle = globalThis.crypto.subtle;
+  const subtle = crypto.subtle;
   const keyMaterial = await subtle.importKey(
     "raw",
     new TextEncoder().encode(plaintextRecoveryKey.trim().toUpperCase()),
@@ -210,16 +210,20 @@ async function runTestSuite(): Promise<void> {
   // Step 8: Backward compatibility check (Legacy P-256 ECDH log decryption)
   console.log("\n[8] Testing backward compatibility with legacy P-256 ECDH (encrypt_version = 1)...");
   const subtle = crypto.subtle;
-  const userLegacyKeypair = await subtle.generateKey(
+  const userLegacyKeypair = (await subtle.generateKey(
     { name: "ECDH", namedCurve: "P-256" },
     true,
     ["deriveKey"]
-  );
+  )) as CryptoKeyPair;
   const userLegacyPubJwk = await subtle.exportKey("jwk", userLegacyKeypair.publicKey);
   const userLegacyPrivJwk = await subtle.exportKey("jwk", userLegacyKeypair.privateKey);
 
   // Server encrypts legacy log
-  const ephemKeypair = await subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey"]);
+  const ephemKeypair = (await subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveKey"]
+  )) as CryptoKeyPair;
   const importedUserPub = await subtle.importKey("jwk", userLegacyPubJwk, { name: "ECDH", namedCurve: "P-256" }, false, []);
   const legacySharedKey = await subtle.deriveKey(
     { name: "ECDH", public: importedUserPub } as any,

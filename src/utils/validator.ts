@@ -167,10 +167,10 @@ export function isSafeUrl(urlString: string): boolean {
     }
 
     let parseableUrl: string;
-    if (urlString.startsWith('tcp://')) {
-      parseableUrl = urlString.replace('tcp://', 'http://');
-    } else if (urlString.startsWith('tls://')) {
-      parseableUrl = urlString.replace('tls://', 'http://');
+    if (urlString.startsWith('tcp://') || urlString.startsWith('udp://')) {
+      parseableUrl = urlString.replace(/^(tcp|udp):\/\//, 'http://');
+    } else if (urlString.startsWith('tls://') || urlString.startsWith('dot://')) {
+      parseableUrl = urlString.replace(/^(tls|dot):\/\//, 'http://');
     } else if (urlString.startsWith('http://') || urlString.startsWith('https://')) {
       parseableUrl = urlString;
     } else {

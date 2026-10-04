@@ -182,11 +182,13 @@ export async function handleProfilesCoreRequest(
         const isHttp  = url.startsWith('http://');
         const isTcp   = url.startsWith('tcp://');
         const isTls   = url.startsWith('tls://');
+        const isDot   = url.startsWith('dot://');
+        const isUdp   = url.startsWith('udp://');
         const isSdns  = url.startsWith('sdns://');
         // 裸 host[:port]：不含 / 且不含 scheme
         const isBareHost = !url.includes('//') && !url.startsWith('/');
 
-        if (!isHttps && !isHttp && !isTcp && !isTls && !isSdns && !isBareHost) {
+        if (!isHttps && !isHttp && !isTcp && !isTls && !isDot && !isUdp && !isSdns && !isBareHost) {
           return new Response("Invalid upstream URL format. Only HTTP(S), TCP, TLS (DoT), DNS Stamp (sdns://), or bare host[:port] are allowed.", { status: 400 });
         }
         // 统一规范化后做安全检查（防 SSRF）

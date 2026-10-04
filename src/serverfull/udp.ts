@@ -9,6 +9,7 @@ import { Env, Context, ExecutionContext } from '../types';
 import { parseDNSQueryFromRaw } from '../utils/dns';
 import { pipeline } from '../pipeline';
 import { resolveDefaultProfile, resolveProfileByKey } from '../api/doh';
+import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 
 export interface UdpServerOptions {
   port: number;
@@ -143,6 +144,21 @@ export class UdpDnsServer {
       });
     } catch (err) {
       console.error('[UDP DNS] Message handling exception:', err);
+      try {
+        const failOpenUpstream = this.options.env.FAIL_OPEN_UPSTREAM || 'https://freedns.controld.com/no-ads-malware-typo';
+        const rawBytes = new Uint8Array(msg.buffer, msg.byteOffset, msg.byteLength);
+        const endpoint = resolveUpstreamEndpoint(failOpenUpstream);
+        const transportRes = await fetchFromUpstream(endpoint, rawBytes);
+        let answer = transportRes.answer;
+        if (answer.length > 512) {
+          const truncated = new Uint8Array(answer);
+          truncated[2] |= 0x02;
+          answer = truncated.slice(0, 512);
+        }
+        this.socket?.send(answer, rinfo.port, rinfo.address);
+      } catch (fallbackErr) {
+        console.error('[UDP DNS] Fail-open upstream fallback failed:', fallbackErr);
+      }
     }
   }
 
