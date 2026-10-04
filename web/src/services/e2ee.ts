@@ -908,7 +908,7 @@ class E2eeService {
 
       return log;
     } catch (err) {
-      console.warn(`[E2EE] Failed to decrypt log #${log.id}:`, err);
+      console.warn("[E2EE] Failed to decrypt log #%s:", String(log.id), err);
       return {
         ...log,
         domain: "[Decryption Failed]",
