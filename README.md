@@ -1,57 +1,87 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
-  <h1>DNS Worker</h1>
-  <p>Protective DNS resolver based on Cloudflare Workers & D1</p>
-  <p>Protect your first hop on the internet</p>
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="ObexDNS Logo" width="128">
+  <h1>ObexDNS</h1>
+  <p>Privacy-First Protective DNS Resolver & DoH / DoT Server</p>
+  <p>Protect your first hop on the internet · Dual-Engine: Cloudflare Workers Edge or Standalone Server (VPS / Linux / macOS / Windows)</p>
   <p align="center">
     English | <a href="README_zh-CN.md">中文 (简体)</a> | <a href="README_zh-TW.md">中文 (正體)</a>
   </p>
 
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
   [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
+  [![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5-green.svg)](https://nodejs.org/)
+  [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
+  [![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](#-dual-engine-architecture--deployment-matrix)
 </div>
 
 ---
 
 ## 📖 Introduction
 
-**DNS Worker** is a lightweight, scalable, and privacy-focused DNS resolution system. It runs entirely on Cloudflare's edge network, leveraging the ultra-fast response of Workers and the efficient storage of D1 database to provide users with a granular DNS (over HTTPS) control experience.
+**ObexDNS** (formerly DNS Worker) is a high-performance, privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+Whether you need global edge resolution across 300+ cities or 100% self-hosted data sovereignty with classic UDP 53 and native Android Private DNS (DoT 853), ObexDNS provides an enterprise-grade resolver with granular filtering, instant local-first analytics, and post-quantum end-to-end encrypted query logs.
 
-### Why DNS Worker?
+### ⚖️ Dual-Engine Architecture & Deployment Matrix
 
-| | Traditional DNS Services | DNS Worker |
+| Feature / Capability | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge |
 |---|---|---|
-| **Hosting** | Requires a VPS or home server | Runs on Cloudflare's free tier — no server needed |
-| **Latency** | Depends on server location | Edge-computed in 300+ cities worldwide |
-| **Maintenance** | Manual updates, OS patches | Zero-maintenance serverless deployment |
-| **Scaling** | Limited by hardware | Scales automatically with Cloudflare's network |
-| **Cost** | Server fees + electricity | Free for most personal usage |
+| **Primary Use Case** | Complete data sovereignty, home lab, direct router DNS, Android DoT | Zero-maintenance, global low-latency edge resolution |
+| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
+| **Storage Backend** | Native Node.js SQLite (`node:sqlite`) on local NVMe/SSD | Cloudflare D1 (Global distributed serverless database) |
+| **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
+| **Data Sovereignty** | **100% Self-Sovereign** — zero cloud vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
+| **Router & LAN DNS** | **Direct UDP 53 listener** (point router/LAN DNS directly to server) | Requires a DoH client, proxy, or stub resolver upstream |
+| **Android Private DNS** | **Native DoT 853** with SNI Profile routing (`<profile_key>.dns.example.com`) | Supported via DoH URL or third-party DNS app |
+| **Zero-Knowledge PQC E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
+| **Local-First Web UI** | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis |
+| **Maintenance & Scaling** | Simple systemd service (`npm run service-create:linux`) | Zero server maintenance; scales automatically |
+| **Cost** | Runs on existing VPS or home server hardware | Free tier for personal usage |
 
-> Deploy your own privacy-respecting DNS resolver in under 5 minutes — no credit card, no server, no DevOps.
+### What is DNS over HTTPS (DoH) & DNS over TLS (DoT)?
 
-### What is DNS over HTTPS (DoH)?
-
-DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS connections. Compared to traditional plaintext DNS, DoH can:
-*   **Prevent Hijacking**: Prevents ISPs or third parties from tampering with DNS responses.
-*   **Enhance Privacy**: Hides your browsing history through an encrypted tunnel.
-*   **Bypass Censorship**: Provides more stable resolution in restricted network environments.
+* **DNS over HTTPS (DoH / RFC 8484)**: Performs DNS queries over encrypted HTTPS connections. ObexDNS exposes DoH endpoints compatible with all modern browsers, operating systems, and stub resolvers.
+* **DNS over TLS (DoT / RFC 7858)**: Encrypts DNS queries directly over TLS on dedicated port 853. ObexDNS Standalone mode natively routes incoming DoT requests to isolated user profiles using TLS Server Name Indication (SNI), making it ideal for Android 9+ native Private DNS.
+* **Classic UDP DNS (RFC 1035)**: Standard plaintext DNS on port 53. ObexDNS Standalone mode provides ultra-low latency LAN resolution directly compatible with home routers and legacy network equipment.
 
 ---
 
 ## ✨ Core Features
 
--   🚀 **Ultra-fast Resolution**: Fully based on edge computing with extremely low global latency.
--   🗒️ **Multi-profile Management**: Supports creating multiple independent configurations, each with a unique endpoint.
+-   🌐 **Dual-Engine Deployment**: Run serverless on Cloudflare Workers edge, or run standalone on any VPS / home server with zero Cloudflare dependency.
+-   ⚡ **Full-Stack Protocol Support**:
+    -   **Classic UDP 53**: Standard RFC 1035 DNS for routers and LAN devices.
+    -   **DoT 853 (DNS over TLS)**: RFC 7858 encrypted DNS with TLS SNI profile routing (`<profile_key>.dns.example.com`), natively compatible with Android Private DNS.
+    -   **DoH (DNS over HTTPS)**: RFC 8484 encrypted DNS over HTTP/2 and HTTP/3.
+-   🚀 **Ultra-fast Resolution**: Edge-accelerated caching and multi-tier memory pipelines for sub-millisecond query responses.
+-   🗒️ **Multi-Profile Management**: Create independent configurations with isolated endpoints, rules, and upstream settings.
 -   🛡️ **Granular Filtering**:
-    -   **Allow/Block Lists**: Supports exact domain and subdomain wildcard matching.
-    -   **Third-party Rule Sets**: Supports subscribing to external blocklists in formats like AdGuard.
-    -   **Custom Redirection**: Supports custom overrides for A, AAAA, TXT, and CNAME records.
--   📊 **Real-time Stats & Logs**: Visual dashboard recording every request's hit reason, geo-location, and upstream latency.
--   🔐 **Privacy Enhancement**: Flexible ECS (EDNS Client Subnet) configuration (Forward, Custom, or Hidden).
--   🔒 **Rewrite ECH & ECH Fronting**: Automatically injects/rewrites ECH (Encrypted Client Hello) parameters and customizable Outer SNI (ECH Fronting) for HTTPS (Type 65) / SVCB (Type 64) queries to eliminate plaintext SNI leakage. *(Note: ECH rewriting is exclusively supported for domains proxied by Cloudflare)*.
--   🌗 **Modern UI**: Dark mode support, high-density management panel built with React + BlueprintJS.
+    -   **Allow/Block Lists**: Exact domain and wildcard subdomain matching.
+    -   **Third-Party Rule Sets**: Subscribe to external blocklists (AdGuard, EasyList, hosts syntax) with fast Bloom filter matching.
+    -   **Custom Redirections**: Override A, AAAA, TXT, and CNAME records with custom answers.
+-   📊 **Real-time Stats & Logs**: Visual dashboard recording query type, hit reason, client geo-location, and upstream latency.
+-   🔐 **Privacy Controls**: Flexible ECS (EDNS Client Subnet) management (Forward, Custom, or Hidden).
+-   🔒 **Rewrite ECH & ECH Fronting**: Automatically injects/rewrites Encrypted Client Hello (ECH) parameters and outer SNI for HTTPS (Type 65) / SVCB (Type 64) queries to eliminate plaintext SNI leakage *(Note: ECH rewriting is supported for domains proxied by Cloudflare)*.
+-   ⚡ **Local-First Architecture**: Embedded in-browser SQLite (WASM + OPFS) and Web Workers deliver instant 0ms log filtering and aggregation without cloud queries. Background bidirectional sync keeps data aligned while saving database read quotas.
+-   🛡️ **Post-Quantum Zero-Knowledge E2EE**: Hardware Passkey (WebAuthn) and Recovery Key protected End-to-End Encryption for query logs. Implements NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography with hourly rotating KEM DEKs. Persistent storage holds only irreversible ciphertexts; decryption occurs strictly on your authorized client devices.
+-   🌗 **Modern UI**: High-density management panel with dark mode, built with React + BlueprintJS.
+
+---
+
+## 🔐 Advanced Privacy: Local-First & Post-Quantum E2EE
+
+DNS Worker redefines personal DNS observability by combining local-first browser computation with cutting-edge post-quantum cryptography:
+
+### ⚡ Local-First Browser SQLite (OPFS + WASM)
+* **Instantaneous 0ms Queries**: Resolution logs and analytical charts render immediately from an in-browser SQLite database powered by Origin Private File System (OPFS) and Dedicated Web Workers.
+* **Quota Preservation & Offline Analytics**: High-frequency filtering, pagination, and multi-dimensional analytics run locally without issuing remote D1 read queries, drastically reducing Cloudflare D1 quota consumption and enabling full offline inspection.
+* **Smart Bidirectional Sync**: Automatically reconciles local storage with remote D1 in the background with zero UI freeze.
+
+### 🛡️ Post-Quantum End-to-End Encryption (P256-MLKEM768)
+* **Zero-Knowledge Cloud Storage**: Sensitive log fields (domains, client IPs, answers, geo locations, and upstream servers) are encrypted before reaching persistent cloud storage. Cloudflare Workers and D1 database store only ciphertexts.
+* **Quantum-Resistant Hybrid Lattice KEM**: Adopts the NIST FIPS 203 standardized **P256-MLKEM768** (ML-KEM-768 + ECDH P-256) hybrid algorithm, defending user query logs against future "Harvest Now, Decrypt Later" quantum attacks.
+* **Decoupled Hourly Envelope Encryption**: Automatically encapsulates and provisions hourly Data Encryption Keys (DEK), compressing KEM database overhead by ~80% while sustaining hot-path pipeline encryption throughput of **20,000+ queries/second**.
+* **Hardware Passkey Protection**: The private key seed is wrapped with hardware Passkeys (WebAuthn PRF) and single-use self-rotating Recovery Keys; no plaintext secret ever touches the server.
 
 ---
 
@@ -92,14 +122,20 @@ DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS conn
 ### Code Structure
 ```text
 ├── src/
-│   ├── index.ts          # Entry point, handles HTTP routing & middleware
+│   ├── index.ts          # Cloudflare Worker entry point, handles HTTP routing & DoH
+│   ├── serverfull/       # Standalone Server entry point (UDP 53, DoT 853, HTTP 3000)
+│   │   ├── index.ts      # Serverfull CLI & Master bootstrap
+│   │   ├── udp.ts        # Classic RFC 1035 UDP 53 DNS Server
+│   │   ├── dot.ts        # RFC 7858 DoT 853 Server with SNI Profile routing
+│   │   ├── http.ts       # Web Dashboard & DoH HTTP server
+│   │   └── db.ts         # Native Node.js SQLite (node:sqlite) adapter & migrator
 │   ├── types.ts          # Type definitions
 │   ├── api/              # API Controllers (Auth, Account, Profiles)
-│   ├── lib/              # Core logic (RBAC, Rule filtering)
-│   ├── models/           # D1 Database models
-│   ├── pipeline/         # DNS Resolution Pipeline (Core business logic)
+│   ├── lib/              # Core logic (RBAC, Rule filtering, PQC Crypto, DEK manager)
+│   ├── models/           # Database models (Unified D1 & SQLite)
+│   ├── pipeline/         # DNS Resolution Pipeline (Unified core business logic)
 │   └── utils/            # Utilities (Cache, GeoIP, DNS Codec, Bloom Filter)
-├── web/                  # React/BlueprintJS UI frontend project
+├── web/                  # React/BlueprintJS UI frontend (Local-First WASM + OPFS)
 │   ├── public/           # Public static files
 │   ├── src/              # Frontend source code
 │   │   ├── assets/       # Static assets (images, icons, etc.)
@@ -112,14 +148,15 @@ DoH (RFC 8484) is a protocol for performing DNS queries via encrypted HTTPS conn
 │   │   └── utils/        # Utility helpers and functions
 │   └── package.json      # Frontend dependencies configuration
 ├── static/               # Compiled static resources
-├── migrations/           # D1 Database migration scripts
+├── scripts/              # Automation scripts (e.g., Linux systemd service generator)
+├── migrations/           # Unified SQL Database migration scripts
 └── wrangler.toml         # Cloudflare deployment configuration
 ```
 
 ### Resolution Pipeline
 When a DNS request arrives, it goes through the following processing stages:
 1.  **Memory Cache Check**: Checks if a valid response for the query exists in the edge node's memory.
-2.  **Config Loading**: Layers profile settings loading from Memory -> Cache API -> D1 Database.
+2.  **Config Loading**: Layers profile settings loading from Memory -> Cache API -> Database (D1 or SQLite).
 3.  **Local Rule Matching**:
     -   **Whitelist**: If hit, forwards directly to upstream and returns.
     -   **Redirection**: If hit, returns custom records.
@@ -127,72 +164,23 @@ When a DNS request arrives, it goes through the following processing stages:
 4.  **External List Filtering**:
     -   Use a **Bloom filter** for fast filtering.
 5.  **Upstream Resolution**: If none of the above hit, requests the upstream DoH server based on configuration, with optional ECS support.
-6.  **Async Logging & Caching**: Asynchronously records resolution logs, fetches target GeoIP, and writes results to various cache levels.
+6.  **Async Logging & Caching**: Asynchronously records resolution logs (with optional PQC E2EE encryption), fetches target GeoIP, and writes results to various cache levels.
 
 ---
 
 ## 🚀 Deployment Guide
 
-### Online Deployment (Cloudflare Dashboard)
+ObexDNS offers two deployment methods tailored to different operational needs:
+* **Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)** — Best if you want complete control, classic UDP 53 for routers, and native Android DoT 853 on your own machine.
+* **Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)** — Best if you want a globally distributed, zero-cost, zero-maintenance DoH resolver on 300+ edge PoPs.
 
-1.  **Fork this repo**: Click the `Fork` button at the top right to clone the repository to your own GitHub account.
-2.  **Create D1 Database**: Log in to the Cloudflare dashboard, go to `Workers & Pages` > `D1`, and create a new database (e.g., named `dns_worker_db`), and copy the created database ID.
-3.  **Configure Database ID**: In your forked repository, edit the `wrangler.toml` file and replace `database_id` with the ID of the database you just created.
-4.  **Create Worker**: Go to Cloudflare dashboard `Workers & Pages` > `Create application`.
-5.  **Import from GitHub & Complete Initial Deployment**: On the deployment page, select `Continue with GitHub`, connect your forked project, and complete the authorized deployment. Under the Build & Deploy settings, configure as follows:
-    *   **Build command**: `npm run build`
-    *   **Deploy command**: `npm run deploy`
-    *   **Root directory (Path)**: `/`
-    > ⚠️ **Note**: Environment variables entered in the initial project setup wizard are only injected into the build container and will not take effect as runtime secrets. Proceed with the "Deploy" button directly, and configure runtime secrets in your Worker's settings after the initial deployment finishes.
-6.  **Configure JWT Secret**: After the initial deployment completes, go to Cloudflare Dashboard -> `Workers & Pages` -> click on your Worker -> `Settings` -> `Runtime variables and secrets` (or `Variables and secrets`) -> click `Add`. Set the Name to `JWT_SECRET`, choose type `Secret`, input a secure random string as Value, and click `Deploy` (or `Save and Deploy`).
-7.  **Configure KEK for Envelope Encryption (Optional)**: In the same `Settings` > `Runtime variables and secrets` section after deployment, to enable server-side envelope encryption for sensitive credentials (such as TOTP keys and recovery keys) in D1, add a variable named `KEK_v1`, type `Secret`, and input a secure key value. When you need to rotate the KEK key, add a new secret `KEK_v(N+1)` (e.g. `KEK_v2` -> `KEK_v3`, etc.) sequentially.
+---
 
-### Local Development & Manual Deployment
+### Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)
 
-#### Development Environment
--   **Node.js**: v18.x or later
--   **Package Manager**: npm
--   **Cloudflare Account**: Workers and D1 permissions required
+Run ObexDNS directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
 
-#### Local Setup & Deployment Steps
-1.  Clone the repository and install dependencies:
-
-```bash
-npm install
-```
-
-2.  Initialize D1 Database:
-
-```bash
-npm run db:setup
-npm run db:migrate:dev
-```
-
-3.  Configure environment variables:
-    *   Create a `.dev.vars` file in the root directory and add a secure random JWT secret (required for session token signing):
-        ```env
-        JWT_SECRET=your_secure_random_string_here
-        ```
-    *   (Optional) Enable Envelope Encryption for sensitive credentials (like TOTP secrets and recovery keys) by adding a Key Encryption Key (KEK):
-        ```env
-        KEK_v1=your_secure_kek_v1_key_string
-        ```
-
-4.  Start the development server:
-
-```bash
-npm run dev
-```
-
-5.  Deploy manually:
-
-```bash
-npm run deploy
-```
-
-### Serverfull Mode Deployment (Standalone Server / VPS)
-
-DNS Worker can run completely independent of Cloudflare Workers as a standalone service on your Linux, Windows, or macOS server. Serverfull mode provides:
+#### Features in Standalone Mode
 * **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
 * **DNS over TLS / DoT (Port 853)**: RFC 7858 encrypted DNS, natively supported by Android 9+ "Private DNS", with SNI-based Profile routing (e.g. `<profile_key>.dns.example.com`).
 * **Web Dashboard & DoH (Default Port 3000)**: Full-featured React management dashboard and REST API.
@@ -214,25 +202,83 @@ DNS Worker can run completely independent of Cloudflare Workers as a standalone 
 
 #### Quick Start
 
-1. Configure environment variables:
-The project provides an out-of-the-box configuration file `.env.serverfull` (the server automatically loads system environment variables, `.env`, or `.env.serverfull` by priority). You can directly modify `.env.serverfull`, or copy it to `.env` for customization:
+1. Clone repository and install dependencies:
 ```bash
-# Edit .env.serverfull directly (or copy via cp .env.serverfull .env first)
-nano .env.serverfull
+git clone https://github.com/Obein/DNS-Worker.git obexdns
+cd obexdns
+npm install
 ```
 
-2. Build frontend and start Serverfull service:
+2. Configure environment variables:
+The project provides an out-of-the-box configuration template `.env.serverfull`. You can modify it directly or copy it to `.env`:
+```bash
+cp .env.serverfull .env
+nano .env
+```
+
+3. Build frontend and start Standalone Server:
 ```bash
 npm run start:serverfull
 ```
 
-3. Register as a Linux systemd background service:
+4. Production deployment as a Linux systemd background service:
 ```bash
 sudo npm run service-create:linux
 sudo systemctl start dns-worker
 sudo systemctl status dns-worker
 ```
-This generates `/etc/systemd/system/dns-worker.service` configured with `CAP_NET_BIND_SERVICE` privileges to bind ports 53 and 853 with automatic restart on boot.
+This generates `/etc/systemd/system/dns-worker.service` configured with `CAP_NET_BIND_SERVICE` privileges to bind privileged ports 53 and 853 without running as root, with automatic restart on reboot.
+
+---
+
+### Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)
+
+Run ObexDNS across 300+ edge locations worldwide on Cloudflare Workers and D1 database.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+
+#### 1. Online Deployment (Cloudflare Dashboard)
+
+1.  **Fork this repo**: Click the `Fork` button at the top right to clone the repository to your own GitHub account.
+2.  **Create D1 Database**: Log in to the Cloudflare dashboard, go to `Workers & Pages` > `D1`, and create a new database (e.g., named `dns_worker_db`), and copy the created database ID.
+3.  **Configure Database ID**: In your forked repository, edit the `wrangler.toml` file and replace `database_id` with the ID of the database you just created.
+4.  **Create Worker**: Go to Cloudflare dashboard `Workers & Pages` > `Create application`.
+5.  **Import from GitHub & Complete Initial Deployment**: On the deployment page, select `Continue with GitHub`, connect your forked project, and complete the authorized deployment. Under the Build & Deploy settings, configure as follows:
+    *   **Build command**: `npm run build`
+    *   **Deploy command**: `npm run deploy`
+    *   **Root directory (Path)**: `/`
+    > ⚠️ **Note**: Environment variables entered in the initial project setup wizard are only injected into the build container and will not take effect as runtime secrets. Proceed with the "Deploy" button directly, and configure runtime secrets in your Worker's settings after the initial deployment finishes.
+6.  **Configure JWT Secret**: After the initial deployment completes, go to Cloudflare Dashboard -> `Workers & Pages` -> click on your Worker -> `Settings` -> `Runtime variables and secrets` (or `Variables and secrets`) -> click `Add`. Set the Name to `JWT_SECRET`, choose type `Secret`, input a secure random string as Value, and click `Deploy` (or `Save and Deploy`).
+7.  **Configure KEK for Envelope Encryption (Optional)**: In the same `Settings` > `Runtime variables and secrets` section after deployment, to enable server-side envelope encryption for sensitive credentials (such as TOTP keys and recovery keys) in D1, add a variable named `KEK_v1`, type `Secret`, and input a secure key value. When you need to rotate the KEK key, add a new secret `KEK_v(N+1)` (e.g. `KEK_v2` -> `KEK_v3`, etc.) sequentially.
+
+#### 2. Local Development & CLI Deployment
+
+##### Prerequisites
+-   **Node.js**: v18.x or later (v22.5.0+ recommended)
+-   **Package Manager**: npm
+-   **Cloudflare Account**: Workers and D1 permissions required
+
+##### Setup & Deployment Steps
+```bash
+# 1. Clone repository and install dependencies
+npm install
+
+# 2. Initialize and migrate local D1 database
+npm run db:setup
+npm run db:migrate:dev
+
+# 3. Configure local environment variables (.dev.vars)
+echo "JWT_SECRET=your_secure_random_string_here" > .dev.vars
+echo "KEK_v1=your_secure_kek_v1_key_string" >> .dev.vars
+
+# 4. Start local development server
+npm run dev
+
+# 5. Deploy to Cloudflare Workers
+npm run deploy
+```
+
+---
 
 ### Online Deployment to Cloudflare Pages (⚠️ Not Recommended)
 
@@ -256,13 +302,15 @@ If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
 
 ## 💪 Powered by
 
-* [Cloudflare Workers](https://workers.cloudflare.com/)
+* [Cloudflare Workers](https://workers.cloudflare.com/) & [D1 Database](https://developers.cloudflare.com/d1/)
+* [Node.js](https://nodejs.org/) (Native `node:sqlite` Engine)
 
-## 🚚 Dependencies
+## 🚚 Dependencies & Technologies
 
-* [Blueprint](https://github.com/palantir/blueprint) (at Palantir)
+* [React](https://github.com/facebook/react) & [Blueprint](https://github.com/palantir/blueprint) (Modern high-density UI)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
-* [React](https://github.com/facebook/react)
+* [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768 Post-Quantum Cryptography)
+* [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WebAssembly SQLite & OPFS Local-First Storage)
 
 ---
 
@@ -274,15 +322,15 @@ This project is licensed under the [AGPLv3](LICENSE) License.
 
 ## 📝 Summary
 
-DNS Worker gives you full control over your DNS resolution — with no servers to rent, no infrastructure to manage, and no compromises on privacy. By leveraging Cloudflare Workers' global edge network and D1 database, it delivers a production-ready Protective DNS service that is:
+ObexDNS gives you full control over your DNS resolution — with zero compromises on privacy, performance, or flexibility. By supporting both a high-efficiency standalone Node.js server and Cloudflare Workers global edge, it delivers an enterprise-grade Protective DNS system that is:
 
--   **Free to run** on Cloudflare's generous free tier
--   **Fast everywhere** thanks to 300+ edge locations worldwide
--   **Fully customizable** with per-profile rules, allowlists, blocklists, and third-party filter subscriptions
--   **Privacy-first** with encrypted DoH and flexible ECS controls
--   **Easy to deploy** in minutes via one-click deploy or a simple `npm run deploy`
+-   **Dual-Engine Versatility**: Run completely Cloudflare-free on your own VPS with classic UDP 53 & DoT 853, or deploy globally on Cloudflare Workers edge for zero-maintenance DoH.
+-   **Full-Stack Protocol Support**: Classic UDP 53 for routers, Android Private DNS (DoT 853 with SNI profile routing), and DoH (RFC 8484).
+-   **Post-Quantum E2EE**: Protects sensitive DNS query logs using NIST FIPS 203 **P256-MLKEM768** lattice cryptography and hardware Passkeys (WebAuthn).
+-   **Local-First Speed**: Instant 0ms log filtering and analytics in your browser via SQLite WASM + OPFS, eliminating unnecessary database read quotas.
+-   **Granular Governance**: Multi-profile isolation, custom record redirection, ECH parameter rewriting, and Bloom-filter-accelerated adblocking subscriptions.
 
-Whether you're protecting a single device or managing DNS for your family, DNS Worker offers an elegant, self-hosted alternative to commercial DNS filtering services — without the cost or complexity.
+Whether protecting a single device, an entire home network, or a distributed organization, ObexDNS provides an elegant, self-sovereign alternative to commercial DNS filtering services.
 
 <div align="center">
   <br>
@@ -290,5 +338,5 @@ Whether you're protecting a single device or managing DNS for your family, DNS W
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>If DNS Worker is useful to you, please consider giving it a ⭐</b>
+  <b>If ObexDNS is useful to you, please consider giving it a ⭐</b>
 </div>

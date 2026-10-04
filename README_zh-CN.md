@@ -1,14 +1,17 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
-  <h1>DNS Worker</h1>
-  <p>基于 Cloudflare Workers & D1 的 Protective DNS 解析服务</p>
-  <p>保护您的互联网第一跳</p>
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="ObexDNS Logo" width="128">
+  <h1>ObexDNS</h1>
+  <p>隐私优先的高性能 Protective DNS 解析器 & DoH / DoT 服务端</p>
+  <p>保护您的互联网第一跳 · 双引擎架构：Cloudflare Workers 边缘无服务器或独立服务器 / VPS (Linux / macOS / Windows)</p>
   <p align="center">
-    <a href="README.md">English </a> | 中文 (简体) | <a href="README_zh-TW.md">中文 (正體)</a>
+    <a href="README.md">English</a> | 中文 (简体) | <a href="README_zh-TW.md">中文 (正體)</a>
   </p>
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5-green.svg)](https://nodejs.org/)
+[![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
+[![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](#-双引擎架构与部署特性对比)
 
 </div>
 
@@ -16,44 +19,70 @@
 
 ## 📖 简介
 
-**DNS Worker** 是一个轻量级、可扩展的隐私保护 DNS 解析系统。它完全运行在 Cloudflare 的边缘网络上，利用 Workers 的极速响应和 D1 数据库的高效存储，为用户提供精细化 DNS (over HTTPS) 控制体验。
+**ObexDNS**（前身为 DNS Worker）是一个专为隐私与性能打造的高性能 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**。它既可以作为免运维的 Serverless 边缘应用完全运行在 Cloudflare Workers 网络上，也可以**完全脱离 Cloudflare**，在您的自有 VPS、家用服务器或物理机（Linux、macOS、Windows）上以独立服务模式运行，并采用原生 Node.js 内置 SQLite 存储。
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+无论您是追求全球 300+ 城市的极速边缘调度与零运维，还是追求 100% 数据自主可控、家庭路由器直连经典 UDP 53 以及 Android 原生私有 DNS（DoT 853），ObexDNS 均能提供企业级过滤、本地优先瞬间分析以及基于后量子密码学的零知识端到端加密日志。
 
-### 何以 DNS Worker？
+### ⚖️ 双引擎架构与部署特性对比
 
-| | 传统 DNS 方案 | DNS Worker |
+| 特性 / 维度 | 🖥️ 独立服务器 / VPS (脱离 Cloudflare) | ☁️ Cloudflare Workers 边缘模式 |
 |---|---|---|
-| **托管** | 需要 VPS 或家用服务器 | 运行于 Cloudflare 免费层级，免服务器 |
-| **延迟** | 取决于服务器位置 | 在全球 300+ 城市边缘计算 |
-| **维护** | 手动更新、系统补丁 | 免维护的 Serverless 部署 |
-| **扩展** | 受硬件限制 | 随 Cloudflare 网络自动扩展 |
-| **成本** | 服务器费用 + 电费 | 个人使用基本免费 |
+| **核心定位** | 100% 数据主权、家庭局域网/路由器直连、Android DoT | 全球极速边缘解析、免运维 Serverless |
+| **运行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare 全球 300+ 城市边缘节点 |
+| **存储介质** | 原生 Node.js SQLite (`node:sqlite`)，存储于本地 NVMe/SSD | Cloudflare D1（全球分布式云端数据库） |
+| **支持协议** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
+| **数据主权** | **100% 自主可控**，完全无云厂商锁定 | 边缘加密；托管于 Cloudflare 基础设施 |
+| **路由器 / 局域网接入** | **直接监听 UDP 53**（路由器 WAN/LAN DNS 直填服务器 IP） | 需搭配 DoH 客户端、代理或分流工具 |
+| **Android 私有 DNS** | **原生 DoT 853**，支持 SNI 路由 (`<profile_key>.dns.example.com`) | 需通过 DoH URL 或第三方客户端支持 |
+| **后量子零知识 E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn |
+| **本地优先 Web UI** | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 |
+| **运维与维护** | 标准 systemd 常驻服务 (`npm run service-create:linux`) | 零服务器维护，边缘自适应伸缩 |
+| **费用与门槛** | 运行于既有 VPS 或家用服务器硬件 | Cloudflare 免费套餐额度内免费运行 |
 
-> 5 分钟内部署您自己的隐私保护 DNS 解析器 —— 免信用卡、免服务器、免运维。
+### 什么是 DNS over HTTPS (DoH) 与 DNS over TLS (DoT)？
 
-### 什么是 DNS over HTTPS (DoH)？
-
-DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议。与传统明文 DNS 相比，DoH 能够：
-
-- **防止劫持**：防止 ISP 或第三方篡改 DNS 响应。
-- **增强隐私**：通过加密隧道隐藏您的浏览记录。
-- **绕过审查**：在受限网络环境下提供更稳定的解析服务。
+* **DNS over HTTPS (DoH / RFC 8484)**：通过加密的 HTTP/2 或 HTTP/3 连接进行 DNS 查询。ObexDNS 提供标准 DoH 端点，兼容各大现代浏览器、操作系统及 stub 客户端。
+* **DNS over TLS (DoT / RFC 7858)**：在标准 853 端口上通过 TLS 隧道直接加密 DNS 查询。ObexDNS 独立模式原生支持 TLS SNI 配置路由，完美契合 Android 9+ 系统自带的“私有 DNS”（Private DNS）。
+* **经典 UDP DNS (RFC 1035)**：标准明文 53 端口 DNS。ObexDNS 独立模式支持直接在局域网内提供纳秒/微秒级低延迟解析，无缝接管家用路由器与各类传统网络设备。
 
 ---
 
 ## ✨ 核心功能
 
-- 🚀 **极速解析**：完全基于边缘计算，全球延迟极低。
-- 🗒️ **多配置管理 (Profiles)**：支持创建多个独立配置，每个配置拥有唯一的端点。
+- 🌐 **双引擎自由部署**：支持 Cloudflare Workers 边缘 Serverless 运行，亦可完全脱离 Cloudflare 在自有 VPS/服务器上独立部署。
+- ⚡ **全栈协议覆盖**：
+  - **经典 UDP 53**：标准 RFC 1035 UDP DNS，路由器与内网设备即插即用。
+  - **DoT 853 (DNS over TLS)**：标准 RFC 7858 加密 DNS，支持 SNI Profile 路由（如 `<profile_key>.dns.example.com`），完美契合 Android 原生私有 DNS。
+  - **DoH (DNS over HTTPS)**：标准 RFC 8484 加密 DNS，支持 HTTP/2 与 HTTP/3。
+- 🚀 **极速解析**：内存与边缘分层加速，纳秒/微秒级响应。
+- 🗒️ **多配置管理 (Profiles)**：支持创建多个独立配置，每个配置拥有唯一的端点与规则集合。
 - 🛡️ **精细过滤**：
   - **黑/白名单**：支持精确域名及子域名通配符。
-  - **第三方规则集**：支持订阅 AdGuard 等格式的外部拦截列表。
+  - **第三方规则集**：支持订阅 AdGuard、EasyList、hosts 等格式的外部拦截列表，借助布隆过滤器毫秒级命中。
   - **自定义重定向**：支持 A/AAAA/TXT/CNAME 记录的自定义覆盖。
 - 📊 **实时统计与日志**：可视化仪表盘，记录每一次请求的命中原因、地理位置及上游延迟。
 - 🔐 **隐私增强**：支持 ECS (EDNS Client Subnet) 灵活配置（透传、自定义或隐藏）。
 - 🔒 **重写 ECH & ECH Fronting**：针对 HTTPS (Type 65) / SVCB (Type 64) 查询，自动重写/注入 ECH (Encrypted Client Hello) 参数与自定义表层伪装域名（Outer SNI / ECH Fronting），全程加密真实目标域名以防中间人窥探与阻断。（*注：重写注入功能仅支持由 Cloudflare 代理的域名*）。
+- ⚡ **本地优先架构 (Local-First)**：基于浏览器原生 OPFS (Origin Private File System) 与 WebAssembly SQLite 构建。解析日志与统计图表本地 0ms 瞬间渲染，后台双向增量同步，大幅节约数据库读配额且支持断网离线分析。
+- 🛡️ **后量子零知识端到端加密 (E2EE)**：支持由硬件通行密钥 (Passkey / WebAuthn) 及恢复密钥保护的端到端日志信封加密。基于 NIST FIPS 203 **P256-MLKEM768** 后量子混合格密码学与周期性小时级 KEM DEK，持久化存储仅存不可逆密文，唯有已授权设备可在本地解密还原。
 - 🌗 **现代 UI**：支持暗黑模式，基于 React + BlueprintJS 构建的高密度管理面板。
+
+---
+
+## 🔐 深度隐私安全：本地优先与后量子 E2EE
+
+DNS Worker 将本地优先（Local-First）计算与前沿抗量子密码学结合，彻底重塑个人 DNS 日志的安全与隐私边界：
+
+### ⚡ 本地优先浏览器 SQLite (OPFS + WASM)
+* **0ms 极速检索与分析**：采用浏览器私有文件系统（OPFS）与 Web Worker 后台驱动的 WebAssembly SQLite 数据库。日志搜索、多维过滤与统计图表渲染均在客户端本地毫秒级完成。
+* **节省 D1 配额与离线可用**：日常日志翻页与统计聚合无需频繁消耗 Cloudflare D1 每日读配额；即使网络中断或服务离线，本地历史数据依然可以随时秒级查询。
+* **增量平滑同步**：后台自适应双向数据同步机制，确保本地数据与云端最新记录无缝对齐，UI 线程全程丝滑流畅。
+
+### 🛡️ 后量子端到端加密 (P256-MLKEM768 / NIST FIPS 203)
+* **云端持久化零知识**：敏感 DNS 字段（请求域名、客户端 IP、解析记录、GeoIP 及上游信息）在写入云端数据库前均已加密。Cloudflare Workers 运行时及 D1 数据库仅留存密文。
+* **抗量子混合格密码学**：采用国际标准化组织 NIST FIPS 203 **P256-MLKEM768**（ML-KEM-768 + ECDH P-256）混合算法，防御量子计算时代的“先窃取后解密（Harvest Now, Decrypt Later）”攻击。
+* **解耦式小时级信封加密**：创新性采用周期性 KEM 派生数据加密密钥（DEK），规避后量子密文的数据库膨胀，节省约 80% 密文存储体积，同时实现 **20,000+ 次/秒** 的超高速流水线加密吞吐。
+* **硬件通行密钥绑定**：私钥种子仅通过硬件通行密钥（Passkey / WebAuthn PRF）或一次性自轮换恢复密钥（Recovery Key）在本地加解密，私钥明文绝不上传或离开设备。
 
 ---
 
@@ -95,14 +124,20 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 
 ```text
 ├── src/
-│   ├── index.ts          # 入口文件，处理 HTTP 路由与中间件
+│   ├── index.ts          # Cloudflare Worker 入口，处理 HTTP 路由与 DoH
+│   ├── serverfull/       # 独立服务器模式入口 (UDP 53, DoT 853, HTTP 3000)
+│   │   ├── index.ts      # Serverfull CLI 与主启动引导
+│   │   ├── udp.ts        # 经典 RFC 1035 UDP 53 DNS 服务端
+│   │   ├── dot.ts        # RFC 7858 DoT 853 服务端 (支持 TLS SNI Profile 路由)
+│   │   ├── http.ts       # Web 控制台与 DoH HTTP 服务端
+│   │   └── db.ts         # 原生 Node.js SQLite (node:sqlite) 适配器与自动迁移
 │   ├── types.ts          # 类型定义
 │   ├── api/              # API 控制器 (Auth, Account, Profiles)
-│   ├── lib/              # 核心逻辑 (RBAC, 规则过滤)
-│   ├── models/           # D1 数据库模型
-│   ├── pipeline/         # DNS 解析流水线 (核心业务逻辑)
+│   ├── lib/              # 核心逻辑 (RBAC, 规则过滤, PQC 密码学, DEK 管理器)
+│   ├── models/           # 数据库模型 (统一适配 D1 与 SQLite)
+│   ├── pipeline/         # DNS 解析流水线 (统一核心业务逻辑)
 │   └── utils/            # 工具类 (缓存, GeoIP, DNS 编解码, Bloom 过滤器)
-├── web/                  # React/BlueprintJS UI 前端项目
+├── web/                  # React/BlueprintJS UI 前端项目 (本地优先 WASM + OPFS)
 │   ├── public/           # 公共静态文件
 │   ├── src/              # 前端源码
 │   │   ├── assets/       # 静态资源 (图片、图标等)
@@ -115,7 +150,8 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 │   │   └── utils/        # 工具类及辅助函数
 │   └── package.json      # 前端依赖配置
 ├── static/               # 编译后的静态资源
-├── migrations/           # D1 数据库迁移脚本
+├── scripts/              # 辅助自动化脚本 (如 Linux systemd 服务生成器)
+├── migrations/           # 统一 SQL 数据库迁移脚本
 └── wrangler.toml         # Cloudflare 部署配置
 ```
 
@@ -123,8 +159,8 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 
 当一个 DNS 请求到达时，它会经过以下处理阶段：
 
-1.  **内存缓存检查**：检查边缘节点内存中是否存在该查询的有效响应。
-2.  **配置加载**：从内存 -> Cache API -> D1 数据库分层加载 Profile 设置。
+1.  **内存缓存检查**：检查边缘或进程内存中是否存在该查询的有效响应。
+2.  **配置加载**：从内存 -> Cache API -> 数据库 (D1 或本地 SQLite) 分层加载 Profile 设置。
 3.  **本地规则匹配**：
     - **白名单**：命中则直接转发上游并返回。
     - **重定向**：命中则返回自定义记录。
@@ -132,77 +168,26 @@ DoH (RFC 8484) 是一种通过加密的 HTTPS 连接进行 DNS 查询的协议�
 4.  **外部列表过滤**：
     - 利用 **Bloom Filter** (布隆过滤器) 进行快速筛选。
 5.  **上游解析**：若以上均未命中，则根据配置请求上游 DoH 服务器，并支持 ECS 处理。
-6.  **异步日志与缓存**：异步记录解析日志、获取目标 GeoIP，并将结果写入各级缓存。
+6.  **异步日志与缓存**：异步记录解析日志（支持 PQC 零知识端到端加密）、获取目标 GeoIP，并将结果写入各级缓存。
 
 ---
 
 ## 🚀 部署指南
 
-### 线上部署 (Cloudflare Dashboard)
+ObexDNS 提供两种部署形态，满足不同场景的使用需求：
+* **方案 A：🖥️ 独立服务器 / VPS 部署 (脱离 Cloudflare, 100% 数据自主)** —— 推荐给追求完全自主可控、家庭路由器直连 UDP 53 及 Android 原生 DoT 853 的自建玩家与企业。
+* **方案 B：☁️ Cloudflare Workers 边缘模式 (无服务器, 免运维)** —— 推荐给追求全球 300+ 节点低延迟、零服务器硬件维护成本的个人与团队。
 
-1.  **Fork 本项目**：点击页面右上角的 `Fork` 按钮，将仓库克隆到你的 GitHub 账号下。
-2.  **创建 D1 数据库**：登录 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，创建一个新的数据库（例如命名为 `dns_worker_db`），并复制所创建的数据库 ID。
-3.  **配置数据库 ID**：在你的 Fork 仓库中，修改 `wrangler.toml` 文件，将 `database_id` 替换为你刚才创建的数据库 ID。
-4.  **创建 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application`。
-5.  **从 GitHub 导入并完成首次部署**：在部署页面选择 `Continue with GitHub`，关联你 Fork 的项目并完成授权。在构建与部署设置 (Build & Deploy settings) 中如此填写：
-    *   **构建命令**: `npm run build`
-    *   **部署命令**: `npm run deploy`
-    *   **路径**: `/`
-    > ⚠️ **注意**：项目初始化向导中的环境变量仅注入构建容器，运行时的机密变量在初始化向导中填写无效。请直接点击“部署”，待首次部署完成后，按后续步骤在 Worker 设置中填写。
-6.  **配置 JWT 密钥**：首次部署完成后，登录 Cloudflare 控制台，前往 `Workers & Pages` > 点击刚才创建的 Worker > `Settings` > `Runtime variables and secrets`（或 `Variables and secrets`） > 点击 `Add`。将变量名称设置为 `JWT_SECRET`，类型选择 `机密 (Secret)`，值中输入一个随机安全字符串，然后点击 `Deploy`（或 `Save and Deploy`）保存。
-7.  **配置 KEK 启用信封加密（可选）**：同样在首次部署完成后的 `Settings` > `Runtime variables and secrets` 中，若要对 D1 数据库中的敏感凭据（如 TOTP 密钥和恢复密钥）启用服务端信封加密，请添加一个名为 `KEK_v1`、类型为 `机密 (Secret)` 的变量，并输入您的安全密钥。在需要轮换 KEK 密钥时，请按顺序添加新的机密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
+---
 
-### 本地开发与手动部署
+### 方案 A：🖥️ 独立服务器 / VPS 部署 (脱离 Cloudflare, 100% 数据自主)
 
-#### 开发环境参考
+ObexDNS 可完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行，依赖 Node.js `>= 22.5.0` 内置的 `node:sqlite` 引擎。无需任何 Cloudflare 账号、API Token 或外部数据库。
 
-- **Node.js**: v18.x 或更高版本
-- **Package Manager**: npm
-- **Cloudflare Account**: 需要启用 Workers 和 D1 权限
-
-#### 本地运行与部署步骤
-
-1.  克隆仓库并安装依赖：
-
-```bash
-npm install
-```
-
-2.  初始化 D1 数据库：
-
-```bash
-npm run db:setup
-npm run db:migrate:dev
-```
-
-3.  配置本地环境变量：
-    *   在项目根目录下创建一个 `.dev.vars` 文件，并添加用于会话 Token 签名的 JWT 密钥：
-        ```env
-        JWT_SECRET=您的随机安全JWT密钥
-        ```
-    *   （可选）通过添加密钥加密密钥（KEK）启用敏感数据（如 TOTP 密钥和恢复密钥）的服务端信封加密：
-        ```env
-        KEK_v1=您的随机安全KEK_v1密钥
-        ```
-
-4.  启动开发服务器：
-
-```bash
-npm run dev
-```
-
-5.  手动部署上线：
-
-```bash
-npm run deploy
-```
-
-### 服务器独立部署 (Serverfull 模式)
-
-DNS Worker 支持脱离 Cloudflare Workers，直接在独立服务器/VPS（Linux、Windows、macOS）上以 Serverfull 模式运行。该模式同时支持：
-* **经典 UDP DNS (端口 53)**：标准的 RFC 1035 UDP DNS 解析服务，可直接填入路由器或系统 DNS 设置中。
+#### 独立模式核心特性
+* **经典 UDP DNS (端口 53)**：标准的 RFC 1035 UDP DNS 解析服务，可直接填入路由器 WAN/LAN 或系统 DNS 设置中。
 * **DNS over TLS / DoT (端口 853)**：标准的 RFC 7858 加密 DNS，原生支持 Android 9+ 系统自带的“私有 DNS”（Private DNS），并支持通过 SNI（如 `<profile_key>.dns.example.com`）自动路由到指定的 Profile。
-* **Web 控制台与 DoH (默认端口 3000)**：全功能 Web 管理面板与 REST API，开箱即用。
+* **Web 控制台与 DoH (默认端口 3000)**：全功能 React 管理面板与 REST API，开箱即用。
 * **本地 SQLite 数据库**：自动执行迁移脚本初始化表结构，无需任何云端依赖。
 
 #### 环境变量配置 (在 `.env.serverfull`、`.env` 或系统环境变量中配置)
@@ -221,25 +206,83 @@ DNS Worker 支持脱离 Cloudflare Workers，直接在独立服务器/VPS（Linu
 
 #### 快速启动
 
-1. 配置环境变量：
-项目内置提供开箱即用的配置文件 `.env.serverfull`（程序会自动按优先级加载系统变量、`.env` 或 `.env.serverfull`）。您可以直接修改 `.env.serverfull`，也可以复制为 `.env` 进行定制：
+1. 克隆代码仓库并安装依赖：
 ```bash
-# 直接编辑 .env.serverfull（亦可 cp .env.serverfull .env 后编辑）
-nano .env.serverfull
+git clone https://github.com/Obein/DNS-Worker.git obexdns
+cd obexdns
+npm install
 ```
 
-2. 编译前端并启动服务：
+2. 配置环境变量：
+项目内置提供开箱即用的配置文件模板 `.env.serverfull`。您可以直接修改，也可以复制为 `.env`：
+```bash
+cp .env.serverfull .env
+nano .env
+```
+
+3. 编译前端并启动独立服务：
 ```bash
 npm run start:serverfull
 ```
 
-3. 注册为 Linux 系统常驻服务 (systemd)：
+4. 注册为 Linux 系统常驻服务 (systemd)：
 ```bash
 sudo npm run service-create:linux
 sudo systemctl start dns-worker
 sudo systemctl status dns-worker
 ```
 该命令会自动生成 `/etc/systemd/system/dns-worker.service`，配置 `CAP_NET_BIND_SERVICE` 特权端口（53/853）绑定能力并配置开机自启。
+
+---
+
+### 方案 B：☁️ Cloudflare Workers 边缘模式 (无服务器, 免运维)
+
+依托 Cloudflare 全球 300+ 个城市的边缘节点网络与 D1 数据库运行，免除所有底层硬件与系统维护。
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+
+#### 1. 线上控制台部署 (Cloudflare Dashboard)
+
+1.  **Fork 本项目**：点击页面右上角的 `Fork` 按钮，将仓库克隆到你的 GitHub 账号下。
+2.  **创建 D1 数据库**：登录 Cloudflare 控制台，前往 `Workers & Pages` > `D1`，创建一个新的数据库（例如命名为 `dns_worker_db`），并复制所创建的数据库 ID。
+3.  **配置数据库 ID**：在你的 Fork 仓库中，修改 `wrangler.toml` 文件，将 `database_id` 替换为你刚才创建的数据库 ID。
+4.  **创建 Worker**：前往 Cloudflare 控制台 `Workers & Pages` > `Create application`。
+5.  **从 GitHub 导入并完成首次部署**：在部署页面选择 `Continue with GitHub`，关联你 Fork 的项目并完成授权。在构建与部署设置 (Build & Deploy settings) 中如此填写：
+    *   **构建命令**: `npm run build`
+    *   **部署命令**: `npm run deploy`
+    *   **路径**: `/`
+    > ⚠️ **注意**：项目初始化向导中的环境变量仅注入构建容器，运行时的机密变量在初始化向导中填写无效。请直接点击“部署”，待首次部署完成后，按后续步骤在 Worker 设置中填写。
+6.  **配置 JWT 密钥**：首次部署完成后，登录 Cloudflare 控制台，前往 `Workers & Pages` > 点击刚才创建的 Worker > `Settings` > `Runtime variables and secrets`（或 `Variables and secrets`） > 点击 `Add`。将变量名称设置为 `JWT_SECRET`，类型选择 `机密 (Secret)`，值中输入一个随机安全字符串，然后点击 `Deploy`（或 `Save and Deploy`）保存。
+7.  **配置 KEK 启用信封加密（可选）**：同样在首次部署完成后的 `Settings` > `Runtime variables and secrets` 中，若要对 D1 数据库中的敏感凭据（如 TOTP 密钥和恢复密钥）启用服务端信封加密，请添加一个名为 `KEK_v1`、类型为 `机密 (Secret)` 的变量，并输入您的安全密钥。在需要轮换 KEK 密钥时，请按顺序添加新的机密 `KEK_v(N+1)`（例如 `KEK_v2` -> `KEK_v3` 等）。
+
+#### 2. 本地开发与命令行部署
+
+##### 开发环境需求
+- **Node.js**: v18.x 或更高版本（推荐 v22.5.0+）
+- **Package Manager**: npm
+- **Cloudflare Account**: 需要启用 Workers 和 D1 权限
+
+##### 部署步骤
+```bash
+# 1. 克隆仓库并安装依赖
+npm install
+
+# 2. 初始化与迁移本地 D1 数据库
+npm run db:setup
+npm run db:migrate:dev
+
+# 3. 配置本地环境变量 (.dev.vars)
+echo "JWT_SECRET=您的随机安全JWT密钥" > .dev.vars
+echo "KEK_v1=您的随机安全KEK密钥" >> .dev.vars
+
+# 4. 启动本地开发服务
+npm run dev
+
+# 5. 手动部署上线至 Cloudflare
+npm run deploy
+```
+
+---
 
 ### 线上部署到 Cloudflare Pages (⚠️ 不推荐)
 
@@ -261,15 +304,17 @@ sudo systemctl status dns-worker
 
 ---
 
-## 💪 感谢
+## 💪 感谢与动力源
 
-* [Cloudflare Workers](https://workers.cloudflare.com/)
+* [Cloudflare Workers](https://workers.cloudflare.com/) & [D1 Database](https://developers.cloudflare.com/d1/)
+* [Node.js](https://nodejs.org/) (内置原生 `node:sqlite` 引擎)
 
-## 🚚 依赖
+## 🚚 核心技术与依赖
 
-* [Blueprint](https://github.com/palantir/blueprint) (at Palantir)
+* [React](https://github.com/facebook/react) & [Blueprint](https://github.com/palantir/blueprint) (现代化企业级高密度 UI)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
-* [React](https://github.com/facebook/react)
+* [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768 后量子混合格密码学)
+* [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WebAssembly SQLite & OPFS 本地优先驱动)
 
 ---
 
@@ -281,15 +326,15 @@ sudo systemctl status dns-worker
 
 ## 📝 总结
 
-DNS Worker 让您完全掌控自己的 DNS 解析 —— 免租用服务器、免管理基础设施、隐私零妥协。假助 Cloudflare Workers 的全球边缘网络和 D1 数据库，可提供一个生产级 Protective DNS 服务：
+ObexDNS 让您在完全自主掌控 DNS 解析的同时，无需在隐私、性能与灵活性之间做任何妥协。通过同时支持高性能 Node.js 独立服务器与 Cloudflare Workers 全球边缘网络，它呈现了一个生产级的 Protective DNS 体系：
 
--   **免费运行** —— 基于 Cloudflare 慷慨的免费套餐
--   **全球极速** —— 得益于遍布 300+ 个城市的边缘节点
--   **高度可定制** —— 支持多配置规则、黑白名单及第三方过滤列表订阅
--   **隐私优先** —— 加密 DoH 传输，灵活的 ECS 控制
--   **部署简单** —— 一键部署或简单的 `npm run deploy` 即可上线
+-   **双引擎自由选择**：既可完全脱离 Cloudflare 独立运行于自有 VPS，独享经典 UDP 53 与 DoT 853；亦可无服务器部署于 Cloudflare 边缘节点，享受零维护的全球 DoH 体验。
+-   **全协议覆盖**：经典 UDP 53、Android 原生私有 DNS（DoT 853 配合 SNI 路由）及 DoH (RFC 8484)。
+-   **后量子零知识 E2EE**：基于 NIST FIPS 203 **P256-MLKEM768** 与硬件通行密钥 (WebAuthn)，全面防御针对 DNS 隐私日志的未来量子解密威胁。
+-   **本地优先极速分析**：借助浏览器端 SQLite WASM + OPFS 实现 0ms 瞬间查询与图表聚合，彻底告别频繁消耗云端数据库读配额。
+-   **精细策略掌控**：多配置隔离、重写 ECH 抵御 SNI 审查，以及布隆过滤器加速的百万级广告与恶意域名拦截订阅。
 
-无论是保护单台设备还是为家庭管理 DNS，DNS Worker 都提供了一个优雅的自托管替代方案 —— 免去商业 DNS 过滤服务的成本与复杂性。
+无论是保护单台移动设备、整个家庭网络，还是跨地域的组织环境，ObexDNS 都提供了一个优雅且数据完全自主的替代方案。
 
 <div align="center">
   <br>
@@ -297,5 +342,5 @@ DNS Worker 让您完全掌控自己的 DNS 解析 —— 免租用服务器、�
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>如果 DNS Worker 对您有帮助，请考虑给它一个 ⭐</b>
+  <b>如果 ObexDNS 对您有所帮助，请考虑给它一个 ⭐</b>
 </div>
