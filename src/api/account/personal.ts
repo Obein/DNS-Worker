@@ -2,6 +2,7 @@ import { Env, User, ExecutionContext } from "../../types";
 import { handleMeRequest } from "./me";
 import { handleSecurityRequest } from "./security";
 import { handleSessionsRequest } from "./sessions";
+import { handleAccountE2eeRequest } from "./e2ee";
 
 /**
  * Handle personal account requests to /api/account/... by delegating to specialized handlers.
@@ -28,6 +29,11 @@ export async function handlePersonalAccountRequest(
   // Delegate session lists/revocation and activity log querying
   if (action === 'activity' || action === 'sessions') {
     return handleSessionsRequest(request, env, user, pathParts, ctx);
+  }
+
+  // Delegate user-level End-to-End Encryption (E2EE) key management
+  if (action === 'e2ee') {
+    return handleAccountE2eeRequest(request, env, user, pathParts, ctx);
   }
 
   return new Response("Not Found", { status: 404 });

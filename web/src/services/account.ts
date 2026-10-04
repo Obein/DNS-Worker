@@ -15,12 +15,7 @@ export interface VerifyIdentityPayload {
   totpTokenHash?: string;
   totpSalt?: string;
   passkeyAssertion?: any;
-}
-
-export interface ViewRecoveryKeysResponse {
-  has_keys: boolean;
-  is_legacy: boolean;
-  recovery_keys: string[];
+  recoveryKey?: string;
 }
 
 export interface RotateRecoveryKeyResponse {
@@ -220,16 +215,6 @@ export async function deletePasskey(id: string): Promise<void> {
 export async function getPasskeyAuthOptions(): Promise<any> {
   const res = await fetch("/api/account/passkeys/auth-options", {
     method: "POST"
-  });
-  if (!res.ok) throw new ApiError(res.status, await res.text());
-  return res.json();
-}
-
-export async function viewRecoveryKeys(payload: VerifyIdentityPayload): Promise<ViewRecoveryKeysResponse> {
-  const res = await fetch("/api/account/recovery-keys/view", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
   return res.json();

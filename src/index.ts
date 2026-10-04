@@ -145,15 +145,41 @@ export default {
                            url.searchParams.has('dns') || 
                            request.headers.get('accept')?.includes('dns-message');
                             
-      if (isKeyValid && isDoHRequest) {
+      if (isKeyValid && (isDoHRequest || request.method === 'OPTIONS')) {
+        if (request.method === 'OPTIONS') {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Accept',
+              'Access-Control-Max-Age': '86400'
+            }
+          });
+        }
         return handleDoHRequest(request, env, ctx, rawKey);
       }
 
       // Static Assets Hosting with Single Page App (SPA) fallback
       try {
         let response = await (env as any).ASSETS.fetch(request);
-        if (response.status === 404) {
-          response = await (env as any).ASSETS.fetch(new Request(url.origin + '/', request));
+        if (response.status === 404 && !url.pathname.startsWith('/assets/') && (request.method === 'GET' || request.method === 'HEAD')) {
+          response = await (env as any).ASSETS.fetch(new Request(url.origin + '/', {
+            method: request.method,
+            headers: request.headers
+          }));
+        }
+
+        // Ensure WASM binary assets are served with the standard MIME type
+        if (url.pathname.endsWith('.wasm')) {
+          const wasmHeaders = new Headers(response.headers);
+          wasmHeaders.set('Content-Type', 'application/wasm');
+          wasmHeaders.set('Cross-Origin-Resource-Policy', 'same-origin');
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: wasmHeaders
+          });
         }
 
         const contentType = response.headers.get('Content-Type') || '';
@@ -210,6 +236,19 @@ export default {
           headers: newHeaders
         });
       }
+    }
+
+    // DoH binary responses must not be constrained by HTML CSP/COOP/COEP
+    if (response.headers.get('Content-Type')?.includes('application/dns-message')) {
+      const dohHeaders = new Headers(response.headers);
+      dohHeaders.set('Access-Control-Allow-Origin', '*');
+      dohHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      dohHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: dohHeaders
+      });
     }
 
     return applySecurityHeaders(response, nonce);

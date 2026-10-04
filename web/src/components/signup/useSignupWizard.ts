@@ -15,7 +15,8 @@ import {
   confirmTotp,
   getPasskeyRegistrationOptions,
   verifyPasskeyRegistration,
-  ApiError
+  ApiError,
+  e2ee
 } from "../../services";
 import { setAccessToken } from "../../utils/token";
 import { startPasskeyRegistration } from "../../utils/webauthn";
@@ -206,12 +207,20 @@ export const useSignupWizard = ({
       const options = await getPasskeyRegistrationOptions();
       const credential = await startPasskeyRegistration(options);
       const res = await verifyPasskeyRegistration({ name: "primary_passkey", credential });
+
+      const passkeyId = (res as any)?.passkey?.id || (res as any)?.id;
+      if (passkeyId) {
+        try {
+          await e2ee.wrapCurrentKeyForPasskey(passkeyId);
+        } catch (wrapErr) {
+          console.warn("Failed to wrap key for new passkey:", wrapErr);
+        }
+      }
+
       if (res.recovery_keys && res.recovery_keys.length > 0) {
         setTotpRecoveryKeys(res.recovery_keys);
-        setSignupStep("recovery");
-      } else {
-        onSuccess();
       }
+      setSignupStep("recovery");
     } catch (err: any) {
       console.error("Passkey registration failed:", err);
       setPasskeyRegError(formatApiErrorMessage(err, t));
@@ -235,7 +244,9 @@ export const useSignupWizard = ({
         totpTokenHash: hashHex,
         salt
       });
-      setTotpRecoveryKeys(data.recovery_keys);
+      if (data.recovery_keys && data.recovery_keys.length > 0) {
+        setTotpRecoveryKeys(data.recovery_keys);
+      }
       setSignupStep("recovery");
     } catch (err: any) {
       setTotpSetupError(err.message || t("common.errorNetwork"));
@@ -280,6 +291,16 @@ export const useSignupWizard = ({
       if (data.accessToken) {
         setAccessToken(data.accessToken);
       }
+
+      if (data.recoveryKey) {
+        setTotpRecoveryKeys([data.recoveryKey]);
+        try {
+          await e2ee.initUserE2eeWithRecoveryKey(data.recoveryKey);
+        } catch (e2eeErr) {
+          console.error("Failed to initialize user E2EE with recovery key:", e2eeErr);
+        }
+      }
+
       setMfaChoice("choose");
       setSignupStep("totp");
     } catch (err: any) {

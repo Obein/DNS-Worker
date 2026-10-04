@@ -31,66 +31,7 @@ export async function handleRecoveryKeysRequest(
   const subAction = pathParts[3];
   const sessionHash = user.sessionId ? await generateSessionHash(user.sessionId, user.id) : null;
 
-  // POST /api/account/recovery-keys/view — 安全核验后解密查看恢复密钥
-  if (subAction === "view" && request.method === "POST") {
-    const body = (await request.json()) as ReauthPayload;
-    const dbUser = await userModel.getById(user.id);
-    if (!dbUser) return new Response("User not found", { status: 404 });
-
-    const authResult = await verifyUserReauth(dbUser, body, env, request);
-    if (!authResult.success) {
-      return new Response(authResult.error || "Authentication failed", { status: 400 });
-    }
-
-    if (!dbUser.totp_recovery_keys) {
-      return new Response(
-        JSON.stringify({
-          has_keys: false,
-          is_legacy: false,
-          recovery_keys: []
-        }),
-        { headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    let parsed: any = null;
-    try {
-      parsed = typeof dbUser.totp_recovery_keys === "string"
-        ? JSON.parse(dbUser.totp_recovery_keys)
-        : dbUser.totp_recovery_keys;
-    } catch {
-      parsed = [dbUser.totp_recovery_keys];
-    }
-
-    if (!Array.isArray(parsed)) {
-      parsed = [parsed];
-    }
-
-    const keys: string[] = [];
-    let isLegacy = false;
-    for (const item of parsed) {
-      if (typeof item === "object" && item?.key) {
-        keys.push(item.key);
-      } else if (typeof item === "string") {
-        if (/^[a-fA-F0-9]{64}$/.test(item.trim())) {
-          isLegacy = true;
-        } else {
-          keys.push(item);
-        }
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        has_keys: keys.length > 0 || isLegacy,
-        is_legacy: isLegacy && keys.length === 0,
-        recovery_keys: keys
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-  }
-
-  // POST /api/account/recovery-keys/rotate — 安全核验后轮换恢复密钥
+  // POST /api/account/recovery-keys/rotate — 验证通行密钥或原恢复密钥后轮换
   if (subAction === "rotate" && request.method === "POST") {
     const body = (await request.json()) as ReauthPayload;
     const dbUser = await userModel.getById(user.id);
@@ -101,9 +42,16 @@ export async function handleRecoveryKeysRequest(
       return new Response(authResult.error || "Authentication failed", { status: 400 });
     }
 
+    // 仅允许通过原 Recovery Key 或 Passkey 轮换
+    if (authResult.method !== "passkey" && authResult.method !== "recovery_key") {
+      return new Response("Recovery Key rotation only permits authentication via existing Passkey or original Recovery Key", {
+        status: 403
+      });
+    }
+
     const plaintextKey = generateRecoveryKey();
     const hashedKey = await hashRecoveryKey(plaintextKey);
-    const newItems: StoredRecoveryKeyItem[] = [{ key: plaintextKey, hash: hashedKey }];
+    const newItems: StoredRecoveryKeyItem[] = [{ hash: hashedKey } as any];
 
     await userModel.updateRecoveryKeys(user.id, newItems);
     await activityLog.record(user.id, "recovery_key_rotated" as any, clientIp, userAgent, { method: authResult.method }, sessionHash);

@@ -1,17 +1,13 @@
 import { D1Database } from "@cloudflare/workers-types";
-import { LogAggregationModel } from "../aggregation";
 import { DestinationCountResult, ISPCountResult } from "./types";
 
 /**
  * Handles geographic destination country and ISP distribution analytics.
- * Leverages `destination_hourly_rollups` to reduce D1 row reads by >99%
- * and eliminates expensive runtime JSON parsing across historical rows.
+ * Queries raw resolution logs directly using the (profile_id, timestamp) clustered index
+ * as a server-side fallback for client-side Local-First SQLite analytics.
  */
 export class LogDestinationAnalytics {
-  constructor(
-    private readonly db: D1Database,
-    private readonly aggregation: LogAggregationModel
-  ) {}
+  constructor(private readonly db: D1Database) {}
 
   /**
    * Retrieves top destination countries for a given time range.
@@ -30,91 +26,24 @@ export class LogDestinationAnalytics {
     accessPointId?: string,
     limit = 250
   ): Promise<DestinationCountResult[]> {
-    const latestRollupHour = await this.aggregation.getLatestDestinationRollupHour(profileId);
-    const cutoff = latestRollupHour !== null ? latestRollupHour + 3600 : since;
-
-    // Case 1: No rollups available or entire range is after cutoff -> query raw logs only
-    if (cutoff <= since) {
-      let queryStr = `
-        SELECT 
-          COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) as country_code,
-          COALESCE(dest_country, json_extract(dest_geoip, '$.country')) as country,
-          COUNT(*) as count
-        FROM logs 
-        WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
-      `;
-      const params: (string | number)[] = [profileId, since, until];
-      if (accessPointId) {
-        queryStr += " AND access_point_id = ?";
-        params.push(accessPointId);
-      }
-      queryStr += ` GROUP BY country_code ORDER BY count DESC LIMIT ${limit}`;
-      const { results } = await this.db
-        .prepare(queryStr)
-        .bind(...params)
-        .all<DestinationCountResult>();
-      return results;
-    }
-
-    // Case 2: Entire range is within completed rollups
-    if (cutoff > until) {
-      const sinceHour = Math.floor(since / 3600) * 3600;
-      let queryStr = `
-        SELECT country_code, country, SUM(count) as count
-        FROM destination_hourly_rollups
-        WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp <= ?
-      `;
-      const params: (string | number)[] = [profileId, sinceHour, until];
-      if (accessPointId) {
-        queryStr += " AND access_point_id = ?";
-        params.push(accessPointId);
-      }
-      queryStr += ` GROUP BY country_code ORDER BY count DESC LIMIT ${limit}`;
-      const { results } = await this.db
-        .prepare(queryStr)
-        .bind(...params)
-        .all<DestinationCountResult>();
-      return results;
-    }
-
-    // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
-    const sinceHour = Math.floor(since / 3600) * 3600;
-    let rollupWhere = "profile_id = ? AND hour_timestamp >= ? AND hour_timestamp < ?";
-    const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
-    if (accessPointId) {
-      rollupWhere += " AND access_point_id = ?";
-      rollupParams.push(accessPointId);
-    }
-
-    let logWhere =
-      "profile_id = ? AND timestamp >= ? AND timestamp <= ? AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL) AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'), '') != ''";
-    const logParams: (string | number)[] = [profileId, cutoff, until];
-    if (accessPointId) {
-      logWhere += " AND access_point_id = ?";
-      logParams.push(accessPointId);
-    }
-
-    const queryStr = `
-      SELECT country_code, country, SUM(count) as count FROM (
-        SELECT country_code, country, count
-        FROM destination_hourly_rollups
-        WHERE ${rollupWhere}
-        UNION ALL
-        SELECT 
-          COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'), '') as country_code,
-          COALESCE(dest_country, json_extract(dest_geoip, '$.country'), '') as country,
-          COUNT(*) as count
-        FROM logs
-        WHERE ${logWhere}
-        GROUP BY country_code, country
-      ) WHERE country_code != '' GROUP BY country_code ORDER BY count DESC LIMIT ${limit}
+    let queryStr = `
+      SELECT 
+        COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) as country_code,
+        COALESCE(dest_country, json_extract(dest_geoip, '$.country')) as country,
+        COUNT(*) as count
+      FROM logs 
+      WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
     `;
-
+    const params: (string | number)[] = [profileId, since, until];
+    if (accessPointId) {
+      queryStr += " AND access_point_id = ?";
+      params.push(accessPointId);
+    }
+    queryStr += ` GROUP BY country_code ORDER BY count DESC LIMIT ${limit}`;
     const { results } = await this.db
       .prepare(queryStr)
-      .bind(...rollupParams, ...logParams)
+      .bind(...params)
       .all<DestinationCountResult>();
-
     return results;
   }
 

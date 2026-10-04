@@ -53,16 +53,8 @@ export async function handleScheduled(
           ? Number(env.LOG_CLEANUP_DAILY_BUDGET)
           : 20000;
         await logModel.cleanupGlobal(maxRetentionDays, cleanupBatchLimit, cleanupDailyBudget);
-
-        const minDomainCount = env.DOMAIN_ROLLUP_MIN_COUNT !== undefined && env.DOMAIN_ROLLUP_MIN_COUNT !== ''
-          ? Number(env.DOMAIN_ROLLUP_MIN_COUNT)
-          : 2;
-        const aggregated = await logModel.aggregateHourlyRollups(undefined, undefined, minDomainCount);
-        if (aggregated > 0) {
-          console.log(`[Cron] Hourly rollup aggregation: aggregated ${aggregated} record(s).`);
-        }
       } catch (e) {
-        console.error("[Cron] Global log cleanup or hourly aggregation failed:", e);
+        console.error("[Cron] Global log cleanup failed:", e);
       }
 
       try {

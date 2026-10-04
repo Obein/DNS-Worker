@@ -10,6 +10,7 @@ import { Env, Context, ExecutionContext } from '../types';
 import { parseDNSQueryFromRaw } from '../utils/dns';
 import { pipeline } from '../pipeline';
 import { resolveDefaultProfile, resolveProfileByKey } from '../api/doh';
+import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 import { ACCESS_KEY_REGEX } from '../utils/validator';
 
 export interface DotServerOptions {
@@ -196,6 +197,20 @@ export class DotDnsServer {
       }
     } catch (err) {
       console.error('[DoT] Query processing exception:', err);
+      try {
+        const failOpenUpstream = this.options.env.FAIL_OPEN_UPSTREAM || 'https://freedns.controld.com/no-ads-malware-typo';
+        const endpoint = resolveUpstreamEndpoint(failOpenUpstream);
+        const transportRes = await fetchFromUpstream(endpoint, rawMsg);
+        if (!socket.destroyed && socket.writable) {
+          const answer = transportRes.answer;
+          const responseBuf = Buffer.allocUnsafe(2 + answer.length);
+          responseBuf.writeUInt16BE(answer.length, 0);
+          responseBuf.set(answer, 2);
+          socket.write(responseBuf);
+        }
+      } catch (fallbackErr) {
+        console.error('[DoT] Fail-open upstream fallback failed:', fallbackErr);
+      }
     }
   }
 

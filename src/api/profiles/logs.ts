@@ -1,6 +1,7 @@
 import { Env, User, Profile, ProfileSettings, ExecutionContext } from "../../types";
 import { LogModel } from "../../models/log";
 import { cacheUtils } from "../../utils/cache";
+import { handleProfileLogsWs } from "./logsWs";
 
 /**
  * Handle logs and analytics requests to /api/profiles/:id/logs and /api/profiles/:id/analytics
@@ -18,6 +19,11 @@ export async function handleProfileLogsAndAnalyticsRequest(
 
   // Handle Logs endpoint: /api/profiles/:id/logs
   if (pathParts[3] === 'logs') {
+    // Handle WebSocket real-time streaming endpoint: /api/profiles/:id/logs/ws or Upgrade: websocket
+    if (pathParts[4] === 'ws' || request.headers.get('Upgrade')?.toLowerCase() === 'websocket') {
+      return handleProfileLogsWs(request, env, user, profile, ctx);
+    }
+
     if (request.method !== 'GET') {
       return new Response("Method Not Allowed", { status: 405 });
     }

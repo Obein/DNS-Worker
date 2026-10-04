@@ -67,5 +67,8 @@
   },
   "overrides": {
     "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "@noble/post-quantum": "^0.7.1"
   }
 }

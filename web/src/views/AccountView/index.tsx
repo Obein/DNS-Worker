@@ -20,6 +20,7 @@ import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
 import { SessionLockCard } from "./components/SessionLockCard";
+import { E2eeCard } from "./components/E2eeCard";
 import { USERNAME_REGEX } from "../../utils/auth";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -182,6 +183,9 @@ export const AccountView: React.FC = () => {
 
       {/* MFA: TOTP & Passkeys */}
       {me && <MfaCard user={me} onRefresh={fetchMe} />}
+
+      {/* End-to-End Encryption (E2EE) */}
+      {me && <E2eeCard user={me} onRefresh={fetchMe} />}
 
       {/* Session Lock */}
       {me && <SessionLockCard user={me} onRefresh={fetchMe} />}

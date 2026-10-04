@@ -12,11 +12,13 @@ export function applySecurityHeaders(response: Response, nonce: string): Respons
   newHeaders.set('X-Frame-Options', 'DENY');
   newHeaders.set('X-XSS-Protection', '1; mode=block');
   newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
+  newHeaders.set('Cross-Origin-Embedder-Policy', 'credentialless');
   
   if (!newHeaders.has('Content-Security-Policy')) {
     newHeaders.set(
       'Content-Security-Policy',
-      `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com https://static.cloudflareinsights.com; script-src-attr 'unsafe-inline'; frame-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://icons.duckduckgo.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflare-dns.com https://1.1.1.1;`
+      `default-src 'self'; script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com https://static.cloudflareinsights.com 'wasm-unsafe-eval'; worker-src 'self' blob:; script-src-attr 'unsafe-inline'; frame-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://icons.duckduckgo.com; connect-src 'self' https://challenges.cloudflare.com https://cloudflare-dns.com https://1.1.1.1;`
     );
   }
 
@@ -56,6 +58,12 @@ export async function getCurrentUser(request: Request, env: Env, ctx?: Execution
   let accessToken = "";
   if (authHeader.startsWith("Bearer ")) {
     accessToken = authHeader.slice(7);
+  } else if (
+    request.headers.get("Upgrade")?.toLowerCase().includes("websocket") ||
+    new URL(request.url).pathname.endsWith("/ws")
+  ) {
+    const url = new URL(request.url);
+    accessToken = url.searchParams.get("token") || url.searchParams.get("access_token") || "";
   }
 
   if (!accessToken) {

@@ -11,7 +11,7 @@ import type {
 /**
  * 包装 fetch 方法，当请求 Profile 相关接口遇到 404 (不存在或无权限) 时，直接引导前端至 404 界面
  */
-async function profileFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+export async function profileFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const res = await fetch(input, init);
   if (res.status === 404) {
     window.location.href = "/404";
@@ -262,8 +262,9 @@ export async function clearProfileLogs(profileId: string): Promise<void> {
 
 export async function getProfileAnalytics(profileId: string, type: string, queryParams: string, options?: { signal?: AbortSignal }): Promise<any> {
   const query = queryParams.startsWith("?") ? queryParams.slice(1) : queryParams;
-  const res = await profileFetch(`/api/profiles/${profileId}/analytics/${type}?${query}`, { signal: options?.signal });
-  if (!res.ok) throw new Error(`Failed to fetch analytics for ${type}`);
+  const path = type ? `/${type}` : "";
+  const res = await profileFetch(`/api/profiles/${profileId}/analytics${path}?${query}`, { signal: options?.signal });
+  if (!res.ok) throw new Error(`Failed to fetch analytics${type ? ` for ${type}` : ""}`);
   return res.json();
 }
 

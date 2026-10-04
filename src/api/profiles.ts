@@ -6,6 +6,7 @@ import { handleProfileAccessPointsRequest } from "./profiles/accessPoints";
 import { handleProfileRulesRequest } from "./profiles/rules";
 import { handleProfileListsRequest } from "./profiles/lists";
 import { handleProfileLogsAndAnalyticsRequest } from "./profiles/logs";
+import { handleProfileE2eeRequest } from "./profiles/e2ee";
 
 export async function handleProfilesRequest(request: Request, env: Env, user: User | null, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
@@ -45,6 +46,8 @@ export async function handleProfilesRequest(request: Request, env: Env, user: Us
       case 'logs':
       case 'analytics':
         return handleProfileLogsAndAnalyticsRequest(request, env, user, profile, pathParts, ctx);
+      case 'e2ee':
+        return handleProfileE2eeRequest(request, env, user, profile, pathParts, ctx);
       default:
         return new Response("Not Found", { status: 404 });
     }

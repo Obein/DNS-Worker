@@ -1,8 +1,49 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import fs from 'fs'
+
+/**
+ * Compiles/emits SQLite WASM OPFS async proxy worker directly into the build output
+ * without placing any raw .js files into the source tree or public directory.
+ */
+function sqliteWasmPlugin(): Plugin {
+  return {
+    name: 'sqlite-wasm-assets',
+    generateBundle(this: any) {
+      const src = path.resolve(__dirname, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
+      if (fs.existsSync(src)) {
+        const source = fs.readFileSync(src, 'utf-8')
+        this.emitFile({
+          type: 'asset',
+          fileName: 'assets/sqlite3-opfs-async-proxy.js',
+          source,
+        })
+        this.emitFile({
+          type: 'asset',
+          fileName: 'sqlite3-opfs-async-proxy.js',
+          source,
+        })
+      }
+    },
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: any) => {
+        if (req.url === '/assets/sqlite3-opfs-async-proxy.js' || req.url === '/sqlite3-opfs-async-proxy.js') {
+          const src = path.resolve(__dirname, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
+          if (fs.existsSync(src)) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+            res.setHeader('Cross-Origin-Resource-Policy', 'same-origin')
+            res.end(fs.readFileSync(src))
+            return
+          }
+        }
+        next()
+      })
+    }
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -14,6 +55,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    sqliteWasmPlugin(),
     react(),
     VitePWA({
       strategies: 'injectManifest',
@@ -36,10 +78,15 @@ export default defineConfig({
   ],
   server: {
     host: '127.0.0.1',
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'credentialless',
+    },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
+        ws: true,
       },
       '/world-110m.json': {
         target: 'http://127.0.0.1:8787',
@@ -50,6 +97,12 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  optimizeDeps: {
+    exclude: ['@sqlite.org/sqlite-wasm'],
+  },
+  worker: {
+    format: 'es',
   },
   build: {
     outDir: '../static',
@@ -73,6 +126,9 @@ export default defineConfig({
             // Exclude recharts from the catch-all so it follows its lazy
             // dynamic-import chain (TrendChart chunk) and is not preloaded.
             if (id.includes('recharts') || id.includes('victory-vendor')) {
+              return undefined;
+            }
+            if (id.includes('@sqlite.org/sqlite-wasm')) {
               return undefined;
             }
             if (id.includes('i18next')) {

@@ -16,7 +16,7 @@ export interface LogsHeaderProps {
   customRange: { start: string; end: string };
   setCustomRange: (cr: { start: string; end: string }) => void;
   nowStr: string;
-  fetchLogs: (range: TimeRange, initial: boolean) => void;
+  fetchLogs: (range: TimeRange, initial: boolean, isAutoRefresh?: boolean, forceSync?: boolean) => void;
   isMobile: boolean;
   realtimeRefresh: boolean;
   setRealtimeRefresh: (val: boolean) => void;
@@ -145,7 +145,7 @@ export const LogsHeader: React.FC<LogsHeaderProps> = ({
                 onChange={(e) => setRealtimeRefresh((e.target as HTMLInputElement).checked)}
                 className="mb-0!"
               />
-              <Button icon="refresh" onClick={() => fetchLogs(range, true)} variant="minimal" small={isMobile} />
+              <Button icon="refresh" onClick={() => fetchLogs(range, true, false, true)} variant="minimal" small={isMobile} />
             </div>
           </div>
         )}

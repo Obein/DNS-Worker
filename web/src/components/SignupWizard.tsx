@@ -217,7 +217,13 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
           totpSetupError={totpSetupError}
           totpSetupLoading={totpSetupLoading}
           onTotpSubmit={handleSignupTotpConfirm}
-          onSkip={onSuccess}
+          onSkip={() => {
+            if (totpRecoveryKeys && totpRecoveryKeys.length > 0) {
+              setSignupStep("recovery");
+            } else {
+              onSuccess();
+            }
+          }}
         />
       )}
 

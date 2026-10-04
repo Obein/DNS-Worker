@@ -5,6 +5,34 @@ import { ProfileModel, ProfileWithBloom } from '../models/profile';
 import { UserModel } from '../models/user';
 import { cacheUtils } from '../utils/cache';
 import { profileKeyMemoryMap } from '../pipeline/cache';
+import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
+
+/**
+ * Safely extracts raw wire-format DNS query bytes from incoming HTTP GET or POST request.
+ */
+async function extractRawQuery(request: Request): Promise<Uint8Array | null> {
+  try {
+    if (request.method === "GET") {
+      const url = new URL(request.url);
+      const dnsParam = url.searchParams.get("dns");
+      if (!dnsParam) return null;
+      let base64 = dnsParam.replace(/-/g, "+").replace(/_/g, "/");
+      while (base64.length % 4) base64 += "=";
+      const binary = atob(base64);
+      const raw = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        raw[i] = binary.charCodeAt(i);
+      }
+      return raw;
+    } else if (request.method === "POST") {
+      const buffer = await request.clone().arrayBuffer();
+      return new Uint8Array(buffer);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 /**
  * Resolves profile and access point metadata with multi-tier caching (L1 Memory -> L2 Cache API -> D1 DB).
@@ -47,30 +75,28 @@ export async function resolveProfileByKey(
     }
   } catch (e: any) {
     console.warn(`[DoH] D1 profile lookup failed for key ${profileKey}:`, e.message || e);
-    // If D1 is exhausted, attempt to return stale in-memory data if available
+    // If D1 is exhausted or erroring, attempt to return stale in-memory data if available
     if (inMem?.data) {
       return inMem.data;
     }
 
-    // Emergency fail-open fallback if D1 has exceeded its read quota:
+    // Emergency fail-open fallback if D1 has exceeded its read quota or is unavailable:
     // Generate a temporary fallback profile so DNS resolution doesn't return 404 or 500
-    if (String(e?.message || e).includes("exceeded D1's free tier daily row read limit")) {
-      const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
-      console.warn(`[DoH] D1 read quota exhausted. Providing emergency fallback profile for key ${profileKey} -> ${failOpenUpstream}`);
-      return {
-        id: profileKey,
-        name: "Emergency Fallback",
-        settings: JSON.stringify({
-          upstream: [failOpenUpstream],
-          default_policy: "ALLOW",
-          log_retention_days: 0,
-          ecs: { enabled: true, use_client_ip: true }
-        }),
-        owner_id: "system",
-        created_at: Math.floor(now / 1000),
-        updated_at: Math.floor(now / 1000)
-      } as any;
-    }
+    const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
+    console.warn(`[DoH] D1 unavailable. Providing emergency fallback profile for key ${profileKey} -> ${failOpenUpstream}`);
+    return {
+      id: profileKey,
+      name: "Emergency Fallback",
+      settings: JSON.stringify({
+        upstream: [failOpenUpstream],
+        default_policy: "ALLOW",
+        log_retention_days: 0,
+        ecs: { enabled: true, use_client_ip: true }
+      }),
+      owner_id: "system",
+      created_at: Math.floor(now / 1000),
+      updated_at: Math.floor(now / 1000)
+    } as any;
   }
 
   return null;
@@ -126,6 +152,7 @@ export async function handleDoHRequest(
   profileKey: string
 ): Promise<Response> {
   const cache = (caches as any).default;
+  let queryRaw: Uint8Array | null = null;
 
   try {
     const profile = await resolveProfileByKey(profileKey, env, ctx);
@@ -137,6 +164,7 @@ export async function handleDoHRequest(
     if (!query) {
       return new Response('Invalid DNS Query', { status: 400 });
     }
+    queryRaw = query.raw;
 
     const context: Context = { 
       profileId, 
@@ -190,22 +218,41 @@ export async function handleDoHRequest(
   } catch (e: any) {
     console.error(`[DoH Pipeline] Internal Error:`, e);
     try {
-      // Emergency fail-open: proxy the DoH request directly to fallback Security DNS
-      // Ensures user devices NEVER experience 500 or internet blackout during D1/Worker anomalies
-      const fallbackUrl = new URL(env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo");
-      const reqUrl = new URL(request.url);
-      fallbackUrl.search = reqUrl.search;
-      const fallbackRes = await fetch(fallbackUrl.toString(), {
-        method: request.method,
-        headers: {
-          "Accept": request.headers.get("Accept") || "application/dns-message",
-          "Content-Type": request.headers.get("Content-Type") || "application/dns-message"
-        },
-        body: request.method === "POST" ? request.body : undefined
-      });
-      return fallbackRes;
+      // Emergency fail-open: dispatch DNS wire query directly to FAIL_OPEN_UPSTREAM
+      // Supports HTTPS (DoH), TLS/DoT (RFC 7858), TCP (RFC 7766), and DNS Stamps (sdns://)
+      const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || "https://freedns.controld.com/no-ads-malware-typo";
+      const rawBytes = queryRaw || (await extractRawQuery(request));
+
+      if (rawBytes && rawBytes.length > 0) {
+        const endpoint = resolveUpstreamEndpoint(failOpenUpstream);
+        const transportRes = await fetchFromUpstream(endpoint, rawBytes);
+        return new Response(transportRes.answer as any, {
+          headers: {
+            "Content-Type": "application/dns-message",
+            "Cache-Control": "max-age=60"
+          }
+        });
+      }
+
+      // If wire query bytes couldn't be decoded and upstream is HTTP(S), proxy request directly
+      if (failOpenUpstream.startsWith("http://") || failOpenUpstream.startsWith("https://")) {
+        const fallbackUrl = new URL(failOpenUpstream);
+        const reqUrl = new URL(request.url);
+        fallbackUrl.search = reqUrl.search;
+        const fallbackRes = await fetch(fallbackUrl.toString(), {
+          method: request.method,
+          headers: {
+            "Accept": request.headers.get("Accept") || "application/dns-message",
+            "Content-Type": request.headers.get("Content-Type") || "application/dns-message"
+          },
+          body: request.method === "POST" ? request.body : undefined
+        });
+        return fallbackRes;
+      }
+
+      return new Response("Invalid DNS Query", { status: 400 });
     } catch (proxyErr) {
-      console.error(`[DoH Pipeline] Emergency fallback proxy failed:`, proxyErr);
+      console.error(`[DoH Pipeline] Emergency fallback failed:`, proxyErr);
       return new Response(`Internal Server Error`, { status: 500 });
     }
   }

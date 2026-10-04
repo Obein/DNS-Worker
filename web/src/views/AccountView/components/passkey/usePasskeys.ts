@@ -6,7 +6,8 @@ import {
   getPasskeyRegistrationOptions,
   verifyPasskeyRegistration,
   renamePasskey,
-  deletePasskey
+  deletePasskey,
+  e2ee
 } from "../../../../services";
 import type { Passkey } from "../../../../services";
 import { isPasskeySupported, startPasskeyRegistration } from "../../../../utils/webauthn";
@@ -160,6 +161,15 @@ export const usePasskeys = ({ onRefresh }: UsePasskeysProps): UsePasskeysReturn 
         name: trimmed,
         credential
       });
+
+      const passkeyId = (res as any)?.passkey?.id || (res as any)?.id;
+      if (passkeyId && e2ee.isUnlocked()) {
+        try {
+          await e2ee.wrapCurrentKeyForPasskey(passkeyId);
+        } catch (wrapErr) {
+          console.warn("[Passkeys] Failed to wrap existing E2EE key for new passkey:", wrapErr);
+        }
+      }
 
       setIsAddOpen(false);
       setPasskeyName("");

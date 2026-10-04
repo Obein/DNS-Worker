@@ -1,7 +1,73 @@
-import { D1PreparedStatement } from "@cloudflare/workers-types";
+import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { Env, ExecutionContext, ProfileSettings, ResolutionLog } from "../types";
 import { LogModel, generateLogId } from "../models/log";
 import { cacheUtils } from "../utils/cache";
+import {
+  encryptSensitiveLogData,
+  encryptSensitiveLogDataWithDek,
+  PqcProfilePublicKey,
+} from "../lib/crypto/e2ee";
+import {
+  getCurrentDek,
+  ensureActiveDek,
+  invalidateActiveDek,
+  ActiveDek,
+} from "../lib/crypto/dekManager";
+
+export type ProfileLogPublicKey = JsonWebKey | PqcProfilePublicKey;
+
+/** In-memory cache for profile E2EE public keys with 5-minute TTL */
+const profileKeyCache = new Map<string, { key: ProfileLogPublicKey | null; expiresAt: number }>();
+
+/**
+ * Retrieves the E2EE public key for a profile, using an in-memory cache to avoid repeated D1 reads.
+ */
+export async function getProfileLogPublicKey(
+  db: D1Database,
+  profileId: string
+): Promise<ProfileLogPublicKey | null> {
+  const now = Date.now();
+  const cached = profileKeyCache.get(profileId);
+  if (cached && cached.expiresAt > now) {
+    return cached.key;
+  }
+
+  try {
+    let row: { public_key: string } | null = null;
+    try {
+      row = await db
+        .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ? AND (is_active IS NULL OR is_active = 1)")
+        .bind(profileId)
+        .first<{ public_key: string }>();
+    } catch (columnErr: any) {
+      if (String(columnErr?.message || columnErr).includes("no such column: is_active")) {
+        row = await db
+          .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ?")
+          .bind(profileId)
+          .first<{ public_key: string }>();
+      } else {
+        throw columnErr;
+      }
+    }
+
+    const key = row?.public_key ? (JSON.parse(row.public_key) as ProfileLogPublicKey) : null;
+    // Cache active key for 5 minutes; if null (E2EE not enabled), cache for only 15 seconds for rapid activation
+    const ttlMs = key ? 5 * 60 * 1000 : 15 * 1000;
+    profileKeyCache.set(profileId, { key, expiresAt: now + ttlMs });
+    return key;
+  } catch (err) {
+    console.error(`[E2EE] Failed to fetch log public key for profile ${profileId}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Invalidates the in-memory E2EE public key and active DEK cache for a profile.
+ */
+export function invalidateProfileLogKeyCache(profileId: string): void {
+  profileKeyCache.delete(profileId);
+  invalidateActiveDek(profileId);
+}
 
 /** In-memory batch queue of logs waiting to be flushed to D1 */
 const logBatchQueue: ResolutionLog[] = [];
@@ -107,7 +173,86 @@ export async function flushLogBatch(env: Env): Promise<void> {
   const logModel = new LogModel(env.DB);
   const statements: D1PreparedStatement[] = [];
 
+  // Group logs by profile to batch E2EE public key lookup
+  const profileIds = Array.from(new Set(logsToFlush.map((l) => l.profile_id)));
+  const keyMap = new Map<string, ProfileLogPublicKey | null>();
+  const dekMap = new Map<string, ActiveDek | null>();
+
+  await Promise.all(
+    profileIds.map(async (pid) => {
+      const pubKey = await getProfileLogPublicKey(env.DB, pid);
+      if (pubKey) {
+        keyMap.set(pid, pubKey);
+        if ("pqc_pk" in pubKey) {
+          // Retrieve current DEK, or ensure initial provisioning if isolate is fresh
+          let activeDek = getCurrentDek(pid);
+          if (!activeDek) {
+            activeDek = await ensureActiveDek(env.DB, pid, pubKey.pqc_pk);
+          }
+          if (activeDek) {
+            dekMap.set(pid, activeDek);
+          }
+        }
+      }
+    })
+  );
+
   for (const log of logsToFlush) {
+    const pubKey = keyMap.get(log.profile_id);
+    if (pubKey) {
+      try {
+        const sensitiveData = {
+          domain: log.domain,
+          client_ip: log.client_ip,
+          geo_country: log.geo_country,
+          answer: log.answer,
+          dest_geoip: log.dest_geoip,
+          dest_country_code: log.dest_country_code,
+          dest_country: log.dest_country,
+          dest_isp: log.dest_isp,
+          ecs: log.ecs,
+          upstream: log.upstream,
+          reason: log.reason,
+        };
+
+        if ("pqc_pk" in pubKey) {
+          // Post-Quantum Periodic Envelope Encryption
+          // ZERO expiration checks here: directly use the active DEK
+          const activeDek = dekMap.get(log.profile_id);
+          if (activeDek) {
+            const encrypted = await encryptSensitiveLogDataWithDek(activeDek.dek, sensitiveData);
+            log.encrypt_version = 2;
+            log.kem_key_id = activeDek.kemKeyId;
+            log.encrypted_payload = encrypted;
+          }
+        } else if ("kty" in pubKey) {
+          // Legacy P-256 E2EE (ECDH JWK)
+          const encrypted = await encryptSensitiveLogData(pubKey, sensitiveData);
+          log.encrypt_version = 1;
+          log.kem_key_id = null;
+          log.encrypted_payload = encrypted;
+        }
+
+        if (log.encrypt_version && log.encrypt_version > 0) {
+          log.domain = "";
+          log.client_ip = "";
+          log.geo_country = "";
+          log.answer = undefined;
+          log.dest_geoip = undefined;
+          log.dest_country_code = null;
+          log.dest_country = null;
+          log.dest_isp = null;
+          log.ecs = undefined;
+          log.upstream = undefined;
+          log.reason = undefined;
+        }
+      } catch (encErr) {
+        console.error(`[LogBatcher] Encryption failed for profile ${log.profile_id}:`, encErr);
+      }
+    } else {
+      log.encrypt_version = 0;
+      log.kem_key_id = null;
+    }
     statements.push(logModel.createInsertStatement(log));
   }
 

@@ -53,7 +53,7 @@ export class LogCoreModel {
   createInsertStatement(log: ResolutionLog): D1PreparedStatement {
     const logId = log.id ?? generateLogId();
     return this.db.prepare(
-      "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency, dest_country_code, dest_country, dest_isp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency, dest_country_code, dest_country, dest_isp, encrypt_version, kem_key_id, encrypted_payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
       log.profile_id,
       log.timestamp,
@@ -72,7 +72,10 @@ export class LogCoreModel {
       log.latency || null,
       log.dest_country_code || null,
       log.dest_country || null,
-      log.dest_isp || null
+      log.dest_isp || null,
+      log.encrypt_version ?? 0,
+      log.kem_key_id || null,
+      log.encrypted_payload || null
     );
   }
 
@@ -98,14 +101,16 @@ export class LogCoreModel {
     let baseSelect = "";
     if (options.export) {
       baseSelect = `
-        SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency, l.dest_country_code, l.dest_country, l.dest_isp
+        SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency, l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, l.kem_key_id, l.encrypted_payload, k.kem_ct
         FROM logs l
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
       `;
     } else {
       baseSelect = `
-        SELECT l.id, l.timestamp, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, l.dest_country_code, l.dest_country, l.dest_isp, ap.name as access_point_name 
+        SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, l.kem_key_id, l.encrypted_payload, k.kem_ct, ap.name as access_point_name 
         FROM logs l
         LEFT JOIN access_points ap ON l.access_point_id = ap.id
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
       `;
     }
 
@@ -210,20 +215,17 @@ export class LogCoreModel {
   }
 
   /**
-   * Deletes all logs and associated hourly rollups belonging to all profiles of an owner.
+   * Deletes all logs belonging to all profiles of an owner.
    *
    * @param ownerId - User identifier.
-   * @returns Promise resolving to true if all delete batches succeeded.
+   * @returns Promise resolving to true if delete succeeded.
    */
   async deleteByOwner(ownerId: string): Promise<boolean> {
-    const results = await this.db.batch([
-      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId),
-      this.db.prepare("DELETE FROM logs WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)").bind(ownerId)
-    ]);
-    return results.every((r) => r.success);
+    const result = await this.db
+      .prepare("DELETE FROM logs WHERE profile_id IN (SELECT id FROM profiles WHERE owner_id = ?)")
+      .bind(ownerId)
+      .run();
+    return result.success;
   }
 
   /**
@@ -231,18 +233,10 @@ export class LogCoreModel {
    *
    * @param profileId - Profile identifier.
    * @param olderThanTimestamp - Unix epoch timestamp threshold in seconds.
-   * @param maxRows - Maximum number of raw log rows to delete (default 20,000).
+   * @param maxRows - Maximum number of raw log rows to delete (default 1000).
    * @returns Total number of rows deleted.
    */
   async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 1000): Promise<number> {
-    // Purge expired rollups first (small tables, sub-millisecond execution)
-    await this.db.batch([
-      this.db.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL') AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp),
-      this.db.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?").bind(profileId, olderThanTimestamp)
-    ]);
-
     let totalDeleted = 0;
     const batchSize = Math.min(1000, maxRows);
     while (totalDeleted < maxRows) {

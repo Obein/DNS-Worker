@@ -1,7 +1,7 @@
-import React from "react";
-import { H3, Intent, Callout } from "@blueprintjs/core";
+import React, { useState } from "react";
+import { H3, Intent, Callout, Dialog, Button, Classes } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy, Check, ShieldAlert } from "lucide-react";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import { LoginUsernameStep } from "./login/LoginUsernameStep";
 import { LoginPasswordStep } from "./login/LoginPasswordStep";
@@ -76,8 +76,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     handleStep3Submit,
     handleSwitchToMfa,
     handlePasskeyLogin,
-    handleBack
+    handleBack,
+    rotatedRecoveryKey,
+    handleAcknowledgeRotatedKey
   } = useLoginForm({ authConfig, turnstileReady, onSuccess });
+
+  const [copiedRotatedKey, setCopiedRotatedKey] = useState(false);
+
+  const handleCopyRotatedKey = (k: string) => {
+    navigator.clipboard.writeText(k);
+    setCopiedRotatedKey(true);
+    setTimeout(() => setCopiedRotatedKey(false), 2000);
+  };
 
   const getStepTitle = (): string => {
     switch (loginStep) {
@@ -211,6 +221,51 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </button>
         </div>
       )}
+
+      {/* Rotated Recovery Key Notification Modal on Login */}
+      <Dialog
+        isOpen={!!rotatedRecoveryKey}
+        onClose={handleAcknowledgeRotatedKey}
+        title={t("account.recoveryKey.autoRotatedTitle", "恢复密钥已自动轮换")}
+        icon="warning-sign"
+        isCloseButtonShown={false}
+        canOutsideClickClose={false}
+        className="dark:bg-gray-900"
+      >
+        <div className={Classes.DIALOG_BODY}>
+          <Callout intent={Intent.WARNING} icon={<ShieldAlert size={16} />} className="mb-4 text-xs">
+            {t(
+              "account.recoveryKey.autoRotatedNotice",
+              "根据恢复密钥单次使用规则，您的原恢复密钥已失效，系统已为您生成全新 30 位紧急恢复密钥。请务必立即复制并妥善离线保存，关闭后将无法再次查看！"
+            )}
+          </Callout>
+
+          {rotatedRecoveryKey && (
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono text-center text-lg font-bold tracking-widest select-all text-gray-900 dark:text-gray-100">
+                {rotatedRecoveryKey}
+              </div>
+              <div className="flex justify-center">
+                <Button
+                  intent={Intent.PRIMARY}
+                  icon={copiedRotatedKey ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                  text={copiedRotatedKey ? t("common.copied", "已复制") : t("common.copyKey", "复制新恢复密钥")}
+                  onClick={() => handleCopyRotatedKey(rotatedRecoveryKey)}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        <div className={Classes.DIALOG_FOOTER}>
+          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+            <Button
+              intent={Intent.SUCCESS}
+              onClick={handleAcknowledgeRotatedKey}
+              text={t("account.recoveryKey.savedAndContinue", "我已妥善保存并进入控制台")}
+            />
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 };

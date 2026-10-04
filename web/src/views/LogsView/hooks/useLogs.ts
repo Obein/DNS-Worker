@@ -31,14 +31,11 @@ export function useLogs({ profileId, toasterRef }: UseLogsParams) {
     profileId,
     realtimeRefresh,
     range: filters.range,
-    statusFilter: filters.statusFilter,
-    accessPointIdFilter: filters.accessPointIdFilter,
-    destCountryFilter: filters.destCountryFilter,
-    ispFilter: filters.ispFilter,
     searchQuery: filters.searchQuery,
     scrollContainerRef: data.scrollContainerRef,
     isFetchingRef: data.isFetchingRef,
     fetchLogs: data.fetchLogs,
+    logsRef: data.logsRef,
   });
 
   const exportState = useLogExport({

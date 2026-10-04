@@ -3,11 +3,13 @@ import assert from "node:assert";
 import { LogRetentionModel } from "../src/models/log/retention";
 import { LogAggregationModel } from "../src/models/log/aggregation";
 import { LogCoreModel } from "../src/models/log/core";
+import { LogTrafficAnalytics } from "../src/models/log/analytics/traffic";
+import { LogDomainAnalytics } from "../src/models/log/analytics/domains";
 
 async function runTests() {
-  console.log(">>> [TEST] Running Log Deletion Budget & Domain Rollup Filter Tests...\n");
+  console.log(">>> [TEST] Running Log Deletion Budget & Direct Analytics Fallback Tests...\n");
 
-  // 1. Test LogRetentionModel.cleanupGlobal batchLimit distribution
+  // 1. Test LogRetentionModel.cleanupGlobal batchLimit distribution and no rollup queries
   console.log("1. Testing LogRetentionModel.cleanupGlobal batchLimit distribution...");
   {
     const executedQueries: { query: string; params: any[] }[] = [];
@@ -64,17 +66,14 @@ async function runTests() {
       assert.strictEqual(limitParam, 300, "perProfileLimit should be 300 (900 / 3)");
     }
 
-    const domainRollupDeletes = executedQueries.filter(q => q.query.includes("DELETE FROM domain_hourly_rollups"));
-    assert.strictEqual(domainRollupDeletes.length, 3, "Should generate domain rollup delete for each profile");
-    for (const stmt of domainRollupDeletes) {
-      assert(stmt.query.includes("action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL')"), "Must use action IN to enable primary key B-Tree range scan");
-    }
+    const rollupDeletes = executedQueries.filter(q => q.query.includes("_hourly_rollups"));
+    assert.strictEqual(rollupDeletes.length, 0, "No rollup delete queries should be issued since tables are dropped");
 
-    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile, domain rollups indexed.");
+    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile, no rollup queries executed.");
   }
 
-  // 2. Test LogAggregationModel.aggregateHourlyRollups with minDomainCount
-  console.log("\n2. Testing LogAggregationModel.aggregateHourlyRollups with minDomainCount...");
+  // 2. Test LogAggregationModel stub and direct logs queries in Analytics
+  console.log("\n2. Testing LogAggregationModel deprecated stub and direct Analytics queries...");
   {
     const executedQueries: { query: string; params: any[] }[] = [];
 
@@ -82,49 +81,43 @@ async function runTests() {
       prepare(query: string) {
         return {
           bind(...args: any[]) {
+            executedQueries.push({ query, params: args });
             return {
-              query,
-              params: args,
-              async first() {
-                if (query.includes("FROM system_settings")) {
-                  return { value: "1000000" };
-                }
-                return null;
-              },
               async all() {
-                if (query.includes("FROM profiles")) {
-                  return { results: [{ id: "p1" }] };
-                }
                 return { results: [] };
               },
+              async first() {
+                return null;
+              },
               async run() {
-                return { success: true, meta: { changes: 1 } };
+                return { success: true };
               }
             };
           }
         };
-      },
-      async batch(statements: any[]) {
-        for (const s of statements) {
-          executedQueries.push({ query: s.query, params: s.params });
-        }
-        return statements.map(() => ({ meta: { changes: 1 } }));
       }
     };
 
     const aggModel = new LogAggregationModel(mockDb);
+    const aggResult = await aggModel.aggregateHourlyRollups(1000000, 1003600, 2);
+    assert.strictEqual(aggResult, 0, "aggregateHourlyRollups stub must return 0");
+    const latestHour = await aggModel.getLatestRollupHour("p1");
+    assert.strictEqual(latestHour, null, "getLatestRollupHour stub must return null");
 
-    // Run aggregation for 1 hour with minDomainCount = 2
-    await aggModel.aggregateHourlyRollups(1000000, 1003600, 2);
+    // Test traffic analytics queries logs directly
+    const trafficAnalytics = new LogTrafficAnalytics(mockDb);
+    await trafficAnalytics.getSummary("p1", 1000, 2000);
+    const summaryQuery = executedQueries.find(q => q.query.includes("SELECT action, COUNT(*) as count FROM logs"));
+    assert(summaryQuery !== undefined, "Summary query must query logs directly");
+    assert.deepStrictEqual(summaryQuery.params, ["p1", 1000, 2000]);
 
-    const domainRollupStmt = executedQueries.find(q => q.query.includes("INSERT OR REPLACE INTO domain_hourly_rollups"));
-    assert(domainRollupStmt !== undefined, "domain_hourly_rollups statement must be executed");
-    assert(domainRollupStmt.query.includes("HAVING COUNT(*) >= ?"), "Query must include HAVING COUNT(*) >= ?");
+    // Test domain analytics queries logs directly
+    const domainAnalytics = new LogDomainAnalytics(mockDb);
+    await domainAnalytics.getTopAllowed("p1", 1000, 2000);
+    const allowedQuery = executedQueries.find(q => q.query.includes("FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS'"));
+    assert(allowedQuery !== undefined, "Top allowed domain query must query logs directly with PASS filter");
 
-    const boundMinCount = domainRollupStmt.params[5];
-    assert.strictEqual(boundMinCount, 2, "HAVING clause must bind minDomainCount (2)");
-
-    console.log("  Passed: domain_hourly_rollups binds HAVING COUNT(*) >= 2.");
+    console.log("  Passed: LogAggregationModel returns 0/null stubs; analytics queries logs directly.");
   }
 
   // 3. Test LogCoreModel.cleanup maxRows default
@@ -214,9 +207,8 @@ async function runTests() {
     const logDeleteStmts = executedQueries.filter(q => q.query.includes("DELETE FROM logs WHERE"));
     assert.strictEqual(logDeleteStmts.length, 0, "When daily budget is exhausted, NO DELETE FROM logs statements should be executed");
 
-    // But rollups should still be cleaned up
     const rollupDeleteStmts = executedQueries.filter(q => q.query.includes("_hourly_rollups"));
-    assert(rollupDeleteStmts.length > 0, "Rollup cleanups should still run");
+    assert.strictEqual(rollupDeleteStmts.length, 0, "No rollup cleanups should exist");
 
     console.log("  Passed: Log deletions skipped when daily budget is exhausted.");
   }
@@ -290,7 +282,7 @@ async function runTests() {
     console.log("  Passed: Log deletions capped to remaining daily budget and counter persisted.");
   }
 
-  console.log("\n>>> [TEST] All Log Deletion Budget & Domain Rollup Filter tests passed successfully!\n");
+  console.log("\n>>> [TEST] All Log Deletion Budget & Direct Analytics Fallback tests passed successfully!\n");
 }
 
 runTests().catch(err => {

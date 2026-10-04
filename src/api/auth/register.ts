@@ -10,8 +10,10 @@ import {
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { hashPassword } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
+import { ProfileModel } from "../../models/profile";
 import { ActivityLogModel } from "../../models/activityLog";
 import { SystemSettingsModel } from "../../models/systemSettings";
+import { generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
 import { cacheUtils } from "../../utils/cache";
 import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
 import { verifyTurnstile } from "./utils";
@@ -97,6 +99,29 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
     await userModel.create({ id: userId, username, passwordHash: hashedPassword, role, timezone, passwordVersion: 2 });
     userCreated = true;
 
+    // Create default profile for the user
+    const profileModel = new ProfileModel(env.DB);
+    const defaultProfileId = generateId(6);
+    const defaultRetentionDays = role === 'admin' ? 7 : 1;
+    await profileModel.create({
+      id: defaultProfileId,
+      owner_id: userId,
+      name: "Default",
+      settings: {
+        upstream: ["https://security.cloudflare-dns.com/dns-query"],
+        ecs: { enabled: true, use_client_ip: true },
+        log_retention_days: defaultRetentionDays,
+        skip_log_on_pass: false,
+        default_policy: "ALLOW",
+        best_effort_ech: { enabled: false, fronting_domain: "cloudflare-ech.com" }
+      }
+    });
+
+    // Generate zero-knowledge Recovery Key; store ONLY irreversible hash in DB
+    const recoveryKey = generateRecoveryKey();
+    const recoveryKeyHash = await hashRecoveryKey(recoveryKey);
+    await userModel.updateRecoveryKeys(userId, [{ hash: recoveryKeyHash }] as any);
+
     const { session, refreshToken } = await createSession(env, userId, clientIp, userAgent, latitude, longitude, false);
     const sessionHash = await generateSessionHash(session.id, userId);
     await activityLog.record(userId, 'signup', clientIp, userAgent, undefined, sessionHash);
@@ -116,11 +141,12 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
     headers.append("Set-Cookie", refreshCookie);
     headers.append("Set-Cookie", csrfCookie);
     headers.append("Content-Type", "application/json");
-    return new Response(JSON.stringify({ success: true, accessToken }), { headers });
+    return new Response(JSON.stringify({ success: true, accessToken, recoveryKey }), { headers });
   } catch (e: any) {
     if (userCreated) {
       // 防御性回滚：清除由于后续步骤失败遗留的未完成注册脏数据，防止用户名被锁死
       try {
+        await env.DB.prepare("DELETE FROM profiles WHERE owner_id = ?").bind(userId).run();
         await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(userId).run();
       } catch (cleanupErr) {
         console.error("Failed to clean up incomplete user registration:", cleanupErr);

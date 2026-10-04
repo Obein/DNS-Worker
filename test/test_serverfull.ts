@@ -205,6 +205,7 @@ async function runTests() {
   console.log('\n======================================================');
   console.log('      ALL SERVERFULL INTEGRATION TESTS PASSED!        ');
   console.log('======================================================');
+  process.exit(0);
 }
 
 runTests().catch((err) => {

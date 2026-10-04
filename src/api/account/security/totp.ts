@@ -71,16 +71,15 @@ export async function handleTotpAndMfaRequest(
       const isValid = await verifyTOTP(secret, totpTokenHash, salt);
       if (!isValid) return new Response("Invalid TOTP code", { status: 400 });
 
-      // Generate recovery keys, store both plaintext and hash under envelope encryption
+      // Generate recovery keys, store only hash under envelope encryption
       const plaintextKeys = generateRecoveryKeys();
-      const storedItems: StoredRecoveryKeyItem[] = await Promise.all(
+      const storedItems = await Promise.all(
         plaintextKeys.map(async (k) => ({
-          key: k,
           hash: await hashRecoveryKey(k)
         }))
       );
 
-      await userModel.updateTOTP(user.id, secret, storedItems);
+      await userModel.updateTOTP(user.id, secret, storedItems as any);
       // Default to passwordless login upon enabling MFA
       await userModel.updateTOTPSettings(user.id, true);
       await activityLog.record(user.id, "totp_setup", clientIp, userAgent, undefined, sessionHash);

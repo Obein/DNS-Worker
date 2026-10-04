@@ -34,6 +34,25 @@ export class PasskeyModel {
   }
 
   /**
+   * Finds a passkey belonging to a specific user by its internal ID or WebAuthn credential ID.
+   * Handles base64url padding differences defensively.
+   */
+  async getByIdOrCredentialId(idOrCredId: string, userId: string): Promise<Passkey | null> {
+    const direct = await this.db.prepare(
+      "SELECT * FROM passkeys WHERE (id = ? OR credential_id = ?) AND user_id = ?"
+    ).bind(idOrCredId, idOrCredId, userId).first<Passkey>();
+    if (direct) return direct;
+
+    // Fallback: match by normalized base64url credential ID
+    const userPasskeys = await this.listByUser(userId);
+    const cleanId = idOrCredId.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    return userPasskeys.find((p) => {
+      const pClean = p.credential_id.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+      return p.id === idOrCredId || pClean === cleanId;
+    }) || null;
+  }
+
+  /**
    * Registers a new passkey credential.
    */
   async create(data: {

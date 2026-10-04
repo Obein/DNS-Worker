@@ -1,6 +1,6 @@
 import { Env } from "../../../types";
 import { verifyPassword } from "../../../utils/crypto";
-import { verifyTOTP } from "../../../lib/totp";
+import { verifyTOTP, findMatchingRecoveryKey } from "../../../lib/totp";
 import { PasskeyModel } from "../../../models/passkey";
 import { verifyAuthenticationResponse } from "../../../lib/webauthn";
 import { cacheUtils } from "../../../utils/cache";
@@ -11,11 +11,12 @@ export interface ReauthPayload {
   totpTokenHash?: string;
   totpSalt?: string;
   passkeyAssertion?: any;
+  recoveryKey?: string;
 }
 
 export interface ReauthResult {
   success: boolean;
-  method?: "password" | "totp" | "passkey";
+  method?: "password" | "totp" | "passkey" | "recovery_key";
   error?: string;
   reason?: string;
 }
@@ -97,5 +98,20 @@ export async function verifyUserReauth(
     return { success: true, method: "password" };
   }
 
-  return { success: false, error: "Authentication required (Password, Passkey, or TOTP)", reason: "no_credentials_provided" };
+  // 4. Recovery Key check
+  if (payload.recoveryKey) {
+    let storedHashes: any[] = [];
+    try {
+      storedHashes = typeof dbUser.totp_recovery_keys === "string"
+        ? JSON.parse(dbUser.totp_recovery_keys)
+        : dbUser.totp_recovery_keys || [];
+    } catch {}
+    const matchIndex = await findMatchingRecoveryKey(payload.recoveryKey, storedHashes);
+    if (matchIndex === -1) {
+      return { success: false, error: "Invalid Recovery Key", reason: "invalid_recovery_key" };
+    }
+    return { success: true, method: "recovery_key" };
+  }
+
+  return { success: false, error: "Authentication required (Passkey, Recovery Key, or Password)", reason: "no_credentials_provided" };
 }
