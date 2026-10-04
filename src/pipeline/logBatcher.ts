@@ -21,13 +21,27 @@ export async function getProfileLogPublicKey(
   }
 
   try {
-    const row = await db
-      .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ? AND (is_active IS NULL OR is_active = 1)")
-      .bind(profileId)
-      .first<{ public_key: string }>();
+    let row: { public_key: string } | null = null;
+    try {
+      row = await db
+        .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ? AND (is_active IS NULL OR is_active = 1)")
+        .bind(profileId)
+        .first<{ public_key: string }>();
+    } catch (columnErr: any) {
+      if (String(columnErr?.message || columnErr).includes("no such column: is_active")) {
+        row = await db
+          .prepare("SELECT public_key FROM user_log_keys WHERE profile_id = ?")
+          .bind(profileId)
+          .first<{ public_key: string }>();
+      } else {
+        throw columnErr;
+      }
+    }
 
     const key = row?.public_key ? (JSON.parse(row.public_key) as JsonWebKey) : null;
-    profileKeyCache.set(profileId, { key, expiresAt: now + 5 * 60 * 1000 });
+    // Cache active key for 5 minutes; if null (E2EE not enabled), cache for only 15 seconds for rapid activation
+    const ttlMs = key ? 5 * 60 * 1000 : 15 * 1000;
+    profileKeyCache.set(profileId, { key, expiresAt: now + ttlMs });
     return key;
   } catch (err) {
     console.error(`[E2EE] Failed to fetch log public key for profile ${profileId}:`, err);
