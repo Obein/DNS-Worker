@@ -79,9 +79,9 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     setLoading(true);
 
     const now = Math.floor(Date.now() / 1000);
-    let since = now - 86400;
+    let since: number;
     let until = now;
-    let bucketSec = 3600;
+    let bucketSec: number;
 
     if (selectedRange === "custom" && customStart && customEnd) {
       since = Math.floor(new Date(customStart).getTime() / 1000);

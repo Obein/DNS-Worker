@@ -94,7 +94,7 @@ export function useLogData({
 
         // Compute time boundaries
         const now = Math.floor(Date.now() / 1000);
-        let since = now;
+        let since: number;
         let until = now;
         if (currentRange === "custom" && customRange.start && customRange.end) {
           since = Math.floor(new Date(customRange.start).getTime() / 1000);
