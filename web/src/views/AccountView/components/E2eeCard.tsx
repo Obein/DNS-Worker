@@ -92,6 +92,16 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
   const hasPasskey = (user.passkeys_count && user.passkeys_count > 0) || (status?.userPasskeyCount || 0) > 0;
   const isLogsE2eeEnabled = Boolean(status?.enabled);
 
+  const isPqc = React.useMemo(() => {
+    if (!status?.publicKey) return false;
+    try {
+      const parsed = JSON.parse(status.publicKey);
+      return parsed.alg === "P256-MLKEM768" || Boolean(parsed.pqc_pk);
+    } catch {
+      return false;
+    }
+  }, [status?.publicKey]);
+
   // 2. Handle toggle for DNS Query Logs encryption across user account
   const handleToggleLogs = async (checked: boolean) => {
     if (checked) {
@@ -425,7 +435,16 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
                   <KeyRound size={13} />
                   {t("account.e2ee.keyType")}:
                 </span>
-                <span className="font-mono">ECDH P-256 + AES-256-GCM</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono">
+                    {isPqc ? "P256-MLKEM768 + AES-256-GCM" : "ECDH P-256 + AES-256-GCM"}
+                  </span>
+                  {isPqc && (
+                    <Tag minimal intent={Intent.PRIMARY} className="text-[10px]">
+                      {t("account.e2ee.pqcTag", "PQC / NIST FIPS 203")}
+                    </Tag>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between">

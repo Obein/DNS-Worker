@@ -128,7 +128,9 @@ export async function initDatabase(): Promise<boolean> {
           dest_country_code TEXT,
           dest_country TEXT,
           dest_isp TEXT,
-          is_encrypted INTEGER DEFAULT 0,
+          encrypt_version INTEGER DEFAULT 0,
+          kem_key_id TEXT,
+          kem_ct TEXT,
           encrypted_payload TEXT,
           PRIMARY KEY (profile_id, timestamp, id)
         );
@@ -158,6 +160,20 @@ export async function initDatabase(): Promise<boolean> {
       } catch {
         // Ignored if column already exists
       }
+
+      // Migration: Add encrypt_version, kem_key_id, kem_ct to local_logs if missing
+      try {
+        db.exec('ALTER TABLE local_logs ADD COLUMN encrypt_version INTEGER DEFAULT 0;');
+      } catch {}
+      try {
+        db.exec('ALTER TABLE local_logs ADD COLUMN kem_key_id TEXT;');
+      } catch {}
+      try {
+        db.exec('ALTER TABLE local_logs ADD COLUMN kem_ct TEXT;');
+      } catch {}
+      try {
+        db.exec('UPDATE local_logs SET encrypt_version = 1 WHERE is_encrypted = 1;');
+      } catch {}
 
       // Clean up stale logs with empty client_ip from prior bug to trigger a fresh sync
       try {

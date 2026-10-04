@@ -28,8 +28,8 @@ export const LogsList: React.FC<LogsListProps> = ({
     <div className="space-y-3 py-4">
       {logs.map((log, idx) => {
         const isNew = realtimeRefresh && prevLatestTimestamp !== null && log.timestamp > prevLatestTimestamp;
-        const isEncryptedLocked = log.is_encrypted === 1 && (!log.domain || log.domain === "[Encrypted]");
-        const isEncryptedUnlocked = log.is_encrypted === 1 && log.domain && log.domain !== "[Encrypted]";
+        const isEncryptedLocked = (log.encrypt_version ?? 0) > 0 && (!log.domain || log.domain === "[Encrypted]");
+        const isEncryptedUnlocked = (log.encrypt_version ?? 0) > 0 && log.domain && log.domain !== "[Encrypted]";
 
         return (
           <Card

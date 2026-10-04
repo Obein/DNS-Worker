@@ -19,7 +19,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   loading,
 }) => {
   const { t } = useTranslation();
-  const isEncrypted = selectedLog.is_encrypted === 1 || Boolean(selectedLog.is_encrypted);
+  const isEncrypted = (selectedLog.encrypt_version ?? 0) > 0;
   const isEncryptedLocked = isEncrypted && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
 
   return (

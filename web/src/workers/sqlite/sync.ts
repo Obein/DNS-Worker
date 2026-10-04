@@ -37,8 +37,8 @@ export function handleSyncBatch(payload: SyncBatchPayload): { inserted: number }
         profile_id, timestamp, id, domain, record_type, action, reason,
         client_ip, geo_country, answer, dest_geoip, ecs, upstream, latency,
         access_point_id, access_point_name, dest_country_code, dest_country, dest_isp,
-        is_encrypted, encrypted_payload
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        encrypt_version, kem_key_id, kem_ct, encrypted_payload
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `);
 
     try {
@@ -66,7 +66,9 @@ export function handleSyncBatch(payload: SyncBatchPayload): { inserted: number }
           log.dest_country_code || null,
           log.dest_country || null,
           log.dest_isp || null,
-          log.is_encrypted ? 1 : 0,
+          log.encrypt_version ?? 0,
+          log.kem_key_id || null,
+          log.kem_ct || null,
           log.encrypted_payload || null
         ]);
         insertStmt.step();
@@ -148,7 +150,7 @@ export function handleUpdateLogsBatch(payload: UpdateLogsBatchPayload): { update
       UPDATE local_logs SET
         domain = ?, client_ip = ?, geo_country = ?, answer = ?,
         dest_geoip = ?, dest_country_code = ?, dest_country = ?, dest_isp = ?,
-        ecs = ?, upstream = ?, reason = ?, is_encrypted = 0, encrypted_payload = NULL
+        ecs = ?, upstream = ?, reason = ?, encrypt_version = 0, encrypted_payload = NULL
       WHERE profile_id = ? AND timestamp = ? AND id = ?;
     `);
 
@@ -196,7 +198,9 @@ export function handleGetEncryptedLogs(payload: GetEncryptedLogsPayload): { rows
   const limit = payload.limit || 500;
   const rows: WorkerLogEntry[] = [];
   const stmt = db.prepare(`
-    SELECT * FROM local_logs WHERE profile_id = ? AND is_encrypted = 1 LIMIT ?;
+    SELECT * FROM local_logs 
+    WHERE profile_id = ? AND (encrypt_version > 0 OR (is_encrypted = 1 AND encrypt_version IS NULL))
+    LIMIT ?;
   `);
 
   try {

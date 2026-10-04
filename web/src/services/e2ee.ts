@@ -2,9 +2,10 @@
  * @file e2ee.ts
  * @description Client-side End-to-End Encryption (E2EE) Service for DNS logs.
  * Provides Passkey hardware-backed envelope encryption, user/account-level key lifecycle management,
- * and zero-knowledge log decryption.
+ * and zero-knowledge log decryption supporting classical P-256 and post-quantum P256-MLKEM768.
  */
 
+import { ml_kem768_p256 } from "@noble/post-quantum/hybrid.js";
 import type { LogEntry } from "../views/LogsView/types";
 import { profileFetch } from "./profiles";
 import { getPasskeyAuthOptions } from "./account";
@@ -24,6 +25,15 @@ export interface EncryptedPayload {
   iv: string;
   ciphertext: string;
 }
+
+export interface CompactEncryptedLogPayload {
+  iv: string;
+  ciphertext: string;
+}
+
+export type UnlockedPrivateKey =
+  | { alg: "P256-MLKEM768"; seedBase64: string }
+  | JsonWebKey;
 
 export interface SensitiveLogData {
   domain: string;
@@ -66,9 +76,53 @@ function base64UrlToUint8Array(base64Url: string): Uint8Array {
   return fromBase64(base64);
 }
 
+async function deriveDekFromSharedSecret(sharedSecret: Uint8Array): Promise<CryptoKey> {
+  const subtle = crypto.subtle;
+  const hkdfKey = await subtle.importKey(
+    "raw",
+    sharedSecret as BufferSource,
+    { name: "HKDF" },
+    false,
+    ["deriveKey"]
+  );
+
+  return await subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: new Uint8Array(0),
+      info: new TextEncoder().encode("obex-pqc-dek-v2"),
+    },
+    hkdfKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function decryptSensitiveLogDataWithDek(
+  dek: CryptoKey,
+  encryptedPayloadStr: string
+): Promise<SensitiveLogData> {
+  const payload: CompactEncryptedLogPayload = JSON.parse(encryptedPayloadStr);
+  const iv = fromBase64(payload.iv);
+  const ciphertext = fromBase64(payload.ciphertext);
+
+  const decryptedBytes = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: iv as BufferSource },
+    dek,
+    ciphertext as BufferSource
+  );
+
+  return JSON.parse(new TextDecoder().decode(decryptedBytes)) as SensitiveLogData;
+}
+
 class E2eeService {
-  /** In-memory store for unlocked private keys (profileId or "account" -> JsonWebKey) */
-  private unlockedKeys = new Map<string, JsonWebKey>();
+  /** In-memory store for unlocked private keys (profileId or "account" -> UnlockedPrivateKey) */
+  private unlockedKeys = new Map<string, UnlockedPrivateKey>();
+
+  /** In-memory DEK cache: kem_key_id -> CryptoKey */
+  private dekCache = new Map<string, CryptoKey>();
 
   /**
    * Retrieves account-level E2EE configuration and status.
@@ -141,16 +195,16 @@ class E2eeService {
   /**
    * Gets the unlocked private key from memory or session storage.
    */
-  private getPrivateKey(profileId: string): JsonWebKey | null {
+  private getPrivateKey(profileId: string): UnlockedPrivateKey | null {
     if (this.unlockedKeys.has(profileId)) {
       return this.unlockedKeys.get(profileId)!;
     }
     const stored = sessionStorage.getItem(`obex_e2ee_sk_${profileId}`);
     if (stored) {
       try {
-        const jwk = JSON.parse(stored) as JsonWebKey;
-        this.unlockedKeys.set(profileId, jwk);
-        return jwk;
+        const key = JSON.parse(stored) as UnlockedPrivateKey;
+        this.unlockedKeys.set(profileId, key);
+        return key;
       } catch {
         sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
       }
@@ -163,9 +217,9 @@ class E2eeService {
       const key = sessionStorage.key(i);
       if (key?.startsWith("obex_e2ee_sk_")) {
         try {
-          const jwk = JSON.parse(sessionStorage.getItem(key) || "");
-          this.unlockedKeys.set(profileId, jwk);
-          return jwk;
+          const parsed = JSON.parse(sessionStorage.getItem(key) || "") as UnlockedPrivateKey;
+          this.unlockedKeys.set(profileId, parsed);
+          return parsed;
         } catch {
           // ignore
         }
@@ -177,9 +231,9 @@ class E2eeService {
   /**
    * Stores the unlocked private key in session memory.
    */
-  private setPrivateKey(profileOrAccountKey: string, skJwk: JsonWebKey): void {
-    this.unlockedKeys.set(profileOrAccountKey, skJwk);
-    sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, JSON.stringify(skJwk));
+  private setPrivateKey(profileOrAccountKey: string, sk: UnlockedPrivateKey): void {
+    this.unlockedKeys.set(profileOrAccountKey, sk);
+    sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, JSON.stringify(sk));
   }
 
   /**
@@ -290,17 +344,17 @@ class E2eeService {
   }
 
   /**
-   * Wraps (encrypts) the ECDH P-256 private key using a Recovery Key KEK.
+   * Wraps (encrypts) the private key using a Recovery Key KEK.
    */
   async wrapPrivateKeyWithRecoveryKey(
-    privateKeyJwk: JsonWebKey,
+    privateKey: UnlockedPrivateKey,
     plaintextRecoveryKey: string
   ): Promise<{ encryptedSk: string; iv: string; salt: string }> {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const kek = await this.deriveRecoveryKek(plaintextRecoveryKey, salt);
 
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKey));
     const ciphertextBuffer = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
       kek,
@@ -315,14 +369,14 @@ class E2eeService {
   }
 
   /**
-   * Unwraps (decrypts) the ECDH P-256 private key using a Recovery Key KEK.
+   * Unwraps (decrypts) the private key using a Recovery Key KEK.
    */
   async unwrapPrivateKeyWithRecoveryKey(
     encryptedSkBase64: string,
     ivBase64: string,
     saltBase64: string,
     plaintextRecoveryKey: string
-  ): Promise<JsonWebKey> {
+  ): Promise<UnlockedPrivateKey> {
     const salt = fromBase64(saltBase64);
     const iv = fromBase64(ivBase64);
     const ciphertext = fromBase64(encryptedSkBase64);
@@ -334,34 +388,33 @@ class E2eeService {
       ciphertext as BufferSource
     );
 
-    return JSON.parse(new TextDecoder().decode(decryptedBuffer)) as JsonWebKey;
+    return JSON.parse(new TextDecoder().decode(decryptedBuffer)) as UnlockedPrivateKey;
   }
 
   /**
-   * Initializes account-level E2EE using a fresh Recovery Key.
-   * Generates the ECDH P-256 key pair, wraps SK with Recovery Key KEK,
-   * uploads to /api/account/e2ee/init, and caches the unlocked SK in session storage.
+   * Initializes account-level E2EE using a fresh Recovery Key and P256-MLKEM768 key pair.
    */
   async initUserE2eeWithRecoveryKey(plaintextRecoveryKey: string): Promise<boolean> {
-    // 1. Generate Log KeyPair
-    const keyPair = await crypto.subtle.generateKey(
-      { name: "ECDH", namedCurve: "P-256" },
-      true,
-      ["deriveKey", "deriveBits"]
-    );
-
-    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-    const privateKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+    // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
+    const pqcKeys = ml_kem768_p256.keygen();
+    const publicKeyPayload = {
+      alg: "P256-MLKEM768",
+      pqc_pk: toBase64(pqcKeys.publicKey),
+    };
+    const privateKeyObj: UnlockedPrivateKey = {
+      alg: "P256-MLKEM768",
+      seedBase64: toBase64(pqcKeys.secretKey),
+    };
 
     // 2. Wrap SK with Recovery Key KEK
-    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(privateKeyJwk, plaintextRecoveryKey);
+    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(privateKeyObj, plaintextRecoveryKey);
 
     // 3. Upload to server
     const res = await fetch("/api/account/e2ee/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        publicKey: publicKeyJwk,
+        publicKey: publicKeyPayload,
         recovery: recoveryWrapped,
       }),
     });
@@ -371,7 +424,7 @@ class E2eeService {
     }
 
     // 4. Save in session for account
-    this.setPrivateKey("account", privateKeyJwk);
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -390,9 +443,9 @@ class E2eeService {
       salt: string;
     };
 
-    let privateKeyJwk: JsonWebKey;
+    let privateKeyObj: UnlockedPrivateKey;
     try {
-      privateKeyJwk = await this.unwrapPrivateKeyWithRecoveryKey(
+      privateKeyObj = await this.unwrapPrivateKeyWithRecoveryKey(
         encryptedSk,
         iv,
         salt,
@@ -402,7 +455,7 @@ class E2eeService {
       throw new Error("Invalid Recovery Key or corrupted data");
     }
 
-    this.setPrivateKey("account", privateKeyJwk);
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -410,8 +463,8 @@ class E2eeService {
    * Wraps the currently unlocked private key for a newly registered Passkey.
    */
   async wrapCurrentKeyForPasskey(passkeyId: string): Promise<boolean> {
-    const skJwk = this.getPrivateKey("account");
-    if (!skJwk) {
+    const sk = this.getPrivateKey("account");
+    if (!sk) {
       console.warn("[E2EE] Cannot wrap passkey: private key is not unlocked in this session");
       return false;
     }
@@ -427,7 +480,7 @@ class E2eeService {
       );
 
       const iv = crypto.getRandomValues(new Uint8Array(12));
-      const plaintext = new TextEncoder().encode(JSON.stringify(skJwk));
+      const plaintext = new TextEncoder().encode(JSON.stringify(sk));
       const encryptedBuf = await crypto.subtle.encrypt(
         { name: "AES-GCM", iv },
         kekKey,
@@ -455,13 +508,13 @@ class E2eeService {
    * Re-wraps the currently unlocked private key with a newly rotated Recovery Key.
    */
   async wrapCurrentKeyForRecovery(newRecoveryKey: string): Promise<boolean> {
-    const skJwk = this.getPrivateKey("account");
-    if (!skJwk) {
+    const sk = this.getPrivateKey("account");
+    if (!sk) {
       console.warn("[E2EE] Cannot wrap recovery: private key is not unlocked in this session");
       return false;
     }
 
-    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(skJwk, newRecoveryKey);
+    const recoveryWrapped = await this.wrapPrivateKeyWithRecoveryKey(sk, newRecoveryKey);
     const res = await fetch("/api/account/e2ee/wrap-recovery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -472,9 +525,7 @@ class E2eeService {
   }
 
   /**
-   * Initializes and enables E2EE at the user/account level:
-   * If keypair already exists, re-enables encryption via /api/account/e2ee/enable.
-   * Otherwise, generates keypair and wraps with Passkey KEK.
+   * Initializes and enables E2EE at the user/account level using P256-MLKEM768.
    */
   async enableUserE2ee(passkeyIdOverride?: string): Promise<boolean> {
     const status = await this.getUserStatus();
@@ -489,17 +540,18 @@ class E2eeService {
     const { kek, passkeyId } = await this.derivePasskeyKek("account");
     const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
 
-    // 1. Generate Log KeyPair
-    const keyPair = await crypto.subtle.generateKey(
-      { name: "ECDH", namedCurve: "P-256" },
-      true,
-      ["deriveKey", "deriveBits"]
-    );
+    // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
+    const pqcKeys = ml_kem768_p256.keygen();
+    const publicKeyPayload = {
+      alg: "P256-MLKEM768",
+      pqc_pk: toBase64(pqcKeys.publicKey),
+    };
+    const privateKeyObj: UnlockedPrivateKey = {
+      alg: "P256-MLKEM768",
+      seedBase64: toBase64(pqcKeys.secretKey),
+    };
 
-    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-    const privateKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
-
-    // 2. Wrap SK_log with Passkey KEK
+    // 2. Wrap SK with Passkey KEK
     const kekKey = await crypto.subtle.importKey(
       "raw",
       kek as BufferSource,
@@ -509,7 +561,7 @@ class E2eeService {
     );
 
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
     const encryptedBuf = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
       kekKey,
@@ -524,7 +576,7 @@ class E2eeService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        publicKey: publicKeyJwk,
+        publicKey: publicKeyPayload,
         passkeyId: chosenPasskeyId,
         encryptedSk,
         iv: ivStr,
@@ -536,7 +588,7 @@ class E2eeService {
     }
 
     // Save in session for account
-    this.setPrivateKey("account", privateKeyJwk);
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -546,17 +598,18 @@ class E2eeService {
   async enableE2ee(profileId: string, passkeyId: string): Promise<boolean> {
     const { kek } = await this.derivePasskeyKek(profileId);
 
-    // 1. Generate Log KeyPair
-    const keyPair = await crypto.subtle.generateKey(
-      { name: "ECDH", namedCurve: "P-256" },
-      true,
-      ["deriveKey", "deriveBits"]
-    );
+    // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
+    const pqcKeys = ml_kem768_p256.keygen();
+    const publicKeyPayload = {
+      alg: "P256-MLKEM768",
+      pqc_pk: toBase64(pqcKeys.publicKey),
+    };
+    const privateKeyObj: UnlockedPrivateKey = {
+      alg: "P256-MLKEM768",
+      seedBase64: toBase64(pqcKeys.secretKey),
+    };
 
-    const publicKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-    const privateKeyJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
-
-    // 2. Wrap SK_log with Passkey KEK
+    // 2. Wrap SK with Passkey KEK
     const kekKey = await crypto.subtle.importKey(
       "raw",
       kek as BufferSource,
@@ -566,7 +619,7 @@ class E2eeService {
     );
 
     const iv = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyJwk));
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
     const encryptedBuf = await crypto.subtle.encrypt(
       { name: "AES-GCM", iv },
       kekKey,
@@ -581,7 +634,7 @@ class E2eeService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        publicKey: publicKeyJwk,
+        publicKey: publicKeyPayload,
         passkeyId,
         encryptedSk,
         iv: ivStr,
@@ -593,8 +646,8 @@ class E2eeService {
     }
 
     // Save in session
-    this.setPrivateKey(profileId, privateKeyJwk);
-    this.setPrivateKey("account", privateKeyJwk);
+    this.setPrivateKey(profileId, privateKeyObj);
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -629,7 +682,7 @@ class E2eeService {
 
     const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
 
-    // Unwrap SK_log
+    // Unwrap SK
     const kekKey = await crypto.subtle.importKey(
       "raw",
       kek as BufferSource,
@@ -644,8 +697,8 @@ class E2eeService {
       fromBase64(encryptedSk) as BufferSource
     );
 
-    const privateKeyJwk = JSON.parse(new TextDecoder().decode(decryptedBuf)) as JsonWebKey;
-    this.setPrivateKey("account", privateKeyJwk);
+    const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -675,7 +728,7 @@ class E2eeService {
 
     const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
 
-    // Unwrap SK_log
+    // Unwrap SK
     const kekKey = await crypto.subtle.importKey(
       "raw",
       kek as BufferSource,
@@ -690,9 +743,9 @@ class E2eeService {
       fromBase64(encryptedSk) as BufferSource
     );
 
-    const privateKeyJwk = JSON.parse(new TextDecoder().decode(decryptedBuf)) as JsonWebKey;
-    this.setPrivateKey(profileId, privateKeyJwk);
-    this.setPrivateKey("account", privateKeyJwk);
+    const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
+    this.setPrivateKey(profileId, privateKeyObj);
+    this.setPrivateKey("account", privateKeyObj);
     return true;
   }
 
@@ -707,6 +760,7 @@ class E2eeService {
       throw new Error(`Failed to disable E2EE: ${await res.text()}`);
     }
     this.unlockedKeys.clear();
+    this.dekCache.clear();
     const toRemove: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const k = sessionStorage.key(i);
@@ -727,6 +781,7 @@ class E2eeService {
       throw new Error(`Failed to disable E2EE: ${await res.text()}`);
     }
     this.unlockedKeys.delete(profileId);
+    this.dekCache.clear();
     sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
     return true;
   }
@@ -735,12 +790,13 @@ class E2eeService {
    * Decrypts a single log entry if encrypted and if the private key is unlocked.
    */
   async decryptLogEntry(profileId: string, log: LogEntry): Promise<LogEntry> {
-    if (!log.is_encrypted || !log.encrypted_payload) {
+    const version = log.encrypt_version ?? (log.encrypted_payload ? 1 : 0);
+    if (version === 0 || !log.encrypted_payload) {
       return log;
     }
 
-    const privKeyJwk = this.getPrivateKey(profileId);
-    if (!privKeyJwk) {
+    const privKey = this.getPrivateKey(profileId);
+    if (!privKey) {
       // Not unlocked yet, keep placeholder
       return {
         ...log,
@@ -750,58 +806,107 @@ class E2eeService {
     }
 
     try {
-      const payload: EncryptedPayload = JSON.parse(log.encrypted_payload);
+      if (version === 2) {
+        // Generation 2: P256-MLKEM768 Periodic Envelope Encryption
+        let dek: CryptoKey | undefined;
+        if (log.kem_key_id) {
+          dek = this.dekCache.get(log.kem_key_id);
+          if (!dek && log.kem_ct && "seedBase64" in privKey) {
+            const seed = fromBase64(privKey.seedBase64);
+            const kemCt = fromBase64(log.kem_ct);
+            const sharedSecret = ml_kem768_p256.decapsulate(kemCt, seed);
+            dek = await deriveDekFromSharedSecret(sharedSecret);
+            this.dekCache.set(log.kem_key_id, dek);
+          }
+        }
 
-      // Import recipient private key
-      const importedPriv = await crypto.subtle.importKey(
-        "jwk",
-        privKeyJwk,
-        { name: "ECDH", namedCurve: "P-256" },
-        false,
-        ["deriveKey"]
-      );
+        if (!dek) {
+          return {
+            ...log,
+            domain: log.domain || "[Encrypted]",
+            client_ip: log.client_ip || "[Encrypted]",
+          };
+        }
 
-      // Import ephemeral public key
-      const importedEphem = await crypto.subtle.importKey(
-        "jwk",
-        payload.ephem_pk,
-        { name: "ECDH", namedCurve: "P-256" },
-        false,
-        []
-      );
+        const data = await decryptSensitiveLogDataWithDek(dek, log.encrypted_payload);
+        return {
+          ...log,
+          domain: data.domain || log.domain,
+          client_ip: data.client_ip || log.client_ip,
+          geo_country: data.geo_country ?? log.geo_country,
+          answer: data.answer ?? log.answer,
+          dest_geoip: data.dest_geoip ?? log.dest_geoip,
+          dest_country_code: data.dest_country_code ?? log.dest_country_code,
+          dest_country: data.dest_country ?? log.dest_country,
+          dest_isp: data.dest_isp ?? log.dest_isp,
+          ecs: data.ecs ?? log.ecs,
+          upstream: data.upstream ?? log.upstream,
+          reason: data.reason ?? log.reason,
+          encrypt_version: 0,
+        };
+      }
 
-      // Derive shared AES-GCM key
-      const aesKey = await crypto.subtle.deriveKey(
-        { name: "ECDH", public: importedEphem },
-        importedPriv,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["decrypt"]
-      );
+      if (version === 1) {
+        // Generation 1: Legacy P-256 ECDH
+        const payload: EncryptedPayload = JSON.parse(log.encrypted_payload);
+        const privKeyJwk = ("kty" in privKey ? privKey : null) as JsonWebKey | null;
+        if (!privKeyJwk) {
+          return {
+            ...log,
+            domain: "[Decryption Failed: Legacy Key Mismatch]",
+          };
+        }
 
-      const decryptedBytes = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: fromBase64(payload.iv) as BufferSource },
-        aesKey,
-        fromBase64(payload.ciphertext) as BufferSource
-      );
+        const importedPriv = await crypto.subtle.importKey(
+          "jwk",
+          privKeyJwk,
+          { name: "ECDH", namedCurve: "P-256" },
+          false,
+          ["deriveKey"]
+        );
 
-      const data: SensitiveLogData = JSON.parse(new TextDecoder().decode(decryptedBytes));
+        const importedEphem = await crypto.subtle.importKey(
+          "jwk",
+          payload.ephem_pk,
+          { name: "ECDH", namedCurve: "P-256" },
+          false,
+          []
+        );
 
-      return {
-        ...log,
-        domain: data.domain || log.domain,
-        client_ip: data.client_ip || log.client_ip,
-        geo_country: data.geo_country ?? log.geo_country,
-        answer: data.answer ?? log.answer,
-        dest_geoip: data.dest_geoip ?? log.dest_geoip,
-        dest_country_code: data.dest_country_code ?? log.dest_country_code,
-        dest_country: data.dest_country ?? log.dest_country,
-        dest_isp: data.dest_isp ?? log.dest_isp,
-        ecs: data.ecs ?? log.ecs,
-        upstream: data.upstream ?? log.upstream,
-        reason: data.reason ?? log.reason,
-        is_encrypted: 0,
-      };
+        const aesKey = await crypto.subtle.deriveKey(
+          { name: "ECDH", public: importedEphem },
+          importedPriv,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["decrypt"]
+        );
+
+        const decryptedBytes = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv: fromBase64(payload.iv) as BufferSource },
+          aesKey,
+          fromBase64(payload.ciphertext) as BufferSource
+        );
+
+        const data: SensitiveLogData = JSON.parse(new TextDecoder().decode(decryptedBytes));
+
+        return {
+          ...log,
+          domain: data.domain || log.domain,
+          client_ip: data.client_ip || log.client_ip,
+          geo_country: data.geo_country ?? log.geo_country,
+          answer: data.answer ?? log.answer,
+          dest_geoip: data.dest_geoip ?? log.dest_geoip,
+          dest_country_code: data.dest_country_code ?? log.dest_country_code,
+          dest_country: data.dest_country ?? log.dest_country,
+          dest_isp: data.dest_isp ?? log.dest_isp,
+          ecs: data.ecs ?? log.ecs,
+          upstream: data.upstream ?? log.upstream,
+          reason: data.reason ?? log.reason,
+          encrypt_version: 0,
+        };
+      }
+
+      return log;
     } catch (err) {
       console.warn(`[E2EE] Failed to decrypt log #${log.id}:`, err);
       return {
@@ -812,12 +917,35 @@ class E2eeService {
   }
 
   /**
-   * Decrypts a batch of logs concurrently.
+   * Decrypts a batch of logs concurrently with DEK pre-caching.
    */
   async decryptLogsBatch(profileId: string, logs: LogEntry[]): Promise<LogEntry[]> {
     if (!logs || logs.length === 0) return logs;
-    const hasEncrypted = logs.some((l) => l.is_encrypted === 1);
+    const hasEncrypted = logs.some((l) => (l.encrypt_version ?? (l.encrypted_payload ? 1 : 0)) > 0);
     if (!hasEncrypted) return logs;
+
+    const privKey = this.getPrivateKey(profileId);
+    if (privKey && "seedBase64" in privKey) {
+      const seed = fromBase64(privKey.seedBase64);
+      // Pre-decapsulate any uncached DEKs in the batch
+      const missingKeyMap = new Map<string, string>(); // kemKeyId -> kemCt
+      for (const log of logs) {
+        if (log.encrypt_version === 2 && log.kem_key_id && log.kem_ct && !this.dekCache.has(log.kem_key_id)) {
+          missingKeyMap.set(log.kem_key_id, log.kem_ct);
+        }
+      }
+
+      for (const [kemKeyId, kemCtBase64] of missingKeyMap.entries()) {
+        try {
+          const kemCt = fromBase64(kemCtBase64);
+          const sharedSecret = ml_kem768_p256.decapsulate(kemCt, seed);
+          const dek = await deriveDekFromSharedSecret(sharedSecret);
+          this.dekCache.set(kemKeyId, dek);
+        } catch (decapsErr) {
+          console.warn(`[E2EE] Failed to decapsulate DEK for ${kemKeyId}:`, decapsErr);
+        }
+      }
+    }
 
     return Promise.all(logs.map((log) => this.decryptLogEntry(profileId, log)));
   }

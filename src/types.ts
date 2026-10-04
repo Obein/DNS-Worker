@@ -166,7 +166,9 @@ export interface ResolutionLog {
   latency?: number;
   ecs?: string;
   upstream?: string;
-  is_encrypted?: number;
+  encrypt_version?: number; // 0: unencrypted, 1: pure P-256 legacy, 2: P256-MLKEM768 hourly KEM
+  kem_key_id?: string | null;
+  kem_ct?: string | null;
   encrypted_payload?: string | null;
 }
 

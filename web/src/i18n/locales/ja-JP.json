@@ -259,7 +259,8 @@
     "routerosDocs": "MikroTik DNS ドキュメント",
     "accessPointsCardTitle": "アクセスポイント",
     "currentAccessPoint": "現在のアクセスポイント",
-    "selectAccessPointToConfigure": "設定するアクセスポイントを選択"
+    "selectAccessPointToConfigure": "設定するアクセスポイントを選択",
+    "e2eeDesc": "独自のエッジ耐量子ハイブリッド鍵 (P256-MLKEM768) で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。"
   },
   "rules": {
     "title": "カスタムルール",
@@ -558,7 +559,7 @@
     "e2eeTitle": "エンドツーエンド暗号化 (E2EE)",
     "e2eeEnabled": "有効",
     "e2eeDisabled": "無効",
-    "e2eeDesc": "独自のエッジ ECDH P-256 鍵で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。",
+    "e2eeDesc": "独自のエッジ耐量子ハイブリッド鍵 (P256-MLKEM768) で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。",
     "e2eePasskeyRequired": "E2EE にはハードウェア Passkey (WebAuthn) が必要です。アカウント設定で Passkey を登録してください。",
     "e2eeGoToAccount": "アカウント設定で Passkey を追加",
     "e2eeEnableSwitch": "ログの E2EE を有効にする",
@@ -584,7 +585,8 @@
     "subtitle": "セキュリティ資格情報とシステムユーザーを管理します。",
     "e2ee": {
       "title": "エンドツーエンド暗号化 (E2EE)",
-      "desc": "ハードウェアPasskeyに基づくクライアント側ECDH P-256 + AES-256-GCMエンベロープ暗号化を採用。エッジWorkerで即時に暗号化され、クラウド側には暗号文のみが保存されます。復号は許可されたデバイス上でのみ行われます。",
+      "desc": "ハードウェアPasskeyに基づくクライアント側耐量子ハイブリッド暗号化（P256-MLKEM768 + AES-256-GCM / NIST FIPS 203）エンベロープ暗号化を採用。エッジWorkerで即時に暗号化され、クラウド側には暗号文のみが保存されます。復号は許可されたデバイス上でのみ行われます。",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "有効",
       "disabled": "無効",
       "passkeyRequired": "エンドツーエンド暗号化にはハードウェアPasskey (WebAuthn) が必要です。上部のMFA設定でPasskeyを登録してください。",
@@ -613,12 +615,12 @@
       "unlockError": "Passkey認証によるロック解除に失敗しました",
       "disableConfirm": "このプロファイルのエンドツーエンド暗号化を無効化してもよろしいですか？今後のログは平文で保存されます。（過去の暗号化ログの復号には秘密鍵が引き続き必要です）",
       "noKeypairTitle": "エンドツーエンド暗号化キーペアが未初期化です",
-      "noKeypairDesc": "エンドツーエンド暗号化には、アカウント専用のECDH P-256キーペアの生成が必要です。秘密鍵はパスキーまたはリカバリーキーによるエンベロープ暗号化で保護され、サーバーはログを復号できません。",
+      "noKeypairDesc": "エンドツーエンド暗号化には、アカウント専用の耐量子（P256-MLKEM768）キーペアの生成が必要です。秘密鍵はパスキーまたはリカバリーキーによるエンベロープ暗号化で保護され、サーバーはログを復号できません。",
       "initPasskeyBtn": "既存のパスキーを検証してキーペアを生成",
       "addPasskeyBtn": "ハードウェア暗号化を有効にするパスキーを追加",
       "initRecoveryBtn": "リカバリーキーでキーペアを生成",
       "initWithRecoveryTitle": "リカバリーキーでキーペアを生成",
-      "initWithRecoveryDesc": "現在の30桁の緊急リカバリーキーを入力してください。システムがローカルでECDH P-256キーペアを生成します。使用後、リカバリーキーは直ちに自動ローテーションされます。",
+      "initWithRecoveryDesc": "現在の30桁の緊急リカバリーキーを入力してください。システムがローカルで耐量子（P256-MLKEM768）キーペアを生成します。使用後、リカバリーキーは直ちに自動ローテーションされます。",
       "keypairGenSuccess": "エンドツーエンド暗号化キーペアが正常に生成されました！",
       "keypairGenError": "暗号化キーペアの生成に失敗しました",
       "unlockRecoveryButton": "リカバリーキーでロック解除",

@@ -259,7 +259,8 @@
     "routerosDocs": "Tài liệu DNS của MikroTik",
     "accessPointsCardTitle": "Điểm truy cập",
     "currentAccessPoint": "Điểm truy cập hiện tại",
-    "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình"
+    "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình",
+    "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey."
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",
@@ -558,7 +559,7 @@
     "e2eeTitle": "Mã hóa đầu cuối (E2EE)",
     "e2eeEnabled": "Đã bật",
     "e2eeDisabled": "Đã tắt",
-    "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa ECDH P-256. Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey.",
+    "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey.",
     "e2eePasskeyRequired": "E2EE yêu cầu hỗ trợ Passkey (WebAuthn). Vui lòng thêm Passkey trong Cài đặt tài khoản trước.",
     "e2eeGoToAccount": "Đi tới Cài đặt tài khoản",
     "e2eeEnableSwitch": "Bật mã hóa đầu cuối",
@@ -584,7 +585,8 @@
     "subtitle": "Quản lý thông tin bảo mật và người dùng hệ thống của bạn.",
     "e2ee": {
       "title": "Mã hóa đầu cuối (E2EE)",
-      "desc": "Sử dụng mã hóa phong bì ECDH P-256 + AES-256-GCM phía máy khách được bảo vệ bởi Passkey phần cứng. Dữ liệu được mã hóa tại Edge; máy chủ chỉ lưu trữ văn bản mã hóa. Giải mã chỉ thực hiện cục bộ trên các thiết bị được ủy quyền.",
+      "desc": "Sử dụng mã hóa phong bì lai hậu lượng tử (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) phía máy khách được bảo vệ bởi Passkey phần cứng. Dữ liệu được mã hóa tại Edge; máy chủ chỉ lưu trữ văn bản mã hóa. Giải mã chỉ thực hiện cục bộ trên các thiết bị được ủy quyền.",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "Đã bật",
       "disabled": "Chưa bật",
       "passkeyRequired": "Mã hóa đầu cuối yêu cầu ít nhất một Passkey phần cứng (WebAuthn). Vui lòng thêm Passkey trong phần cài đặt MFA ở trên.",
@@ -613,12 +615,12 @@
       "unlockError": "Xác thực Passkey để mở khóa thất bại",
       "disableConfirm": "Bạn có chắc chắn muốn tắt mã hóa đầu cuối cho cấu hình này không? Các nhật ký trong tương lai sẽ được lưu dưới dạng văn bản thô. (Nhật ký mã hóa trước đây vẫn cần khóa riêng tư để giải mã)",
       "noKeypairTitle": "Cặp khóa mã hóa đầu cuối chưa được khởi tạo",
-      "noKeypairDesc": "Mã hóa đầu cuối yêu cầu tạo cặp khóa ECDH P-256 dành riêng cho tài khoản của bạn. Khóa riêng tư được bảo vệ bằng mã hóa phong bì qua Passkey hoặc khóa khôi phục.",
+      "noKeypairDesc": "Mã hóa đầu cuối yêu cầu tạo cặp khóa hậu lượng tử (P256-MLKEM768) dành riêng cho tài khoản của bạn. Khóa riêng tư được bảo vệ bằng mã hóa phong bì qua Passkey hoặc khóa khôi phục.",
       "initPasskeyBtn": "Xác minh Passkey hiện có để tạo cặp khóa",
       "addPasskeyBtn": "Thêm Passkey để hỗ trợ mã hóa phần cứng",
       "initRecoveryBtn": "Tạo cặp khóa bằng khóa khôi phục",
       "initWithRecoveryTitle": "Tạo cặp khóa bằng khóa khôi phục",
-      "initWithRecoveryDesc": "Nhập khóa khôi phục khẩn cấp 30 chữ số hiện tại của bạn. Hệ thống sẽ tạo cục bộ cặp khóa ECDH P-256. Khóa sẽ tự động xoay vòng sau khi sử dụng.",
+      "initWithRecoveryDesc": "Nhập khóa khôi phục khẩn cấp 30 chữ số hiện tại của bạn. Hệ thống sẽ tạo cục bộ cặp khóa hậu lượng tử (P256-MLKEM768). Khóa sẽ tự động xoay vòng sau khi sử dụng.",
       "keypairGenSuccess": "Đã tạo cặp khóa mã hóa đầu cuối thành công!",
       "keypairGenError": "Không thể tạo cặp khóa mã hóa",
       "unlockRecoveryButton": "Mở khóa bằng khóa khôi phục",

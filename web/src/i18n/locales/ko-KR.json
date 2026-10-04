@@ -259,7 +259,8 @@
     "routerosDocs": "MikroTik DNS 문서",
     "accessPointsCardTitle": "액세스 포인트",
     "currentAccessPoint": "현재 액세스 포인트",
-    "selectAccessPointToConfigure": "구성할 액세스 포인트 선택"
+    "selectAccessPointToConfigure": "구성할 액세스 포인트 선택",
+    "e2eeDesc": "전용 양자내성 하이브리드 키(P256-MLKEM768)를 사용하여 엣지에서 즉시 DNS 로그를 암호화합니다. 클라우드에서는 볼 수 없으며 하드웨어 Passkey로 인증된 브라우저에서만 복호화됩니다."
   },
   "rules": {
     "title": "사용자 지정 규칙",
@@ -558,7 +559,7 @@
     "e2eeTitle": "로그 종단간 암호화 (E2EE)",
     "e2eeEnabled": "활성화됨",
     "e2eeDisabled": "비활성화됨",
-    "e2eeDesc": "전용 ECDH P-256 키를 사용하여 엣지에서 즉시 DNS 로그를 암호화합니다. 클라우드에서는 볼 수 없으며 하드웨어 Passkey로 인증된 브라우저에서만 복호화됩니다.",
+    "e2eeDesc": "전용 양자내성 하이브리드 키(P256-MLKEM768)를 사용하여 엣지에서 즉시 DNS 로그를 암호화합니다. 클라우드에서는 볼 수 없으며 하드웨어 Passkey로 인증된 브라우저에서만 복호화됩니다.",
     "e2eePasskeyRequired": "종단간 암호화에는 Passkey(WebAuthn)가 필요합니다. 계정 설정에서 먼저 Passkey를 등록해 주세요.",
     "e2eeGoToAccount": "계정 설정으로 이동하여 Passkey 추가",
     "e2eeEnableSwitch": "로그 E2EE 암호화 활성화",
@@ -584,7 +585,8 @@
     "subtitle": "보안 자격 증명 및 시스템 사용자를 관리합니다.",
     "e2ee": {
       "title": "종단간 암호화 (E2EE)",
-      "desc": "하드웨어 Passkey 기반 클라이언트 측 ECDH P-256 + AES-256-GCM 엔벨로프 암호화를 사용합니다. 엣지에서 즉시 암호화되며 서버에는 암호문만 저장됩니다. 복호화는 승인된 기기에서만 로컬로 수행됩니다.",
+      "desc": "하드웨어 Passkey 기반 클라이언트 측 양자내성 하이브리드 암호화(P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) 엔벨로프 암호화를 사용합니다. 엣지에서 즉시 암호화되며 서버에는 암호문만 저장됩니다. 복호화는 승인된 기기에서만 로컬로 수행됩니다.",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "활성화됨",
       "disabled": "비활성화됨",
       "passkeyRequired": "종단간 암호화에는 하드웨어 Passkey(WebAuthn)가 필요합니다. 상단 MFA 설정에서 먼저 Passkey를 등록해 주세요.",
@@ -613,12 +615,12 @@
       "unlockError": "Passkey 인증 및 잠금 해제 실패",
       "disableConfirm": "이 프로필의 종단간 암호화를 비활성화하시겠습니까? 향후 생성되는 로그는 일반 텍스트로 저장됩니다. (기존 암호화 로그 복호화에는 여전히 개인 키가 필요합니다)",
       "noKeypairTitle": "종단간 암호화 키 쌍이 초기화되지 않음",
-      "noKeypairDesc": "종단간 암호화를 위해 계정 전용 ECDH P-256 키 쌍 생성이 필요합니다. 개인 키는 패스키 또는 복구 키를 통한 봉투 암호화로 보호되어 서버에서 로그를 복호화할 수 없습니다.",
+      "noKeypairDesc": "종단간 암호화를 위해 계정 전용 양자내성(P256-MLKEM768) 키 쌍 생성이 필요합니다. 개인 키는 패스키 또는 복구 키를 통한 봉투 암호화로 보호되어 서버에서 로그를 복호화할 수 없습니다.",
       "initPasskeyBtn": "기존 패스키 인증으로 키 쌍 생성",
       "addPasskeyBtn": "하드웨어 암호화 지원을 위한 패스키 추가",
       "initRecoveryBtn": "복구 키로 키 쌍 생성",
       "initWithRecoveryTitle": "복구 키로 키 쌍 생성",
-      "initWithRecoveryDesc": "현재 30자리 비상 복구 키를 입력하세요. 시스템이 로컬에서 ECDH P-256 키 쌍을 생성합니다. 사용 후 복구 키는 즉시 자동 교체됩니다.",
+      "initWithRecoveryDesc": "현재 30자리 비상 복구 키를 입력하세요. 시스템이 로컬에서 양자내성(P256-MLKEM768) 키 쌍을 생성합니다. 사용 후 복구 키는 즉시 자동 교체됩니다.",
       "keypairGenSuccess": "종단간 암호화 키 쌍이 성공적으로 생성되었습니다!",
       "keypairGenError": "암호화 키 쌍 생성 실패",
       "unlockRecoveryButton": "복구 키로 잠금 해제",

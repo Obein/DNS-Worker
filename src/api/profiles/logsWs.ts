@@ -130,10 +130,11 @@ export async function handleProfileLogsWs(
       const { results } = await env.DB.prepare(`
         SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, 
                l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, 
-               l.dest_country_code, l.dest_country, l.dest_isp, l.is_encrypted, 
-               l.encrypted_payload, ap.name as access_point_name 
+               l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, 
+               l.kem_key_id, l.encrypted_payload, k.kem_ct, ap.name as access_point_name 
         FROM logs l 
         LEFT JOIN access_points ap ON l.access_point_id = ap.id 
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
         WHERE l.profile_id = ? AND (l.timestamp > ? OR (l.timestamp = ? AND l.id > ?))
         ORDER BY l.timestamp DESC, l.id DESC 
         LIMIT 50;
@@ -192,10 +193,11 @@ export async function handleProfileLogsWs(
           const { results } = await env.DB.prepare(`
             SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, 
                    l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, 
-                   l.dest_country_code, l.dest_country, l.dest_isp, l.is_encrypted, 
-                   l.encrypted_payload, ap.name as access_point_name 
+                   l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, 
+                   l.kem_key_id, l.encrypted_payload, k.kem_ct, ap.name as access_point_name 
             FROM logs l 
             LEFT JOIN access_points ap ON l.access_point_id = ap.id 
+            LEFT JOIN kem_keys k ON l.kem_key_id = k.id
             WHERE l.profile_id = ? AND l.timestamp >= ? AND l.timestamp <= ?
             ORDER BY l.timestamp DESC, l.id DESC 
             LIMIT ?;

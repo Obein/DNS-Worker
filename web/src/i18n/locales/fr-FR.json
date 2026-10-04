@@ -259,7 +259,8 @@
     "routerosDocs": "Documentation DNS de MikroTik",
     "accessPointsCardTitle": "Points d'accès",
     "currentAccessPoint": "Point d'accès actuel",
-    "selectAccessPointToConfigure": "Sélectionner le point d'accès à configurer"
+    "selectAccessPointToConfigure": "Sélectionner le point d'accès à configurer",
+    "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey."
   },
   "rules": {
     "title": "Règles personnalisées",
@@ -558,7 +559,7 @@
     "e2eeTitle": "Chiffrement de bout en bout (E2EE)",
     "e2eeEnabled": "Activé",
     "e2eeDisabled": "Désactivé",
-    "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé ECDH P-256. Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey.",
+    "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey.",
     "e2eePasskeyRequired": "E2EE nécessite un Passkey (WebAuthn). Veuillez d'abord ajouter un Passkey dans les paramètres du compte.",
     "e2eeGoToAccount": "Aller aux paramètres du compte",
     "e2eeEnableSwitch": "Activer le chiffrement E2EE",
@@ -584,7 +585,8 @@
     "subtitle": "Gérez vos identifiants de sécurité et les utilisateurs du système.",
     "e2ee": {
       "title": "Chiffrement de bout en bout (E2EE)",
-      "desc": "Sécurise vos données via un chiffrement d'enveloppe ECDH P-256 + AES-256-GCM adossé aux Passkeys matérielles. Les données sont chiffrées en périphérie ; le serveur ne stocke que du texte chiffré. Le déchiffrement a lieu exclusivement sur vos appareils autorisés.",
+      "desc": "Sécurise vos données sensibles via un chiffrement enveloppe hybride post-quantique côté client (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) adossé à des Passkeys matériels. Seuls les appareils autorisés peuvent déchiffrer localement.",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "Activé",
       "disabled": "Désactivé",
       "passkeyRequired": "Le chiffrement de bout en bout nécessite au moins une clé d'accès matérielle (WebAuthn). Veuillez ajouter une Passkey dans la section MFA ci-dessus.",
@@ -613,12 +615,12 @@
       "unlockError": "Échec de la vérification de la Passkey",
       "disableConfirm": "Voulez-vous vraiment désactiver le chiffrement de bout en bout pour ce profil ? Les futurs journaux seront stockés en clair. (Les anciens journaux chiffrés nécessitent toujours la clé privée)",
       "noKeypairTitle": "Paire de clés de bout en bout non initialisée",
-      "noKeypairDesc": "Le chiffrement de bout en bout nécessite la génération d'une paire de clés ECDH P-256 dédiée. La clé privée est protégée par chiffrement enveloppe adossé à votre Passkey ou clé de récupération.",
+      "noKeypairDesc": "Le chiffrement de bout en bout nécessite la génération d'une paire de clés post-quantiques (P256-MLKEM768) pour votre compte. La clé privée est protégée par chiffrement enveloppe adossé à votre Passkey ou clé de récupération.",
       "initPasskeyBtn": "Vérifier la Passkey existante pour générer la paire de clés",
       "addPasskeyBtn": "Ajouter une Passkey pour prendre en charge le chiffrement matériel",
       "initRecoveryBtn": "Générer la paire de clés avec la clé de récupération",
       "initWithRecoveryTitle": "Générer la paire de clés avec la clé de récupération",
-      "initWithRecoveryDesc": "Saisissez votre clé d'urgence actuelle à 30 chiffres. Le système générera localement une paire de clés ECDH P-256. La clé de récupération sera automatiquement renouvelée dès son utilisation.",
+      "initWithRecoveryDesc": "Saisissez votre clé d'urgence actuelle à 30 chiffres. Le système générera localement une paire de clés post-quantiques (P256-MLKEM768). La clé de récupération sera automatiquement renouvelée dès son utilisation.",
       "keypairGenSuccess": "Paire de clés de bout en bout générée avec succès !",
       "keypairGenError": "Échec de la génération de la paire de clés",
       "unlockRecoveryButton": "Déverrouiller avec la clé de récupération",

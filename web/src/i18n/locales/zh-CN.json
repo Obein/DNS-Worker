@@ -259,7 +259,8 @@
     "routerosDocs": "MikroTik DNS 文档",
     "accessPointsCardTitle": "接入点",
     "currentAccessPoint": "当前接入点",
-    "selectAccessPointToConfigure": "选择接入点以配置"
+    "selectAccessPointToConfigure": "选择接入点以配置",
+    "e2eeDesc": "使用专属后量子混合密钥 (P256-MLKEM768) 在边缘即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。"
   },
   "rules": {
     "title": "自定义规则",
@@ -558,7 +559,7 @@
     "e2eeTitle": "日志端到端加密 (E2EE)",
     "e2eeEnabled": "已启用",
     "e2eeDisabled": "未启用",
-    "e2eeDesc": "使用您专属的 ECDH P-256 密钥在边缘 Worker 处即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。",
+    "e2eeDesc": "使用专属后量子混合密钥 (P256-MLKEM768) 在边缘即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。",
     "e2eePasskeyRequired": "端到端加密需要硬件 Passkey (WebAuthn) 支持。检测到您尚未在账号中绑定 Passkey，请先在「账号设置」中添加 Passkey。",
     "e2eeGoToAccount": "前往账号设置添加 Passkey",
     "e2eeEnableSwitch": "启用日志端到端加密",
@@ -584,7 +585,8 @@
     "subtitle": "管理您的安全凭据和系统用户。",
     "e2ee": {
       "title": "端到端加密 (E2EE)",
-      "desc": "采用客户端 ECDH P-256 + AES-256-GCM 硬件信封加密技术。数据在边缘即刻加密，服务端仅存储不可逆密文，只有已授权硬件 Passkey 的设备可在本地解密并分析。",
+      "desc": "采用客户端后量子混合加密 (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) 硬件信封加密技术。数据在边缘即刻加密，服务端仅存储不可逆密文，只有已授权硬件 Passkey 的设备可在本地解密并分析。",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "已启用",
       "disabled": "未启用",
       "passkeyRequired": "端到端加密需要硬件 Passkey (WebAuthn) 支持。请在上方「双重认证 (MFA)」设置中先添加至少一个 Passkey 凭据。",
@@ -613,12 +615,12 @@
       "unlockError": "验证 Passkey 解锁失败",
       "disableConfirm": "确定要关闭端到端加密吗？关闭后新生成的 DNS 日志将以明文存储。（已加密的历史日志仍需私钥解密）",
       "noKeypairTitle": "尚未生成端到端加密密钥对",
-      "noKeypairDesc": "端到端加密需要为您的账户生成专属的 ECDH P-256 密钥对。私钥将通过通行密钥 (Passkey) 或恢复密钥 (Recovery Key) 进行硬件/信封加密保护，服务端无法解密您的 DNS 记录。",
+      "noKeypairDesc": "端到端加密需要为您的账户生成专属的后量子 (P256-MLKEM768) 密钥对。私钥将通过通行密钥 (Passkey) 或恢复密钥 (Recovery Key) 进行硬件/信封加密保护，服务端无法解密您的 DNS 记录。",
       "initPasskeyBtn": "验证现有 Passkey 生成密钥对",
       "addPasskeyBtn": "添加 Passkey 以支持硬件加密",
       "initRecoveryBtn": "通过恢复密钥生成密钥对",
       "initWithRecoveryTitle": "通过恢复密钥生成密钥对",
-      "initWithRecoveryDesc": "请输入您当前的 30 位紧急恢复密钥。系统将在本地生成 ECDH P-256 密钥对并通过该密钥信封加密。使用后恢复密钥将自动轮换以确保安全。",
+      "initWithRecoveryDesc": "请输入您当前的 30 位紧急恢复密钥。系统将在本地生成后量子 (P256-MLKEM768) 密钥对并通过该密钥信封加密。使用后恢复密钥将自动轮换以确保安全。",
       "keypairGenSuccess": "端到端加密密钥对已成功生成！",
       "keypairGenError": "生成端到端加密密钥对失败",
       "unlockRecoveryButton": "使用恢复密钥解锁",

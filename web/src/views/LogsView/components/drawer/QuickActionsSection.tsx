@@ -14,7 +14,7 @@ export const QuickActionsSection: React.FC<QuickActionsSectionProps> = ({
   onQuickAction,
 }) => {
   const { t } = useTranslation();
-  const isEncryptedLocked = selectedLog.is_encrypted === 1 && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
+  const isEncryptedLocked = (selectedLog.encrypt_version ?? 0) > 0 && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
 
   return (
     <Section title={t("logs.quickActions")} icon={<Edit3 size={16} />} className="shadow-none! rounded-lg!">

@@ -376,7 +376,7 @@ class LocalDbService {
     if (!res.rows || res.rows.length === 0) return 0;
 
     const decrypted = await e2ee.decryptLogsBatch(profileId, res.rows);
-    const successfullyDecrypted = decrypted.filter((l) => l.is_encrypted === 0);
+    const successfullyDecrypted = decrypted.filter((l) => (l.encrypt_version ?? 0) === 0);
     if (successfullyDecrypted.length === 0) return 0;
 
     const updateRes = await this.sendRequest<{ updated: number }>('UPDATE_LOGS_BATCH', {

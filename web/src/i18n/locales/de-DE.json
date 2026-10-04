@@ -259,7 +259,8 @@
     "routerosDocs": "MikroTik-DNS-Dokumentation",
     "accessPointsCardTitle": "Zugangspunkte",
     "currentAccessPoint": "Aktueller Zugangspunkt",
-    "selectAccessPointToConfigure": "Zugangspunkt zum Konfigurieren auswählen"
+    "selectAccessPointToConfigure": "Zugangspunkt zum Konfigurieren auswählen",
+    "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem Post-Quanten-Hybridschlüssel (P256-MLKEM768). Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey."
   },
   "rules": {
     "title": "Benutzerdefinierte Regeln",
@@ -558,7 +559,7 @@
     "e2eeTitle": "Ende-zu-Ende-Verschlüsselung (E2EE)",
     "e2eeEnabled": "Aktiviert",
     "e2eeDisabled": "Deaktiviert",
-    "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem ECDH P-256-Schlüssel. Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey.",
+    "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem Post-Quanten-Hybridschlüssel (P256-MLKEM768). Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey.",
     "e2eePasskeyRequired": "E2EE erfordert einen Hardware-Passkey (WebAuthn). Bitte fügen Sie zuerst einen Passkey in den Kontoeinstellungen hinzu.",
     "e2eeGoToAccount": "Zu den Kontoeinstellungen",
     "e2eeEnableSwitch": "Protokoll-E2EE aktivieren",
@@ -584,7 +585,8 @@
     "subtitle": "Verwalten Sie Ihre Sicherheitsanmeldedaten und Systembenutzer.",
     "e2ee": {
       "title": "Ende-zu-Ende-Verschlüsselung (E2EE)",
-      "desc": "Verwendet clientseitige ECDH P-256 + AES-256-GCM Umschlagverschlüsselung mit Hardware-Passkeys. Daten werden am Edge verschlüsselt; Server und Datenbank speichern nur Chiffretext. Die Entschlüsselung erfolgt ausschließlich auf autorisierten Geräten.",
+      "desc": "Sichert Ihre sensiblen Daten mit Post-Quanten-Hybrid-Umschlagverschlüsselung (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) über Hardware-Passkeys. Am Edge verschlüsselt; nur autorisierte Geräte können lokal entschlüsseln.",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "Aktiviert",
       "disabled": "Deaktiviert",
       "passkeyRequired": "Ende-zu-Ende-Verschlüsselung erfordert mindestens einen Hardware-Passkey (WebAuthn). Bitte fügen Sie zuerst einen Passkey in den MFA-Einstellungen hinzu.",
@@ -613,12 +615,12 @@
       "unlockError": "Entsperrung mit Passkey fehlgeschlagen",
       "disableConfirm": "Möchten Sie die Ende-zu-Ende-Verschlüsselung für dieses Profil wirklich deaktivieren? Zukünftige Protokolle werden im Klartext gespeichert. (Historische verschlüsselte Protokolle erfordern weiterhin den privaten Schlüssel)",
       "noKeypairTitle": "Ende-zu-Ende-Schlüsselpaar nicht initialisiert",
-      "noKeypairDesc": "Für die Ende-zu-Ende-Verschlüsselung wird ein dediziertes ECDH P-256-Schlüsselpaar benötigt. Der private Schlüssel wird über Ihren Passkey oder Wiederherstellungsschlüssel per Umschlagverschlüsselung geschützt.",
+      "noKeypairDesc": "Ende-zu-Ende-Verschlüsselung erfordert die Erstellung eines Post-Quanten-Schlüsselpaars (P256-MLKEM768) für Ihr Konto. Der private Schlüssel wird über Ihren Passkey oder Wiederherstellungsschlüssel geschützt.",
       "initPasskeyBtn": "Vorhandenen Passkey bestätigen, um Schlüsselpaar zu generieren",
       "addPasskeyBtn": "Passkey hinzufügen, um Hardware-Verschlüsselung zu unterstützen",
       "initRecoveryBtn": "Schlüsselpaar mit Wiederherstellungsschlüssel generieren",
       "initWithRecoveryTitle": "Schlüsselpaar mit Wiederherstellungsschlüssel generieren",
-      "initWithRecoveryDesc": "Geben Sie Ihren aktuellen 30-stelligen Notfallschlüssel ein. Das System generiert lokal ein ECDH P-256-Schlüsselpaar. Bei Verwendung wird der Wiederherstellungsschlüssel automatisch erneuert.",
+      "initWithRecoveryDesc": "Geben Sie Ihren aktuellen 30-stelligen Wiederherstellungsschlüssel ein. Das System erzeugt lokal ein Post-Quanten-Schlüsselpaar (P256-MLKEM768) und verschlüsselt es. Der Wiederherstellungsschlüssel wird sofort automatisch erneuert.",
       "keypairGenSuccess": "Ende-zu-Ende-Schlüsselpaar erfolgreich generiert!",
       "keypairGenError": "Generierung des Schlüsselpaars fehlgeschlagen",
       "unlockRecoveryButton": "Mit Wiederherstellungsschlüssel entsperren",

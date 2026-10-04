@@ -53,7 +53,7 @@ export class LogCoreModel {
   createInsertStatement(log: ResolutionLog): D1PreparedStatement {
     const logId = log.id ?? generateLogId();
     return this.db.prepare(
-      "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency, dest_country_code, dest_country, dest_isp, is_encrypted, encrypted_payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO logs (profile_id, timestamp, id, access_point_id, client_ip, geo_country, domain, record_type, action, reason, answer, dest_geoip, ecs, upstream, latency, dest_country_code, dest_country, dest_isp, encrypt_version, kem_key_id, encrypted_payload) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
       log.profile_id,
       log.timestamp,
@@ -73,7 +73,8 @@ export class LogCoreModel {
       log.dest_country_code || null,
       log.dest_country || null,
       log.dest_isp || null,
-      log.is_encrypted ? 1 : 0,
+      log.encrypt_version ?? 0,
+      log.kem_key_id || null,
       log.encrypted_payload || null
     );
   }
@@ -100,14 +101,16 @@ export class LogCoreModel {
     let baseSelect = "";
     if (options.export) {
       baseSelect = `
-        SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency, l.dest_country_code, l.dest_country, l.dest_isp, l.is_encrypted, l.encrypted_payload
+        SELECT l.profile_id, l.access_point_id, l.timestamp, l.client_ip, l.geo_country, l.domain, l.record_type, l.action, l.reason, l.answer, l.dest_geoip, l.ecs, l.upstream, l.latency, l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, l.kem_key_id, l.encrypted_payload, k.kem_ct
         FROM logs l
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
       `;
     } else {
       baseSelect = `
-        SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, l.dest_country_code, l.dest_country, l.dest_isp, l.is_encrypted, l.encrypted_payload, ap.name as access_point_name 
+        SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, l.dest_country_code, l.dest_country, l.dest_isp, l.encrypt_version, l.kem_key_id, l.encrypted_payload, k.kem_ct, ap.name as access_point_name 
         FROM logs l
         LEFT JOIN access_points ap ON l.access_point_id = ap.id
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
       `;
     }
 

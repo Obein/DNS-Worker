@@ -259,7 +259,8 @@
     "routerosDocs": "MikroTik DNS 文件",
     "accessPointsCardTitle": "存取點",
     "currentAccessPoint": "目前存取點",
-    "selectAccessPointToConfigure": "選擇存取點以設定"
+    "selectAccessPointToConfigure": "選擇存取點以設定",
+    "e2eeDesc": "使用專屬後量子混合金鑰 (P256-MLKEM768) 在邊緣即刻加密 DNS 日誌。雲端無法窺視，資料僅在通過您的硬體 Passkey 授權的客戶端本地解密並分析。"
   },
   "rules": {
     "title": "自訂規則",
@@ -558,7 +559,7 @@
     "e2eeTitle": "日誌端到端加密 (E2EE)",
     "e2eeEnabled": "已啟用",
     "e2eeDisabled": "未啟用",
-    "e2eeDesc": "使用您專屬的 ECDH P-256 金鑰在邊緣 Worker 處即刻加密 DNS 日誌。雲端無法窺視，資料僅在通過您的硬體 Passkey 授權的客戶端本地解密並分析。",
+    "e2eeDesc": "使用專屬後量子混合金鑰 (P256-MLKEM768) 在邊緣即刻加密 DNS 日誌。雲端無法窺視，資料僅在通過您的硬體 Passkey 授權的客戶端本地解密並分析。",
     "e2eePasskeyRequired": "端到端加密需要硬體 Passkey (WebAuthn) 支援。檢測到您尚未在帳號中綁定 Passkey，請先在「帳號設定」中添加 Passkey。",
     "e2eeGoToAccount": "前往帳號設定添加 Passkey",
     "e2eeEnableSwitch": "啟用日誌端到端加密",
@@ -584,7 +585,8 @@
     "subtitle": "管理您的安全憑據和系統用戶。",
     "e2ee": {
       "title": "端到端加密 (E2EE)",
-      "desc": "採用客戶端 ECDH P-256 + AES-256-GCM 硬體信封加密技術。資料在邊緣即刻加密，伺服端僅儲存不可逆密文，只有已授權硬體 Passkey 的設備可在本機解密並分析。",
+      "desc": "採用客戶端後量子混合加密 (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) 硬體信封加密技術。資料在邊緣即刻加密，伺服端僅儲存不可逆密文，只有已授權硬體 Passkey 的設備可在本機解密並分析。",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "已啟用",
       "disabled": "未啟用",
       "passkeyRequired": "端到端加密需要硬體 Passkey (WebAuthn) 支援。請在上方「雙重認證 (MFA)」設定中先新增至少一個 Passkey 憑證。",
@@ -613,12 +615,12 @@
       "unlockError": "驗證 Passkey 解鎖失敗",
       "disableConfirm": "確定要關閉端到端加密嗎？關閉後新產生的 DNS 日誌將以明文儲存。（已加密的歷史日誌仍需私鑰解密）",
       "noKeypairTitle": "尚未產生端到端加密金鑰對",
-      "noKeypairDesc": "端到端加密需要為您的帳戶產生專屬的 ECDH P-256 金鑰對。私密金鑰將透過通行金鑰 (Passkey) 或修復金鑰 (Recovery Key) 進行硬體/信封加密保護，伺服器無法解密您的 DNS 記錄。",
+      "noKeypairDesc": "端到端加密需要為您的帳戶產生專屬的後量子 (P256-MLKEM768) 金鑰對。私密金鑰將透過通行金鑰 (Passkey) 或修復金鑰 (Recovery Key) 進行硬體/信封加密保護，伺服器無法解密您的 DNS 記錄。",
       "initPasskeyBtn": "驗證現有 Passkey 產生金鑰對",
       "addPasskeyBtn": "新增 Passkey 以支援硬體加密",
       "initRecoveryBtn": "透過修復金鑰產生金鑰對",
       "initWithRecoveryTitle": "透過修復金鑰產生金鑰對",
-      "initWithRecoveryDesc": "請輸入您目前的 30 位緊急修復金鑰。系統將在本地產生 ECDH P-256 金鑰對並透過該金鑰信封加密。使用後修復金鑰將自動輪換以確保安全。",
+      "initWithRecoveryDesc": "請輸入您目前的 30 位緊急修復金鑰。系統將在本地產生後量子 (P256-MLKEM768) 金鑰對並透過該金鑰信封加密。使用後修復金鑰將自動輪換以確保安全。",
       "keypairGenSuccess": "端到端加密金鑰對已成功產生！",
       "keypairGenError": "產生端到端加密金鑰對失敗",
       "unlockRecoveryButton": "使用修復金鑰解鎖",

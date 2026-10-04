@@ -259,7 +259,8 @@
     "routerosDocs": "Documentación de DNS de MikroTik",
     "accessPointsCardTitle": "Puntos de acceso",
     "currentAccessPoint": "Punto de acceso actual",
-    "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar"
+    "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar",
+    "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey."
   },
   "rules": {
     "title": "Reglas personalizadas",
@@ -558,7 +559,7 @@
     "e2eeTitle": "Cifrado de extremo a extremo (E2EE)",
     "e2eeEnabled": "Activado",
     "e2eeDisabled": "Desactivado",
-    "e2eeDesc": "Cifra los registros DNS en el edge con su clave ECDH P-256. La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey.",
+    "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey.",
     "e2eePasskeyRequired": "E2EE requiere soporte para Passkey (WebAuthn). Por favor, agregue primero un Passkey en la configuración de la cuenta.",
     "e2eeGoToAccount": "Ir a Configuración de Cuenta",
     "e2eeEnableSwitch": "Activar cifrado E2EE",
@@ -584,7 +585,8 @@
     "subtitle": "Gestiona tus credenciales de seguridad y usuarios del sistema.",
     "e2ee": {
       "title": "Cifrado de extremo a extremo (E2EE)",
-      "desc": "Protege los datos mediante cifrado de sobre ECDH P-256 + AES-256-GCM respaldado por Passkeys de hardware. Los datos se cifran en el Edge; el servidor y la base de datos solo almacenan texto cifrado. El descifrado se realiza estrictamente en dispositivos autorizados.",
+      "desc": "Protege sus datos confidenciales mediante cifrado de sobre híbrido poscuántico del lado del cliente (P256-MLKEM768 + AES-256-GCM / NIST FIPS 203) respaldado por Passkeys de hardware. Solo los dispositivos autorizados pueden desencriptar localmente.",
+      "pqcTag": "PQC / NIST FIPS 203",
       "enabled": "Activado",
       "disabled": "Desactivado",
       "passkeyRequired": "El cifrado de extremo a extremo requiere al menos una Passkey de hardware (WebAuthn). Registre una Passkey en la sección de autenticación multifactor (MFA) arriba.",
@@ -613,12 +615,12 @@
       "unlockError": "Error al verificar Passkey y desbloquear",
       "disableConfirm": "¿Está seguro de desactivar el cifrado de extremo a extremo para este perfil? Los registros futuros se guardarán en texto plano. (Los registros cifrados históricos seguirán requiriendo la clave privada)",
       "noKeypairTitle": "Par de claves de extremo a extremo no inicializado",
-      "noKeypairDesc": "El cifrado de extremo a extremo requiere generar un par de claves ECDH P-256 dedicado. La clave privada se protege mediante cifrado de sobre respaldado por su Passkey o clave de recuperación.",
+      "noKeypairDesc": "El cifrado de extremo a extremo requiere generar un par de claves poscuánticas (P256-MLKEM768) para su cuenta. La clave privada se protegerá mediante sobre cifrado con su Passkey o clave de recuperación.",
       "initPasskeyBtn": "Verificar Passkey existente para generar par de claves",
       "addPasskeyBtn": "Añadir Passkey para admitir cifrado por hardware",
       "initRecoveryBtn": "Generar par de claves con clave de recuperación",
       "initWithRecoveryTitle": "Generar par de claves con clave de recuperación",
-      "initWithRecoveryDesc": "Introduzca su clave de emergencia actual de 30 dígitos. El sistema generará localmente un par de claves ECDH P-256. La clave se rotará automáticamente tras su uso.",
+      "initWithRecoveryDesc": "Ingrese su clave de recuperación de emergencia actual de 30 dígitos. El sistema generará localmente un par de claves poscuánticas (P256-MLKEM768). La clave de recuperación se rotará automáticamente después de su uso.",
       "keypairGenSuccess": "¡Par de claves de extremo a extremo generado con éxito!",
       "keypairGenError": "Error al generar el par de claves",
       "unlockRecoveryButton": "Desbloquear con clave de recuperación",
