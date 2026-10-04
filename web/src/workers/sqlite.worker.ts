@@ -85,7 +85,7 @@ self.onmessage = async (e: MessageEvent<WorkerMessageRequest>): Promise<void> =>
     self.postMessage({ id, success: true, data: result } satisfies WorkerMessageResponse);
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
-    console.error(`[SQLite Worker] Error executing ${type}:`, err);
+    console.error('[SQLite Worker] Error executing %s:', type, err);
     self.postMessage({
       id,
       success: false,
