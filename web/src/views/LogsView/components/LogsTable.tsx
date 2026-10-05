@@ -47,8 +47,9 @@ export const LogsTable: React.FC<LogsTableProps> = ({
       header: t("logs.tableDomain"),
       headerClassName: "w-1/4",
       render: (log: LogEntry): React.ReactNode => {
-        const isEncryptedLocked = (log.encrypt_version ?? 0) > 0 && (!log.domain || log.domain === "[Encrypted]");
-        const isEncryptedUnlocked = (log.encrypt_version ?? 0) > 0 && log.domain && log.domain !== "[Encrypted]";
+        const isEncrypted = (log.encrypt_version ?? 0) > 0 || Boolean(log.kem_key_id || log.encrypted_payload);
+        const isEncryptedLocked = isEncrypted && (!log.domain || log.domain === "[Encrypted]");
+        const isEncryptedUnlocked = isEncrypted && Boolean(log.domain && log.domain !== "[Encrypted]");
 
         return (
           <div className="flex items-center gap-2 truncate">
