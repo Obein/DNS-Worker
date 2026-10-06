@@ -1,20 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  validateUsername,
-  isPasswordLeaked,
-  hashTotpToken,
-  hashPasswordClient,
-  deriveStoredHashClient,
-  hmacSha256,
-  formatApiErrorMessage
-} from "../../utils/auth";
-import { setAccessToken } from "../../utils/token";
-import { prelogin, login, ApiError, migratePassword } from "../../services";
-import { e2ee } from "../../services/e2ee";
-import { startPasskeyAuthentication } from "../../utils/webauthn";
+import { validateUsername, formatApiErrorMessage } from "../../utils/auth";
+import { prelogin } from "../../services";
+import { useTurnstile } from "./hooks/useTurnstile";
+import { useLoginAuth } from "./hooks/useLoginAuth";
+import { useMfaStep } from "./hooks/useMfaStep";
 
-interface AuthConfig {
+export interface AuthConfig {
   turnstile_site_key: string;
   turnstile_enabled_signup: boolean;
   turnstile_enabled_login: boolean;
@@ -28,112 +20,96 @@ export interface UseLoginFormProps {
 }
 
 /**
- * Custom hook to manage the login state machine across:
- * Step 1: Username
- * Step 2: Password (if required; with "Other options" switch to MFA)
- * Step 3: MFA (Passkey prioritized; with "Other options" switch to TOTP / Recovery)
+ * Custom coordinator hook to manage the login state machine across:
+ * Step 1: Username & Turnstile challenge
+ * Step 2: Password challenge
+ * Step 3: MFA (Passkey / TOTP / Recovery Key)
  */
 export const useLoginForm = ({
   authConfig,
   turnstileReady,
   onSuccess
 }: UseLoginFormProps) => {
+  const { t } = useTranslation();
+
   // Steps: 1 = Username, 2 = Password, 3 = MFA
   const [loginStep, setLoginStep] = useState<1 | 2 | 3>(1);
 
-  // Input states
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [totpToken, setTotpToken] = useState("");
-  const [recoveryKey, setRecoveryKey] = useState("");
-  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  // Form input states
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [keepLoggedIn, setKeepLoggedIn] = useState<boolean>(false);
+
+  // Cryptographic challenge & account capabilities returned by prelogin
   const [passwordVersion, setPasswordVersion] = useState<number>(1);
   const [nonce, setNonce] = useState<string | undefined>(undefined);
   const [serverSalt, setServerSalt] = useState<string | null | undefined>(undefined);
+  const [requiresPassword, setRequiresPassword] = useState<boolean>(true);
+  const [requiresTotp, setRequiresTotp] = useState<boolean>(false);
+  const [hasPasskey, setHasPasskey] = useState<boolean>(false);
+  const [passkeyOptions, setPasskeyOptions] = useState<unknown>(null);
 
-  // Server response step requirements
-  const [requiresPassword, setRequiresPassword] = useState(true);
-  const [requiresTotp, setRequiresTotp] = useState(false);
-  const [hasPasskey, setHasPasskey] = useState(false);
-  const [passkeyOptions, setPasskeyOptions] = useState<any>(null);
-  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  // Core login execution & challenge solver hook
+  const {
+    loading: authLoading,
+    error,
+    setError,
+    rotatedRecoveryKey,
+    setRotatedRecoveryKey,
+    executeLogin
+  } = useLoginAuth({
+    username,
+    password,
+    passwordVersion,
+    nonce,
+    serverSalt,
+    keepLoggedIn,
+    onSuccess
+  });
 
-  // Active MFA method in Step 3
-  const [mfaMethod, setMfaMethod] = useState<"passkey" | "totp" | "recovery">("passkey");
+  const [step1Loading, setStep1Loading] = useState<boolean>(false);
+  const loading = authLoading || step1Loading;
 
-  // Status indicators
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [rotatedRecoveryKey, setRotatedRecoveryKey] = useState<string | null>(null);
-
-  // Turnstile state
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileStatus, setTurnstileStatus] = useState<
-    "idle" | "verifying" | "success" | "error"
-  >("idle");
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
-  const { t } = useTranslation();
   const isTurnstileEnabled = authConfig?.turnstile_enabled_login;
 
-  useEffect(() => {
-    // Only render turnstile in Step 1
-    if (
-      loginStep === 1 &&
-      isTurnstileEnabled &&
-      authConfig?.turnstile_site_key &&
-      (turnstileReady || window.turnstile) &&
-      turnstileRef.current
-    ) {
-      try {
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.remove(widgetIdRef.current);
-          widgetIdRef.current = null;
-        }
-        setTurnstileStatus("verifying");
-        turnstileRef.current.innerHTML = "";
-        const widgetId = window.turnstile.render(turnstileRef.current, {
-          sitekey: authConfig.turnstile_site_key,
-          callback: (token: string) => {
-            setTurnstileToken(token);
-            setTurnstileStatus("success");
-            setError("");
-          },
-          "expired-callback": () => {
-            setTurnstileToken(null);
-            setTurnstileStatus("idle");
-          },
-          "error-callback": (err: unknown) => {
-            console.error("Turnstile error:", err);
-            setTurnstileStatus("error");
-            setError(
-              t(
-                "auth.turnstileError",
-                "Verification service failed to load. Please reload and try again."
-              )
-            );
-            setTurnstileToken(null);
-          }
-        });
-        widgetIdRef.current = widgetId;
-      } catch (e) {
-        console.error("Turnstile render error:", e);
-        setTurnstileStatus("error");
-      }
-    }
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
-    };
-  }, [isTurnstileEnabled, authConfig, loginStep, turnstileReady, t]);
+  // Turnstile hook
+  const {
+    turnstileToken,
+    turnstileStatus,
+    turnstileRef,
+    resetTurnstile
+  } = useTurnstile({
+    siteKey: authConfig?.turnstile_site_key,
+    enabled: isTurnstileEnabled,
+    turnstileReady,
+    isActive: loginStep === 1,
+    onError: setError,
+    onClearError: () => setError("")
+  });
+
+  // Step 3 MFA hook
+  const {
+    mfaMethod,
+    setMfaMethod,
+    totpToken,
+    setTotpToken,
+    recoveryKey,
+    setRecoveryKey,
+    passkeyLoading,
+    handlePasskeyLogin,
+    handleStep3Submit,
+    resetMfaFields
+  } = useMfaStep({
+    hasPasswordEntered: !!password,
+    passkeyOptions,
+    executeLogin,
+    onError: setError
+  });
 
   /**
    * Submits Step 1 (Username + Turnstile).
    */
-  const handleStep1Submit = async (e: React.FormEvent) => {
+  const handleStep1Submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!validateUsername(username)) {
       setError(t("auth.formatTipUsername"));
@@ -144,7 +120,7 @@ export const useLoginForm = ({
       return;
     }
 
-    setLoading(true);
+    setStep1Loading(true);
     setError("");
 
     try {
@@ -158,108 +134,27 @@ export const useLoginForm = ({
       setServerSalt(data.serverSalt);
 
       const userHasPasskey = !!data.has_passkey;
-      const initialMfaMethod: "passkey" | "totp" = userHasPasskey ? "passkey" : "totp";
-      setMfaMethod(initialMfaMethod);
+      setMfaMethod(userHasPasskey ? "passkey" : "totp");
 
-      // If passwordless login is enabled, skip password step directly to MFA step
+      // If passwordless login is enabled, advance directly to MFA step
       if (!data.requires_password) {
         setLoginStep(3);
       } else {
         setLoginStep(2);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatApiErrorMessage(err, t));
-      if (window.turnstile) window.turnstile.reset();
-      setTurnstileToken(null);
+      resetTurnstile();
     } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Helper to perform the final login call with provided credentials.
-   */
-  const executeLogin = async (credentials: {
-    useEnteredPassword?: boolean;
-    passkeyAssertion?: any;
-    totpTokenHash?: string;
-    totpSalt?: string;
-    recoveryKey?: string;
-  }) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const body: {
-        password?: string;
-        recoveryKey?: string;
-        totpTokenHash?: string;
-        totpSalt?: string;
-        passkeyAssertion?: any;
-        keepLoggedIn?: boolean;
-      } = {
-        keepLoggedIn,
-        passkeyAssertion: credentials.passkeyAssertion,
-        totpTokenHash: credentials.totpTokenHash,
-        totpSalt: credentials.totpSalt,
-        recoveryKey: credentials.recoveryKey
-      };
-
-      // If user entered password in Step 2, compute challenge response
-      if (credentials.useEnteredPassword && password) {
-        if (passwordVersion === 2) {
-          if (!nonce || !serverSalt) {
-            throw new Error(t("auth.sessionExpired", "Session expired, please start over"));
-          }
-          const clientHash = await hashPasswordClient(password, username);
-          const storedHash = await deriveStoredHashClient(clientHash, serverSalt);
-          body.password = await hmacSha256(storedHash, nonce);
-        } else {
-          body.password = password;
-        }
-      }
-
-      const data = await login(body);
-      if (data.accessToken) {
-        setAccessToken(data.accessToken);
-      }
-      if (data.needsMigration && password) {
-        const clientHash = await hashPasswordClient(password, username);
-        await migratePassword(clientHash);
-      }
-      if (data.rotatedRecoveryKey && credentials.recoveryKey) {
-        // Recovery key was used to login and automatically rotated!
-        try {
-          await e2ee.unlockWithRecoveryKey(credentials.recoveryKey);
-          await e2ee.wrapCurrentKeyForRecovery(data.rotatedRecoveryKey);
-        } catch (e) {
-          console.warn("[Login] Could not auto re-wrap E2EE key with rotated recovery key:", e);
-        }
-        setRotatedRecoveryKey(data.rotatedRecoveryKey);
-        return;
-      }
-      onSuccess();
-    } catch (err: any) {
-      if (err instanceof ApiError) {
-        const fakeRes = { status: err.status } as Response;
-        if (isPasswordLeaked(fakeRes, err.bodyText)) {
-          setError(t("auth.passwordLeaked"));
-        } else {
-          setError(formatApiErrorMessage(err, t));
-        }
-      } else {
-        setError(formatApiErrorMessage(err, t));
-      }
-    } finally {
-      setLoading(false);
+      setStep1Loading(false);
     }
   };
 
   /**
    * Submits Step 2 (Password input).
-   * If user has MFA, advances to Step 3. Otherwise, completes login.
+   * If user has MFA configured, advances to Step 3. Otherwise, completes login.
    */
-  const handleStep2Submit = async (e: React.FormEvent) => {
+  const handleStep2Submit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!password) {
       setError(t("auth.passwordRequiredFirst", "Please enter your password first"));
@@ -268,12 +163,10 @@ export const useLoginForm = ({
 
     const hasMfa = hasPasskey || requiresTotp;
     if (hasMfa) {
-      // Advance to MFA step with password stored
       setError("");
       setLoginStep(3);
       setMfaMethod(hasPasskey ? "passkey" : "totp");
     } else {
-      // No MFA configured: execute login with password alone
       await executeLogin({ useEnteredPassword: true });
     }
   };
@@ -281,71 +174,29 @@ export const useLoginForm = ({
   /**
    * Switches directly from Password Step to MFA Step via "Other options".
    */
-  const handleSwitchToMfa = () => {
+  const handleSwitchToMfa = (): void => {
     setPassword("");
     setError("");
     setLoginStep(3);
     setMfaMethod(hasPasskey ? "passkey" : "totp");
   };
 
-  /**
-   * Handles Passkey login in Step 3.
-   */
-  const handlePasskeyLogin = async () => {
-    if (!passkeyOptions) return;
-    setPasskeyLoading(true);
+  const resetToStep1 = (): void => {
+    setLoginStep(1);
+    setPassword("");
     setError("");
-
-    try {
-      const assertion = await startPasskeyAuthentication(passkeyOptions);
-      await executeLogin({
-        useEnteredPassword: !!password,
-        passkeyAssertion: assertion
-      });
-    } catch (err: any) {
-      console.error("Passkey authentication error:", err);
-      setError(formatApiErrorMessage(err, t));
-    } finally {
-      setPasskeyLoading(false);
-    }
-  };
-
-  /**
-   * Submits Step 3 (TOTP or Recovery Key).
-   */
-  const handleStep3Submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (mfaMethod === "totp") {
-      const cleanToken = totpToken.replace(/\s/g, "");
-      if (cleanToken.length !== 6) {
-        setError(t("auth.totpFormatError", "Please enter a valid 6-digit code"));
-        return;
-      }
-      const salt = crypto.randomUUID();
-      const hashHex = await hashTotpToken(cleanToken, salt);
-      await executeLogin({
-        useEnteredPassword: !!password,
-        totpTokenHash: hashHex,
-        totpSalt: salt
-      });
-    } else if (mfaMethod === "recovery") {
-      const normalizedKey = recoveryKey.replace(/[-\s]/g, "");
-      if (!normalizedKey) {
-        setError(t("auth.recoveryKeyRequired", "Please enter your recovery key"));
-        return;
-      }
-      await executeLogin({
-        useEnteredPassword: !!password,
-        recoveryKey: normalizedKey
-      });
-    }
+    setNonce(undefined);
+    setServerSalt(undefined);
+    setHasPasskey(false);
+    setPasskeyOptions(null);
+    resetMfaFields();
+    resetTurnstile();
   };
 
   /**
    * Navigates back one step.
    */
-  const handleBack = () => {
+  const handleBack = (): void => {
     setError("");
     if (loginStep === 2) {
       resetToStep1();
@@ -358,22 +209,7 @@ export const useLoginForm = ({
     }
   };
 
-  const resetToStep1 = () => {
-    setLoginStep(1);
-    setPassword("");
-    setTotpToken("");
-    setRecoveryKey("");
-    setError("");
-    setTurnstileToken(null);
-    setNonce(undefined);
-    setServerSalt(undefined);
-    setHasPasskey(false);
-    setPasskeyOptions(null);
-    setPasskeyLoading(false);
-    setMfaMethod("passkey");
-  };
-
-  const handleAcknowledgeRotatedKey = () => {
+  const handleAcknowledgeRotatedKey = (): void => {
     setRotatedRecoveryKey(null);
     onSuccess();
   };
