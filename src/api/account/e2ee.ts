@@ -85,20 +85,31 @@ export async function handleAccountE2eeRequest(
     const url = new URL(request.url);
     const passkeyId = url.searchParams.get("passkey_id");
 
-    if (!passkeyId) {
-      return new Response("Missing passkey_id parameter", { status: 400 });
+    let wrapped: { encrypted_sk: string; iv: string } | null = null;
+
+    if (passkeyId) {
+      const passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
+      if (passkey) {
+        wrapped = await env.DB.prepare(
+          "SELECT encrypted_sk, iv FROM user_passkey_wrapped_keys WHERE passkey_id = ?"
+        )
+          .bind(passkey.id)
+          .first<{ encrypted_sk: string; iv: string }>();
+      }
     }
 
-    const passkey = await passkeyModel.getByIdOrCredentialId(passkeyId, user.id);
-    if (!passkey) {
-      return new Response("Passkey not found or unauthorized", { status: 403 });
+    if (!wrapped) {
+      // Fallback: If specific passkey_id is not matched or omitted, check for any wrapped key for this user
+      wrapped = await env.DB.prepare(`
+        SELECT upwk.encrypted_sk, upwk.iv 
+        FROM user_passkey_wrapped_keys upwk
+        JOIN passkeys pk ON upwk.passkey_id = pk.id
+        WHERE pk.user_id = ?
+        LIMIT 1
+      `)
+        .bind(user.id)
+        .first<{ encrypted_sk: string; iv: string }>();
     }
-
-    const wrapped = await env.DB.prepare(
-      "SELECT encrypted_sk, iv FROM user_passkey_wrapped_keys WHERE passkey_id = ?"
-    )
-      .bind(passkey.id)
-      .first<{ encrypted_sk: string; iv: string }>();
 
     if (!wrapped) {
       return new Response("Wrapped key not found for this passkey", { status: 404 });

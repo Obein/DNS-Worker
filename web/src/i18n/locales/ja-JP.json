@@ -33,7 +33,19 @@
     "importSuccess": "設定のインポートに成功しました",
     "importError": "設定のインポートに失敗しました。形式を確認し、後でもう一度お試しください",
     "save": "保存",
-    "saveSuccess": "設定を保存しました"
+    "saveSuccess": "設定を保存しました",
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "continue": "続行",
+    "back": "戻る",
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "copyKey": "新しいリカバリキーをコピー",
+    "confirm": "確認",
+    "delete": "削除",
+    "rename": "名前を変更",
+    "disable": "無効化",
+    "confirmDisable": "無効化を確認"
   },
   "nav": {
     "setup": "インストール",
@@ -175,7 +187,12 @@
     "jwtSecretPreset": "デフォルトの JWT_SECRET が検出されました。デプロイ前に環境変数でプリセットの JWT_SECRET を変更してください。",
     "jwtSecretMissing": "JWT_SECRET が見つかりません。デプロイ前に環境変数で安全なキーを設定してください。",
     "jwtSecretInvalid": "JWT_SECRET の形式が無効です。設定を確認してください。",
-    "keepLoggedIn": "{{days}} 日間ログイン状態を保持する"
+    "keepLoggedIn": "{{days}} 日間ログイン状態を保持する",
+    "orUseOtherMfa": "または別の方法を使用",
+    "totpUseRecovery": "リカバリキーを使用",
+    "totpUseApp": "認証アプリを使用",
+    "mfaMethodTotp": "認証アプリ (TOTP)",
+    "invalidTotp": "無効なTOTP認証コードです。もう一度お試しください。"
   },
   "setup": {
     "title": "インストールガイド",
@@ -301,7 +318,12 @@
     "updateSuccess": "ルールを更新しました",
     "updateFailed": "ルールの更新に失敗しました",
     "tableCreatedAt": "追加日時",
-    "clickToSort": "クリックして並べ替え"
+    "clickToSort": "クリックして並べ替え",
+    "editRule": "ルールを編集",
+    "cancel": "キャンセル",
+    "saveChanges": "変更を保存",
+    "delete": "削除",
+    "close": "閉じる"
   },
   "analytics": {
     "customRange": "カスタム期間",
@@ -329,7 +351,8 @@
     "topIsps": "主要プロバイダー",
     "pressToShowMore": "クリックしてさらに表示",
     "maximize": "拡大",
-    "minimize": "縮小"
+    "minimize": "縮小",
+    "loading": "読み込み中..."
   },
   "logs": {
     "title": "クエリログ",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "クライアント側暗号化",
     "encryptedLocked": "はい（未解除）",
     "encryptedDecrypted": "はい（ローカル復号済）",
-    "notEncrypted": "いいえ"
+    "notEncrypted": "いいえ",
+    "encryptedRecord": "[暗号化された記録]",
+    "exportSuccess": "ログのエクスポートに成功しました",
+    "exportError": "ログのエクスポートに失敗しました"
   },
   "filtering": {
     "title": "外部ブロックリスト",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "フィルターは確率的であるため、一致の一部は誤検知です。例外を追加すると、そのすべてのサブドメインもカバーされます。",
     "checkAllowAction": "それでも許可する",
     "checkAllowed": "例外を追加しました - このドメインは解決されるようになりました",
-    "allowRuleAdded": "{{domain}} の例外を追加しました"
+    "allowRuleAdded": "{{domain}} の例外を追加しました",
+    "listDetails": "リスト詳細"
   },
   "settings": {
     "title": "動作設定",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "エンドツーエンド暗号化を無効にしますか？以降のログは平文で保存されます。",
     "e2eeUnlockPrompt": "このプロファイルは E2EE が有効です。Passkey を認証してログを表示してください。",
     "e2eeUnlockNow": "暗号化ログを解除",
-    "e2eeUnlockRecovery": "リカバリーキーでロック解除"
+    "e2eeUnlockRecovery": "リカバリーキーでロック解除",
+    "securityTitle": "セキュリティとアクセス",
+    "rotateKeyTitle": "アクセスURL",
+    "rotateKeyDesc": "このプロファイルの新しいアクセスURLを生成します。古いURLを使用しているすべてのデバイスは直ちに接続を失い、新しいURLで再設定する必要があります。",
+    "rotateKeyBtn": "URLをローテーション",
+    "copied": "クリップボードにコピーしました",
+    "nameUpdateFailed": "更新に失敗しました"
   },
   "account": {
     "title": "アカウント設定",
@@ -633,7 +666,10 @@
       "enableSwitch": "クエリログのエンドツーエンド暗号化を有効化",
       "enableSwitchDesc": "ドメイン名、クライアントIP、応答レコード、上流レイテンシをエッジで暗号化してからクラウドストレージに保存します。",
       "trustBoundaryTitle": "セキュリティと信頼境界に関する注意事項",
-      "trustBoundaryDesc": "すべてのDNSクエリトラフィックは名前解決時にホスティングサーバー（Cloudflare Workersエッジノードまたは自ホストランタイム）を必ず通過し、メモリ上で処理された後に暗号化されて永続化されます。本機能はクラウドデータベース（D1 / 永続ストレージ）の保存データ漏洩を防ぐためのものであり、リクエストを処理するホスティングサーバーに対してリアルタイムトラフィックを隠蔽するものではありません。"
+      "trustBoundaryDesc": "すべてのDNSクエリトラフィックは名前解決時にホスティングサーバー（Cloudflare Workersエッジノードまたは自ホストランタイム）を必ず通過し、メモリ上で処理された後に暗号化されて永続化されます。本機能はクラウドデータベース（D1 / 永続ストレージ）の保存データ漏洩を防ぐためのものであり、リクエストを処理するホスティングサーバーに対してリアルタイムトラフィックを隠蔽するものではありません。",
+      "initFailed": "エンドツーエンド暗号化の初期化に失敗しました",
+      "lockDevice": "この端末をロック",
+      "lockSuccess": "ロックしました。秘密鍵は端末から削除されました"
     },
     "jwtSecretWarningTitle": "セキュリティ警告：JWTシークレットの強度が不足しています",
     "jwtSecretWarningDesc": "現在の JWT_SECRET は32文字未満であり、セキュリティ上の潜在的なリスクがあります。エンベロープ暗号化された既存のTOTPおよびリカバリキーの復号を維持するため、JWT_SECRET をローテーションする前に環境変数 KEK_v1 を設定してください。",
@@ -701,7 +737,8 @@
       "copyKeys": "すべてのキーをコピー",
       "copied": "コピーしました！",
       "done": "完了（キーを保存しました）",
-      "activeDesc": "認証アプリ (TOTP) が有効化され、6桁の確認コードを生成しています。"
+      "activeDesc": "認証アプリ (TOTP) が有効化され、6桁の確認コードを生成しています。",
+      "invalidCode": "6桁のコードを入力してください"
     },
     "activity": {
       "title": "アカウントアクティビティ履歴",
@@ -735,7 +772,8 @@
       "passkeyDeleted": "パスキー削除",
       "passkeyVerifySuccess": "パスキー認証成功",
       "passkeyVerifyFail": "パスキー認証失敗",
-      "recoveryKeyRotated": "復旧キーをローテーションしました"
+      "recoveryKeyRotated": "復旧キーをローテーションしました",
+      "device": "端末"
     },
     "sessions": {
       "title": "アクティブなセッション",
@@ -798,7 +836,10 @@
       "desc": "パスキー (Passkey) と認証アプリ (TOTP) の両方がMFA認証方法として利用できます。少なくとも1つを設定することでアカウントを保護し、パスワードレスログインが可能になります。",
       "passwordlessTitle": "パスワードレスログイン",
       "passwordlessDesc": "有効にするとパスワード入力が不要となり、パスキーまたはTOTPで直接本人確認が行われます。",
-      "unconfiguredHint": "MFA認証方法がまだ設定されていません。下記よりパスキーまたは認証アプリを設定してください。"
+      "unconfiguredHint": "MFA認証方法がまだ設定されていません。下記よりパスキーまたは認証アプリを設定してください。",
+      "password": "パスワード",
+      "passkey": "パスキー (Passkey)",
+      "totp": "認証アプリ (TOTP)"
     },
     "recoveryKey": {
       "title": "緊急リカバリーキー",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "リカバリーキーが自動ローテーションされました",
       "autoRotatedNotice": "使い捨てルールに従い、以前のキーは無効化され、新しい30桁のリカバリーキーが生成されました。直ちにコピーして安全にオフライン保存してください！",
       "savedAndClose": "安全に保存したので閉じる",
-      "savedAndContinue": "安全に保存してダッシュボードへ"
+      "savedAndContinue": "安全に保存してダッシュボードへ",
+      "descOneWay": "緊急リカバリキーは、すべてのパスキーや認証アプリを紛失した場合に、アカウントへのアクセスを回復しE2EEデータを復号化するための唯一の認証情報です。ゼロ知識セキュリティを確保するため、一方向の不可逆ハッシュとして保存され、Web上で平文を表示することはできません。元のリカバリキーまたは既存のパスキーを使用してのみローテーション可能です。使用されると直ちに自動ローテーションされます。",
+      "keyRequired": "リカバリキーを入力してください",
+      "verifyBtn": "リカバリキー",
+      "verifyPromptLabel": "元のリカバリキー (Original Recovery Key)"
     },
     "verifyIdentity": "セキュリティ本人確認",
     "verifyIdentityDesc": "アカウントの安全のため、この操作を実行する前に本人確認を行ってください。",
     "usePasskeyInstead": "パスキーで認証",
     "changePasswordWithPasskey": "パスキーで認証してパスワードを変更",
-    "enableRegistration": "新規ユーザー登録を許可"
+    "enableRegistration": "新規ユーザー登録を許可",
+    "timezone": "タイムゾーン",
+    "timezoneAuto": "自動（ブラウザのデフォルト）",
+    "totpCode": "認証コード"
   },
   "intro": {
     "item1Title": "Obex 保護DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "安全な JWT_SECRET ジェネレーター",
     "jwtGeneratorDesc": "この暗号的に安全なキー生成器を使用して、env.JWT_SECRET 用のランダムな 64 文字の英数字シークレットを生成します。",
     "regenerate": "再生成"
+  },
+  "meta": {
+    "defaultDesc": "すべてのデバイスに安全で高速、カスタマイズ可能なDNS解決を提供します。Cloudflare Workersベース、オープンソース、プライバシー重視。",
+    "setupDesc": "DNS Workerを使用するようにデバイスを設定します。"
   }
 }

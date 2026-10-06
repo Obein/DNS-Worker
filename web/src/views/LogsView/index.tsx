@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Spinner,
   Callout,
@@ -79,15 +79,48 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction, to
     handleExportLogs,
   } = useLogs({ profileId, toasterRef });
 
+  const autoUnlockAttempted = useRef<boolean>(false);
+  const lastProfileRef = useRef<string>(profileId);
+  if (lastProfileRef.current !== profileId) {
+    lastProfileRef.current = profileId;
+    autoUnlockAttempted.current = false;
+  }
+
   const checkE2ee = useCallback(async () => {
     try {
       const status = await e2ee.getStatus(profileId);
-      setIsE2eeEnabled(status.enabled || Boolean(status.hasKeys));
-      setIsE2eeUnlocked(e2ee.isProfileUnlocked(profileId));
+      const enabled = status.enabled || Boolean(status.hasKeys);
+      setIsE2eeEnabled(enabled);
+
+      const unlocked = e2ee.isProfileUnlocked(profileId);
+      setIsE2eeUnlocked(unlocked);
+
+      // Attempt automatic unlock on entry if enabled, not yet unlocked, and passkey available
+      if (
+        enabled &&
+        !unlocked &&
+        status.wrappedPasskeys &&
+        status.wrappedPasskeys.length > 0 &&
+        !autoUnlockAttempted.current
+      ) {
+        autoUnlockAttempted.current = true;
+        try {
+          const success = await e2ee.unlockProfile(profileId);
+          if (success) {
+            setIsE2eeUnlocked(true);
+            await localDb.reDecryptLocalLogs(profileId);
+            fetchLogs(range, true);
+          }
+        } catch (autoErr) {
+          // Silent catch: If user cancels biometric prompt or browser requires gesture,
+          // remain on the banner for manual unlock without disturbing user with error toast.
+          console.debug("[LogsView] Silent auto-unlock skipped or cancelled:", autoErr);
+        }
+      }
     } catch {
       setIsE2eeEnabled(false);
     }
-  }, [profileId]);
+  }, [profileId, fetchLogs, range]);
 
   useEffect(() => {
     checkE2ee();

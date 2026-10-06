@@ -453,9 +453,26 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
                   {t("account.e2ee.deviceState")}:
                 </span>
                 {isUnlocked ? (
-                  <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
-                    {t("account.e2ee.unlocked")}
-                  </Tag>
+                  <div className="flex items-center gap-2">
+                    <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
+                      {t("account.e2ee.unlocked")}
+                    </Tag>
+                    <Button
+                      small
+                      minimal
+                      intent={Intent.NONE}
+                      icon="lock"
+                      text={t("account.e2ee.lockDevice", "锁定此设备")}
+                      onClick={() => {
+                        e2ee.clearStorage();
+                        setIsUnlocked(false);
+                        toasterRef.current?.show({
+                          message: t("account.e2ee.lockSuccess", "已锁定，私钥已从本地清除"),
+                          intent: Intent.NONE,
+                        });
+                      }}
+                    />
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {hasPasskey && (

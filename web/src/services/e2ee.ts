@@ -8,7 +8,8 @@
 import { ml_kem768_p256 } from "@noble/post-quantum/hybrid.js";
 import type { LogEntry } from "../views/LogsView/types";
 import { profileFetch } from "./profiles";
-import { getPasskeyAuthOptions } from "./account";
+import { getPasskeyAuthOptions, getPasskeys } from "./account";
+import { bufferToBase64Url } from "../utils/webauthn";
 
 export interface ProfileE2eeStatus {
   hasKeys?: boolean;
@@ -179,6 +180,9 @@ class E2eeService {
     for (let i = 0; i < sessionStorage.length; i++) {
       if (sessionStorage.key(i)?.startsWith("obex_e2ee_sk_")) return true;
     }
+    for (let i = 0; i < localStorage.length; i++) {
+      if (localStorage.key(i)?.startsWith("obex_e2ee_sk_")) return true;
+    }
     return false;
   }
 
@@ -186,67 +190,152 @@ class E2eeService {
    * Checks whether the current session has unlocked the private key for this profile or account.
    */
   isProfileUnlocked(profileId: string): boolean {
-    if (this.unlockedKeys.has(profileId) || !!sessionStorage.getItem(`obex_e2ee_sk_${profileId}`)) {
-      return true;
-    }
-    return this.isUnlocked();
+    return this.getPrivateKey(profileId) !== null;
   }
 
   /**
-   * Gets the unlocked private key from memory or session storage.
+   * Gets the unlocked private key from memory, session storage, or local storage.
    */
   private getPrivateKey(profileId: string): UnlockedPrivateKey | null {
     if (this.unlockedKeys.has(profileId)) {
       return this.unlockedKeys.get(profileId)!;
     }
-    const stored = sessionStorage.getItem(`obex_e2ee_sk_${profileId}`);
-    if (stored) {
+    if (this.unlockedKeys.has("account")) {
+      const key = this.unlockedKeys.get("account")!;
+      this.unlockedKeys.set(profileId, key);
+      return key;
+    }
+
+    // 1. Check sessionStorage
+    const storedSession =
+      sessionStorage.getItem(`obex_e2ee_sk_${profileId}`) ||
+      sessionStorage.getItem("obex_e2ee_sk_account");
+    if (storedSession) {
       try {
-        const key = JSON.parse(stored) as UnlockedPrivateKey;
+        const key = JSON.parse(storedSession) as UnlockedPrivateKey;
         this.unlockedKeys.set(profileId, key);
+        this.unlockedKeys.set("account", key);
         return key;
       } catch {
         sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
+        sessionStorage.removeItem("obex_e2ee_sk_account");
       }
     }
-    // Account-wide fallback if any key was unlocked in session
-    if (this.unlockedKeys.size > 0) {
-      return this.unlockedKeys.values().next().value || null;
+
+    // 2. Check localStorage (persistent across browser reloads/tabs)
+    const storedLocal =
+      localStorage.getItem(`obex_e2ee_sk_${profileId}`) ||
+      localStorage.getItem("obex_e2ee_sk_account");
+    if (storedLocal) {
+      try {
+        const key = JSON.parse(storedLocal) as UnlockedPrivateKey;
+        this.unlockedKeys.set(profileId, key);
+        this.unlockedKeys.set("account", key);
+        return key;
+      } catch {
+        localStorage.removeItem(`obex_e2ee_sk_${profileId}`);
+        localStorage.removeItem("obex_e2ee_sk_account");
+      }
     }
+
+    // 3. Fallback: check any obex_e2ee_sk_ key in sessionStorage
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
       if (key?.startsWith("obex_e2ee_sk_")) {
         try {
           const parsed = JSON.parse(sessionStorage.getItem(key) || "") as UnlockedPrivateKey;
           this.unlockedKeys.set(profileId, parsed);
+          this.unlockedKeys.set("account", parsed);
           return parsed;
         } catch {
           // ignore
         }
       }
     }
+
+    // 4. Fallback: check any obex_e2ee_sk_ key in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("obex_e2ee_sk_")) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key) || "") as UnlockedPrivateKey;
+          this.unlockedKeys.set(profileId, parsed);
+          this.unlockedKeys.set("account", parsed);
+          return parsed;
+        } catch {
+          // ignore
+        }
+      }
+    }
+
     return null;
   }
 
   /**
-   * Stores the unlocked private key in session memory.
+   * Stores the unlocked private key in memory, session storage, and local storage.
    */
   private setPrivateKey(profileOrAccountKey: string, sk: UnlockedPrivateKey): void {
     this.unlockedKeys.set(profileOrAccountKey, sk);
-    sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, JSON.stringify(sk));
+    this.unlockedKeys.set("account", sk);
+    try {
+      const serialized = JSON.stringify(sk);
+      sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, serialized);
+      sessionStorage.setItem("obex_e2ee_sk_account", serialized);
+      localStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, serialized);
+      localStorage.setItem("obex_e2ee_sk_account", serialized);
+    } catch (e) {
+      console.warn("[E2EE] Could not persist key to storage:", e);
+    }
+  }
+
+  /**
+   * Clears unlocked keys from memory and local/session storage.
+   */
+  clearStorage(): void {
+    this.unlockedKeys.clear();
+    this.dekCache.clear();
+    const sessionKeys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k?.startsWith("obex_e2ee_sk_")) sessionKeys.push(k);
+    }
+    sessionKeys.forEach((k) => sessionStorage.removeItem(k));
+
+    const localKeys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("obex_e2ee_sk_")) localKeys.push(k);
+    }
+    localKeys.forEach((k) => localStorage.removeItem(k));
   }
 
   /**
    * Derives a 256-bit Key Encryption Key (KEK) using WebAuthn Passkey assertion.
-   * Leverages WebAuthn PRF extension where available, with assertion signature hash fallback.
+   * Leverages WebAuthn PRF extension with dual salt evaluation (account + profileId)
+   * to guarantee seamless decryption regardless of key wrap scope.
    */
-  async derivePasskeyKek(saltScope: string = "account"): Promise<{ kek: Uint8Array; passkeyId?: string }> {
+  async derivePasskeyKek(saltScope: string = "account"): Promise<{ kek: Uint8Array; altKek?: Uint8Array; passkeyId?: string }> {
     const authOptions = await getPasskeyAuthOptions();
 
-    // Prepare 32-byte salt for PRF extension
-    const saltBytes = new Uint8Array(32);
-    const enc = new TextEncoder().encode(`obex-dns-log-e2ee-salt:${saltScope}`);
-    saltBytes.set(enc.subarray(0, 32));
+    // Primary salt is always "account"
+    const saltAccount = new Uint8Array(32);
+    const encAccount = new TextEncoder().encode("obex-dns-log-e2ee-salt:account");
+    saltAccount.set(encAccount.subarray(0, 32));
+
+    // Secondary salt if saltScope is provided and distinct from "account"
+    let saltProfile: Uint8Array | undefined;
+    if (saltScope && saltScope !== "account") {
+      saltProfile = new Uint8Array(32);
+      const encProfile = new TextEncoder().encode(`obex-dns-log-e2ee-salt:${saltScope}`);
+      saltProfile.set(encProfile.subarray(0, 32));
+    }
+
+    const prfEval: any = {
+      first: saltAccount,
+    };
+    if (saltProfile) {
+      prfEval.second = saltProfile;
+    }
 
     const challengeBytes = base64UrlToUint8Array(authOptions.challenge);
 
@@ -262,9 +351,7 @@ class E2eeService {
         })),
         extensions: {
           prf: {
-            eval: {
-              first: saltBytes,
-            },
+            eval: prfEval,
           },
         } as any,
       },
@@ -276,10 +363,13 @@ class E2eeService {
 
     const extResults = credential.getClientExtensionResults() as any;
     let kekBytes: Uint8Array;
+    let altKekBytes: Uint8Array | undefined;
 
     if (extResults?.prf?.results?.first) {
-      // 1. Hardware PRF secret
       kekBytes = new Uint8Array(extResults.prf.results.first);
+      if (extResults?.prf?.results?.second) {
+        altKekBytes = new Uint8Array(extResults.prf.results.second);
+      }
     } else {
       throw new Error(
         "Passkey authenticator does not support WebAuthn PRF extension. Please unlock using your Recovery Key."
@@ -289,18 +379,25 @@ class E2eeService {
     // Match credential ID to registered passkey if possible
     let passkeyId = credential.id;
     const normalizeB64 = (s: string) => (s || "").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const rawIdB64Url = credential.rawId ? bufferToBase64Url(credential.rawId) : "";
     const credIdNorm = normalizeB64(credential.id);
+    const rawIdNorm = normalizeB64(rawIdB64Url);
 
     if (authOptions.allowCredentials && authOptions.allowCredentials.length > 0) {
-      const match = authOptions.allowCredentials.find((c: any) => normalizeB64(c.id) === credIdNorm);
+      const match = authOptions.allowCredentials.find((c: any) => {
+        const cNorm = normalizeB64(c.id);
+        return cNorm === credIdNorm || cNorm === rawIdNorm || c.passkey_id === credential.id;
+      });
       if (match?.passkey_id) passkeyId = match.passkey_id;
     }
 
     if (!passkeyId || passkeyId === credential.id) {
       try {
-        const { getPasskeys } = await import("./account");
         const passkeys = await getPasskeys();
-        const match = passkeys.find((p) => normalizeB64(p.credential_id) === credIdNorm);
+        const match = passkeys.find((p) => {
+          const pNorm = normalizeB64(p.credential_id);
+          return pNorm === credIdNorm || pNorm === rawIdNorm || p.id === credential.id;
+        });
         if (match?.id) {
           passkeyId = match.id;
         } else if (passkeys.length > 0) {
@@ -311,7 +408,7 @@ class E2eeService {
       }
     }
 
-    return { kek: kekBytes, passkeyId };
+    return { kek: kekBytes, altKek: altKekBytes, passkeyId };
   }
 
   /**
@@ -655,23 +752,25 @@ class E2eeService {
    * Unlocks the account's log private key using the device's Passkey with a single prompt.
    */
   async unlockUser(): Promise<boolean> {
+    if (this.isUnlocked()) return true;
+
     const status = await this.getUserStatus();
     if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
 
-    const { kek, passkeyId } = await this.derivePasskeyKek("account");
+    const { kek, altKek, passkeyId } = await this.derivePasskeyKek("account");
 
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
-    if (!targetPasskeyId) {
-      throw new Error("No wrapped key found for this passkey. Please unlock using your Recovery Key.");
-    }
-
-    let res = await fetch(`/api/account/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+    let res = await fetch(
+      `/api/account/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
+    );
     if (!res.ok) {
       const profilesRes = await fetch("/api/profiles");
       if (profilesRes.ok) {
         const profiles = await profilesRes.json();
         if (profiles && profiles.length > 0) {
-          res = await fetch(`/api/profiles/${profiles[0].id}/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+          res = await fetch(
+            `/api/profiles/${profiles[0].id}/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
+          );
         }
       }
     }
@@ -681,21 +780,45 @@ class E2eeService {
     }
 
     const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
+    const ciphertextBuf = fromBase64(encryptedSk);
+    const ivBuf = fromBase64(iv);
 
-    // Unwrap SK
-    const kekKey = await crypto.subtle.importKey(
-      "raw",
-      kek as BufferSource,
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-
-    const decryptedBuf = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: fromBase64(iv) as BufferSource },
-      kekKey,
-      fromBase64(encryptedSk) as BufferSource
-    );
+    // Unwrap SK: Try primary KEK (account), then altKek (profile)
+    let decryptedBuf: ArrayBuffer | null = null;
+    try {
+      const kekKey = await crypto.subtle.importKey(
+        "raw",
+        kek as BufferSource,
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"]
+      );
+      decryptedBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: ivBuf as BufferSource },
+        kekKey,
+        ciphertextBuf as BufferSource
+      );
+    } catch {
+      if (altKek) {
+        try {
+          const altKekKey = await crypto.subtle.importKey(
+            "raw",
+            altKek as BufferSource,
+            { name: "AES-GCM" },
+            false,
+            ["decrypt"]
+          );
+          decryptedBuf = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: ivBuf as BufferSource },
+            altKekKey,
+            ciphertextBuf as BufferSource
+          );
+        } catch {}
+      }
+      if (!decryptedBuf) {
+        throw new Error("Failed to decrypt private key with this Passkey. Please unlock using your Recovery Key.");
+      }
+    }
 
     const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
     this.setPrivateKey("account", privateKeyObj);
@@ -706,42 +829,69 @@ class E2eeService {
    * Unlocks the profile's log private key using the device's Passkey.
    */
   async unlockProfile(profileId: string): Promise<boolean> {
+    if (this.isProfileUnlocked(profileId)) {
+      return true;
+    }
+
     const status = await this.getStatus(profileId);
     if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
 
-    const { kek, passkeyId } = await this.derivePasskeyKek(profileId);
+    // Use dual-salt derivation (account + profileId)
+    const { kek, altKek, passkeyId } = await this.derivePasskeyKek(profileId);
 
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
-    if (!targetPasskeyId) {
-      throw new Error("No wrapped key found for this passkey. Please unlock using your Recovery Key.");
-    }
-
     let res = await fetch(
-      `/api/profiles/${profileId}/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`
+      `/api/profiles/${profileId}/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
     );
     if (!res.ok) {
-      res = await fetch(`/api/account/e2ee/wrapped-key?passkey_id=${targetPasskeyId}`);
+      res = await fetch(
+        `/api/account/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
+      );
     }
     if (!res.ok) {
       throw new Error(`Failed to fetch wrapped key: ${await res.text()}`);
     }
 
     const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
+    const ciphertextBuf = fromBase64(encryptedSk);
+    const ivBuf = fromBase64(iv);
 
-    // Unwrap SK
-    const kekKey = await crypto.subtle.importKey(
-      "raw",
-      kek as BufferSource,
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-
-    const decryptedBuf = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: fromBase64(iv) as BufferSource },
-      kekKey,
-      fromBase64(encryptedSk) as BufferSource
-    );
+    // Unwrap SK: Try primary KEK (account), then altKek (profile)
+    let decryptedBuf: ArrayBuffer | null = null;
+    try {
+      const kekKey = await crypto.subtle.importKey(
+        "raw",
+        kek as BufferSource,
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"]
+      );
+      decryptedBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: ivBuf as BufferSource },
+        kekKey,
+        ciphertextBuf as BufferSource
+      );
+    } catch {
+      if (altKek) {
+        try {
+          const altKekKey = await crypto.subtle.importKey(
+            "raw",
+            altKek as BufferSource,
+            { name: "AES-GCM" },
+            false,
+            ["decrypt"]
+          );
+          decryptedBuf = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: ivBuf as BufferSource },
+            altKekKey,
+            ciphertextBuf as BufferSource
+          );
+        } catch {}
+      }
+      if (!decryptedBuf) {
+        throw new Error("Failed to decrypt private key with this Passkey. Please unlock using your Recovery Key.");
+      }
+    }
 
     const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
     this.setPrivateKey(profileId, privateKeyObj);
@@ -759,14 +909,7 @@ class E2eeService {
     if (!res.ok) {
       throw new Error(`Failed to disable E2EE: ${await res.text()}`);
     }
-    this.unlockedKeys.clear();
-    this.dekCache.clear();
-    const toRemove: string[] = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const k = sessionStorage.key(i);
-      if (k?.startsWith("obex_e2ee_sk_")) toRemove.push(k);
-    }
-    toRemove.forEach((k) => sessionStorage.removeItem(k));
+    this.clearStorage();
     return true;
   }
 
@@ -783,6 +926,7 @@ class E2eeService {
     this.unlockedKeys.delete(profileId);
     this.dekCache.clear();
     sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
+    localStorage.removeItem(`obex_e2ee_sk_${profileId}`);
     return true;
   }
 

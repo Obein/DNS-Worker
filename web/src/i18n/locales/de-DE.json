@@ -33,7 +33,19 @@
     "importSuccess": "Profil erfolgreich importiert",
     "importError": "Profilimport fehlgeschlagen. Bitte überprüfen Sie das Format und versuchen Sie es später noch einmal",
     "save": "Speichern",
-    "saveSuccess": "Einstellungen gespeichert"
+    "saveSuccess": "Einstellungen gespeichert",
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "continue": "Fortfahren",
+    "back": "Zurück",
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "copyKey": "Neuen Wiederherstellungsschlüssel kopieren",
+    "confirm": "Bestätigen",
+    "delete": "Löschen",
+    "rename": "Umbenennen",
+    "disable": "Deaktivieren",
+    "confirmDisable": "Deaktivierung bestätigen"
   },
   "nav": {
     "setup": "Installation",
@@ -175,7 +187,12 @@
     "jwtSecretPreset": "Standard-JWT_SECRET erkannt. Bitte ändern Sie das voreingestellte JWT_SECRET in den Umgebungsvariablen vor der Bereitstellung.",
     "jwtSecretMissing": "JWT_SECRET fehlt. Bitte konfigurieren Sie einen sicheren Schlüssel in den Umgebungsvariablen vor der Bereitstellung.",
     "jwtSecretInvalid": "Ungültiges JWT_SECRET-Format, bitte überprüfen Sie die Konfiguration.",
-    "keepLoggedIn": "{{days}} Tage lang angemeldet bleiben"
+    "keepLoggedIn": "{{days}} Tage lang angemeldet bleiben",
+    "orUseOtherMfa": "oder eine andere Methode verwenden",
+    "totpUseRecovery": "Wiederherstellungsschlüssel verwenden",
+    "totpUseApp": "Authenticator-App verwenden",
+    "mfaMethodTotp": "Authenticator-App (TOTP)",
+    "invalidTotp": "Ungültiger TOTP-Bestätigungscode."
   },
   "setup": {
     "title": "Installationsanleitung",
@@ -301,7 +318,12 @@
     "updateSuccess": "Regel erfolgreich aktualisiert",
     "updateFailed": "Regel konnte nicht aktualisiert werden",
     "tableCreatedAt": "Hinzugefügt am",
-    "clickToSort": "Klicken zum Sortieren"
+    "clickToSort": "Klicken zum Sortieren",
+    "editRule": "Regel bearbeiten",
+    "cancel": "Abbrechen",
+    "saveChanges": "Änderungen speichern",
+    "delete": "Löschen",
+    "close": "Schließen"
   },
   "analytics": {
     "customRange": "Benutzerdefinierter Zeitraum",
@@ -329,7 +351,8 @@
     "topIsps": "Haupt-ISPs",
     "pressToShowMore": "Klicken, um mehr anzuzeigen",
     "maximize": "Vergrößern",
-    "minimize": "Verkleinern"
+    "minimize": "Verkleinern",
+    "loading": "Laden..."
   },
   "logs": {
     "title": "Abfrageprotokolle",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "Clientseitig verschlüsselt",
     "encryptedLocked": "Ja (Gesperrt)",
     "encryptedDecrypted": "Ja (Lokal entschlüsselt)",
-    "notEncrypted": "Nein"
+    "notEncrypted": "Nein",
+    "encryptedRecord": "[Verschlüsselter Eintrag]",
+    "exportSuccess": "Protokolle erfolgreich exportiert",
+    "exportError": "Fehler beim Exportieren der Protokolle"
   },
   "filtering": {
     "title": "Externe Blockierlisten",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "Filter sind probabilistisch, ein kleiner Teil der Treffer ist daher ein Fehlalarm. Eine Ausnahme deckt auch alle Subdomains ab.",
     "checkAllowAction": "Trotzdem zulassen",
     "checkAllowed": "Ausnahme hinzugefügt - diese Domain wird jetzt aufgelöst",
-    "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt"
+    "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt",
+    "listDetails": "Listen-Details"
   },
   "settings": {
     "title": "Profileinstellungen",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "Möchten Sie E2EE wirklich deaktivieren? Zukünftige Protokolle werden im Klartext gespeichert.",
     "e2eeUnlockPrompt": "Dieses Profil ist Ende-zu-Ende verschlüsselt. Entsperren Sie es mit Ihrem Passkey.",
     "e2eeUnlockNow": "Protokolle entsperren",
-    "e2eeUnlockRecovery": "Mit Wiederherstellungsschlüssel entsperren"
+    "e2eeUnlockRecovery": "Mit Wiederherstellungsschlüssel entsperren",
+    "securityTitle": "Sicherheit & Zugriff",
+    "rotateKeyTitle": "Zugriffs-URL",
+    "rotateKeyDesc": "Generiert eine neue Zugriffs-URL für dieses Profil. Alle Geräte, die die alte URL verwenden, verlieren sofort die Verbindung zu DNS Worker und müssen mit der neuen URL neu konfiguriert werden.",
+    "rotateKeyBtn": "URL rotieren",
+    "copied": "In die Zwischenablage kopiert",
+    "nameUpdateFailed": "Aktualisierung fehlgeschlagen"
   },
   "account": {
     "title": "Kontoeinstellungen",
@@ -633,7 +666,10 @@
       "enableSwitch": "Ende-zu-Ende-Verschlüsselung für Abfrageprotokolle aktivieren",
       "enableSwitchDesc": "Verschlüsselt Domainnamen, Client-IPs, Antwortdatensätze und Upstream-Latenzen am Edge vor dem Speichern in der Cloud.",
       "trustBoundaryTitle": "Sicherheits- und Vertrauensgrenzenhinweis",
-      "trustBoundaryDesc": "Der gesamte DNS-Abfrageverkehr läuft während der Auflösung zwangsläufig über den Hosting-Server (Cloudflare Workers Edge-Knoten oder Server-Runtime), wo Abfragen im Speicher verarbeitet und anschließend verschlüsselt gespeichert werden. Diese Funktion schützt ruhende Daten in der Cloud-Datenbank (D1 / Persistenzspeicher) vor Datenlecks; sie verbirgt den aktiven Netzwerkverkehr nicht vor dem verarbeitenden Hosting-Server."
+      "trustBoundaryDesc": "Der gesamte DNS-Abfrageverkehr läuft während der Auflösung zwangsläufig über den Hosting-Server (Cloudflare Workers Edge-Knoten oder Server-Runtime), wo Abfragen im Speicher verarbeitet und anschließend verschlüsselt gespeichert werden. Diese Funktion schützt ruhende Daten in der Cloud-Datenbank (D1 / Persistenzspeicher) vor Datenlecks; sie verbirgt den aktiven Netzwerkverkehr nicht vor dem verarbeitenden Hosting-Server.",
+      "initFailed": "Initialisierung der Ende-zu-Ende-Verschlüsselung fehlgeschlagen",
+      "lockDevice": "Dieses Gerät sperren",
+      "lockSuccess": "Gesperrt, privater Schlüssel wurde aus dem lokalen Speicher gelöscht"
     },
     "jwtSecretWarningTitle": "Sicherheitshinweis: Schwaches JWT-Secret",
     "jwtSecretWarningDesc": "Das aktuelle JWT_SECRET ist kürzer als 32 Zeichen, was potenzielle Sicherheitsrisiken birgt. Bitte konfigurieren Sie die Umgebungsvariable KEK_v1, bevor Sie JWT_SECRET rotieren, um sicherzustellen, dass vorhandene Umschlag-verschlüsselte TOTP- und Wiederherstellungsschlüssel entschlüsselbar bleiben.",
@@ -701,7 +737,8 @@
       "copyKeys": "Alle Schlüssel kopieren",
       "copied": "Kopiert!",
       "done": "Fertig, ich habe die Schlüssel gespeichert",
-      "activeDesc": "Die Authentifikator-App (TOTP) ist aktiv und generiert 6-stellige Bestätigungscodes."
+      "activeDesc": "Die Authentifikator-App (TOTP) ist aktiv und generiert 6-stellige Bestätigungscodes.",
+      "invalidCode": "Bitte geben Sie einen 6-stelligen Code ein"
     },
     "activity": {
       "title": "Aktivitätsprotokoll des Kontos",
@@ -735,7 +772,8 @@
       "passkeyDeleted": "Passkey gelöscht",
       "passkeyVerifySuccess": "Passkey verifiziert",
       "passkeyVerifyFail": "Passkey-Verifizierung fehlgeschlagen",
-      "recoveryKeyRotated": "Wiederherstellungsschlüssel erneuert"
+      "recoveryKeyRotated": "Wiederherstellungsschlüssel erneuert",
+      "device": "Gerät"
     },
     "sessions": {
       "title": "Aktive Sitzungen",
@@ -798,7 +836,10 @@
       "desc": "Passkeys und Authentifikator-Apps (TOTP) dienen als MFA-Methoden. Die Konfiguration mindestens eines Faktors schützt Ihr Konto und ermöglicht passwortlose Anmeldung.",
       "passwordlessTitle": "Passwortlose Anmeldung",
       "passwordlessDesc": "Bei Aktivierung wird die Passworteingabe übersprungen und Ihre Identität direkt per Passkey oder TOTP geprüft.",
-      "unconfiguredHint": "Noch keine MFA konfiguriert. Richten Sie unten einen Passkey oder eine Authentifikator-App ein."
+      "unconfiguredHint": "Noch keine MFA konfiguriert. Richten Sie unten einen Passkey oder eine Authentifikator-App ein.",
+      "password": "Passwort",
+      "passkey": "Passkey",
+      "totp": "TOTP"
     },
     "recoveryKey": {
       "title": "Notfall-Wiederherstellungsschlüssel",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "Wiederherstellungsschlüssel automatisch erneuert",
       "autoRotatedNotice": "Gemäß der Einmalverwendungsregel wurde Ihr bisheriger Schlüssel ungültig und ein neuer 30-stelliger Schlüssel generiert. Bitte sofort kopieren und sicher aufbewahren!",
       "savedAndClose": "Ich habe ihn gesichert und fortfahren",
-      "savedAndContinue": "Ich habe ihn gesichert und weiter zum Dashboard"
+      "savedAndContinue": "Ich habe ihn gesichert und weiter zum Dashboard",
+      "descOneWay": "Der Notfall-Wiederherstellungsschlüssel ist der einzige Nachweis zur Wiederherstellung des Kontozugriffs und zur Entschlüsselung von E2EE-Daten bei Verlust aller Passkeys oder Authentifikatoren. Zur Gewährleistung von Zero-Knowledge-Sicherheit wird er als irreversibler Einweghash gespeichert und kann im Web nicht im Klartext eingesehen werden. Eine Rotation ist nur mit dem bisherigen Schlüssel oder einem Passkey möglich. Nach der Verwendung wird er automatisch rotiert.",
+      "keyRequired": "Wiederherstellungsschlüssel ist erforderlich",
+      "verifyBtn": "Wiederherstellungsschlüssel",
+      "verifyPromptLabel": "Bisheriger Wiederherstellungsschlüssel"
     },
     "verifyIdentity": "Sicherheitsbestätigung",
     "verifyIdentityDesc": "Um Ihr Konto zu schützen, bestätigen Sie bitte Ihre Identität.",
     "usePasskeyInstead": "Mit Passkey bestätigen",
     "changePasswordWithPasskey": "Mit Passkey bestätigen & ändern",
-    "enableRegistration": "Benutzerregistrierung aktivieren"
+    "enableRegistration": "Benutzerregistrierung aktivieren",
+    "timezone": "Zeitzone",
+    "timezoneAuto": "Automatisch (Browser-Standard)",
+    "totpCode": "Authenticator-Code"
   },
   "intro": {
     "item1Title": "Obex Schutz-DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "Sicherer JWT_SECRET-Generator",
     "jwtGeneratorDesc": "Verwenden Sie diesen kryptografisch sicheren Schlüsselgenerator, um ein zufälliges 64-stelliges alphanumerisches Geheimnis für env.JWT_SECRET zu generieren.",
     "regenerate": "Neu generieren"
+  },
+  "meta": {
+    "defaultDesc": "Sichere, schnelle und anpassbare DNS-Auflösung für alle Ihre Geräte. Basiert auf Cloudflare Workers, quelloffen und datenschutzorientiert.",
+    "setupDesc": "Konfigurieren Sie Ihre Geräte für die Verwendung von DNS Worker."
   }
 }
