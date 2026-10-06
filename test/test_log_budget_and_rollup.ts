@@ -187,6 +187,9 @@ async function runTests() {
               return { results: [{ id: "p1", settings: "{}" }] };
             }
             return { results: [] };
+          },
+          async run() {
+            return { meta: { changes: 0 } };
           }
         });
         return createObj();
@@ -251,6 +254,9 @@ async function runTests() {
               };
             }
             return { results: [] };
+          },
+          async run() {
+            return { meta: { changes: 0 } };
           }
         });
         return createObj();
