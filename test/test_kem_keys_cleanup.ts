@@ -80,10 +80,11 @@ async function runTests(): Promise<void> {
       kem_key_id: string | null;
     }
 
+    const currentNowSec = Math.floor(Date.now() / 1000);
     let kemKeysTable: MockKemKey[] = [
-      { id: "key_1", profile_id: "prof_a", kem_ct: "ct1", created_at: nowSec - 86400, expires_at: nowSec - 86400 + 3600 },
-      { id: "key_2", profile_id: "prof_a", kem_ct: "ct2", created_at: nowSec - 18000, expires_at: nowSec - 18000 + 3600 },
-      { id: "key_3", profile_id: "prof_b", kem_ct: "ct3", created_at: nowSec - 600, expires_at: nowSec - 600 + 3600 },
+      { id: "key_1", profile_id: "prof_a", kem_ct: "ct1", created_at: currentNowSec - 86400, expires_at: currentNowSec - 86400 + 3600 },
+      { id: "key_2", profile_id: "prof_a", kem_ct: "ct2", created_at: currentNowSec - 18000, expires_at: currentNowSec - 18000 + 3600 },
+      { id: "key_3", profile_id: "prof_b", kem_ct: "ct3", created_at: currentNowSec - 600, expires_at: currentNowSec - 600 + 3600 },
     ];
 
     const logsTable: MockLog[] = [
@@ -121,13 +122,10 @@ async function runTests(): Promise<void> {
       }
     };
 
-    // Run cleanup with safety window = 3600s
-    const cutoff = nowSec - oneHour;
+    // Run cleanup through KemKeyModel with safety window = 3600s
     const kemModel = new KemKeyModel(mockDb);
-
-    // Call simulated run
-    const result = await mockDb.prepare("DELETE FROM kem_keys ...").bind(cutoff, 1000).run();
-    assert.strictEqual(result.meta.changes, 1, "Exactly 1 orphan key (key_2) should be deleted");
+    const deletedCount = await kemModel.cleanupOrphans(oneHour, 1000);
+    assert.strictEqual(deletedCount, 1, "Exactly 1 orphan key (key_2) should be deleted");
 
     const remainingIds = kemKeysTable.map((k) => k.id);
     assert(remainingIds.includes("key_1"), "key_1 must be preserved because logs depend on it");
