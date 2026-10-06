@@ -75,10 +75,12 @@ export class LogDestinationAnalytics {
         AND timestamp >= ? 
         AND timestamp <= ? 
         AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
+        AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) IS NOT NULL
+        AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) != ''
     `;
     const params: (string | number)[] = [profileId, since, until];
     if (countryCode) {
-      queryStr += " AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) = ?";
+      queryStr += " AND UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?";
       params.push(countryCode.toUpperCase());
     }
     if (accessPointId) {

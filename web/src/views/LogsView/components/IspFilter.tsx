@@ -12,6 +12,7 @@ import {
 import { Network } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getProfileAnalytics } from "../../../services";
+import { localDb } from "../../../services/localDb";
 import type { TimeRange } from "../types";
 
 export interface IspFilterProps {
@@ -51,14 +52,26 @@ export const IspFilter: React.FC<IspFilterProps> = ({
   const fetchIsps = async () => {
     setLoading(true);
     try {
+      const nowTs = Math.floor(Date.now() / 1000);
+      let since = nowTs - 86400;
+      let until = nowTs;
       const params = new URLSearchParams();
+
       if (range === "custom" && customRange.start && customRange.end) {
-        const s = Math.floor(new Date(customRange.start).getTime() / 1000);
-        const e = Math.floor(new Date(customRange.end).getTime() / 1000);
+        since = Math.floor(new Date(customRange.start).getTime() / 1000);
+        until = Math.floor(new Date(customRange.end).getTime() / 1000);
         params.set("range", "custom");
-        params.set("start", String(s));
-        params.set("end", String(e));
+        params.set("start", String(since));
+        params.set("end", String(until));
       } else {
+        switch (range) {
+          case "10m": since = nowTs - 600; break;
+          case "1h": since = nowTs - 3600; break;
+          case "24h": since = nowTs - 86400; break;
+          case "7d": since = nowTs - 604800; break;
+          case "30d": since = nowTs - 2592000; break;
+          default: since = nowTs - 86400; break;
+        }
         params.set("range", range);
       }
 
@@ -70,6 +83,26 @@ export const IspFilter: React.FC<IspFilterProps> = ({
         params.set("access_point_id", accessPointIdFilter);
       }
 
+      // 1. Try local SQLite query first (for client-decrypted E2EE logs in OPFS)
+      try {
+        const localData = await localDb.queryISPs({
+          profileId,
+          countryCode: destCountryFilter || undefined,
+          since,
+          until,
+          accessPointId: accessPointIdFilter || undefined,
+        });
+        if (localData && localData.length > 0) {
+          setIsps(localData);
+          lastFetchedKeyRef.current = currentParamKey;
+          setLoading(false);
+          return;
+        }
+      } catch (localErr) {
+        console.warn("[IspFilter] Local SQLite query failed, falling back to server:", localErr);
+      }
+
+      // 2. Fallback to server API
       const data = await getProfileAnalytics(profileId, "isps", params.toString());
       if (Array.isArray(data)) {
         setIsps(data);

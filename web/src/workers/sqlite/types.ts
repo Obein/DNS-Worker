@@ -56,6 +56,15 @@ export interface WorkerAnalyticsParams {
   accessPointId?: string;
 }
 
+export interface WorkerQueryParamsISPs {
+  profileId: string;
+  countryCode?: string;
+  since: number;
+  until: number;
+  accessPointId?: string;
+  limit?: number;
+}
+
 /**
  * Incoming message request envelope from the main thread.
  */
@@ -69,6 +78,7 @@ export interface WorkerMessageRequest {
     | 'GET_WATERMARK'
     | 'QUERY_LOGS'
     | 'QUERY_ANALYTICS'
+    | 'QUERY_ISPS'
     | 'CLEANUP'
     | 'GET_STORAGE_INFO'
     | 'CLEAR_PROFILE';
