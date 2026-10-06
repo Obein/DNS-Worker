@@ -187,7 +187,7 @@ export async function flushLogBatch(env: Env): Promise<void> {
           // Retrieve current DEK, or ensure initial provisioning if isolate is fresh
           let activeDek = getCurrentDek(pid);
           if (!activeDek) {
-            activeDek = await ensureActiveDek(env.DB, pid, pubKey.pqc_pk, env);
+            activeDek = await ensureActiveDek(env.DB, pid, pubKey.pqc_pk);
           }
           if (activeDek) {
             dekMap.set(pid, activeDek);
