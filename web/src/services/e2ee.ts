@@ -33,7 +33,7 @@ export interface CompactEncryptedLogPayload {
 }
 
 export type UnlockedPrivateKey =
-  | { alg: "P256-MLKEM768"; seedBase64: string }
+  | { alg: "P256-MLKEM768"; seedBase64: string; legacyKey?: JsonWebKey }
   | JsonWebKey;
 
 export interface SensitiveLogData {
@@ -132,7 +132,9 @@ class E2eeService {
     try {
       const res = await fetch("/api/account/e2ee/status");
       if (res.ok) {
-        return await res.json();
+        const data = (await res.json()) as ProfileE2eeStatus;
+        this.validateCachedKeyAgainstStatus(data);
+        return data;
       }
     } catch {
       // Fallback
@@ -144,7 +146,9 @@ class E2eeService {
       if (profilesRes.ok) {
         const profiles = await profilesRes.json();
         if (profiles && profiles.length > 0) {
-          return await this.getStatus(profiles[0].id);
+          const profileStatus = await this.getStatus(profiles[0].id);
+          this.validateCachedKeyAgainstStatus(profileStatus);
+          return profileStatus;
         }
       }
     } catch (err) {
@@ -169,21 +173,46 @@ class E2eeService {
     if (!res.ok) {
       throw new Error(`Failed to fetch E2EE status: ${await res.text()}`);
     }
-    return res.json();
+    const data = (await res.json()) as ProfileE2eeStatus;
+    this.validateCachedKeyAgainstStatus(data);
+    return data;
+  }
+
+  /**
+   * Checks whether an unlocked private key is structurally compatible with the server's active public key.
+   */
+  isKeyCompatibleWithServer(sk: UnlockedPrivateKey, serverPublicKeyJson?: string | null): boolean {
+    if (!serverPublicKeyJson) return true;
+    try {
+      const parsed = typeof serverPublicKeyJson === "string" ? JSON.parse(serverPublicKeyJson) : serverPublicKeyJson;
+      const serverIsPqc = parsed.alg === "P256-MLKEM768" || Boolean(parsed.pqc_pk);
+      const keyIsPqc = "seedBase64" in sk || (sk as any).alg === "P256-MLKEM768";
+      if (serverIsPqc && !keyIsPqc) {
+        return false;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
+  /**
+   * Validates cached private key against server public key and cleans up stale keys if incompatible.
+   */
+  private validateCachedKeyAgainstStatus(status: ProfileE2eeStatus): void {
+    if (!status.publicKey) return;
+    const cachedKey = this.getPrivateKey("account");
+    if (cachedKey && !this.isKeyCompatibleWithServer(cachedKey, status.publicKey)) {
+      console.warn("[E2EE] Cached private key does not match server algorithm. Purging stale key.");
+      this.clearStorage();
+    }
   }
 
   /**
    * Checks whether the current session has unlocked the private key for the account.
    */
   isUnlocked(): boolean {
-    if (this.unlockedKeys.size > 0) return true;
-    for (let i = 0; i < sessionStorage.length; i++) {
-      if (sessionStorage.key(i)?.startsWith("obex_e2ee_sk_")) return true;
-    }
-    for (let i = 0; i < localStorage.length; i++) {
-      if (localStorage.key(i)?.startsWith("obex_e2ee_sk_")) return true;
-    }
-    return false;
+    return this.getPrivateKey("account") !== null;
   }
 
   /**
@@ -194,76 +223,87 @@ class E2eeService {
   }
 
   /**
+   * Purges legacy profile-specific storage keys (e.g. obex_e2ee_sk_<profileId>)
+   * while keeping the authoritative account key obex_e2ee_sk_account.
+   */
+  private purgeProfileStorageKeys(): void {
+    const sessionKeys: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k?.startsWith("obex_e2ee_sk_") && k !== "obex_e2ee_sk_account") {
+        sessionKeys.push(k);
+      }
+    }
+    sessionKeys.forEach((k) => sessionStorage.removeItem(k));
+
+    const localKeys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith("obex_e2ee_sk_") && k !== "obex_e2ee_sk_account") {
+        localKeys.push(k);
+      }
+    }
+    localKeys.forEach((k) => localStorage.removeItem(k));
+  }
+
+  /**
    * Gets the unlocked private key from memory, session storage, or local storage.
    */
-  private getPrivateKey(profileId: string): UnlockedPrivateKey | null {
-    if (this.unlockedKeys.has(profileId)) {
+  private getPrivateKey(profileId?: string): UnlockedPrivateKey | null {
+    // 1. Account key in memory is authoritative
+    if (this.unlockedKeys.has("account")) {
+      return this.unlockedKeys.get("account")!;
+    }
+    if (profileId && this.unlockedKeys.has(profileId)) {
       return this.unlockedKeys.get(profileId)!;
     }
-    if (this.unlockedKeys.has("account")) {
-      const key = this.unlockedKeys.get("account")!;
-      this.unlockedKeys.set(profileId, key);
-      return key;
-    }
 
-    // 1. Check sessionStorage
-    const storedSession =
-      sessionStorage.getItem(`obex_e2ee_sk_${profileId}`) ||
-      sessionStorage.getItem("obex_e2ee_sk_account");
-    if (storedSession) {
+    // 2. Check sessionStorage account key
+    const sessionAccount = sessionStorage.getItem("obex_e2ee_sk_account");
+    if (sessionAccount) {
       try {
-        const key = JSON.parse(storedSession) as UnlockedPrivateKey;
-        this.unlockedKeys.set(profileId, key);
+        const key = JSON.parse(sessionAccount) as UnlockedPrivateKey;
         this.unlockedKeys.set("account", key);
+        if (profileId) this.unlockedKeys.set(profileId, key);
         return key;
       } catch {
-        sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
         sessionStorage.removeItem("obex_e2ee_sk_account");
       }
     }
 
-    // 2. Check localStorage (persistent across browser reloads/tabs)
-    const storedLocal =
-      localStorage.getItem(`obex_e2ee_sk_${profileId}`) ||
-      localStorage.getItem("obex_e2ee_sk_account");
-    if (storedLocal) {
+    // 3. Check localStorage account key
+    const localAccount = localStorage.getItem("obex_e2ee_sk_account");
+    if (localAccount) {
       try {
-        const key = JSON.parse(storedLocal) as UnlockedPrivateKey;
-        this.unlockedKeys.set(profileId, key);
+        const key = JSON.parse(localAccount) as UnlockedPrivateKey;
         this.unlockedKeys.set("account", key);
+        if (profileId) this.unlockedKeys.set(profileId, key);
         return key;
       } catch {
-        localStorage.removeItem(`obex_e2ee_sk_${profileId}`);
         localStorage.removeItem("obex_e2ee_sk_account");
       }
     }
 
-    // 3. Fallback: check any obex_e2ee_sk_ key in sessionStorage
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (key?.startsWith("obex_e2ee_sk_")) {
+    // 4. Legacy profile key migration (if obex_e2ee_sk_account is missing but profile key exists)
+    if (profileId) {
+      const legacySession = sessionStorage.getItem(`obex_e2ee_sk_${profileId}`);
+      if (legacySession) {
         try {
-          const parsed = JSON.parse(sessionStorage.getItem(key) || "") as UnlockedPrivateKey;
-          this.unlockedKeys.set(profileId, parsed);
-          this.unlockedKeys.set("account", parsed);
-          return parsed;
+          const key = JSON.parse(legacySession) as UnlockedPrivateKey;
+          this.setPrivateKey("account", key);
+          return key;
         } catch {
-          // ignore
+          sessionStorage.removeItem(`obex_e2ee_sk_${profileId}`);
         }
       }
-    }
-
-    // 4. Fallback: check any obex_e2ee_sk_ key in localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith("obex_e2ee_sk_")) {
+      const legacyLocal = localStorage.getItem(`obex_e2ee_sk_${profileId}`);
+      if (legacyLocal) {
         try {
-          const parsed = JSON.parse(localStorage.getItem(key) || "") as UnlockedPrivateKey;
-          this.unlockedKeys.set(profileId, parsed);
-          this.unlockedKeys.set("account", parsed);
-          return parsed;
+          const key = JSON.parse(legacyLocal) as UnlockedPrivateKey;
+          this.setPrivateKey("account", key);
+          return key;
         } catch {
-          // ignore
+          localStorage.removeItem(`obex_e2ee_sk_${profileId}`);
         }
       }
     }
@@ -275,13 +315,16 @@ class E2eeService {
    * Stores the unlocked private key in memory, session storage, and local storage.
    */
   private setPrivateKey(profileOrAccountKey: string, sk: UnlockedPrivateKey): void {
-    this.unlockedKeys.set(profileOrAccountKey, sk);
+    this.unlockedKeys.clear();
+    this.dekCache.clear();
     this.unlockedKeys.set("account", sk);
+    if (profileOrAccountKey && profileOrAccountKey !== "account") {
+      this.unlockedKeys.set(profileOrAccountKey, sk);
+    }
     try {
+      this.purgeProfileStorageKeys();
       const serialized = JSON.stringify(sk);
-      sessionStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, serialized);
       sessionStorage.setItem("obex_e2ee_sk_account", serialized);
-      localStorage.setItem(`obex_e2ee_sk_${profileOrAccountKey}`, serialized);
       localStorage.setItem("obex_e2ee_sk_account", serialized);
     } catch (e) {
       console.warn("[E2EE] Could not persist key to storage:", e);
@@ -697,6 +740,15 @@ class E2eeService {
     const { kek, passkeyId } = await this.derivePasskeyKek("account");
     const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
 
+    // Preserve existing legacy key if present so historical Gen 1 logs remain decryptable
+    const currentKey = this.getPrivateKey("account");
+    let legacyKey: JsonWebKey | undefined = undefined;
+    if (currentKey && "kty" in currentKey) {
+      legacyKey = currentKey as JsonWebKey;
+    } else if (currentKey && "legacyKey" in currentKey) {
+      legacyKey = (currentKey as any).legacyKey;
+    }
+
     // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
     const pqcKeys = ml_kem768_p256.keygen();
     const publicKeyPayload = {
@@ -706,6 +758,7 @@ class E2eeService {
     const privateKeyObj: UnlockedPrivateKey = {
       alg: "P256-MLKEM768",
       seedBase64: toBase64(pqcKeys.secretKey),
+      ...(legacyKey ? { legacyKey } : {}),
     };
 
     // 2. Wrap SK with Passkey KEK
@@ -812,10 +865,14 @@ class E2eeService {
    * Unlocks the account's log private key using the device's Passkey with a single prompt.
    */
   async unlockUser(): Promise<boolean> {
-    if (this.isUnlocked()) return true;
-
     const status = await this.getUserStatus();
     if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
+
+    // Only skip if already unlocked with a key compatible with the server's active algorithm
+    const cachedKey = this.getPrivateKey("account");
+    if (cachedKey && this.isKeyCompatibleWithServer(cachedKey, status.publicKey)) {
+      return true;
+    }
 
     const { kek, altKek, passkeyId } = await this.derivePasskeyKek("account");
 
@@ -889,12 +946,14 @@ class E2eeService {
    * Unlocks the profile's log private key using the device's Passkey.
    */
   async unlockProfile(profileId: string): Promise<boolean> {
-    if (this.isProfileUnlocked(profileId)) {
-      return true;
-    }
-
     const status = await this.getStatus(profileId);
     if (!status.hasKeys && !status.enabled && status.wrappedPasskeys.length === 0) return false;
+
+    // Only skip if already unlocked with a key compatible with the server's active algorithm
+    const cachedKey = this.getPrivateKey(profileId);
+    if (cachedKey && this.isKeyCompatibleWithServer(cachedKey, status.publicKey)) {
+      return true;
+    }
 
     // Use dual-salt derivation (account + profileId)
     const { kek, altKek, passkeyId } = await this.derivePasskeyKek(profileId);
@@ -1066,7 +1125,13 @@ class E2eeService {
       if (version === 1) {
         // Generation 1: Legacy P-256 ECDH
         const payload: EncryptedPayload = JSON.parse(log.encrypted_payload);
-        const privKeyJwk = ("kty" in privKey ? privKey : null) as JsonWebKey | null;
+        const privKeyJwk = (
+          "kty" in privKey
+            ? privKey
+            : "legacyKey" in privKey && privKey.legacyKey
+            ? privKey.legacyKey
+            : null
+        ) as JsonWebKey | null;
         if (!privKeyJwk) {
           return {
             ...log,
