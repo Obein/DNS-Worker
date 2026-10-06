@@ -401,7 +401,7 @@
     "noResult": "結果なし",
     "networkDetails": "ネットワーク詳細",
     "clientSource": "クライアント (送信元)",
-    "destination": "宛先 (解決アドレス)",
+    "destination": "宛先",
     "quickActions": "クイック操作",
     "actionAllow": "許可する",
     "actionBlock": "ブロックする",

@@ -401,7 +401,7 @@
     "noResult": "無結果",
     "networkDetails": "網路詳情",
     "clientSource": "客戶端 (源)",
-    "destination": "目的地 (解析地址)",
+    "destination": "目的地",
     "quickActions": "快捷操作",
     "actionAllow": "放行",
     "actionBlock": "攔截",

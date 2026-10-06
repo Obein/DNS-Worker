@@ -401,7 +401,7 @@
     "noResult": "Sin resultados",
     "networkDetails": "Detalles de red",
     "clientSource": "Cliente (Origen)",
-    "destination": "Destino (Dirección resuelta)",
+    "destination": "Destino",
     "quickActions": "Acciones rápidas",
     "actionAllow": "Permitir",
     "actionBlock": "Bloquear",
