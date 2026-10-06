@@ -198,11 +198,11 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
 
           <Divider className="my-4" />
 
-          <div className="flex justify-between items-center mb-3">
-            <span className="font-semibold text-sm">{t("auth.verifyIdentity", "Verify Identity")}</span>
+          <div className="mb-3 space-y-2">
+            <span className="font-semibold text-sm block">{t("auth.verifyIdentity", "Verify Identity")}</span>
             {(hasPasskey || hasTotp) && (
-              <div className="flex items-center isolate" style={{ isolation: "isolate" }}>
-                <ButtonGroup variant="minimal" style={{ isolation: "isolate" }}>
+              <div className="w-full bg-gray-100/70 dark:bg-gray-800/70 p-1 rounded-lg isolate" style={{ isolation: "isolate" }}>
+                <ButtonGroup fill variant="minimal" style={{ isolation: "isolate" }}>
                   <Button
                     small
                     active={authMethod === "password"}
