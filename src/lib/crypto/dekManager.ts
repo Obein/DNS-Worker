@@ -1,11 +1,13 @@
 /**
  * @file dekManager.ts
- * @description Decoupled Post-Quantum DEK (Data Encryption Key) Lifecycle Manager.
- * Operates as an independent key producer: generates and rotates hourly hybrid KEM keys,
- * persists kem_keys to D1, and publishes active keys to the in-memory pool.
+ * @description Zero-Knowledge Post-Quantum DEK (Data Encryption Key) Lifecycle Manager.
+ * Operates as an independent key producer: generates and rotates hybrid KEM keys per isolate,
+ * persists kem_keys (containing ONLY client-decapsulatable ciphertext kem_ct) to D1,
+ * and maintains an active in-memory pool for the lifetime of the Worker isolate.
  *
- * NOTE: The log encryption pipeline (consumer) does NOT check expiration; it simply uses
- * whatever active key this manager provides.
+ * NOTE: The server NEVER persists the plaintext DEK or any server-decryptable wrapper.
+ * Once the isolate terminates, ephemeral shared secrets are destroyed from server memory,
+ * ensuring strict forward secrecy and zero-knowledge data-at-rest encryption.
  */
 
 import { D1Database } from "@cloudflare/workers-types";
@@ -27,8 +29,11 @@ export interface ActiveDek {
 /** 1 hour DEK lifetime in milliseconds */
 export const DEK_LIFETIME_MS = 3600 * 1000;
 
-/** In-memory pool of currently active DEKs per profile */
+/** In-memory pool of currently active DEKs per profile in this isolate */
 const activeDekMap = new Map<string, ActiveDek>();
+
+/** Mutex to deduplicate concurrent in-flight DEK provisionings per profile in this isolate */
+const inFlightDekPromises = new Map<string, Promise<ActiveDek>>();
 
 /**
  * Key Provider / Consumer Interface:
@@ -44,10 +49,13 @@ export function getCurrentDek(profileId: string): ActiveDek | null {
 
 /**
  * Key Producer Interface:
- * Ensures an active DEK is available for the profile.
- * If none exists or the existing key has exceeded its 1-hour rotation window,
- * generates a fresh post-quantum hybrid KEM key, writes to kem_keys in D1,
- * and publishes the new key to the active memory pool.
+ * Ensures an active DEK is available in this isolate for the profile.
+ * If none exists or the existing key has exceeded its rotation window,
+ * generates a fresh post-quantum hybrid KEM key, writes kem_ct to D1,
+ * and publishes the new key to the active in-memory pool.
+ *
+ * Uses inFlightDekPromises mutex to ensure parallel concurrent requests
+ * do not generate duplicate keys simultaneously.
  *
  * @param db D1 Database instance
  * @param profileId Profile identifier
@@ -67,12 +75,27 @@ export async function ensureActiveDek(
     return existing;
   }
 
-  return await rotateDek(db, profileId, pqcPublicKeyBase64);
+  // Deduplicate concurrent in-flight requests for the same profile
+  const inFlight = inFlightDekPromises.get(profileId);
+  if (inFlight) {
+    return await inFlight;
+  }
+
+  const promise = (async () => {
+    try {
+      return await rotateDek(db, profileId, pqcPublicKeyBase64);
+    } finally {
+      inFlightDekPromises.delete(profileId);
+    }
+  })();
+
+  inFlightDekPromises.set(profileId, promise);
+  return await promise;
 }
 
 /**
  * Key Producer Interface:
- * Generates a new DEK via P256-MLKEM768 encapsulation, persists to D1 kem_keys,
+ * Generates a new DEK via P256-MLKEM768 encapsulation, persists kem_ct to D1 kem_keys,
  * and atomically updates the in-memory active pool.
  *
  * @param db D1 Database instance
@@ -109,7 +132,6 @@ export async function rotateDek(
       .run();
   } catch (err) {
     console.error(`[DekManager] Failed to persist kem_key ${kemKeyId} to D1:`, err);
-    // Even if D1 insert throws (e.g. transient network), proceed with in-memory key
   }
 
   // 5. Publish to in-memory active pool
@@ -130,4 +152,5 @@ export async function rotateDek(
  */
 export function invalidateActiveDek(profileId: string): void {
   activeDekMap.delete(profileId);
+  inFlightDekPromises.delete(profileId);
 }
