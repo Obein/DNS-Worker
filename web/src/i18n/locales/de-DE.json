@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "Clientseitig verschlüsselt",
     "encryptedLocked": "Ja (Gesperrt)",
     "encryptedDecrypted": "Ja (Lokal entschlüsselt)",
+    "encryptedYes": "Ja",
     "notEncrypted": "Nein",
     "encryptedRecord": "[Verschlüsselter Eintrag]",
     "exportSuccess": "Protokolle erfolgreich exportiert",

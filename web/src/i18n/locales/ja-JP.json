@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "クライアント側暗号化",
     "encryptedLocked": "はい（未解除）",
     "encryptedDecrypted": "はい（ローカル復号済）",
+    "encryptedYes": "はい",
     "notEncrypted": "いいえ",
     "encryptedRecord": "[暗号化された記録]",
     "exportSuccess": "ログのエクスポートに成功しました",

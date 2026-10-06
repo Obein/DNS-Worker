@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "클라이언트 암호화 여부",
     "encryptedLocked": "예 (잠김)",
     "encryptedDecrypted": "예 (로컬 복호화됨)",
+    "encryptedYes": "예",
     "notEncrypted": "아니요",
     "encryptedRecord": "[암호화된 기록]",
     "exportSuccess": "로그 내보내기 성공",

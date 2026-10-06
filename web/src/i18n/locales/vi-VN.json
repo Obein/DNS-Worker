@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "Mã hóa phía máy khách",
     "encryptedLocked": "Có (Đã khóa)",
     "encryptedDecrypted": "Có (Đã giải mã cục bộ)",
+    "encryptedYes": "Có",
     "notEncrypted": "Không",
     "encryptedRecord": "[Bản ghi đã mã hóa]",
     "exportSuccess": "Xuất nhật ký thành công",

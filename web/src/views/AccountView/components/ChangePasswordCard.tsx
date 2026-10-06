@@ -142,15 +142,17 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
 
   return (
     <Card elevation={Elevation.ONE} className="isolate" style={{ isolation: "isolate" }}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
-          <Key size={20} className="text-orange-500" />
-          <H4 style={{ margin: 0 }}>{t("account.changePassword", "Change Password")}</H4>
-        </div>
+      {/* Row 1: Title */}
+      <div className="flex items-center gap-2 mb-4">
+        <Key size={20} className="text-orange-500" />
+        <H4 style={{ margin: 0 }}>{t("account.changePassword", "Change Password")}</H4>
+      </div>
 
-        {(hasPasskey || hasTotp) && (
-          <div className="flex items-center isolate" style={{ isolation: "isolate" }}>
-            <ButtonGroup variant="minimal" style={{ isolation: "isolate" }}>
+      {/* Row 2: Verification method selector */}
+      {(hasPasskey || hasTotp) && (
+        <div className="mb-4 isolate" style={{ isolation: "isolate" }}>
+          <div className="w-full bg-gray-100/70 dark:bg-gray-800/70 p-1 rounded-lg">
+            <ButtonGroup fill variant="minimal" style={{ isolation: "isolate" }}>
               <Button
                 small
                 active={authMethod === "password"}
@@ -190,8 +192,8 @@ export const ChangePasswordCard: React.FC<ChangePasswordCardProps> = ({ me, onRe
               )}
             </ButtonGroup>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {message && (
         <Callout intent={message.intent} className="mb-4">

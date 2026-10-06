@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "Client-Side Encrypted",
     "encryptedLocked": "Yes (Locked)",
     "encryptedDecrypted": "Yes (Decrypted Locally)",
+    "encryptedYes": "Yes",
     "notEncrypted": "No",
     "encryptedRecord": "[Encrypted Record]",
     "exportSuccess": "Logs exported successfully",

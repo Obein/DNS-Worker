@@ -19,10 +19,16 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   loading,
 }) => {
   const { t } = useTranslation();
-  const effectiveEncryptVersion = detailedLog?.encrypt_version ?? selectedLog.encrypt_version ?? 0;
+  const effectiveEncryptVersion =
+    detailedLog?.encrypt_version ??
+    selectedLog.encrypt_version ??
+    (detailedLog?.kem_key_id || selectedLog.kem_key_id ? 2 : 0);
   const isEncrypted =
     effectiveEncryptVersion > 0 ||
     Boolean(selectedLog.kem_key_id || selectedLog.encrypted_payload || detailedLog?.kem_key_id || detailedLog?.encrypted_payload);
+  const isPqc =
+    effectiveEncryptVersion === 2 ||
+    Boolean(selectedLog.kem_key_id || detailedLog?.kem_key_id);
   const isEncryptedLocked = isEncrypted && (!selectedLog.domain || selectedLog.domain === "[Encrypted]");
 
   return (
@@ -50,30 +56,6 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
               </div>
             }
             bold
-          />
-          <DetailItem
-            label={t("logs.detailIsClientEncrypted", "是否用户端加密")}
-            value={
-              isEncrypted ? (
-                <div className="flex items-center gap-1.5 justify-end">
-                  <Lock size={13} className={isEncryptedLocked ? "text-amber-500" : "text-emerald-500"} />
-                  <span
-                    className={clsx(
-                      "text-xs font-medium",
-                      isEncryptedLocked ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
-                    )}
-                  >
-                    {isEncryptedLocked
-                      ? t("logs.encryptedLocked", "是 (未解锁)")
-                      : t("logs.encryptedDecrypted", "是 (已本地解密)")}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-xs text-gray-400 dark:text-gray-500">
-                  {t("logs.notEncrypted", "否")}
-                </span>
-              )
-            }
           />
           <DetailItem label={t("logs.detailType")} value={selectedLog.record_type} />
           <DetailItem
@@ -146,6 +128,31 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             label={t("logs.detailECS")}
             value={detailedLog?.ecs || selectedLog.ecs || (loading ? <Spinner size={12} /> : "-")}
             italic
+          />
+          <DetailItem
+            label={t("logs.detailIsClientEncrypted", "是否用户端加密")}
+            value={
+              isEncrypted ? (
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Lock size={13} className={isEncryptedLocked ? "text-amber-500" : "text-emerald-500"} />
+                  <span
+                    className={clsx(
+                      "text-xs font-medium",
+                      isEncryptedLocked ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                    )}
+                  >
+                    {isEncryptedLocked
+                      ? t("logs.encryptedLocked", "是 (未解锁)")
+                      : t("logs.encryptedYes", "是")}
+                    {isPqc ? " (PQC)" : ""}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {t("logs.notEncrypted", "否")}
+                </span>
+              )
+            }
           />
         </div>
       </SectionCard>
