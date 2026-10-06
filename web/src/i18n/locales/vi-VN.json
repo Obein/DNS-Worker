@@ -33,7 +33,19 @@
     "importSuccess": "Nhập cấu hình thành công",
     "importError": "Nhập cấu hình thất bại, vui lòng đảm bảo định dạng đúng và thử lại sau",
     "save": "Lưu",
-    "saveSuccess": "Đã lưu cài đặt"
+    "saveSuccess": "Đã lưu cài đặt",
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "continue": "Tiếp tục",
+    "back": "Quay lại",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "copyKey": "Sao chép khóa khôi phục mới",
+    "confirm": "Xác nhận",
+    "delete": "Xóa",
+    "rename": "Đổi tên",
+    "disable": "Vô hiệu hóa",
+    "confirmDisable": "Xác nhận vô hiệu hóa"
   },
   "nav": {
     "setup": "Thiết lập",
@@ -175,7 +187,12 @@
     "jwtSecretPreset": "Đã phát hiện JWT_SECRET mặc định. Vui lòng sửa đổi JWT_SECRET đặt sẵn trong các biến môi trường trước khi triển khai.",
     "jwtSecretMissing": "Thiếu JWT_SECRET. Vui lòng định cấu hình khóa bảo mật trong các biến môi trường trước khi triển khai.",
     "jwtSecretInvalid": "Định dạng JWT_SECRET không hợp lệ, vui lòng kiểm tra cấu hình.",
-    "keepLoggedIn": "Duy trì đăng nhập trong {{days}} ngày"
+    "keepLoggedIn": "Duy trì đăng nhập trong {{days}} ngày",
+    "orUseOtherMfa": "hoặc sử dụng phương thức khác",
+    "totpUseRecovery": "Sử dụng khóa khôi phục",
+    "totpUseApp": "Sử dụng ứng dụng xác thực",
+    "mfaMethodTotp": "Ứng dụng xác thực (TOTP)",
+    "invalidTotp": "Mã xác thực TOTP không hợp lệ."
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
@@ -301,7 +318,12 @@
     "updateSuccess": "Cập nhật quy tắc thành công",
     "updateFailed": "Cập nhật quy tắc thất bại",
     "tableCreatedAt": "Thời gian thêm",
-    "clickToSort": "Nhấp để sắp xếp"
+    "clickToSort": "Nhấp để sắp xếp",
+    "editRule": "Chỉnh sửa quy tắc",
+    "cancel": "Hủy",
+    "saveChanges": "Lưu thay đổi",
+    "delete": "Xóa",
+    "close": "Đóng"
   },
   "analytics": {
     "customRange": "Khoảng thời gian tùy chỉnh",
@@ -329,7 +351,8 @@
     "topIsps": "Nhà mạng chính (ISP)",
     "pressToShowMore": "Nhấn để xem thêm",
     "maximize": "Phóng to",
-    "minimize": "Thu nhỏ"
+    "minimize": "Thu nhỏ",
+    "loading": "Đang tải..."
   },
   "logs": {
     "title": "Nhật ký truy vấn",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "Mã hóa phía máy khách",
     "encryptedLocked": "Có (Đã khóa)",
     "encryptedDecrypted": "Có (Đã giải mã cục bộ)",
-    "notEncrypted": "Không"
+    "notEncrypted": "Không",
+    "encryptedRecord": "[Bản ghi đã mã hóa]",
+    "exportSuccess": "Xuất nhật ký thành công",
+    "exportError": "Không thể xuất nhật ký"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "Bộ lọc mang tính xác suất, nên một phần nhỏ các lượt khớp là dương tính giả. Thêm ngoại lệ cũng áp dụng cho mọi tên miền con của nó.",
     "checkAllowAction": "Vẫn cho phép",
     "checkAllowed": "Đã thêm ngoại lệ - tên miền này giờ đã phân giải được",
-    "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}"
+    "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}",
+    "listDetails": "Chi tiết danh sách"
   },
   "settings": {
     "title": "Cài đặt cấu hình",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "Bạn có chắc chắn muốn tắt E2EE không? Nhật ký trong tương lai sẽ được lưu dưới dạng văn bản thuần túy.",
     "e2eeUnlockPrompt": "Cấu hình này sử dụng mã hóa E2EE. Xác minh Passkey để xem nhật ký văn bản gốc.",
     "e2eeUnlockNow": "Mở khóa nhật ký",
-    "e2eeUnlockRecovery": "Mở khóa bằng khóa khôi phục"
+    "e2eeUnlockRecovery": "Mở khóa bằng khóa khôi phục",
+    "securityTitle": "Bảo mật & Truy cập",
+    "rotateKeyTitle": "URL truy cập",
+    "rotateKeyDesc": "Tạo URL truy cập mới cho hồ sơ này. Mọi thiết bị hiện đang sử dụng URL cũ sẽ mất kết nối ngay lập tức với DNS Worker và cần được định cấu hình lại bằng URL mới.",
+    "rotateKeyBtn": "Xoay vòng URL",
+    "copied": "Đã sao chép vào khay nhớ tạm",
+    "nameUpdateFailed": "Cập nhật thất bại"
   },
   "account": {
     "title": "Cài đặt tài khoản",
@@ -633,7 +666,10 @@
       "enableSwitch": "Bật mã hóa đầu cuối cho nhật ký truy vấn",
       "enableSwitchDesc": "Mã hóa tên miền, IP máy khách, bản ghi phản hồi và độ trễ ngược dòng tại biên trước khi lưu vào đám mây.",
       "trustBoundaryTitle": "Thông báo về ranh giới bảo mật và tin cậy",
-      "trustBoundaryDesc": "Tất cả lưu lượng truy vấn DNS chắc chắn sẽ đi qua máy chủ lưu trữ (nút biên Cloudflare Workers hoặc máy chủ tự lưu trữ) trong quá trình phân giải, nơi các truy vấn được xử lý trong bộ nhớ trước khi ghi mã hóa. Tính năng này chỉ bảo vệ dữ liệu tĩnh trong cơ sở dữ liệu đám mây (D1); không thể ẩn lưu lượng mạng trực tiếp đối với máy chủ đang xử lý yêu cầu."
+      "trustBoundaryDesc": "Tất cả lưu lượng truy vấn DNS chắc chắn sẽ đi qua máy chủ lưu trữ (nút biên Cloudflare Workers hoặc máy chủ tự lưu trữ) trong quá trình phân giải, nơi các truy vấn được xử lý trong bộ nhớ trước khi ghi mã hóa. Tính năng này chỉ bảo vệ dữ liệu tĩnh trong cơ sở dữ liệu đám mây (D1); không thể ẩn lưu lượng mạng trực tiếp đối với máy chủ đang xử lý yêu cầu.",
+      "initFailed": "Không thể khởi tạo mã hóa đầu cuối",
+      "lockDevice": "Khóa thiết bị này",
+      "lockSuccess": "Đã khóa, khóa riêng đã được xóa khỏi bộ nhớ cục bộ"
     },
     "jwtSecretWarningTitle": "Cảnh báo bảo mật: Mã bí mật JWT yếu",
     "jwtSecretWarningDesc": "JWT_SECRET hiện tại có ít hơn 32 ký tự, tiềm ẩn rủi ro bảo mật. Vui lòng cấu hình biến môi trường KEK_v1 trước khi xoay vòng JWT_SECRET để đảm bảo các khóa TOTP và khóa khôi phục được mã hóa phong bì vẫn có thể giải mã được.",
@@ -701,7 +737,8 @@
       "copyKeys": "Sao chép tất cả khóa",
       "copied": "Đã sao chép!",
       "done": "Xong, tôi đã lưu khóa",
-      "activeDesc": "Ứng dụng xác thực (TOTP) đang hoạt động và tạo mã xác nhận 6 chữ số."
+      "activeDesc": "Ứng dụng xác thực (TOTP) đang hoạt động và tạo mã xác nhận 6 chữ số.",
+      "invalidCode": "Vui lòng nhập mã gồm 6 chữ số"
     },
     "activity": {
       "title": "Nhật ký hoạt động tài khoản",
@@ -735,7 +772,8 @@
       "passkeyDeleted": "Xóa Passkey",
       "passkeyVerifySuccess": "Xác minh Passkey thành công",
       "passkeyVerifyFail": "Xác minh Passkey thất bại",
-      "recoveryKeyRotated": "Khóa khôi phục đã được xoay vòng"
+      "recoveryKeyRotated": "Khóa khôi phục đã được xoay vòng",
+      "device": "Thiết bị"
     },
     "sessions": {
       "title": "Phiên hoạt động",
@@ -798,7 +836,10 @@
       "desc": "Khóa truy cập (Passkey) và ứng dụng xác thực (TOTP) đều là phương thức MFA. Cấu hình ít nhất một phương thức để bảo vệ tài khoản.",
       "passwordlessTitle": "Đăng nhập không mật khẩu",
       "passwordlessDesc": "Khi bật, đăng nhập sẽ bỏ qua mật khẩu và xác minh danh tính trực tiếp qua Passkey hoặc TOTP.",
-      "unconfiguredHint": "Chưa có phương thức MFA nào được cấu hình. Hãy thiết lập Passkey hoặc ứng dụng xác thực bên dưới."
+      "unconfiguredHint": "Chưa có phương thức MFA nào được cấu hình. Hãy thiết lập Passkey hoặc ứng dụng xác thực bên dưới.",
+      "password": "Mật khẩu",
+      "passkey": "Passkey",
+      "totp": "TOTP"
     },
     "recoveryKey": {
       "title": "Khóa khôi phục khẩn cấp",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "Khóa khôi phục đã tự động xoay vòng",
       "autoRotatedNotice": "Theo quy tắc sử dụng một lần, khóa trước đây của bạn đã bị vô hiệu hóa và khóa 30 chữ số mới đã được tạo. Hãy sao chép và lưu trữ ngoại tuyến an toàn ngay!",
       "savedAndClose": "Tôi đã lưu an toàn và tiếp tục",
-      "savedAndContinue": "Tôi đã lưu an toàn và vào bảng điều khiển"
+      "savedAndContinue": "Tôi đã lưu an toàn và vào bảng điều khiển",
+      "descOneWay": "Khóa khôi phục khẩn cấp là thông tin xác thực duy nhất để lấy lại quyền truy cập tài khoản và giải mã dữ liệu E2EE nếu mất tất cả Passkey hoặc ứng dụng xác thực. Để đảm bảo an toàn không kiến thức (zero-knowledge), khóa được lưu trữ dưới dạng băm một chiều không thể đảo ngược, không thể xem dưới dạng văn bản thuần túy và chỉ có thể xoay vòng bằng khóa khôi phục ban đầu hoặc Passkey hiện có. Khóa sẽ tự động xoay vòng ngay sau khi được sử dụng.",
+      "keyRequired": "Cần có khóa khôi phục",
+      "verifyBtn": "Khóa khôi phục",
+      "verifyPromptLabel": "Khóa khôi phục ban đầu"
     },
     "verifyIdentity": "Xác minh bảo mật",
     "verifyIdentityDesc": "Để bảo vệ tài khoản của bạn, vui lòng xác minh danh tính trước khi tiếp tục.",
     "usePasskeyInstead": "Xác thực bằng Passkey",
     "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu",
-    "enableRegistration": "Cho phép đăng ký người dùng mới"
+    "enableRegistration": "Cho phép đăng ký người dùng mới",
+    "timezone": "Múi giờ",
+    "timezoneAuto": "Tự động (mặc định của trình duyệt)",
+    "totpCode": "Mã xác thực"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "Bộ tạo JWT_SECRET An toàn",
     "jwtGeneratorDesc": "Sử dụng bộ tạo khóa an toàn mật mã này để tạo mã bí mật chữ số ngẫu nhiên gồm 64 ký tự cho env.JWT_SECRET.",
     "regenerate": "Tạo lại"
+  },
+  "meta": {
+    "defaultDesc": "Phân giải DNS an toàn, nhanh chóng và có thể tùy chỉnh cho tất cả các thiết bị của bạn. Dựa trên Cloudflare Workers, mã nguồn mở và tập trung vào quyền riêng tư.",
+    "setupDesc": "Định cấu hình thiết bị của bạn để sử dụng DNS Worker."
   }
 }

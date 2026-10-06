@@ -33,7 +33,19 @@
     "importSuccess": "Profile imported successfully",
     "importError": "Failed to import profile. Please ensure the format is correct and try again.",
     "save": "Save",
-    "saveSuccess": "Settings saved"
+    "saveSuccess": "Settings saved",
+    "close": "Close",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "back": "Back",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyKey": "Copy New Recovery Key",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "rename": "Rename",
+    "disable": "Disable",
+    "confirmDisable": "Confirm Disable"
   },
   "nav": {
     "setup": "Setup",
@@ -175,7 +187,12 @@
     "backToLogin": "Back to login",
     "jwtSecretPreset": "Default preset JWT_SECRET detected. Please update and customize JWT_SECRET in environment variables before deploying.",
     "jwtSecretMissing": "JWT_SECRET is missing. Please configure a secure key in environment variables before deploying.",
-    "jwtSecretInvalid": "JWT_SECRET format is invalid, please check configuration."
+    "jwtSecretInvalid": "JWT_SECRET format is invalid, please check configuration.",
+    "orUseOtherMfa": "or use another method",
+    "totpUseRecovery": "Use Recovery Key",
+    "totpUseApp": "Use Authentication App",
+    "mfaMethodTotp": "Authenticator App (TOTP)",
+    "invalidTotp": "Invalid TOTP verification code."
   },
   "setup": {
     "title": "Setup Guide",
@@ -301,7 +318,12 @@
     "updateSuccess": "Rule updated successfully",
     "updateFailed": "Failed to update rule",
     "tableCreatedAt": "Added Time",
-    "clickToSort": "Click to sort"
+    "clickToSort": "Click to sort",
+    "editRule": "Edit Rule",
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "delete": "Delete",
+    "close": "Close"
   },
   "analytics": {
     "customRange": "Custom Range",
@@ -329,7 +351,8 @@
     "topIsps": "Top ISPs",
     "pressToShowMore": "Press to show more",
     "maximize": "Maximize",
-    "minimize": "Minimize"
+    "minimize": "Minimize",
+    "loading": "Loading..."
   },
   "logs": {
     "title": "Query Logs",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "Client-Side Encrypted",
     "encryptedLocked": "Yes (Locked)",
     "encryptedDecrypted": "Yes (Decrypted Locally)",
-    "notEncrypted": "No"
+    "notEncrypted": "No",
+    "encryptedRecord": "[Encrypted Record]",
+    "exportSuccess": "Logs exported successfully",
+    "exportError": "Failed to export logs"
   },
   "filtering": {
     "title": "External Filters",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "Filters are probabilistic, so a small share of matches are false positives. Adding an exception also covers every subdomain of it.",
     "checkAllowAction": "Allow anyway",
     "checkAllowed": "Exception added - this domain now resolves",
-    "allowRuleAdded": "Exception added for {{domain}}"
+    "allowRuleAdded": "Exception added for {{domain}}",
+    "listDetails": "List Details"
   },
   "settings": {
     "title": "Settings",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "Are you sure you want to disable End-to-End Encryption? Future DNS logs will be stored in plaintext. (Historical encrypted logs still require private key to decrypt)",
     "e2eeUnlockPrompt": "This profile uses End-to-End Encryption. Verify your Passkey to decrypt and view plaintext logs.",
     "e2eeUnlockNow": "Unlock Encrypted Logs",
-    "e2eeUnlockRecovery": "Unlock with Recovery Key"
+    "e2eeUnlockRecovery": "Unlock with Recovery Key",
+    "securityTitle": "Security & Access",
+    "rotateKeyTitle": "Access URL",
+    "rotateKeyDesc": "Generate a new access URL for this profile. Any devices currently using the old URL will immediately lose their connection to DNS Worker and will need to be reconfigured with the new URL.",
+    "rotateKeyBtn": "Rotate URL",
+    "copied": "Copied to clipboard",
+    "nameUpdateFailed": "Failed to update profile name"
   },
   "account": {
     "title": "Account Settings",
@@ -604,6 +637,8 @@
       "keyType": "Encryption Algorithm",
       "deviceState": "Device Status",
       "unlocked": "Unlocked on this device",
+      "lockDevice": "Lock this device",
+      "lockSuccess": "Locked, private key cleared from local storage",
       "unlockButton": "Verify Passkey to Unlock",
       "protectedPasskeys": "Authorized Passkey Credentials",
       "devicesUnit": "credential(s)",
@@ -633,7 +668,8 @@
       "enableSwitch": "Enable Query Logs End-to-End Encryption",
       "enableSwitchDesc": "Encrypts domain names, client IPs, response records, and upstream latency on the edge before persisting to cloud storage.",
       "trustBoundaryTitle": "Security & Trust Boundary Notice",
-      "trustBoundaryDesc": "All DNS query traffic inevitably passes through the hosting server (Cloudflare Workers edge nodes or self-hosted server runtime) during resolution, where queries are processed in memory before being encrypted and saved. This feature strictly protects data at rest in the cloud database (D1 / persistent storage) from data leaks or offline analysis; it does not conceal active network traffic from the hosting server processing the request."
+      "trustBoundaryDesc": "All DNS query traffic inevitably passes through the hosting server (Cloudflare Workers edge nodes or self-hosted server runtime) during resolution, where queries are processed in memory before being encrypted and saved. This feature strictly protects data at rest in the cloud database (D1 / persistent storage) from data leaks or offline analysis; it does not conceal active network traffic from the hosting server processing the request.",
+      "initFailed": "Failed to initialize End-to-End Encryption"
     },
     "jwtSecretWarningTitle": "Security Notice: Weak JWT Secret",
     "jwtSecretWarningDesc": "The current JWT_SECRET is shorter than 32 characters, which introduces potential security risks. Please configure the KEK_v1 environment variable before rotating JWT_SECRET to ensure existing envelope-encrypted TOTP and recovery keys remain decryptable.",
@@ -701,7 +737,8 @@
       "copyKeys": "Copy All Keys",
       "copied": "Copied!",
       "done": "Done — I've saved my keys",
-      "activeDesc": "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account."
+      "activeDesc": "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account.",
+      "invalidCode": "Please enter a 6-digit code"
     },
     "sessions": {
       "session": "Session",
@@ -752,7 +789,8 @@
       "passkeyDeleted": "Passkey Deleted",
       "passkeyVerifySuccess": "Passkey Verified",
       "passkeyVerifyFail": "Passkey Verification Failed",
-      "recoveryKeyRotated": "Recovery key rotated"
+      "recoveryKeyRotated": "Recovery key rotated",
+      "device": "Device"
     },
     "passkey": {
       "title": "Passkeys",
@@ -798,7 +836,10 @@
       "desc": "Passkeys and Authenticator Apps (TOTP) both serve as MFA authentication methods. Configuring at least one factor protects your account and enables passwordless login and self-service password recovery.",
       "passwordlessTitle": "Passwordless Login",
       "passwordlessDesc": "When enabled, logging in will skip the password requirement and verify your identity directly via Passkey or TOTP.",
-      "unconfiguredHint": "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
+      "unconfiguredHint": "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery.",
+      "password": "Password",
+      "passkey": "Passkey",
+      "totp": "TOTP"
     },
     "recoveryKey": {
       "title": "Emergency Recovery Key",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "Recovery Key Automatically Rotated",
       "autoRotatedNotice": "Under the single-use rule, your previous recovery key has been invalidated and a fresh 30-digit key generated. Please copy and store it safely offline!",
       "savedAndClose": "I Have Saved It Safely",
-      "savedAndContinue": "I Have Saved It & Continue to Dashboard"
+      "savedAndContinue": "I Have Saved It & Continue to Dashboard",
+      "descOneWay": "Emergency Recovery Key is the sole credential to regain account access and decrypt E2EE data if all Passkeys or authenticators are lost. To maintain zero-knowledge security, it is stored as a one-way irreversible hash, cannot be viewed in plaintext on the web, and can only be rotated using the current Recovery Key or existing Passkey. The key rotates automatically upon use.",
+      "keyRequired": "Recovery key is required",
+      "verifyBtn": "Recovery Key",
+      "verifyPromptLabel": "Original Recovery Key"
     },
     "verifyIdentity": "Security Verification",
     "verifyIdentityDesc": "To protect your account security, please verify your identity before proceeding.",
     "usePasskeyInstead": "Authenticate with Passkey",
     "changePasswordWithPasskey": "Verify with Passkey & Update",
-    "enableRegistration": "Enable user registration"
+    "enableRegistration": "Enable user registration",
+    "timezone": "Timezone",
+    "timezoneAuto": "Auto (Browser Default)",
+    "totpCode": "Authenticator Code"
   },
   "intro": {
     "item1Title": "Obex Protective DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "Secure JWT_SECRET Generator",
     "jwtGeneratorDesc": "Use this cryptographically secure key generator to generate a random 64-character alphanumeric secret for your env.JWT_SECRET.",
     "regenerate": "Regenerate"
+  },
+  "meta": {
+    "defaultDesc": "Secure, fast, and customizable DNS resolution for all your devices. Based on Cloudflare Workers. Open-source and privacy-focused.",
+    "setupDesc": "Configure your devices to use DNS Worker."
   }
 }

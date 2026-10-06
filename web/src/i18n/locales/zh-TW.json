@@ -33,7 +33,19 @@
     "importSuccess": "配置成功匯入",
     "importError": "配置匯入失敗，請確保格式正確且稍後再試",
     "save": "儲存",
-    "saveSuccess": "設定已儲存"
+    "saveSuccess": "設定已儲存",
+    "close": "關閉",
+    "cancel": "取消",
+    "continue": "繼續",
+    "back": "返回",
+    "copy": "複製",
+    "copied": "已複製",
+    "copyKey": "複製新恢復密鑰",
+    "confirm": "確認",
+    "delete": "刪除",
+    "rename": "重新命名",
+    "disable": "停用",
+    "confirmDisable": "確認停用"
   },
   "nav": {
     "setup": "安裝",
@@ -175,7 +187,12 @@
     "backToLogin": "返回登入",
     "jwtSecretPreset": "檢測到正在使用預設的 JWT_SECRET，請在環境變數中修改並替換為自訂安全金鑰後重新部署。",
     "jwtSecretMissing": "缺少 JWT_SECRET，請在環境變數中配置安全金鑰後重新部署。",
-    "jwtSecretInvalid": "JWT_SECRET 金鑰格式無效，請檢查設定。"
+    "jwtSecretInvalid": "JWT_SECRET 金鑰格式無效，請檢查設定。",
+    "orUseOtherMfa": "或使用其他驗證方式",
+    "totpUseRecovery": "使用緊急恢復密鑰",
+    "totpUseApp": "使用驗證器 App",
+    "mfaMethodTotp": "數位驗證器 (TOTP)",
+    "invalidTotp": "TOTP 驗證碼無效，請重試"
   },
   "setup": {
     "title": "安裝指南",
@@ -301,7 +318,12 @@
     "updateSuccess": "規則更新成功",
     "updateFailed": "更新規則失敗",
     "tableCreatedAt": "新增時間",
-    "clickToSort": "點擊排序"
+    "clickToSort": "點擊排序",
+    "editRule": "編輯規則",
+    "cancel": "取消",
+    "saveChanges": "儲存變更",
+    "delete": "刪除",
+    "close": "關閉"
   },
   "analytics": {
     "customRange": "自訂時間範圍",
@@ -329,7 +351,8 @@
     "topIsps": "主要營運商",
     "pressToShowMore": "按下顯示更多",
     "maximize": "放大",
-    "minimize": "縮小"
+    "minimize": "縮小",
+    "loading": "載入中..."
   },
   "logs": {
     "title": "查詢日誌",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "是否使用者端加密",
     "encryptedLocked": "是 (未解鎖)",
     "encryptedDecrypted": "是 (已本機解密)",
-    "notEncrypted": "否"
+    "notEncrypted": "否",
+    "encryptedRecord": "[加密記錄]",
+    "exportSuccess": "日誌匯出成功",
+    "exportError": "日誌匯出失敗"
   },
   "filtering": {
     "title": "外部攔截清單",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "過濾器屬於機率性，因此少部分比對屬於誤判。新增例外規則也會涵蓋其所有子網域。",
     "checkAllowAction": "仍然允許",
     "checkAllowed": "已新增例外 - 該網域現在可以解析",
-    "allowRuleAdded": "已為 {{domain}} 新增例外"
+    "allowRuleAdded": "已為 {{domain}} 新增例外",
+    "listDetails": "清單詳情"
   },
   "settings": {
     "title": "配置設定",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "確定要關閉端到端加密嗎？關閉後新產生的 DNS 日誌將以明文儲存。（已加密的歷史日誌仍需私鑰解密）",
     "e2eeUnlockPrompt": "此配置已啟用端到端加密，請驗證 Passkey 解鎖查看完整明文日誌。",
     "e2eeUnlockNow": "解鎖加密日誌",
-    "e2eeUnlockRecovery": "使用修復金鑰解鎖"
+    "e2eeUnlockRecovery": "使用修復金鑰解鎖",
+    "securityTitle": "安全與存取",
+    "rotateKeyTitle": "存取憑據 (URL)",
+    "rotateKeyDesc": "為此設定檔重新產生新的存取 URL。目前使用舊 URL 的所有裝置將立即中斷與 DNS Worker 的連線，需使用新 URL 重新設定。",
+    "rotateKeyBtn": "輪換存取憑據",
+    "copied": "已複製到剪貼簿",
+    "nameUpdateFailed": "更新失敗"
   },
   "account": {
     "title": "帳號設定",
@@ -633,7 +666,10 @@
       "enableSwitch": "啟用查詢日誌端到端加密",
       "enableSwitchDesc": "在用戶端邊緣加密 DNS 請求的網域名稱、用戶端 IP、解析記錄及上游資訊後再寫入雲端持久化儲存。",
       "trustBoundaryTitle": "安全與信任邊界提示",
-      "trustBoundaryDesc": "所有 DNS 查詢流量在網路解析時必然會經過託管伺服器（Cloudflare Workers 邊緣節點或自建主機執行階段），伺服器在執行階段記憶體中處理解析後將記錄加密寫入。本功能僅用於保護雲端持久化資料庫（D1 / 資料倉儲）免受靜態資料洩漏或離線分析，無法向正在處理轉發請求的託管伺服器隱藏即時網路流量。"
+      "trustBoundaryDesc": "所有 DNS 查詢流量在網路解析時必然會經過託管伺服器（Cloudflare Workers 邊緣節點或自建主機執行階段），伺服器在執行階段記憶體中處理解析後將記錄加密寫入。本功能僅用於保護雲端持久化資料庫（D1 / 資料倉儲）免受靜態資料洩漏或離線分析，無法向正在處理轉發請求的託管伺服器隱藏即時網路流量。",
+      "initFailed": "初始化端對端加密失敗",
+      "lockDevice": "鎖定此裝置",
+      "lockSuccess": "已鎖定，私鑰已從本機清除"
     },
     "jwtSecretWarningTitle": "安全提示：JWT 金鑰強度較弱",
     "jwtSecretWarningDesc": "目前 JWT_SECRET 長度小於 32 位元字元，存在潛在安全隱患。請先設定環境變數 KEK_v1 完成憑證信封加密遷移，然後再輪換 JWT_SECRET，以防止既有加密的 TOTP 或復原金鑰無法解密。",
@@ -701,7 +737,8 @@
       "copyKeys": "複製全部密鑰",
       "copied": "已複製！",
       "done": "完成，我已保存密鑰",
-      "activeDesc": "數位驗證器已啟用，正在為您的帳號提供 6 位動態驗證碼保護。"
+      "activeDesc": "數位驗證器已啟用，正在為您的帳號提供 6 位動態驗證碼保護。",
+      "invalidCode": "請輸入 6 位驗證碼"
     },
     "sessions": {
       "session": "會話",
@@ -752,7 +789,8 @@
       "passkeyDeleted": "刪除通行密鑰",
       "passkeyVerifySuccess": "通行密鑰驗證通過",
       "passkeyVerifyFail": "通行密鑰驗證失敗",
-      "recoveryKeyRotated": "應急恢復金鑰已輪換"
+      "recoveryKeyRotated": "應急恢復金鑰已輪換",
+      "device": "裝置"
     },
     "passkey": {
       "title": "通行密鑰 (Passkey)",
@@ -798,7 +836,10 @@
       "desc": "通行金鑰 (Passkey) 與數位驗證器 (TOTP) 均可作為多因素驗證方式，設定任選其一即可保障帳號安全並支援無密碼登入與密碼重設。",
       "passwordlessTitle": "無密碼登入 (Passwordless Login)",
       "passwordlessDesc": "啟用後，登入時無需輸入密碼，直接透過通行金鑰 (Passkey) 或數位驗證碼 (TOTP) 完成身分核驗。",
-      "unconfiguredHint": "目前帳號尚未設定任何多因素驗證。設定通行金鑰或數位驗證器後，可啟用無密碼快速登入並在忘記密碼時安全找回帳號。"
+      "unconfiguredHint": "目前帳號尚未設定任何多因素驗證。設定通行金鑰或數位驗證器後，可啟用無密碼快速登入並在忘記密碼時安全找回帳號。",
+      "password": "密碼",
+      "passkey": "通行密鑰 (Passkey)",
+      "totp": "身份驗證器 (TOTP)"
     },
     "recoveryKey": {
       "title": "緊急修復金鑰",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "修復金鑰已自動輪換",
       "autoRotatedNotice": "根據修復金鑰單次使用規則，您的原修復金鑰已失效，系統已為您產生全新 30 位緊急修復金鑰。請務必立即複製並妥善離線儲存，關閉後將無法再次檢視！",
       "savedAndClose": "我已妥善儲存並繼續",
-      "savedAndContinue": "我已妥善儲存並進入控制台"
+      "savedAndContinue": "我已妥善儲存並進入控制台",
+      "descOneWay": "緊急恢復密鑰是在您遺失所有通行密鑰 (Passkey) 或身份驗證器時，恢復帳號存取及端對端解密資料的唯一憑據。為確保零知識安全，恢復密鑰採用單向不可逆雜湊儲存，無法在網頁端檢視明文，僅支援透過原恢復密鑰或現有 Passkey 進行輪換。密鑰一旦被使用將立即自動輪換。",
+      "keyRequired": "請輸入緊急恢復密鑰",
+      "verifyBtn": "恢復密鑰",
+      "verifyPromptLabel": "原恢復密鑰 (Original Recovery Key)"
     },
     "verifyIdentity": "安全身分核驗",
     "verifyIdentityDesc": "為了保護您的帳戶安全，執行此敏感操作前請先驗證您的身分。",
     "usePasskeyInstead": "使用通行金鑰驗證",
     "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼",
-    "enableRegistration": "開放新使用者註冊"
+    "enableRegistration": "開放新使用者註冊",
+    "timezone": "時區",
+    "timezoneAuto": "自動（跟隨瀏覽器預設）",
+    "totpCode": "驗證器動態口令"
   },
   "intro": {
     "item1Title": "Obex 保護性 DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "安全 JWT_SECRET 產生器",
     "jwtGeneratorDesc": "使用此加密安全的隨機數產生器產生 64 位元字元的隨機字母數字組合，用於 env.JWT_SECRET。",
     "regenerate": "重新產生"
+  },
+  "meta": {
+    "defaultDesc": "為您的所有裝置提供安全、快速且可自訂的 DNS 解析。基於 Cloudflare Workers 構建，開源且注重隱私。",
+    "setupDesc": "設定您的裝置以使用 DNS Worker。"
   }
 }

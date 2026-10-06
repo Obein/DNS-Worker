@@ -33,7 +33,19 @@
     "importSuccess": "配置成功导入",
     "importError": "配置导入失败，请确保格式正确且稍后再试",
     "save": "保存",
-    "saveSuccess": "设置已保存"
+    "saveSuccess": "设置已保存",
+    "close": "关闭",
+    "cancel": "取消",
+    "continue": "继续",
+    "back": "返回",
+    "copy": "复制",
+    "copied": "已复制",
+    "copyKey": "复制新恢复密钥",
+    "confirm": "确认",
+    "delete": "删除",
+    "rename": "重命名",
+    "disable": "关闭",
+    "confirmDisable": "确认关闭"
   },
   "nav": {
     "setup": "安装",
@@ -175,7 +187,12 @@
     "backToLogin": "返回登录",
     "jwtSecretPreset": "检测到正在使用预设的 JWT_SECRET，请在环境变量中修改并替换为自定义安全密钥后重新部署。",
     "jwtSecretMissing": "缺少 JWT_SECRET，请在环境变量中配置安全密钥后重新部署。",
-    "jwtSecretInvalid": "JWT_SECRET 密钥格式无效，请检查配置。"
+    "jwtSecretInvalid": "JWT_SECRET 密钥格式无效，请检查配置。",
+    "orUseOtherMfa": "或使用其他验证方式",
+    "totpUseRecovery": "使用紧急恢复密钥",
+    "totpUseApp": "使用身份验证器 App",
+    "mfaMethodTotp": "数字验证器 (TOTP)",
+    "invalidTotp": "TOTP 验证码无效，请重试"
   },
   "setup": {
     "title": "安装指南",
@@ -301,7 +318,12 @@
     "updateSuccess": "规则更新成功",
     "updateFailed": "更新规则失败",
     "tableCreatedAt": "添加时间",
-    "clickToSort": "点击排序"
+    "clickToSort": "点击排序",
+    "editRule": "编辑规则",
+    "cancel": "取消",
+    "saveChanges": "保存更改",
+    "delete": "删除",
+    "close": "关闭"
   },
   "analytics": {
     "customRange": "自定义时间范围",
@@ -329,7 +351,8 @@
     "topIsps": "主要运营商",
     "pressToShowMore": "按下显示更多",
     "maximize": "放大",
-    "minimize": "缩小"
+    "minimize": "缩小",
+    "loading": "加载中..."
   },
   "logs": {
     "title": "查询日志",
@@ -399,7 +422,10 @@
     "detailIsClientEncrypted": "是否用户端加密",
     "encryptedLocked": "是 (未解锁)",
     "encryptedDecrypted": "是 (已本地解密)",
-    "notEncrypted": "否"
+    "notEncrypted": "否",
+    "encryptedRecord": "[加密记录]",
+    "exportSuccess": "日志导出成功",
+    "exportError": "日志导出失败"
   },
   "filtering": {
     "title": "外部拦截列表",
@@ -456,7 +482,8 @@
     "checkProbabilistic": "过滤器基于概率，因此少部分匹配属于误判。添加例外规则也会覆盖其所有子域名。",
     "checkAllowAction": "仍然允许",
     "checkAllowed": "已添加例外 - 该域名现在可以解析",
-    "allowRuleAdded": "已为 {{domain}} 添加例外"
+    "allowRuleAdded": "已为 {{domain}} 添加例外",
+    "listDetails": "列表详情"
   },
   "settings": {
     "title": "配置设置",
@@ -578,7 +605,13 @@
     "e2eeDisableConfirm": "确定要关闭端到端加密吗？关闭后新生成的 DNS 日志将以明文存储。（已加密的历史日志仍需私钥解密）",
     "e2eeUnlockPrompt": "此配置已启用端到端加密，请验证 Passkey 解锁查看完整明文日志。",
     "e2eeUnlockNow": "解锁加密日志",
-    "e2eeUnlockRecovery": "使用恢复密钥解锁"
+    "e2eeUnlockRecovery": "使用恢复密钥解锁",
+    "securityTitle": "安全与访问",
+    "rotateKeyTitle": "接入凭据 (URL)",
+    "rotateKeyDesc": "为此配置重新生成新的访问 URL。当前使用旧 URL 的所有设备将立即失去与 DNS Worker 的连接，需使用新 URL 重新配置。",
+    "rotateKeyBtn": "轮换接入凭据",
+    "copied": "已复制到剪贴板",
+    "nameUpdateFailed": "更新失败"
   },
   "account": {
     "title": "账号设置",
@@ -604,6 +637,8 @@
       "keyType": "加密算法",
       "deviceState": "当前设备状态",
       "unlocked": "已在此设备解锁",
+      "lockDevice": "锁定此设备",
+      "lockSuccess": "已锁定，私钥已从本地清除",
       "unlockButton": "验证 Passkey 解锁",
       "protectedPasskeys": "已授权 Passkey 凭据",
       "devicesUnit": "个凭据",
@@ -633,7 +668,8 @@
       "enableSwitch": "启用查询日志端到端加密",
       "enableSwitchDesc": "在客户端边缘加密 DNS 请求的域名、客户端 IP、解析记录及上游信息后再写入云端持久化存储。",
       "trustBoundaryTitle": "安全与信任边界提示",
-      "trustBoundaryDesc": "所有 DNS 查询流量在网络解析时必然会经过托管服务器（Cloudflare Workers 边缘节点或自建主机运行时），服务器在运行时内存中处理解析后将记录加密写入。本功能仅用于保护云端持久化数据库（D1 / 数据仓库）免受静态数据泄露或离线分析，无法向正在处理转发请求的托管服务器隐藏实时网络流量。"
+      "trustBoundaryDesc": "所有 DNS 查询流量在网络解析时必然会经过托管服务器（Cloudflare Workers 边缘节点或自建主机运行时），服务器在运行时内存中处理解析后将记录加密写入。本功能仅用于保护云端持久化数据库（D1 / 数据仓库）免受静态数据泄露或离线分析，无法向正在处理转发请求的托管服务器隐藏实时网络流量。",
+      "initFailed": "初始化端到端加密失败"
     },
     "jwtSecretWarningTitle": "安全提示：JWT 密钥强度较弱",
     "jwtSecretWarningDesc": "当前 JWT_SECRET 长度小于 32 位字符，存在潜在安全隐患。请先配置环境变量 KEK_v1 完成凭据信封加密迁移，然后再轮换 JWT_SECRET，以防止存量加密的 TOTP 或恢复密钥无法解密。",
@@ -701,7 +737,8 @@
       "copyKeys": "复制全部密钥",
       "copied": "已复制！",
       "done": "完成，我已保存密钥",
-      "activeDesc": "数字验证器已启用，正在为您的账号提供 6 位动态验证码保护。"
+      "activeDesc": "数字验证器已启用，正在为您的账号提供 6 位动态验证码保护。",
+      "invalidCode": "请输入 6 位验证码"
     },
     "sessions": {
       "session": "会话",
@@ -752,7 +789,8 @@
       "passkeyDeleted": "删除通行密钥",
       "passkeyVerifySuccess": "通行密钥验证通过",
       "passkeyVerifyFail": "通行密钥验证失败",
-      "recoveryKeyRotated": "应急恢复密钥已轮换"
+      "recoveryKeyRotated": "应急恢复密钥已轮换",
+      "device": "设备"
     },
     "passkey": {
       "title": "通行密钥 (Passkey)",
@@ -798,7 +836,10 @@
       "desc": "通行密钥 (Passkey) 与数字验证器 (TOTP) 均可作为多因素认证方式，配置任选其一即可保障账号安全并支持无密码登录与密码重置。",
       "passwordlessTitle": "无密码登录 (Passwordless Login)",
       "passwordlessDesc": "启用后，登录时无需输入密码，直接通过通行密钥 (Passkey) 或数字验证码 (TOTP) 完成身份核验。",
-      "unconfiguredHint": "当前账号尚未配置任何多因素认证。配置通行密钥或数字验证器后，可启用无密码快捷登录并在忘记密码时安全找回账号。"
+      "unconfiguredHint": "当前账号尚未配置任何多因素认证。配置通行密钥或数字验证器后，可启用无密码快捷登录并在忘记密码时安全找回账号。",
+      "password": "密码",
+      "passkey": "通行密钥 (Passkey)",
+      "totp": "身份验证器 (TOTP)"
     },
     "recoveryKey": {
       "title": "紧急恢复密钥",
@@ -819,13 +860,20 @@
       "autoRotatedTitle": "恢复密钥已自动轮换",
       "autoRotatedNotice": "根据恢复密钥单次使用规则，您的原恢复密钥已失效，系统已为您生成全新 30 位紧急恢复密钥。请务必立即复制并妥善离线保存，关闭后将无法再次查看！",
       "savedAndClose": "我已妥善保存并继续",
-      "savedAndContinue": "我已妥善保存并进入控制台"
+      "savedAndContinue": "我已妥善保存并进入控制台",
+      "descOneWay": "紧急恢复密钥是在您丢失所有通行密钥 (Passkey) 或身份验证器时，恢复账号访问及端到端解密数据的唯一凭据。为确保零知识安全，恢复密钥采用单向不可逆散列存储，无法在网页端查看明文，仅支持通过原恢复密钥或现有 Passkey 进行轮换。密钥一旦被使用将立即自动轮换。",
+      "keyRequired": "请输入紧急恢复密钥",
+      "verifyBtn": "恢复密钥",
+      "verifyPromptLabel": "原恢复密钥 (Original Recovery Key)"
     },
     "verifyIdentity": "安全身份核验",
     "verifyIdentityDesc": "为了保护您的账户安全，执行此敏感操作前请先验证您的身份。",
     "usePasskeyInstead": "使用通行密钥验证",
     "changePasswordWithPasskey": "使用通行密钥核验并修改密码",
-    "enableRegistration": "开放新用户注册"
+    "enableRegistration": "开放新用户注册",
+    "timezone": "时区",
+    "timezoneAuto": "自动（跟随浏览器默认）",
+    "totpCode": "验证器动态口令"
   },
   "intro": {
     "item1Title": "Obex 保护性 DNS",
@@ -878,5 +926,9 @@
     "jwtGeneratorTitle": "安全 JWT_SECRET 生成器",
     "jwtGeneratorDesc": "使用此加密安全的随机数生成器生成 64 位字符的随机字母数字组合，用于 env.JWT_SECRET。",
     "regenerate": "重新生成"
+  },
+  "meta": {
+    "defaultDesc": "为您的所有设备提供安全、快速且可定制的 DNS 解析。基于 Cloudflare Workers 构建，开源且注重隐私。",
+    "setupDesc": "配置您的设备以使用 DNS Worker。"
   }
 }

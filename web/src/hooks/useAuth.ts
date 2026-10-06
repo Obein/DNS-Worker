@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { OverlayToaster } from "@blueprintjs/core";
 import { getAccessToken, setAccessToken } from "../utils/token";
 import { setSystemTimeZone, setSystemLocale } from "../utils/date";
-import { refresh, getMe, logout, ApiError } from "../services";
+import { refresh, getMe, logout, ApiError, e2ee } from "../services";
 import type { UserInfo } from "../services";
 
 /**
@@ -109,6 +109,7 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
   // Listen for unauthorized events from the API client / interceptor
   useEffect(() => {
     const handleUnauthorized = (e: Event) => {
+      e2ee.clearStorage();
       clearCsrfToken();
       setIsLoggedIn(false);
 
@@ -148,10 +149,12 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
 
   const handleLogout = async () => {
     try {
+      e2ee.clearStorage();
       await logout();
     } catch (e) {
       console.error("Logout failed", e);
     } finally {
+      e2ee.clearStorage();
       if (typeof window !== "undefined" && "caches" in window) {
         try {
           await caches.delete("dns-worker-logs-v1");
