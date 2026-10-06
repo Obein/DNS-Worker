@@ -973,16 +973,29 @@ class E2eeService {
         }
 
         const data = await decryptSensitiveLogDataWithDek(dek, log.encrypted_payload);
+        let destCountryCode = data.dest_country_code ?? log.dest_country_code;
+        let destCountry = data.dest_country ?? log.dest_country;
+        let destIsp = data.dest_isp ?? log.dest_isp;
+        const rawGeoJson = data.dest_geoip ?? log.dest_geoip;
+        if ((!destCountryCode || !destCountry) && rawGeoJson) {
+          try {
+            const parsed = JSON.parse(rawGeoJson);
+            if (!destCountryCode && parsed.country_code) destCountryCode = parsed.country_code.toUpperCase();
+            if (!destCountry && parsed.country) destCountry = parsed.country;
+            if (!destIsp && parsed.isp) destIsp = parsed.isp;
+          } catch {}
+        }
+
         return {
           ...log,
           domain: data.domain || log.domain,
           client_ip: data.client_ip || log.client_ip,
           geo_country: data.geo_country ?? log.geo_country,
           answer: data.answer ?? log.answer,
-          dest_geoip: data.dest_geoip ?? log.dest_geoip,
-          dest_country_code: data.dest_country_code ?? log.dest_country_code,
-          dest_country: data.dest_country ?? log.dest_country,
-          dest_isp: data.dest_isp ?? log.dest_isp,
+          dest_geoip: rawGeoJson,
+          dest_country_code: destCountryCode,
+          dest_country: destCountry,
+          dest_isp: destIsp,
           ecs: data.ecs ?? log.ecs,
           upstream: data.upstream ?? log.upstream,
           reason: data.reason ?? log.reason,
@@ -1032,6 +1045,18 @@ class E2eeService {
         );
 
         const data: SensitiveLogData = JSON.parse(new TextDecoder().decode(decryptedBytes));
+        let destCountryCode = data.dest_country_code ?? log.dest_country_code;
+        let destCountry = data.dest_country ?? log.dest_country;
+        let destIsp = data.dest_isp ?? log.dest_isp;
+        const rawGeoJson = data.dest_geoip ?? log.dest_geoip;
+        if ((!destCountryCode || !destCountry) && rawGeoJson) {
+          try {
+            const parsed = JSON.parse(rawGeoJson);
+            if (!destCountryCode && parsed.country_code) destCountryCode = parsed.country_code.toUpperCase();
+            if (!destCountry && parsed.country) destCountry = parsed.country;
+            if (!destIsp && parsed.isp) destIsp = parsed.isp;
+          } catch {}
+        }
 
         return {
           ...log,
@@ -1039,10 +1064,10 @@ class E2eeService {
           client_ip: data.client_ip || log.client_ip,
           geo_country: data.geo_country ?? log.geo_country,
           answer: data.answer ?? log.answer,
-          dest_geoip: data.dest_geoip ?? log.dest_geoip,
-          dest_country_code: data.dest_country_code ?? log.dest_country_code,
-          dest_country: data.dest_country ?? log.dest_country,
-          dest_isp: data.dest_isp ?? log.dest_isp,
+          dest_geoip: rawGeoJson,
+          dest_country_code: destCountryCode,
+          dest_country: destCountry,
+          dest_isp: destIsp,
           ecs: data.ecs ?? log.ecs,
           upstream: data.upstream ?? log.upstream,
           reason: data.reason ?? log.reason,

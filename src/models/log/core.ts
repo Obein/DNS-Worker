@@ -192,10 +192,11 @@ export class LogCoreModel {
   async getLog(profileId: string, logId: number, timestamp?: number): Promise<ResolutionLog | null> {
     if (timestamp !== undefined && !isNaN(timestamp)) {
       return await this.db.prepare(`
-        SELECT l.*, p.name as profile_name, ap.name as access_point_name 
+        SELECT l.*, p.name as profile_name, ap.name as access_point_name, k.kem_ct
         FROM logs l 
         JOIN profiles p ON l.profile_id = p.id 
         LEFT JOIN access_points ap ON l.access_point_id = ap.id
+        LEFT JOIN kem_keys k ON l.kem_key_id = k.id
         WHERE l.profile_id = ? AND l.timestamp = ? AND l.id = ?
       `)
         .bind(profileId, timestamp, logId)
@@ -203,10 +204,11 @@ export class LogCoreModel {
     }
 
     return await this.db.prepare(`
-      SELECT l.*, p.name as profile_name, ap.name as access_point_name 
+      SELECT l.*, p.name as profile_name, ap.name as access_point_name, k.kem_ct
       FROM logs l 
       JOIN profiles p ON l.profile_id = p.id 
       LEFT JOIN access_points ap ON l.access_point_id = ap.id
+      LEFT JOIN kem_keys k ON l.kem_key_id = k.id
       WHERE l.profile_id = ? AND l.id = ?
       LIMIT 1
     `)

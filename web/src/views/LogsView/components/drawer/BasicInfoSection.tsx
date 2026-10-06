@@ -109,11 +109,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <DetailItem
             label={t("logs.detailProfile")}
             value={
-              loading ? (
-                <Spinner size={12} />
-              ) : (
-                detailedLog?.profile_name || detailedLog?.client_ip || "-"
-              )
+              detailedLog?.profile_name || detailedLog?.client_ip || selectedLog.client_ip || (loading ? <Spinner size={12} /> : "-")
             }
           />
           <DetailItem
@@ -139,7 +135,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           />
           <DetailItem
             label={t("logs.detailUpstream")}
-            value={loading ? <Spinner size={12} /> : detailedLog?.upstream || "-"}
+            value={detailedLog?.upstream || selectedLog.upstream || (loading ? <Spinner size={12} /> : "-")}
           />
           <DetailItem
             label={t("logs.detailReason")}
@@ -148,7 +144,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           />
           <DetailItem
             label={t("logs.detailECS")}
-            value={loading ? <Spinner size={12} /> : detailedLog?.ecs || "-"}
+            value={detailedLog?.ecs || selectedLog.ecs || (loading ? <Spinner size={12} /> : "-")}
             italic
           />
         </div>
