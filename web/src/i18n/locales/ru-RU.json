@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "Клиентское шифрование",
     "encryptedLocked": "Да (Заблокировано)",
     "encryptedDecrypted": "Да (Расшифровано локально)",
+    "encryptedYes": "Да",
     "notEncrypted": "Нет",
     "encryptedRecord": "[Зашифрованная запись]",
     "exportSuccess": "Журналы успешно экспортированы",

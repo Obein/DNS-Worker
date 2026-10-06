@@ -30,8 +30,13 @@ export function useLogDetails(
         .then(async (data: any) => {
           if (controller.signal.aborted) return;
           try {
+            const rawEncryptVersion = data?.encrypt_version ?? selectedLog.encrypt_version;
             const decrypted = await e2ee.decryptLogEntry(profileId, data);
-            setDetailedLog((prev) => ({ ...(prev || selectedLog), ...decrypted }));
+            setDetailedLog((prev) => ({
+              ...(prev || selectedLog),
+              ...decrypted,
+              encrypt_version: rawEncryptVersion ?? decrypted.encrypt_version,
+            }));
           } catch {
             setDetailedLog((prev) => ({ ...(prev || selectedLog), ...data }));
           }

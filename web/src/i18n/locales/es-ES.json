@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "¿Cifrado en el cliente?",
     "encryptedLocked": "Sí (Bloqueado)",
     "encryptedDecrypted": "Sí (Descifrado localmente)",
+    "encryptedYes": "Sí",
     "notEncrypted": "No",
     "encryptedRecord": "[Registro cifrado]",
     "exportSuccess": "Registros exportados con éxito",

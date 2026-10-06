@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "Chiffré côté client",
     "encryptedLocked": "Oui (Verrouillé)",
     "encryptedDecrypted": "Oui (Déchiffré localement)",
+    "encryptedYes": "Oui",
     "notEncrypted": "Non",
     "encryptedRecord": "[Enregistrement chiffré]",
     "exportSuccess": "Journaux exportés avec succès",

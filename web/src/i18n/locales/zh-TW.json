@@ -422,6 +422,7 @@
     "detailIsClientEncrypted": "是否使用者端加密",
     "encryptedLocked": "是 (未解鎖)",
     "encryptedDecrypted": "是 (已本機解密)",
+    "encryptedYes": "是",
     "notEncrypted": "否",
     "encryptedRecord": "[加密記錄]",
     "exportSuccess": "日誌匯出成功",
