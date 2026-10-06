@@ -1,5 +1,6 @@
 import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { SystemSettingsModel } from "../systemSettings";
+import { KemKeyModel } from "../kemKey";
 
 /**
  * Model responsible for enforcing log retention policies and purging
@@ -135,6 +136,21 @@ export class LogRetentionModel {
             console.warn("[LogRetentionModel] Failed to persist daily cleanup count:", err);
           }
         }
+      }
+
+      // ── Orphan kem_keys cleanup (Zero Dependents) ───────────────────────────
+      // Automatically purges kem_keys that have zero referencing logs in D1,
+      // strictly ensuring keys with active dependent logs are preserved regardless of age.
+      try {
+        const kemKeyModel = new KemKeyModel(this.db);
+        const deletedOrphanKeys = await kemKeyModel.cleanupOrphans();
+        if (deletedOrphanKeys > 0) {
+          console.log(
+            `[LogRetentionModel] Cleaned up ${deletedOrphanKeys} orphaned kem_keys with zero referencing logs.`
+          );
+        }
+      } catch (kemErr) {
+        console.warn("[LogRetentionModel] Failed to cleanup orphaned kem_keys:", kemErr);
       }
 
       console.log(

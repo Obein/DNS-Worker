@@ -6,6 +6,7 @@ import {
 } from "./core";
 import { LogAggregationModel } from "./aggregation";
 import { LogRetentionModel } from "./retention";
+import { KemKeyModel } from "../kemKey";
 import {
   LogAnalyticsModel,
   ActionCountResult,
@@ -22,22 +23,25 @@ export * from "./core";
 export * from "./aggregation";
 export * from "./retention";
 export * from "./analytics";
+export * from "../kemKey";
 
 /**
  * Unified LogModel Facade providing backward-compatible access to
- * all log-related subsystems (core CRUD, aggregation, retention, analytics).
+ * all log-related subsystems (core CRUD, aggregation, retention, analytics, kemKeys).
  */
 export class LogModel {
   public readonly core: LogCoreModel;
   public readonly aggregation: LogAggregationModel;
   public readonly retention: LogRetentionModel;
   public readonly analytics: LogAnalyticsModel;
+  public readonly kemKeys: KemKeyModel;
 
   constructor(private readonly db: D1Database) {
     this.core = new LogCoreModel(db);
     this.aggregation = new LogAggregationModel(db);
     this.retention = new LogRetentionModel(db);
     this.analytics = new LogAnalyticsModel(db, this.aggregation);
+    this.kemKeys = new KemKeyModel(db);
   }
 
   createInsertStatement(log: ResolutionLog): D1PreparedStatement {

@@ -172,6 +172,14 @@ export interface ResolutionLog {
   encrypted_payload?: string | null;
 }
 
+export interface KemKeyRecord {
+  id: string;
+  profile_id: string;
+  kem_ct: string;
+  created_at: number;
+  expires_at: number;
+}
+
 export interface LogHourlyRollup {
   profile_id: string;
   hour_timestamp: number;

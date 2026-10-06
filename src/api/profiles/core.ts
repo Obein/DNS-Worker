@@ -219,6 +219,7 @@ export async function handleProfilesCoreRequest(
         ctx.waitUntil((async () => {
           try {
             await env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId).run();
+            await logModel.kemKeys.cleanupProfileOrphans(profileId);
           } catch (e: any) {
             console.error("[Profile] Failed to purge logs on retention disable:", e?.message || e);
           }
