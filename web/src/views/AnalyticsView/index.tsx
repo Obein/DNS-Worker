@@ -24,7 +24,7 @@ import { processTrendData } from "./utils";
 import { getFlagEmoji } from "../../utils/getFlagEmoji";
 import { MetricCard } from "./components/MetricCard";
 import { RankTable } from "./components/RankTable";
-import { getProfileAccessPoints, getProfileDetails, getProfileAnalytics, localDb } from "../../services";
+import { getProfileAccessPoints, getProfileDetails, getProfileAnalytics, localDb, e2ee } from "../../services";
 import type { AccessPoint } from "../../services";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
@@ -99,6 +99,15 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
       }
     }
 
+    // ── Step 0: Ensure local encrypted logs are re-decrypted if E2EE is unlocked ──
+    try {
+      if (e2ee.isUnlocked()) {
+        await localDb.reDecryptLocalLogs(profileId);
+      }
+    } catch {
+      // Non-critical local decryption check
+    }
+
     // ── Step 1: Attempt Local-First SQLite aggregation for instant preview (0ms latency) ──
     try {
       const isDbReady = await localDb.init();
@@ -159,9 +168,9 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           // If local database has decrypted rankings (e.g. for E2EE), merge decrypted names
           const hasLocalDecrypted =
             prev &&
-            prev.top_allowed.some(
+            (prev.top_allowed.some(
               (d) => d.domain && d.domain !== "[Encrypted]" && d.domain !== "[Decryption Failed]"
-            );
+            ) || (prev.destinations && prev.destinations.length > 0));
 
           return {
             ...serverAnalytics!,
@@ -180,7 +189,10 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
               hasLocalDecrypted && prev?.clients.length
                 ? prev.clients
                 : serverAnalytics!.clients || [],
-            destinations: serverAnalytics!.destinations || [],
+            destinations:
+              (hasLocalDecrypted || (serverAnalytics!.destinations || []).length === 0) && prev?.destinations?.length
+                ? prev.destinations
+                : serverAnalytics!.destinations || [],
           };
         });
       }
@@ -192,7 +204,33 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
 
     // ── Step 3: Background sync of raw logs within query range into local SQLite ──
     try {
-      localDb.syncProfileLogs(profileId, undefined, since).catch((syncErr) => {
+      localDb.syncProfileLogs(profileId, undefined, since).then(async (inserted) => {
+        if (inserted > 0) {
+          try {
+            const freshLocal = await localDb.queryAnalytics({
+              profileId,
+              since,
+              until,
+              bucketSec,
+              accessPointId: apIdFilter || undefined,
+            });
+            if (freshLocal.destinations?.length > 0 || freshLocal.top_allowed?.length > 0) {
+              setData((curr) => {
+                if (!curr) return freshLocal;
+                return {
+                  ...curr,
+                  destinations: freshLocal.destinations.length > 0 ? freshLocal.destinations : curr.destinations,
+                  top_allowed: freshLocal.top_allowed.length > 0 ? freshLocal.top_allowed : curr.top_allowed,
+                  top_blocked: freshLocal.top_blocked.length > 0 ? freshLocal.top_blocked : curr.top_blocked,
+                  clients: freshLocal.clients.length > 0 ? freshLocal.clients : curr.clients,
+                };
+              });
+            }
+          } catch {
+            // Ignore re-query errors
+          }
+        }
+      }).catch((syncErr) => {
         console.warn("[AnalyticsView] Background sync error:", syncErr);
       });
     } catch {

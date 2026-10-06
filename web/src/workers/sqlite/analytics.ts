@@ -119,10 +119,18 @@ export function handleQueryAnalytics(params: WorkerAnalyticsParams): WorkerAnaly
   // 6. Destinations
   const destinations: { country_code: string; country: string; count: number }[] = [];
   const destStmt = db.prepare(`
-    SELECT dest_country_code as country_code, COALESCE(dest_country, 'Unknown') as country, count(*) as count 
+    SELECT 
+      COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) as country_code,
+      COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown') as country,
+      count(*) as count 
     FROM local_logs 
-    WHERE ${baseWhere} AND dest_country_code IS NOT NULL AND dest_country_code != ''
-    GROUP BY dest_country_code, dest_country 
+    WHERE ${baseWhere} 
+      AND (
+        (dest_country_code IS NOT NULL AND dest_country_code != '')
+        OR
+        (dest_geoip IS NOT NULL AND json_extract(dest_geoip, '$.country_code') IS NOT NULL AND json_extract(dest_geoip, '$.country_code') != '')
+      )
+    GROUP BY country_code, country 
     ORDER BY count DESC 
     LIMIT 15;
   `);

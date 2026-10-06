@@ -241,6 +241,30 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
     }
   };
 
+  // Handle upgrade from legacy ECDH P-256 to Post-Quantum P256-MLKEM768
+  const handleUpgradeToPqc = async () => {
+    setProcessing(true);
+    try {
+      await e2ee.rotateUserE2eeKey();
+      toasterRef.current?.show({
+        message: t("account.e2ee.upgradePqcSuccess", "已成功升级到后量子混合加密 (P256-MLKEM768)"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await loadStatus();
+      onRefresh?.();
+    } catch (err: any) {
+      console.error("[E2eeCard] Upgrade to PQC failed:", err);
+      toasterRef.current?.show({
+        message: err.message || t("account.e2ee.upgradePqcError", "升级到后量子加密失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   // 6. Handle keypair generation with Recovery Key (Single-use auto-rotation)
   const handleInitWithRecoveryKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -439,10 +463,20 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
                   <span className="font-mono">
                     {isPqc ? "P256-MLKEM768 + AES-256-GCM" : "ECDH P-256 + AES-256-GCM"}
                   </span>
-                  {isPqc && (
+                  {isPqc ? (
                     <Tag minimal intent={Intent.PRIMARY} className="text-[10px]">
                       {t("account.e2ee.pqcTag", "PQC / NIST FIPS 203")}
                     </Tag>
+                  ) : (
+                    <Button
+                      small
+                      intent={Intent.PRIMARY}
+                      minimal
+                      icon={<RefreshCw size={12} />}
+                      text={t("account.e2ee.upgradePqcBtn", "升级到后量子 (PQC)")}
+                      loading={processing}
+                      onClick={handleUpgradeToPqc}
+                    />
                   )}
                 </div>
               </div>

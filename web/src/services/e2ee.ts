@@ -690,6 +690,66 @@ class E2eeService {
   }
 
   /**
+   * Generates a new P256-MLKEM768 keypair and wraps it with the user's Passkey,
+   * upgrading from legacy ECDH P-256 or rotating the active post-quantum keypair.
+   */
+  async rotateUserE2eeKey(passkeyIdOverride?: string): Promise<boolean> {
+    const { kek, passkeyId } = await this.derivePasskeyKek("account");
+    const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
+
+    // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
+    const pqcKeys = ml_kem768_p256.keygen();
+    const publicKeyPayload = {
+      alg: "P256-MLKEM768",
+      pqc_pk: toBase64(pqcKeys.publicKey),
+    };
+    const privateKeyObj: UnlockedPrivateKey = {
+      alg: "P256-MLKEM768",
+      seedBase64: toBase64(pqcKeys.secretKey),
+    };
+
+    // 2. Wrap SK with Passkey KEK
+    const kekKey = await crypto.subtle.importKey(
+      "raw",
+      kek as BufferSource,
+      { name: "AES-GCM" },
+      false,
+      ["encrypt"]
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
+    const encryptedBuf = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      kekKey,
+      plaintext
+    );
+
+    const encryptedSk = toBase64(encryptedBuf);
+    const ivStr = toBase64(iv);
+
+    // 3. Upload to server
+    const res = await fetch("/api/account/e2ee/init", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        publicKey: publicKeyPayload,
+        passkeyId: chosenPasskeyId,
+        encryptedSk,
+        iv: ivStr,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to upgrade user E2EE key: ${await res.text()}`);
+    }
+
+    // Save in session for account
+    this.setPrivateKey("account", privateKeyObj);
+    return true;
+  }
+
+  /**
    * Initializes and enables E2EE for a profile (legacy wrapper).
    */
   async enableE2ee(profileId: string, passkeyId: string): Promise<boolean> {
@@ -973,16 +1033,29 @@ class E2eeService {
         }
 
         const data = await decryptSensitiveLogDataWithDek(dek, log.encrypted_payload);
+        let destCountryCode = data.dest_country_code ?? log.dest_country_code;
+        let destCountry = data.dest_country ?? log.dest_country;
+        let destIsp = data.dest_isp ?? log.dest_isp;
+        const rawGeoJson = data.dest_geoip ?? log.dest_geoip;
+        if ((!destCountryCode || !destCountry) && rawGeoJson) {
+          try {
+            const parsed = JSON.parse(rawGeoJson);
+            if (!destCountryCode && parsed.country_code) destCountryCode = parsed.country_code.toUpperCase();
+            if (!destCountry && parsed.country) destCountry = parsed.country;
+            if (!destIsp && parsed.isp) destIsp = parsed.isp;
+          } catch {}
+        }
+
         return {
           ...log,
           domain: data.domain || log.domain,
           client_ip: data.client_ip || log.client_ip,
           geo_country: data.geo_country ?? log.geo_country,
           answer: data.answer ?? log.answer,
-          dest_geoip: data.dest_geoip ?? log.dest_geoip,
-          dest_country_code: data.dest_country_code ?? log.dest_country_code,
-          dest_country: data.dest_country ?? log.dest_country,
-          dest_isp: data.dest_isp ?? log.dest_isp,
+          dest_geoip: rawGeoJson,
+          dest_country_code: destCountryCode,
+          dest_country: destCountry,
+          dest_isp: destIsp,
           ecs: data.ecs ?? log.ecs,
           upstream: data.upstream ?? log.upstream,
           reason: data.reason ?? log.reason,
@@ -1032,6 +1105,18 @@ class E2eeService {
         );
 
         const data: SensitiveLogData = JSON.parse(new TextDecoder().decode(decryptedBytes));
+        let destCountryCode = data.dest_country_code ?? log.dest_country_code;
+        let destCountry = data.dest_country ?? log.dest_country;
+        let destIsp = data.dest_isp ?? log.dest_isp;
+        const rawGeoJson = data.dest_geoip ?? log.dest_geoip;
+        if ((!destCountryCode || !destCountry) && rawGeoJson) {
+          try {
+            const parsed = JSON.parse(rawGeoJson);
+            if (!destCountryCode && parsed.country_code) destCountryCode = parsed.country_code.toUpperCase();
+            if (!destCountry && parsed.country) destCountry = parsed.country;
+            if (!destIsp && parsed.isp) destIsp = parsed.isp;
+          } catch {}
+        }
 
         return {
           ...log,
@@ -1039,10 +1124,10 @@ class E2eeService {
           client_ip: data.client_ip || log.client_ip,
           geo_country: data.geo_country ?? log.geo_country,
           answer: data.answer ?? log.answer,
-          dest_geoip: data.dest_geoip ?? log.dest_geoip,
-          dest_country_code: data.dest_country_code ?? log.dest_country_code,
-          dest_country: data.dest_country ?? log.dest_country,
-          dest_isp: data.dest_isp ?? log.dest_isp,
+          dest_geoip: rawGeoJson,
+          dest_country_code: destCountryCode,
+          dest_country: destCountry,
+          dest_isp: destIsp,
           ecs: data.ecs ?? log.ecs,
           upstream: data.upstream ?? log.upstream,
           reason: data.reason ?? log.reason,

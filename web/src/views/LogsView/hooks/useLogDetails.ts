@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { LogEntry } from "../types";
 import { getProfileLogDetails } from "../../../services";
+import { e2ee } from "../../../services/e2ee";
 
 /**
  * Hook to fetch and manage detailed metadata for a selected log entry.
@@ -21,20 +22,30 @@ export function useLogDetails(
   useEffect(() => {
     if (isDrawerOpen && selectedLog?.id) {
       setLoading(true);
-      setDetailedLog(null);
+      // Initialize with selectedLog so summary data (client_ip, answer, etc.) is immediately available
+      setDetailedLog(selectedLog);
 
       const controller = new AbortController();
       getProfileLogDetails(profileId, selectedLog.id, selectedLog.timestamp, { signal: controller.signal })
-        .then((data: any) => {
-          setDetailedLog(data);
+        .then(async (data: any) => {
+          if (controller.signal.aborted) return;
+          try {
+            const decrypted = await e2ee.decryptLogEntry(profileId, data);
+            setDetailedLog((prev) => ({ ...(prev || selectedLog), ...decrypted }));
+          } catch {
+            setDetailedLog((prev) => ({ ...(prev || selectedLog), ...data }));
+          }
         })
         .catch((err: any) => {
           if (err.name !== "AbortError") {
             console.error(err);
+            setDetailedLog((prev) => prev || selectedLog);
           }
         })
         .finally(() => {
-          setLoading(false);
+          if (!controller.signal.aborted) {
+            setLoading(false);
+          }
         });
 
       return () => {
