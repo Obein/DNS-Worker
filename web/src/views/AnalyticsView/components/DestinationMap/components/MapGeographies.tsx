@@ -30,7 +30,7 @@ export const MapGeographies: React.FC<MapGeographiesProps> = ({
     <Geographies geography={geographyData}>
       {({ geographies }) =>
         geographies.map((geo) => {
-          const countryCode = numericToAlpha2[geo.id];
+          const countryCode = geo.id != null ? numericToAlpha2[String(geo.id)] : undefined;
           const dest = countryCode ? destinationMap[countryCode] : null;
           const count = dest?.count || 0;
           const fillLevel = getLevel(count);
