@@ -35,21 +35,24 @@ export function rebuildEchWithFronting(
     const pkLen = (bytes[9] << 8) | bytes[10];
     const pkStart = 11;
     const pkEnd = pkStart + pkLen;
-    if (pkEnd > bytes.length) return rawBase64;
+    if (pkEnd + 4 > bytes.length) return rawBase64;
     const publicKey = bytes.slice(pkStart, pkEnd);
 
     let offset = pkEnd;
     const csLen = (bytes[offset] << 8) | bytes[offset + 1];
     offset += 2;
+    if (offset + csLen + 2 > bytes.length) return rawBase64;
     const cipherSuites = bytes.slice(offset, offset + csLen);
     offset += csLen;
 
     const maxNameLen = bytes[offset++];
     const oldNameLen = bytes[offset++];
+    if (offset + oldNameLen + 2 > bytes.length) return rawBase64;
     offset += oldNameLen;
 
     const extLen = (bytes[offset] << 8) | bytes[offset + 1];
     offset += 2;
+    if (offset + extLen > bytes.length) return rawBase64;
     const extensions = bytes.slice(offset, offset + extLen);
 
     const targetName = (newFrontingDomain || DEFAULT_ECH_FRONTING_DOMAIN).trim().toLowerCase();

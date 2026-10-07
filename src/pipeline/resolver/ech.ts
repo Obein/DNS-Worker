@@ -4,8 +4,7 @@ import {
   isCloudflareIp,
   buildCloudflareEchConfig,
   DEFAULT_ECH_FRONTING_DOMAIN,
-  ensureCloudflareIpRangesLoaded,
-  saveActiveCfEchConfig
+  ensureCloudflareIpRangesLoaded
 } from "../../utils/ech";
 import { EchProcessResult, ParsedDNSAnswerRecord } from "./types";
 
@@ -78,7 +77,6 @@ export async function processBestEffortEch(
       const echMatch = a.data.match(/ech=([A-Za-z0-9+/=]+)/);
       if (echMatch) {
         existingEch = echMatch[1];
-        context.ctx.waitUntil(saveActiveCfEchConfig(context.env.DB, existingEch));
       }
     }
 

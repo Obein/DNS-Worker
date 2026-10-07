@@ -17,6 +17,7 @@ export function decodeName(
   let jumped = false;
   let consumed = 0;
   let iterations = 0;
+  let terminated = false;
 
   while (iterations < 128) {
     if (curr >= buffer.length) break; // Boundary check
@@ -24,6 +25,7 @@ export function decodeName(
 
     if (len === 0) {
       if (!jumped) consumed++;
+      terminated = true;
       break;
     }
 
@@ -39,6 +41,11 @@ export function decodeName(
       continue;
     }
 
+    // RFC 1035: Label length top 2 bits must be 00 for uncompressed labels (max 63 octets)
+    if ((len & 0xc0) !== 0) {
+      break;
+    }
+
     if (name.length > 0) name += ".";
     // Check if label content overflows the buffer
     if (curr + 1 + len > buffer.length) break;
@@ -49,6 +56,10 @@ export function decodeName(
     if (!jumped) consumed += len + 1;
     curr += len + 1;
     iterations++;
+  }
+
+  if (!terminated) {
+    return { name: "", read: 0 };
   }
 
   return { name, read: consumed };
@@ -79,6 +90,7 @@ export function parseDNSQueryFromRaw(raw: Uint8Array): DNSQuery | null {
     if (raw.length < 16) return null;
 
     const { name, read } = decodeName(raw, 12);
+    if (read === 0) return null;
     const qtypeOffset = 12 + read;
 
     // Boundary check for query type and class
@@ -157,6 +169,7 @@ export function parseDNSAnswer(
   for (let i = 0; i < qCount; i++) {
     if (offset >= raw.length) return [];
     const { read } = decodeName(raw, offset);
+    if (read === 0) return [];
     offset += read + 4; // QNAME + QTYPE(2) + QCLASS(2)
     if (offset > raw.length) return [];
   }
@@ -165,6 +178,7 @@ export function parseDNSAnswer(
     if (offset >= raw.length) break;
 
     const { name, read: nameRead } = decodeName(raw, offset);
+    if (nameRead === 0) break;
     offset += nameRead;
 
     // Boundary check 1: Ensure enough bytes for fixed RR header

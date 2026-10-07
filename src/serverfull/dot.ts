@@ -109,6 +109,10 @@ export class DotDnsServer {
       }
     }
 
+    socket.setTimeout(30000, () => {
+      socket.destroy();
+    });
+
     socket.on('error', (err: Error) => {
       // Common client disconnection / reset
       if ((err as any).code !== 'ECONNRESET') {
@@ -116,7 +120,12 @@ export class DotDnsServer {
       }
     });
 
+    const MAX_DOT_BUFFER = 65537; // 2-byte length prefix + 65535 max DNS packet (RFC 7858)
     socket.on('data', async (chunk: Buffer) => {
+      if (buffer.length + chunk.length > MAX_DOT_BUFFER) {
+        socket.destroy();
+        return;
+      }
       buffer = Buffer.concat([buffer, chunk]);
 
       while (buffer.length >= 2) {
@@ -177,7 +186,8 @@ export class DotDnsServer {
         ctx
       };
 
-      const request = new Request(`http://${remoteIp}/dns-query`, {
+      const host = remoteIp.includes(':') ? `[${remoteIp}]` : remoteIp;
+      const request = new Request(`http://${host}/dns-query`, {
         headers: {
           'CF-Connecting-IP': remoteIp,
           'Accept': 'application/dns-message',
