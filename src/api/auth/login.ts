@@ -14,7 +14,7 @@ import {
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { verifyPassword } from "../../utils/crypto";
-import { verifyTOTP, verifyTOTPWithStep, findMatchingRecoveryKey, generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
+import { verifyTOTPWithStep, findMatchingRecoveryKey, generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { PasskeyModel } from "../../models/passkey";
 import { ActivityLogModel } from "../../models/activityLog";
