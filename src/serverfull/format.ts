@@ -363,14 +363,21 @@ export function formatPortError(config: PortErrorConfig): string {
 
   if (errCode === 'EACCES') {
     const causes = [
-      'Port numbers below 1024 require elevated privileges on Linux/macOS.',
+      'Port numbers below 1024 require elevated privileges on Linux/macOS (e.g. DNS port 53).',
       'On Windows, the port may fall within a reserved NAT/Hyper-V port exclusion range.'
     ];
 
+    const isLinux = process.platform === 'linux';
     const solutions = [
-      'Run with elevated privileges (e.g. sudo npx dns-worker).',
-      `Or use ${alternateOption} to bind to an unprivileged or available port.`
-    ];
+      isLinux
+        ? "Run persistently as systemd service (Recommended): 'sudo dns-worker service install' (enables port 53 via CAP_NET_BIND_SERVICE)"
+        : "Run with elevated Administrator privileges.",
+      isLinux
+        ? "Or run directly in foreground with sudo: 'sudo dns-worker'"
+        : null,
+      `Or bind to an unprivileged port: '${alternateOption}'`,
+      disableOption ? `Or disable this transport: '${disableOption}'` : null
+    ].filter(Boolean) as string[];
 
     return formatDiagnostic({
       level: 'error',

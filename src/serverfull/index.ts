@@ -317,11 +317,16 @@ async function bootstrap(): Promise<void> {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-bootstrap().catch((err) => {
-  console.error(formatDiagnostic({
-    level: 'error',
-    title: 'Serverfull - Fatal Startup Error',
-    message: err?.message || String(err)
-  }));
+bootstrap().catch((err: unknown) => {
+  const errCode = (err as { code?: string })?.code;
+  // If already displayed as a formatted port diagnostic error by udp/dot/http, avoid duplicate error box
+  if (errCode !== 'EACCES' && errCode !== 'EADDRINUSE') {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(formatDiagnostic({
+      level: 'error',
+      title: 'Serverfull - Fatal Startup Error',
+      message: errorMsg
+    }));
+  }
   process.exit(1);
 });
