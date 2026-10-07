@@ -15,51 +15,80 @@ import { flushLogBatch } from '../pipeline/logBatcher';
 import worker from '../index';
 import { ExecutionContext } from '../types';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
+import {
+  formatBanner,
+  formatDiagnostic,
+  formatHelpMenu,
+  formatKeyValueSection
+} from './format';
+import { showServerfullStatus } from './status';
+import { handleServiceAction } from './service';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (major < 22 || (major === 22 && minor < 5)) {
-    console.error('\n[DNS Worker] Error: Node.js >= 22.5.0 is required (found v' + process.versions.node + ').');
-    console.error('Please upgrade Node.js to version 22.5.0 or higher to use built-in SQLite (node:sqlite).\n');
+    console.error(formatDiagnostic({
+      level: 'error',
+      title: 'DNS Worker - Environment Error',
+      message: `Node.js >= 22.5.0 is required (found v${process.versions.node}).`,
+      solutions: [
+        'Please upgrade Node.js to version 22.5.0 or higher to use built-in SQLite (node:sqlite).'
+      ]
+    }));
     process.exit(1);
   }
 }
 
 function printHelp(): void {
   const version = getPackageVersion();
-  console.log(`
-DNS Worker v${version} (Serverfull Mode) - Privacy-first DNS & DoH Resolver
 
-Usage:
-  dns-worker [options]
-  npx dns-worker [options]
+  const menu = formatHelpMenu({
+    name: `DNS Worker v${version} (Serverfull Mode)`,
+    description: 'Privacy-first DNS & DoH Resolver',
+    usage: [
+      'dns-worker [options]',
+      'dns-worker status [options]',
+      'dns-worker service <action>',
+      'npx dns-worker [options]'
+    ],
+    commands: [
+      { label: 'status', desc: 'Inspect service runtime status and database health' },
+      { label: 'service <action>', desc: 'Manage Linux systemd service (install, start, stop, restart, status, logs, uninstall)' }
+    ],
+    options: [
+      { label: '-s, --status', desc: 'Display service and database runtime status' },
+      { label: '-p, --port <number>', desc: 'Web Dashboard & DoH HTTP port (default: 3000)' },
+      { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
+      { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
+      { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
+      { label: '--db <path>', desc: 'SQLite database file path (default: ./data/dns_worker.sqlite)' },
+      { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
+      { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
+      { label: '--disable-dot', desc: 'Disable DoT server' },
+      { label: '-v, --version', desc: 'Display version number' },
+      { label: '--help', desc: 'Display this help message' }
+    ],
+    envVars: [
+      { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
+      { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
+      { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
+      { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
+      { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
+      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
+      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
+    ],
+    tip: [
+      "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
+      "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
+    ]
+  });
 
-Options:
-  -p, --port <number>          Web Dashboard & DoH HTTP port (default: 3000)
-  --dns-port <number>          Classic UDP DNS port (default: 53)
-  --dot-port <number>          DoT (DNS over TLS) port (default: 853)
-  -h, --host <address>         Network address to bind (default: 0.0.0.0)
-  --db <path>                  SQLite database file path (default: ./data/dns_worker.sqlite)
-  --default-profile <key>      Default Profile Key or Access Point Token for standard queries
-  --disable-udp                Disable Classic UDP DNS server
-  --disable-dot                Disable DoT server
-  -v, --version                Display version number
-  --help                       Display this help message
-
-Environment Variables:
-  PORT / SERVERFULL_HTTP_PORT    Web Dashboard & DoH port
-  DNS_PORT / SERVERFULL_UDP_PORT Classic UDP DNS port
-  DOT_PORT / SERVERFULL_DOT_PORT DoT port
-  DB_PATH / SERVERFULL_DB_PATH   SQLite database file path
-  JWT_SECRET                     JWT secret key (recommended >= 32 characters)
-  SERVERFULL_TLS_KEY_PATH        Path to TLS private key for DoT
-  SERVERFULL_TLS_CERT_PATH       Path to TLS certificate for DoT
-`);
+  console.log(menu);
 }
 
-function parseCli(): ServerfullCliArgs {
+async function parseCli(): Promise<ServerfullCliArgs> {
   try {
-    const { values } = parseArgs({
+    const { values, positionals } = parseArgs({
       options: {
         port: { type: 'string', short: 'p' },
         'dns-port': { type: 'string' },
@@ -69,13 +98,14 @@ function parseCli(): ServerfullCliArgs {
         'default-profile': { type: 'string' },
         'disable-udp': { type: 'boolean' },
         'disable-dot': { type: 'boolean' },
+        status: { type: 'boolean', short: 's' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
       },
       allowPositionals: true
     });
 
-    if (values.help) {
+    if (values.help || positionals[0]?.toLowerCase() === 'help') {
       printHelp();
       process.exit(0);
     }
@@ -85,21 +115,59 @@ function parseCli(): ServerfullCliArgs {
       process.exit(0);
     }
 
+    if (values.status || positionals[0]?.toLowerCase() === 'status') {
+      const { config, env } = getServerfullConfig(values as ServerfullCliArgs);
+      await showServerfullStatus(config, env.JWT_SECRET);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'service') {
+      const action = positionals[1]?.toLowerCase() || 'status';
+      await handleServiceAction(action);
+      process.exit(0);
+    }
+
+    if (positionals.length > 0) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'DNS Worker - CLI Argument Error',
+        message: `Unrecognized command or argument "${positionals.join(' ')}".`,
+        solutions: [
+          "Run 'dns-worker status' to view runtime status.",
+          "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+          "Run 'dns-worker --help' to inspect supported options and usage."
+        ]
+      }));
+      printHelp();
+      process.exit(1);
+    }
+
     return values as ServerfullCliArgs;
-  } catch (err: any) {
-    console.error(`[DNS Worker] CLI Argument Error: ${err.message}`);
-    console.error('Run "dns-worker --help" for available options.\n');
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(formatDiagnostic({
+      level: 'error',
+      title: 'DNS Worker - CLI Argument Error',
+      message: errorMsg,
+      solutions: [
+        "Run 'dns-worker status' to view runtime status.",
+        "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+        "Run 'dns-worker --help' to inspect supported options and usage."
+      ]
+    }));
+    printHelp();
     process.exit(1);
   }
 }
 
 async function bootstrap(): Promise<void> {
   checkNodeVersion();
-  const cliArgs = parseCli();
+  const cliArgs = await parseCli();
 
-  console.log('------------------------------------------------------');
-  console.log(`       Initializing DNS Worker v${getPackageVersion()} (Serverfull)   `);
-  console.log('------------------------------------------------------');
+  console.log(formatBanner({
+    title: `Initializing DNS Worker v${getPackageVersion()} (Serverfull)`,
+    borderChar: '-'
+  }));
 
   // 1. Initialize in-memory Web Cache and HTMLRewriter polyfills
   initNodeGlobals();
@@ -107,11 +175,25 @@ async function bootstrap(): Promise<void> {
   // 2. Load environment variables & configurations
   const { config, env } = getServerfullConfig(cliArgs);
 
+  console.log(formatKeyValueSection({
+    title: '[Services] Configured Ports & Transports:',
+    items: [
+      { label: 'Web Dashboard & DoH', value: `http://${config.host}:${config.httpPort}` },
+      { label: 'Classic UDP DNS', value: config.disableUdp ? 'Disabled' : `udp://${config.host}:${config.udpPort}` },
+      { label: 'DNS over TLS (DoT)', value: config.disableDot ? 'Disabled' : `tls://${config.host}:${config.dotPort}` }
+    ]
+  }));
+
   // Non-blocking security check for legacy short JWT_SECRET
   if (isUsableJwtSecret(env.JWT_SECRET) && !isStrongJwtSecret(env.JWT_SECRET)) {
-    console.warn('\n[SECURITY WARNING] JWT_SECRET is shorter than 32 characters.');
-    console.warn('  Please configure KEK_v1 in your environment before rotating JWT_SECRET');
-    console.warn('  to prevent existing encrypted credentials from becoming unrecoverable.\n');
+    console.warn(formatDiagnostic({
+      level: 'warning',
+      title: 'SECURITY WARNING',
+      message: 'JWT_SECRET is shorter than 32 characters.',
+      solutions: [
+        'Please configure KEK_v1 in your environment before rotating JWT_SECRET to prevent existing encrypted credentials from becoming unrecoverable.'
+      ]
+    }));
   }
 
   // 3. Initialize SQLite D1 adapter and execute schema migrations
@@ -168,22 +250,30 @@ async function bootstrap(): Promise<void> {
     }
   }, 60000);
 
-  console.log('======================================================');
-  console.log('   DNS Worker (Serverfull Mode) Started Successfully  ');
-  console.log('======================================================');
-  if (udpServer) {
-    console.log(`  * Classic UDP DNS :  udp://${config.host}:${config.udpPort}`);
-  } else {
-    console.log(`  * Classic UDP DNS :  Disabled (--disable-udp)`);
-  }
-  if (dotServer && config.tlsKeyPath && config.tlsCertPath) {
-    console.log(`  * DoT (TLS DNS)   :  tls://${config.host}:${config.dotPort}`);
-  } else {
-    console.log(`  * DoT (TLS DNS)   :  Disabled / Not Configured`);
-  }
-  console.log(`  * Web UI & DoH    :  http://${config.host}:${config.httpPort}`);
-  console.log(`  * SQLite Database :  ${config.dbPath}`);
-  console.log('======================================================');
+  const hasTls = !!(dotServer && config.tlsKeyPath && config.tlsCertPath);
+  console.log(formatBanner({
+    title: 'DNS Worker (Serverfull Mode) Started Successfully',
+    borderChar: '=',
+    bullet: '• ',
+    items: [
+      {
+        label: 'Classic UDP DNS',
+        value: udpServer ? `udp://${config.host}:${config.udpPort}` : 'Disabled (--disable-udp)'
+      },
+      {
+        label: 'DoT (TLS DNS)',
+        value: hasTls ? `tls://${config.host}:${config.dotPort}` : 'Disabled / Not Configured'
+      },
+      {
+        label: 'Web UI & DoH',
+        value: `http://${config.host}:${config.httpPort}`
+      },
+      {
+        label: 'SQLite Database',
+        value: config.dbPath
+      }
+    ]
+  }));
 
   // 7. Handle graceful shutdown
   const shutdown = async (signal: string) => {
@@ -218,6 +308,10 @@ async function bootstrap(): Promise<void> {
 }
 
 bootstrap().catch((err) => {
-  console.error('[Serverfull] Fatal startup error:', err.message || err);
+  console.error(formatDiagnostic({
+    level: 'error',
+    title: 'Serverfull - Fatal Startup Error',
+    message: err?.message || String(err)
+  }));
   process.exit(1);
 });

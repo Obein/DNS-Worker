@@ -207,10 +207,13 @@ export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoo
   console.log(`[SQLite D1] Connecting to database at: ${dbPath}`);
   const rawDb = new DatabaseSync(dbPath);
 
-  // Configure SQLite for high concurrency & integrity
+  // Configure SQLite for high concurrency, zero-copy memory reads & integrity
   rawDb.exec('PRAGMA journal_mode = WAL;');
   rawDb.exec('PRAGMA synchronous = NORMAL;');
   rawDb.exec('PRAGMA foreign_keys = ON;');
+  rawDb.exec('PRAGMA temp_store = MEMORY;');
+  rawDb.exec('PRAGMA cache_size = -64000;'); // 64 MB in-memory page cache
+  rawDb.exec('PRAGMA mmap_size = 268435456;'); // 256 MB zero-copy memory-mapped I/O
 
   // Run migrations
   const migrationsDir = path.join(rootDir, 'migrations');

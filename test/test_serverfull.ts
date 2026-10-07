@@ -89,7 +89,7 @@ async function runTests() {
   // Ports for testing
   const UDP_TEST_PORT = 15353;
   const DOT_TEST_PORT = 18853;
-  const HTTP_TEST_PORT = 13300;
+  const HTTP_TEST_PORT = 23300;
 
   // 5. Start UDP Server
   const udpServer = new UdpDnsServer({

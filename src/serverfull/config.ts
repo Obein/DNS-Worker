@@ -18,6 +18,9 @@ export interface ServerfullCliArgs {
   'default-profile'?: string;
   'disable-udp'?: boolean;
   'disable-dot'?: boolean;
+  status?: boolean;
+  version?: boolean;
+  help?: boolean;
 }
 
 export interface ServerfullConfig {

@@ -10,6 +10,7 @@ import { parseDNSQueryFromRaw } from '../utils/dns';
 import { pipeline } from '../pipeline';
 import { resolveDefaultProfile, resolveProfileByKey } from '../api/doh';
 import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
+import { formatPortError } from './format';
 
 export interface UdpServerOptions {
   port: number;
@@ -33,23 +34,14 @@ export class UdpDnsServer {
           try { this.socket?.close(); } catch {}
           this.socket = null;
 
-          if (err.code === 'EADDRINUSE') {
-            console.error(`\n[Port Conflict] UDP port ${this.options.port} is already in use.`);
-            console.error('  Possible causes:');
-            console.error('    - Linux: systemd-resolved is listening on port 53 (stop it or configure DNSStubListener=no).');
-            console.error('    - Another DNS server (bind9, dnsmasq, AdGuard Home) is running.');
-            console.error('  Solutions:');
-            console.error(`    - Use --dns-port <port> (e.g. --dns-port 5353) to specify an alternate port.`);
-            console.error(`    - Or use --disable-udp to run only the Web Dashboard & DoH.\n`);
-          } else if (err.code === 'EACCES') {
-            console.error(`\n[Permission Denied] Permission denied binding to UDP port ${this.options.port}.`);
-            console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
-            console.error('  Solutions:');
-            console.error('    - Run with sudo (e.g. sudo npx dns-worker).');
-            console.error('    - Or use --dns-port 5353 to bind to an unprivileged port.\n');
-          } else {
-            console.error('[UDP DNS] Failed to bind socket:', err.message || err);
-          }
+          console.error(formatPortError({
+            serviceName: 'UDP DNS',
+            protocol: 'UDP',
+            port: this.options.port,
+            err,
+            alternateOption: '--dns-port <port> (e.g. --dns-port 5353)',
+            disableOption: '--disable-udp'
+          }));
 
           reject(err);
         };
@@ -65,6 +57,13 @@ export class UdpDnsServer {
           this.socket?.on('error', (err: Error) => {
             console.error('[UDP DNS] Socket runtime error:', err);
           });
+          // Boost OS UDP socket buffers to reduce packet drops under high DNS load
+          try {
+            this.socket?.setRecvBufferSize(4 * 1024 * 1024);
+            this.socket?.setSendBufferSize(4 * 1024 * 1024);
+          } catch {
+            /* Gracefully ignore if OS limits prevent buffer expansion */
+          }
           this.isRunning = true;
           console.log(`[UDP DNS] Classic DNS listening on udp://${this.options.host}:${this.options.port}`);
           resolve();
