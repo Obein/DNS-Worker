@@ -1,6 +1,6 @@
 {
   "name": "dns-worker",
-  "version": "1.0.24",
+  "version": "1.1.1",
   "private": false,
   "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
   "main": "./dist/serverfull.mjs",
@@ -29,7 +29,7 @@
     "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",
     "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:* --external:node:*",
-    "postinstall": "npm run ui:install",
+    "prepare": "npm run ui:install",
     "db:setup": "wrangler d1 create dns_worker_db",
     "db:migrate:dev": "wrangler d1 migrations apply dns_worker_db --local",
     "db:migrate:prod": "echo \"y\" | wrangler d1 migrations apply dns_worker_db --remote",
