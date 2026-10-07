@@ -9,7 +9,7 @@
 
 import assert from "node:assert";
 import { isSafeUrl } from "../src/utils/validator";
-import { verifyAuthenticationResponse, verifyRegistrationResponse, base64UrlEncode } from "../src/lib/webauthn";
+import { verifyAuthenticationResponse, base64UrlEncode } from "../src/lib/webauthn";
 
 async function testSafeUrlSSRFVectors(): Promise<void> {
   console.log("1. Testing isSafeUrl SSRF & Dynamic DNS Wildcard Filtering...");
