@@ -1,0 +1,55 @@
+name: Publish Canary to npm
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish_canary:
+    name: Build and Publish Canary to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Determine and sync canary package version
+        run: |
+          # Extract base semver (e.g. 1.1.1 from 1.1.1 or 1.1.1-canary)
+          BASE_VER=$(node -p "require('./package.json').version.split('-')[0]")
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          CANARY_VER="${BASE_VER}-canary.${SHORT_SHA}"
+
+          echo "Syncing package.json version to canary: $CANARY_VER"
+          npm version "$CANARY_VER" --no-git-tag-version --allow-same-version
+
+          echo "CANARY_VERSION=$CANARY_VER" >> $GITHUB_ENV
+
+      - name: Build Web Dashboard and Serverfull bundle
+        run: npm run build:serverfull
+
+      - name: Publish canary package to npm
+        run: |
+          npm publish --access public --tag canary
+          npm dist-tag add "dns-worker@${{ env.CANARY_VERSION }}" alpha || true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
