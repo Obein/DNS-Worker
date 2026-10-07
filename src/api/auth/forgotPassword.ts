@@ -9,7 +9,8 @@ import { generateId, hashPassword } from "../../utils/crypto";
 import { PASSWORD_REGEX } from "../../utils/validator";
 import { verifyTurnstile } from "./utils";
 import { generateWebAuthnChallenge, verifyAuthenticationResponse } from "../../lib/webauthn";
-import { verifyTOTP, findMatchingRecoveryKey } from "../../lib/totp";
+import { verifyTOTPWithStep, findMatchingRecoveryKey } from "../../lib/totp";
+import { StoredRecoveryKey } from "../../models/user";
 
 interface RecoveryState {
   userId: string;
@@ -72,14 +73,19 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
     const passkeyModel = new PasskeyModel(env.DB);
     const passkeys = await passkeyModel.listByUser(user.id);
     const has_passkey = passkeys.length > 0;
-    const has_totp = !!user.totp_enabled && !!user.totp_secret;
+    const has_totp = !!user.totp_enabled && (!!user.totp_secret || !!user.totp_secret_encrypted);
 
     let has_recovery_keys = false;
-    if (user.totp_recovery_keys) {
+    const rawRecoveryKeys = user.totp_recovery_keys;
+    if (rawRecoveryKeys) {
       try {
-        const parsed = JSON.parse(user.totp_recovery_keys);
+        const parsed = typeof rawRecoveryKeys === "string" ? JSON.parse(rawRecoveryKeys) : rawRecoveryKeys;
         has_recovery_keys = Array.isArray(parsed) && parsed.length > 0;
-      } catch {}
+      } catch {
+        has_recovery_keys = typeof rawRecoveryKeys === "string" && rawRecoveryKeys.length > 0;
+      }
+    } else if (user.totp_recovery_keys_encrypted) {
+      has_recovery_keys = true;
     }
 
     // If no MFA configured at all, user cannot self-reset
@@ -194,9 +200,11 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
     }
     // Verify Recovery Key
     else if (recoveryKey) {
-      let storedHashes: string[] = [];
+      let storedHashes: StoredRecoveryKey[] = [];
       try {
-        storedHashes = JSON.parse(user.totp_recovery_keys || '[]');
+        const raw = user.totp_recovery_keys;
+        storedHashes = typeof raw === 'string' ? JSON.parse(raw || '[]') : (raw || []);
+        if (!Array.isArray(storedHashes)) storedHashes = [storedHashes];
       } catch {}
 
       const matchIndex = await findMatchingRecoveryKey(recoveryKey, storedHashes);
@@ -211,11 +219,23 @@ export async function handleForgotPasswordRequest(request: Request, env: Env): P
     }
     // Verify TOTP
     else if (totpTokenHash && user.totp_secret) {
-      const isValid = await verifyTOTP(user.totp_secret, totpTokenHash, totpSalt);
-      if (!isValid) {
+      const totpResult = await verifyTOTPWithStep(user.totp_secret, totpTokenHash, totpSalt);
+      if (!totpResult.valid) {
         state.failedAttempts++;
         await cacheUtils.set(cache, cacheKey, state, 300);
         return new Response("Invalid TOTP code", { status: 400 });
+      }
+
+      // Anti-replay protection: prevent reusing the same TOTP time-step
+      if (totpResult.timeStep !== undefined) {
+        const stepKey = `totp_step:${user.id}:${totpResult.timeStep}`;
+        const replayed = await cacheUtils.get(cache, stepKey);
+        if (replayed) {
+          state.failedAttempts++;
+          await cacheUtils.set(cache, cacheKey, state, 300);
+          return new Response("TOTP code already used, please wait for next code", { status: 400 });
+        }
+        await cacheUtils.set(cache, stepKey, true, 180);
       }
 
       await activityLog.record(user.id, 'totp_verify_success', clientIp, userAgent, { flow: 'forgot_password' });

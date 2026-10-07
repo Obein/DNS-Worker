@@ -142,6 +142,14 @@ export class HttpServer {
         headers.set('CF-Connecting-IP', remoteIp);
       }
 
+      // Populate fallback geolocation coordinates for serverfull environments without Cloudflare edge proxy
+      if (!headers.has('CF-IPLatitude')) {
+        headers.set('CF-IPLatitude', '0.0');
+      }
+      if (!headers.has('CF-IPLongitude')) {
+        headers.set('CF-IPLongitude', '0.0');
+      }
+
       let body: any = null;
       if (req.method !== 'GET' && req.method !== 'HEAD') {
         const chunks: Buffer[] = [];

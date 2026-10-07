@@ -1,6 +1,6 @@
 import { Env, User, ExecutionContext } from "../../../types";
 import { generateSessionHash } from "../../../utils/crypto";
-import { UserModel } from "../../../models/user";
+import { UserModel, StoredRecoveryKey } from "../../../models/user";
 import { ActivityLogModel } from "../../../models/activityLog";
 import { PasskeyModel } from "../../../models/passkey";
 import { PASSKEY_NAME_REGEX } from "../../../utils/validator";
@@ -10,7 +10,7 @@ import {
   verifyRegistrationResponse
 } from "../../../lib/webauthn";
 import { cacheUtils } from "../../../utils/cache";
-import { generateRecoveryKeys, hashRecoveryKey, StoredRecoveryKeyItem } from "../../../lib/totp";
+import { generateRecoveryKeys, hashRecoveryKey } from "../../../lib/totp";
 
 /**
  * Handles WebAuthn Passkeys lifecycle endpoints:
@@ -182,43 +182,49 @@ export async function handlePasskeysRequest(
       const dbUser = await userModel.getById(user.id);
       let recoveryKeys: string[] = [];
       if (dbUser) {
+        let hasExistingRecoveryKeys = false;
         if (dbUser.totp_recovery_keys) {
-          let parsedKeys: any = null;
           try {
-            parsedKeys = typeof dbUser.totp_recovery_keys === "string"
+            const parsed = typeof dbUser.totp_recovery_keys === "string"
               ? JSON.parse(dbUser.totp_recovery_keys)
               : dbUser.totp_recovery_keys;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              hasExistingRecoveryKeys = true;
+            }
           } catch {
-            parsedKeys = [dbUser.totp_recovery_keys];
-          }
-          if (!Array.isArray(parsedKeys)) parsedKeys = [parsedKeys];
-          for (const item of parsedKeys) {
-            if (typeof item === "object" && item?.key) {
-              recoveryKeys.push(item.key);
-            } else if (typeof item === "string" && !/^[a-fA-F0-9]{64}$/.test(item.trim())) {
-              recoveryKeys.push(item);
+            if (dbUser.totp_recovery_keys.length > 0) {
+              hasExistingRecoveryKeys = true;
             }
           }
+        } else if (dbUser.totp_recovery_keys_encrypted) {
+          hasExistingRecoveryKeys = true;
         }
 
-        // If no recovery keys found or only legacy hashes exist, generate fresh recovery keys
-        if (recoveryKeys.length === 0) {
+        // Only generate emergency recovery keys if the account does not already have recovery keys configured.
+        // Existing recovery keys (hashed or envelope-encrypted) must never be overwritten on passkey addition.
+        if (!hasExistingRecoveryKeys) {
           const plaintextKeys = generateRecoveryKeys();
-          const storedItems = await Promise.all(
+          const storedItems: StoredRecoveryKey[] = await Promise.all(
             plaintextKeys.map(async (k) => ({
               hash: await hashRecoveryKey(k)
             }))
           );
-          await userModel.updateRecoveryKeys(user.id, storedItems as any);
+          await userModel.updateRecoveryKeys(user.id, storedItems);
           recoveryKeys = plaintextKeys;
         }
       }
 
       await activityLog.record(user.id, "passkey_registered", clientIp, userAgent, { name: passkeyName }, sessionHash);
-      return new Response(JSON.stringify({ ...created, recovery_keys: recoveryKeys }), {
-        status: 201,
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(
+        JSON.stringify({
+          ...created,
+          recovery_keys: recoveryKeys.length > 0 ? recoveryKeys : undefined
+        }),
+        {
+          status: 201,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
     } catch (err: any) {
       console.warn("[Passkey Registration] Verification failed:", err.message || err);
       return new Response(err.message || "Passkey registration failed", { status: 400 });

@@ -13,9 +13,10 @@ export async function verifyTurnstile(token: string, secret: string, ip: string)
       body: params,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
-      }
+      },
+      signal: AbortSignal.timeout(5000)
     });
-    const outcome = await result.json() as any;
+    const outcome = await result.json() as { success?: boolean };
     return !!outcome.success;
   } catch (e) {
     return false;
