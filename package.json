@@ -40,7 +40,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "ui:dev": "cd web && npm run dev",
     "ui:build": "cd web && npm run build",
-    "ui:install": "cd web && npm install -f"
+    "ui:install": "cd web && npm install"
   },
   "keywords": [
     "dns",
