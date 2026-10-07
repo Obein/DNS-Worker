@@ -51,23 +51,6 @@
 
 ---
 
-## 🔐 Advanced Privacy: Local-First & Post-Quantum E2EE
-
-DNS Worker redefines personal DNS observability by combining local-first browser computation with cutting-edge post-quantum cryptography:
-
-### ⚡ Local-First Browser SQLite (OPFS + WASM)
-* **Instantaneous 0ms Queries**: Resolution logs and analytical charts render immediately from an in-browser SQLite database powered by Origin Private File System (OPFS) and Dedicated Web Workers.
-* **Quota Preservation & Offline Analytics**: High-frequency filtering, pagination, and multi-dimensional analytics run locally without issuing remote D1 read queries, drastically reducing Cloudflare D1 quota consumption and enabling full offline inspection.
-* **Smart Bidirectional Sync**: Automatically reconciles local storage with remote D1 in the background with zero UI freeze.
-
-### 🛡️ Post-Quantum End-to-End Encryption (P256-MLKEM768)
-* **Zero-Knowledge Cloud Storage**: Sensitive log fields (domains, client IPs, answers, geo locations, and upstream servers) are encrypted before reaching persistent cloud storage. Cloudflare Workers and D1 database store only ciphertexts.
-* **Quantum-Resistant Hybrid Lattice KEM**: Adopts the NIST FIPS 203 standardized **P256-MLKEM768** (ML-KEM-768 + ECDH P-256) hybrid algorithm, defending user query logs against future "Harvest Now, Decrypt Later" quantum attacks.
-* **Decoupled Hourly Envelope Encryption**: Automatically encapsulates and provisions hourly Data Encryption Keys (DEK), compressing KEM database overhead by ~80% while sustaining hot-path pipeline encryption throughput of **20,000+ queries/second**.
-* **Hardware Passkey Protection**: The private key seed is wrapped with hardware Passkeys (WebAuthn PRF) and single-use self-rotating Recovery Keys; no plaintext secret ever touches the server.
-
----
-
 ## 🖼️ Quick Look
 
 | User Login |
