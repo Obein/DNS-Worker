@@ -22,6 +22,7 @@ import {
   formatKeyValueSection
 } from './format';
 import { showServerfullStatus } from './status';
+import { handleServiceAction } from './service';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
@@ -46,11 +47,13 @@ function printHelp(): void {
     description: 'Privacy-first DNS & DoH Resolver',
     usage: [
       'dns-worker [options]',
-      'dns-worker <command> [options]',
+      'dns-worker status [options]',
+      'dns-worker service <action>',
       'npx dns-worker [options]'
     ],
     commands: [
-      { label: 'status', desc: 'Inspect service runtime status and database health' }
+      { label: 'status', desc: 'Inspect service runtime status and database health' },
+      { label: 'service <action>', desc: 'Manage Linux systemd service (install, start, stop, restart, status, logs, uninstall)' }
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },
@@ -74,7 +77,10 @@ function printHelp(): void {
       { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
       { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
     ],
-    tip: "Run 'dns-worker status' to inspect active runtime status, port availability, and database health."
+    tip: [
+      "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
+      "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
+    ]
   });
 
   console.log(menu);
@@ -115,6 +121,12 @@ async function parseCli(): Promise<ServerfullCliArgs> {
       process.exit(0);
     }
 
+    if (positionals[0]?.toLowerCase() === 'service') {
+      const action = positionals[1]?.toLowerCase() || 'status';
+      await handleServiceAction(action);
+      process.exit(0);
+    }
+
     if (positionals.length > 0) {
       console.error(formatDiagnostic({
         level: 'error',
@@ -122,6 +134,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         message: `Unrecognized command or argument "${positionals.join(' ')}".`,
         solutions: [
           "Run 'dns-worker status' to view runtime status.",
+          "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
           "Run 'dns-worker --help' to inspect supported options and usage."
         ]
       }));
@@ -138,6 +151,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
       message: errorMsg,
       solutions: [
         "Run 'dns-worker status' to view runtime status.",
+        "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
         "Run 'dns-worker --help' to inspect supported options and usage."
       ]
     }));
