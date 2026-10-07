@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="ObexDNS Logo" width="128">
-  <h1>ObexDNS</h1>
-  <p>隐私优先的高性能 Protective DNS 解析器 & DoH / DoT 服务端</p>
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <h1>DNS Worker</h1>
+  <p>隐私优先 Protective DNS 解析器 & DoH / DoT 服务端</p>
   <p>保护您的互联网第一跳 · 双引擎架构：Cloudflare Workers 边缘无服务器或独立服务器 / VPS (Linux / macOS / Windows)</p>
   <p align="center">
     <a href="README.md">English</a> | 中文 (简体) | <a href="README_zh-TW.md">中文 (正體)</a>
@@ -19,31 +19,14 @@
 
 ## 📖 简介
 
-**ObexDNS**（前身为 DNS Worker）是一个专为隐私与性能打造的高性能 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**。它既可以作为免运维的 Serverless 边缘应用完全运行在 Cloudflare Workers 网络上，也可以**完全脱离 Cloudflare**，在您的自有 VPS、家用服务器或物理机（Linux、macOS、Windows）上以独立服务模式运行，并采用原生 Node.js 内置 SQLite 存储。
+**DNS Worker** 作为专为隐私与性能 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**。它既可以作为免运维的 Serverless 边缘应用完全运行在 Cloudflare Workers 网络上，也可以**完全脱离 Cloudflare**，在您的自有 VPS、家用服务器或物理机（Linux、macOS、Windows）上以独立服务模式运行，并采用原生 Node.js 内置 SQLite 存储。
 
-无论您是追求全球 300+ 城市的极速边缘调度与零运维，还是追求 100% 数据自主可控、家庭路由器直连经典 UDP 53 以及 Android 原生私有 DNS（DoT 853），ObexDNS 均能提供企业级过滤、本地优先瞬间分析以及基于后量子密码学的零知识端到端加密日志。
-
-### ⚖️ 双引擎架构与部署特性对比
-
-| 特性 / 维度 | 🖥️ 独立服务器 / VPS (脱离 Cloudflare) | ☁️ Cloudflare Workers 边缘模式 |
-|---|---|---|
-| **核心定位** | 100% 数据主权、家庭局域网/路由器直连、Android DoT | 全球极速边缘解析、免运维 Serverless |
-| **运行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare 全球 300+ 城市边缘节点 |
-| **存储介质** | 原生 Node.js SQLite (`node:sqlite`)，存储于本地 NVMe/SSD | Cloudflare D1（全球分布式云端数据库） |
-| **支持协议** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
-| **数据主权** | **100% 自主可控**，完全无云厂商锁定 | 边缘加密；托管于 Cloudflare 基础设施 |
-| **路由器 / 局域网接入** | **直接监听 UDP 53**（路由器 WAN/LAN DNS 直填服务器 IP） | 需搭配 DoH 客户端、代理或分流工具 |
-| **Android 私有 DNS** | **原生 DoT 853**，支持 SNI 路由 (`<profile_key>.dns.example.com`) | 需通过 DoH URL 或第三方客户端支持 |
-| **后量子零知识 E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn |
-| **本地优先 Web UI** | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 |
-| **运维与维护** | 标准 systemd 常驻服务 (`npm run service-create:linux`) | 零服务器维护，边缘自适应伸缩 |
-| **费用与门槛** | 运行于既有 VPS 或家用服务器硬件 | Cloudflare 免费套餐额度内免费运行 |
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
 ### 什么是 DNS over HTTPS (DoH) 与 DNS over TLS (DoT)？
 
-* **DNS over HTTPS (DoH / RFC 8484)**：通过加密的 HTTP/2 或 HTTP/3 连接进行 DNS 查询。ObexDNS 提供标准 DoH 端点，兼容各大现代浏览器、操作系统及 stub 客户端。
-* **DNS over TLS (DoT / RFC 7858)**：在标准 853 端口上通过 TLS 隧道直接加密 DNS 查询。ObexDNS 独立模式原生支持 TLS SNI 配置路由，完美契合 Android 9+ 系统自带的“私有 DNS”（Private DNS）。
-* **经典 UDP DNS (RFC 1035)**：标准明文 53 端口 DNS。ObexDNS 独立模式支持直接在局域网内提供纳秒/微秒级低延迟解析，无缝接管家用路由器与各类传统网络设备。
+* **DNS over HTTPS (DoH / RFC 8484)**：通过加密的 HTTP/2 或 HTTP/3 连接进行 DNS 查询。DNS Worker 提供标准 DoH 端点，兼容各大现代浏览器、操作系统及 stub 客户端。
+* **DNS over TLS (DoT / RFC 7858)**：在标准 853 端口上通过 TLS 隧道直接加密 DNS 查询。DNS Worker 独立模式原生支持 TLS SNI 配置路由，完美契合 Android 9+ 系统自带的“私有 DNS”（Private DNS）。
 
 ---
 
@@ -174,7 +157,7 @@ DNS Worker 将本地优先（Local-First）计算与前沿抗量子密码学结�
 
 ## 🚀 部署指南
 
-ObexDNS 提供两种部署形态，满足不同场景的使用需求：
+DNS Worker 提供两种部署形态，满足不同场景的使用需求：
 * **方案 A：🖥️ 独立服务器 / VPS 部署 (脱离 Cloudflare, 100% 数据自主)** —— 推荐给追求完全自主可控、家庭路由器直连 UDP 53 及 Android 原生 DoT 853 的自建玩家与企业。
 * **方案 B：☁️ Cloudflare Workers 边缘模式 (无服务器, 免运维)** —— 推荐给追求全球 300+ 节点低延迟、零服务器硬件维护成本的个人与团队。
 
@@ -182,7 +165,7 @@ ObexDNS 提供两种部署形态，满足不同场景的使用需求：
 
 ### 方案 A：🖥️ 独立服务器 / VPS 部署 (脱离 Cloudflare, 100% 数据自主)
 
-ObexDNS 可完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行，依赖 Node.js `>= 22.5.0` 内置的 `node:sqlite` 引擎。无需任何 Cloudflare 账号、API Token 或外部数据库。
+DNS Worker 可完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行，依赖 Node.js `>= 22.5.0` 内置的 `node:sqlite` 引擎。无需任何 Cloudflare 账号、API Token 或外部数据库。
 
 #### 独立模式核心特性
 * **经典 UDP DNS (端口 53)**：标准的 RFC 1035 UDP DNS 解析服务，可直接填入路由器 WAN/LAN 或系统 DNS 设置中。
@@ -208,8 +191,8 @@ ObexDNS 可完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS �
 
 1. 克隆代码仓库并安装依赖：
 ```bash
-git clone https://github.com/Obein/DNS-Worker.git obexdns
-cd obexdns
+git clone https://github.com/Obein/DNS-Worker.git DNS-Worker
+cd DNS-Worker
 npm install
 ```
 
@@ -302,14 +285,32 @@ npm run deploy
     *   **D1 数据库**: 选择您刚刚创建的 `dns_worker_db` 数据库。
 5.  重新部署该 Pages 项目以使绑定生效。
 
+### ⚖️ 双引擎架构与部署特性对比
+
+无论您是追求全球 300+ 城市的极速边缘调度与零运维，还是追求 100% 数据自主可控、家庭路由器直连经典 UDP 53 以及 Android 原生私有 DNS（DoT 853），DNS Worker 均能提供企业级过滤、本地优先瞬间分析以及基于后量子密码学的零知识端到端加密日志。
+
+| 特性 / 维度 | 🖥️ 独立服务器 / VPS (脱离 Cloudflare) | ☁️ Cloudflare Workers 边缘模式 |
+|---|---|---|
+| **核心定位** | 100% 数据主权、家庭局域网/路由器直连、Android DoT | 全球极速边缘解析、免运维 Serverless |
+| **运行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare 全球 300+ 城市边缘节点 |
+| **存储介质** | 原生 Node.js SQLite (`node:sqlite`)，存储于本地 NVMe/SSD | Cloudflare D1（全球分布式云端数据库） |
+| **支持协议** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
+| **数据主权** | **100% 自主可控**，完全无云厂商锁定 | 边缘加密；托管于 Cloudflare 基础设施 |
+| **路由器 / 局域网接入** | **直接监听 UDP 53**（路由器 WAN/LAN DNS 直填服务器 IP） | 需搭配 DoH 客户端、代理或分流工具 |
+| **Android 私有 DNS** | **原生 DoT 853**，支持 SNI 路由 (`<profile_key>.dns.example.com`) | 需通过 DoH URL 或第三方客户端支持 |
+| **后量子零知识 E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn |
+| **本地优先 Web UI** | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 |
+| **运维与维护** | 标准 systemd 常驻服务 (`npm run service-create:linux`) | 零服务器维护，边缘自适应伸缩 |
+| **费用与门槛** | 运行于既有 VPS 或家用服务器硬件 | Cloudflare 免费套餐额度内免费运行 |
+
 ---
 
-## 💪 感谢与动力源
+## 💪 动力
 
 * [Cloudflare Workers](https://workers.cloudflare.com/) & [D1 Database](https://developers.cloudflare.com/d1/)
 * [Node.js](https://nodejs.org/) (内置原生 `node:sqlite` 引擎)
 
-## 🚚 核心技术与依赖
+## 🚚 依赖
 
 * [React](https://github.com/facebook/react) & [Blueprint](https://github.com/palantir/blueprint) (现代化企业级高密度 UI)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
@@ -326,7 +327,7 @@ npm run deploy
 
 ## 📝 总结
 
-ObexDNS 让您在完全自主掌控 DNS 解析的同时，无需在隐私、性能与灵活性之间做任何妥协。通过同时支持高性能 Node.js 独立服务器与 Cloudflare Workers 全球边缘网络，它呈现了一个生产级的 Protective DNS 体系：
+DNS Worker 让您在完全自主掌控 DNS 解析的同时，无需在隐私、性能与灵活性之间做任何妥协。通过同时支持高性能 Node.js 独立服务器与 Cloudflare Workers 全球边缘网络，它呈现了一个生产级的 Protective DNS 体系：
 
 -   **双引擎自由选择**：既可完全脱离 Cloudflare 独立运行于自有 VPS，独享经典 UDP 53 与 DoT 853；亦可无服务器部署于 Cloudflare 边缘节点，享受零维护的全球 DoH 体验。
 -   **全协议覆盖**：经典 UDP 53、Android 原生私有 DNS（DoT 853 配合 SNI 路由）及 DoH (RFC 8484)。
@@ -334,7 +335,7 @@ ObexDNS 让您在完全自主掌控 DNS 解析的同时，无需在隐私、性�
 -   **本地优先极速分析**：借助浏览器端 SQLite WASM + OPFS 实现 0ms 瞬间查询与图表聚合，彻底告别频繁消耗云端数据库读配额。
 -   **精细策略掌控**：多配置隔离、重写 ECH 抵御 SNI 审查，以及布隆过滤器加速的百万级广告与恶意域名拦截订阅。
 
-无论是保护单台移动设备、整个家庭网络，还是跨地域的组织环境，ObexDNS 都提供了一个优雅且数据完全自主的替代方案。
+无论是保护单台移动设备、整个家庭网络，还是跨地域的组织环境，DNS Worker 都提供了一个优雅且数据完全自主的替代方案。
 
 <div align="center">
   <br>
@@ -342,5 +343,5 @@ ObexDNS 让您在完全自主掌控 DNS 解析的同时，无需在隐私、性�
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>如果 ObexDNS 对您有所帮助，请考虑给它一个 ⭐</b>
+  <b>如果 DNS Worker 对您有所帮助，请考虑给它一个 ⭐</b>
 </div>
