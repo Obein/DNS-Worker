@@ -87,6 +87,13 @@ export class HttpServer {
         await this.handleHttpRequest(req, res);
       });
 
+      // Optimize HTTP keepalive timeouts and disable Nagle's algorithm for low-latency DoH
+      this.server.keepAliveTimeout = 65000;
+      this.server.headersTimeout = 66000;
+      this.server.on('connection', (socket) => {
+        socket.setNoDelay(true);
+      });
+
       const startupErrorHandler = (err: any) => {
         this.server = null;
 

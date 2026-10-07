@@ -67,7 +67,8 @@ export class DotDnsServer {
         const tlsOptions: tls.TlsOptions = {
           key: fs.readFileSync(tlsKeyPath),
           cert: fs.readFileSync(tlsCertPath),
-          ALPNProtocols: ['dot']
+          ALPNProtocols: ['dot'],
+          sessionIdContext: 'dns-worker-dot'
         };
 
         this.server = tls.createServer(tlsOptions, (socket: tls.TLSSocket) => {
@@ -108,6 +109,10 @@ export class DotDnsServer {
   }
 
   private handleConnection(socket: tls.TLSSocket): void {
+    // Disable Nagle's algorithm (RFC 7858) and enable TCP keepalive
+    socket.setNoDelay(true);
+    socket.setKeepAlive(true, 60000);
+
     const remoteIp = socket.remoteAddress?.replace(/^::ffff:/, '') || '127.0.0.1';
     let buffer = Buffer.alloc(0);
 

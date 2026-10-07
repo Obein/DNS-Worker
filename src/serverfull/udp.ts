@@ -57,6 +57,13 @@ export class UdpDnsServer {
           this.socket?.on('error', (err: Error) => {
             console.error('[UDP DNS] Socket runtime error:', err);
           });
+          // Boost OS UDP socket buffers to reduce packet drops under high DNS load
+          try {
+            this.socket?.setRecvBufferSize(4 * 1024 * 1024);
+            this.socket?.setSendBufferSize(4 * 1024 * 1024);
+          } catch {
+            /* Gracefully ignore if OS limits prevent buffer expansion */
+          }
           this.isRunning = true;
           console.log(`[UDP DNS] Classic DNS listening on udp://${this.options.host}:${this.options.port}`);
           resolve();
