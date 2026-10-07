@@ -15,6 +15,7 @@ import { flushLogBatch } from '../pipeline/logBatcher';
 import worker from '../index';
 import { ExecutionContext } from '../types';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
+import { formatHelpMenu } from './help';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
@@ -33,39 +34,42 @@ function printHelp(cliArgs?: ServerfullCliArgs): void {
   const dotStatus = config.disableDot ? 'Disabled' : String(config.dotPort);
   const httpStatus = String(config.httpPort);
 
-  console.log(`
-DNS Worker v${version} (Serverfull Mode) - Privacy-first DNS & DoH Resolver
+  const menu = formatHelpMenu({
+    name: `DNS Worker v${version} (Serverfull Mode)`,
+    description: 'Privacy-first DNS & DoH Resolver',
+    usage: [
+      'dns-worker [options]',
+      'npx dns-worker [options]'
+    ],
+    options: [
+      { label: '-p, --port <number>', desc: `Web Dashboard & DoH HTTP port (current: ${httpStatus}, default: 3000)` },
+      { label: '--dns-port <number>', desc: `Classic UDP DNS port (current: ${udpStatus}, default: 53)` },
+      { label: '--dot-port <number>', desc: `DoT (DNS over TLS) port (current: ${dotStatus}, default: 853)` },
+      { label: '-h, --host <address>', desc: `Network address to bind (current: ${config.host}, default: 0.0.0.0)` },
+      { label: '--db <path>', desc: `SQLite database file path (current: ${config.dbPath})` },
+      { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
+      { label: '--disable-udp', desc: `Disable Classic UDP DNS server (current: ${config.disableUdp})` },
+      { label: '--disable-dot', desc: `Disable DoT server (current: ${config.disableDot})` },
+      { label: '-v, --version', desc: 'Display version number' },
+      { label: '--help', desc: 'Display this help message' }
+    ],
+    services: [
+      { label: '• Web Dashboard & DoH (HTTP)', desc: `http://${config.host}:${httpStatus}` },
+      { label: '• Classic UDP DNS', desc: config.disableUdp ? 'Disabled' : `udp://${config.host}:${udpStatus}` },
+      { label: '• DNS over TLS (DoT)', desc: config.disableDot ? 'Disabled' : `tls://${config.host}:${dotStatus}` }
+    ],
+    envVars: [
+      { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
+      { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
+      { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
+      { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
+      { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
+      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
+      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
+    ]
+  });
 
-Usage:
-  dns-worker [options]
-  npx dns-worker [options]
-
-Options:
-  -p, --port <number>          Web Dashboard & DoH HTTP port (current: ${httpStatus}, default: 3000)
-  --dns-port <number>          Classic UDP DNS port (current: ${udpStatus}, default: 53)
-  --dot-port <number>          DoT (DNS over TLS) port (current: ${dotStatus}, default: 853)
-  -h, --host <address>         Network address to bind (current: ${config.host}, default: 0.0.0.0)
-  --db <path>                  SQLite database file path (current: ${config.dbPath})
-  --default-profile <key>      Default Profile Key or Access Point Token for standard queries
-  --disable-udp                Disable Classic UDP DNS server (current: ${config.disableUdp})
-  --disable-dot                Disable DoT server (current: ${config.disableDot})
-  -v, --version                Display version number
-  --help                       Display this help message
-
-Current Service Ports:
-  • Web Dashboard & DoH (HTTP): http://${config.host}:${httpStatus}
-  • Classic UDP DNS:           ${config.disableUdp ? 'Disabled' : `udp://${config.host}:${udpStatus}`}
-  • DNS over TLS (DoT):        ${config.disableDot ? 'Disabled' : `tls://${config.host}:${dotStatus}`}
-
-Environment Variables:
-  PORT / SERVERFULL_HTTP_PORT    Web Dashboard & DoH port
-  DNS_PORT / SERVERFULL_UDP_PORT Classic UDP DNS port
-  DOT_PORT / SERVERFULL_DOT_PORT DoT port
-  DB_PATH / SERVERFULL_DB_PATH   SQLite database file path
-  JWT_SECRET                     JWT secret key (recommended >= 32 characters)
-  SERVERFULL_TLS_KEY_PATH        Path to TLS private key for DoT
-  SERVERFULL_TLS_CERT_PATH       Path to TLS certificate for DoT
-`);
+  console.log(menu);
 }
 
 function parseCli(): ServerfullCliArgs {
