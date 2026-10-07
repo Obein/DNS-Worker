@@ -25,8 +25,14 @@ function checkNodeVersion(): void {
   }
 }
 
-function printHelp(): void {
+function printHelp(cliArgs?: ServerfullCliArgs): void {
   const version = getPackageVersion();
+  const { config } = getServerfullConfig(cliArgs);
+
+  const udpStatus = config.disableUdp ? 'Disabled' : String(config.udpPort);
+  const dotStatus = config.disableDot ? 'Disabled' : String(config.dotPort);
+  const httpStatus = String(config.httpPort);
+
   console.log(`
 DNS Worker v${version} (Serverfull Mode) - Privacy-first DNS & DoH Resolver
 
@@ -35,16 +41,21 @@ Usage:
   npx dns-worker [options]
 
 Options:
-  -p, --port <number>          Web Dashboard & DoH HTTP port (default: 3000)
-  --dns-port <number>          Classic UDP DNS port (default: 53)
-  --dot-port <number>          DoT (DNS over TLS) port (default: 853)
-  -h, --host <address>         Network address to bind (default: 0.0.0.0)
-  --db <path>                  SQLite database file path (default: ./data/dns_worker.sqlite)
+  -p, --port <number>          Web Dashboard & DoH HTTP port (current: ${httpStatus}, default: 3000)
+  --dns-port <number>          Classic UDP DNS port (current: ${udpStatus}, default: 53)
+  --dot-port <number>          DoT (DNS over TLS) port (current: ${dotStatus}, default: 853)
+  -h, --host <address>         Network address to bind (current: ${config.host}, default: 0.0.0.0)
+  --db <path>                  SQLite database file path (current: ${config.dbPath})
   --default-profile <key>      Default Profile Key or Access Point Token for standard queries
-  --disable-udp                Disable Classic UDP DNS server
-  --disable-dot                Disable DoT server
+  --disable-udp                Disable Classic UDP DNS server (current: ${config.disableUdp})
+  --disable-dot                Disable DoT server (current: ${config.disableDot})
   -v, --version                Display version number
   --help                       Display this help message
+
+Current Service Ports:
+  • Web Dashboard & DoH (HTTP): http://${config.host}:${httpStatus}
+  • Classic UDP DNS:           ${config.disableUdp ? 'Disabled' : `udp://${config.host}:${udpStatus}`}
+  • DNS over TLS (DoT):        ${config.disableDot ? 'Disabled' : `tls://${config.host}:${dotStatus}`}
 
 Environment Variables:
   PORT / SERVERFULL_HTTP_PORT    Web Dashboard & DoH port
@@ -76,7 +87,7 @@ function parseCli(): ServerfullCliArgs {
     });
 
     if (values.help || positionals[0]?.toLowerCase() === 'help') {
-      printHelp();
+      printHelp(values as ServerfullCliArgs);
       process.exit(0);
     }
 
@@ -87,7 +98,7 @@ function parseCli(): ServerfullCliArgs {
 
     if (positionals.length > 0) {
       console.error(`\n[DNS Worker] CLI Argument Error: Unrecognized command or argument "${positionals.join(' ')}".`);
-      printHelp();
+      printHelp(values as ServerfullCliArgs);
       process.exit(1);
     }
 
@@ -113,6 +124,11 @@ async function bootstrap(): Promise<void> {
 
   // 2. Load environment variables & configurations
   const { config, env } = getServerfullConfig(cliArgs);
+
+  console.log('[Services] Configured Ports & Transports:');
+  console.log(`  • Web Dashboard & DoH: http://${config.host}:${config.httpPort}`);
+  console.log(`  • Classic UDP DNS:     ${config.disableUdp ? 'Disabled' : `udp://${config.host}:${config.udpPort}`}`);
+  console.log(`  • DNS over TLS (DoT):  ${config.disableDot ? 'Disabled' : `tls://${config.host}:${config.dotPort}`}`);
 
   // Non-blocking security check for legacy short JWT_SECRET
   if (isUsableJwtSecret(env.JWT_SECRET) && !isStrongJwtSecret(env.JWT_SECRET)) {
