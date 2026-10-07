@@ -10,6 +10,7 @@ import { Buffer } from 'node:buffer';
 import worker from '../index';
 import { Env, ExecutionContext } from '../types';
 import { getPackageRoot } from './config';
+import { formatPortError } from './format';
 
 export interface HttpServerOptions {
   port: number;
@@ -89,19 +90,13 @@ export class HttpServer {
       const startupErrorHandler = (err: any) => {
         this.server = null;
 
-        if (err.code === 'EADDRINUSE') {
-          console.error(`\n[Port Conflict] HTTP port ${port} is already in use.`);
-          console.error('  Solution:');
-          console.error(`    - Use -p, --port <port> (e.g. --port ${port + 1}) to specify an alternate HTTP port.`);
-          console.error(`    - Or set the PORT environment variable (e.g. PORT=${port + 1}).\n`);
-        } else if (err.code === 'EACCES') {
-          console.error(`\n[Permission Denied] Permission denied binding to HTTP port ${port}.`);
-          console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
-          console.error('  Solution:');
-          console.error(`    - Run with sudo, or use --port 3000 to bind to an unprivileged port.\n`);
-        } else {
-          console.error('[HTTP Server] Failed to start:', err.message || err);
-        }
+        console.error(formatPortError({
+          serviceName: 'Web Dashboard & DoH (HTTP)',
+          protocol: 'HTTP',
+          port,
+          err,
+          alternateOption: `-p, --port <port> (e.g. --port ${port + 1})`
+        }));
 
         reject(err);
       };

@@ -12,6 +12,7 @@ import { pipeline } from '../pipeline';
 import { resolveDefaultProfile, resolveProfileByKey } from '../api/doh';
 import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 import { ACCESS_KEY_REGEX } from '../utils/validator';
+import { formatDiagnostic, formatPortError } from './format';
 
 export interface DotServerOptions {
   port: number;
@@ -33,14 +34,31 @@ export class DotDnsServer {
       const { tlsKeyPath, tlsCertPath, port, host } = this.options;
 
       if (!tlsKeyPath || !tlsCertPath) {
-        console.warn('[DoT] TLS key or certificate path not configured. Skipping DoT server start.');
-        console.warn('[DoT] Set SERVERFULL_TLS_KEY_PATH and SERVERFULL_TLS_CERT_PATH to enable DoT.');
+        console.warn(formatDiagnostic({
+          level: 'warning',
+          title: 'DoT - TLS Not Configured',
+          message: 'TLS key or certificate path not provided. Skipping DoT server startup.',
+          solutions: [
+            'Set SERVERFULL_TLS_KEY_PATH and SERVERFULL_TLS_CERT_PATH to enable DNS over TLS (DoT).'
+          ]
+        }));
         resolve();
         return;
       }
 
       if (!fs.existsSync(tlsKeyPath) || !fs.existsSync(tlsCertPath)) {
-        console.warn(`[DoT] TLS files not found:\n  Key: ${tlsKeyPath}\n  Cert: ${tlsCertPath}\nSkipping DoT server.`);
+        console.warn(formatDiagnostic({
+          level: 'warning',
+          title: 'DoT - TLS Files Missing',
+          message: 'Configured TLS key or certificate files were not found on disk. Skipping DoT server startup.',
+          details: [
+            `Key path  : ${tlsKeyPath}`,
+            `Cert path : ${tlsCertPath}`
+          ],
+          solutions: [
+            'Verify the file paths or generate TLS certificates before enabling DoT.'
+          ]
+        }));
         resolve();
         return;
       }
@@ -59,20 +77,14 @@ export class DotDnsServer {
         const startupErrorHandler = (err: any) => {
           this.server = null;
 
-          if (err.code === 'EADDRINUSE') {
-            console.error(`\n[Port Conflict] DoT port ${port} is already in use.`);
-            console.error('  Solution:');
-            console.error(`    - Use --dot-port <port> (e.g. --dot-port 8853) to specify an alternate DoT port.`);
-            console.error(`    - Or use --disable-dot to disable DoT.\n`);
-          } else if (err.code === 'EACCES') {
-            console.error(`\n[Permission Denied] Permission denied binding to DoT port ${port}.`);
-            console.error('  Port numbers below 1024 require elevated privileges on Linux/macOS.');
-            console.error('  Solution:');
-            console.error('    - Run with sudo (e.g. sudo npx dns-worker).');
-            console.error(`    - Or use --dot-port 8853 to bind to an unprivileged port.\n`);
-          } else {
-            console.error('[DoT] Server error:', err.message || err);
-          }
+          console.error(formatPortError({
+            serviceName: 'DNS over TLS (DoT)',
+            protocol: 'DoT',
+            port,
+            err,
+            alternateOption: '--dot-port <port> (e.g. --dot-port 8853)',
+            disableOption: '--disable-dot'
+          }));
 
           reject(err);
         };
