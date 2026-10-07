@@ -146,22 +146,37 @@ export class BloomFilter {
    * 从原始二进制流恢复 (零拷贝/对齐安全反序列化)
    */
   static fromUint8Array(buffer: Uint8Array): BloomFilter {
+    if (!buffer || buffer.byteLength < 8) {
+      throw new Error("Invalid bloom filter buffer: header too short");
+    }
     const view = new DataView(buffer.buffer, buffer.byteOffset, 8);
     const size = view.getUint32(0, true);
     const hashes = view.getUint32(4, true);
+
+    if (size === 0 || hashes === 0) {
+      throw new Error("Invalid bloom filter parameters: size and hashes must be positive integers");
+    }
     
     const offset = buffer.byteOffset + 8;
     const length = buffer.byteLength - 8;
+    const expectedWords = (size + 31) >>> 5;
+    const actualWords = length >> 2;
+
+    if (actualWords < expectedWords) {
+      throw new Error(
+        `Invalid bloom filter buffer: bit array truncated (expected ${expectedWords} words, got ${actualWords})`
+      );
+    }
     
     let bitData: Uint32Array;
     // 确保 offset 是 4 的倍数，否则 Uint32Array 构建会抛出异常
     if (offset % 4 === 0) {
-      bitData = new Uint32Array(buffer.buffer, offset, length >> 2);
+      bitData = new Uint32Array(buffer.buffer, offset, expectedWords);
     } else {
       // 非 4 字节对齐时，执行拷贝到对齐的 ArrayBuffer 内存中
-      const copy = new Uint8Array(length);
-      copy.set(buffer.subarray(8));
-      bitData = new Uint32Array(copy.buffer, 0, length >> 2);
+      const copy = new Uint8Array(expectedWords << 2);
+      copy.set(buffer.subarray(8, 8 + (expectedWords << 2)));
+      bitData = new Uint32Array(copy.buffer, 0, expectedWords);
     }
     return new BloomFilter(size, hashes, bitData);
   }

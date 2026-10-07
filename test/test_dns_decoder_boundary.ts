@@ -1,7 +1,9 @@
 /// <reference types="node" />
 import assert from "node:assert";
-import { parseDNSAnswer } from "../src/utils/dns/decoder";
+import { parseDNSAnswer, parseDNSQueryFromRaw } from "../src/utils/dns/decoder";
 import { buildDNSQuery, buildResponseMulti } from "../src/utils/dns/encoder";
+import { BloomFilter } from "../src/utils/bloom";
+import { rebuildEchWithFronting } from "../src/utils/ech/codec";
 
 async function runTests() {
   console.log(">>> [TEST] Running DNS Decoder Boundary & Truncation Tests...\n");
@@ -148,6 +150,75 @@ async function runTests() {
     assert.strictEqual(answers.length, 1);
     assert.strictEqual(answers[0].data, "[Raw: 1 bytes]");
     console.log("  Passed: HTTPS record with rdLength < 2 handled safely.");
+  }
+
+  // 9. Truncated query packet in parseDNSQueryFromRaw
+  console.log("\n9. Testing parseDNSQueryFromRaw with truncated question section...");
+  {
+    const fullQuery = buildDNSQuery("secure.example.com", "A");
+    // Cut off query mid-name so that length label declares 7 bytes but only 3 remain
+    const truncated = fullQuery.subarray(0, 16);
+    const parsed = parseDNSQueryFromRaw(truncated);
+    assert.strictEqual(parsed, null, "Truncated DNS query should return null instead of treating corrupt bytes as QTYPE");
+    console.log("  Passed: Truncated query safely returned null.");
+  }
+
+  // 10. DNS query with pointer loop / unterminated name
+  console.log("\n10. Testing parseDNSQueryFromRaw with cyclic pointer...");
+  {
+    const loopPacket = new Uint8Array(20);
+    // Header (12 bytes)
+    loopPacket[0] = 0x12; loopPacket[1] = 0x34; // ID
+    // Offset 12: Pointer pointing back to offset 12 (0xc0, 0x0c)
+    loopPacket[12] = 0xc0; loopPacket[13] = 0x0c;
+    loopPacket[14] = 0x00; loopPacket[15] = 0x01; // QTYPE A
+    loopPacket[16] = 0x00; loopPacket[17] = 0x01; // QCLASS IN
+    const parsed = parseDNSQueryFromRaw(loopPacket);
+    assert.strictEqual(parsed, null, "Cyclic pointer must return null");
+    console.log("  Passed: Cyclic pointer query safely detected and rejected.");
+  }
+
+  // 11. DNS query with reserved RFC 1035 label length bits
+  console.log("\n11. Testing parseDNSQueryFromRaw with reserved label length bits (0x40)...");
+  {
+    const reservedPacket = new Uint8Array(20);
+    reservedPacket[12] = 0x45; // top 2 bits 01 (reserved, not 00 or 11)
+    const parsed = parseDNSQueryFromRaw(reservedPacket);
+    assert.strictEqual(parsed, null, "Reserved label type bits must be rejected");
+    console.log("  Passed: Reserved RFC 1035 label bits safely rejected.");
+  }
+
+  // 12. Bloom filter deserialization boundary checks
+  console.log("\n12. Testing BloomFilter.fromUint8Array boundary and truncation enforcement...");
+  {
+    // Buffer too short (< 8 bytes)
+    assert.throws(
+      () => BloomFilter.fromUint8Array(new Uint8Array(5)),
+      /Invalid bloom filter buffer: header too short/,
+      "Must reject buffer < 8 bytes"
+    );
+
+    // Truncated bit array (declares large size but buffer has only header)
+    const truncatedBuf = new Uint8Array(12);
+    const view = new DataView(truncatedBuf.buffer);
+    view.setUint32(0, 100000, true); // size = 100,000 bits (~3125 words = 12,500 bytes)
+    view.setUint32(4, 7, true);      // hashes = 7
+    assert.throws(
+      () => BloomFilter.fromUint8Array(truncatedBuf),
+      /Invalid bloom filter buffer: bit array truncated/,
+      "Must reject truncated bit array to prevent silent fail-open"
+    );
+    console.log("  Passed: Bloom filter buffer boundary checks throw expected errors.");
+  }
+
+  // 13. ECH codec boundary validation
+  console.log("\n13. Testing rebuildEchWithFronting with truncated ECH payload...");
+  {
+    // Pass truncated base64 ECH data (e.g. truncated mid-length)
+    const invalidBase64 = Buffer.from([0x00, 0x10, 0xfe, 0x0d, 0x00, 0x01, 0x01, 0x00, 0x20, 0x00, 0x05]).toString("base64");
+    const result = rebuildEchWithFronting(invalidBase64, "fronting.example.com");
+    assert.strictEqual(result, invalidBase64, "Truncated ECH config should safely return input fallback without throwing");
+    console.log("  Passed: Truncated ECH payload safely handled with fallback.");
   }
 
   console.log("\n>>> [TEST] All DNS Decoder Boundary & Truncation tests passed successfully!\n");

@@ -62,6 +62,22 @@ export function buildDNSQuery(name: string, type: string): Uint8Array {
 }
 
 /**
+ * Creates a standard SERVFAIL response packet (RFC 1035).
+ *
+ * @param queryRaw - Optional raw incoming DNS query to echo ID and flags from.
+ * @returns A 12-byte DNS header with RCODE 2 (SERVFAIL).
+ */
+export function createServFail(queryRaw?: Uint8Array): Uint8Array {
+  const res = new Uint8Array(12);
+  if (queryRaw && queryRaw.length >= 12) {
+    res.set(queryRaw.slice(0, 12));
+  }
+  res[2] = (res[2] & 0x01) | 0x80; // QR=1, inherit RD
+  res[3] = (res[3] & 0xf0) | 0x02; // ServFail (RCODE 2)
+  return res;
+}
+
+/**
  * Builds a raw DNS response packet containing multiple answer resource records.
  *
  * @param queryRaw - The raw incoming DNS query packet buffer.
@@ -76,10 +92,7 @@ export function buildResponseMulti(
 ): Uint8Array {
   try {
     if (!queryRaw || queryRaw.length < 12) {
-      const err = new Uint8Array(12);
-      err[2] = 0x81;
-      err[3] = 0x82; // Server Failure
-      return err;
+      return createServFail(queryRaw);
     }
 
     const header = new Uint8Array(12);
@@ -91,14 +104,12 @@ export function buildResponseMulti(
     const qCount = (queryRaw[4] << 8) | queryRaw[5];
     for (let i = 0; i < qCount; i++) {
       const { read } = decodeName(queryRaw, qEnd);
-      if (read === 0 && qEnd < queryRaw.length) {
-        qEnd++;
-      } else {
-        qEnd += read + 4;
+      if (read === 0) {
+        return createServFail(queryRaw);
       }
+      qEnd += read + 4;
       if (qEnd > queryRaw.length) {
-        qEnd = queryRaw.length;
-        break;
+        return createServFail(queryRaw);
       }
     }
     const questionSection = queryRaw.slice(12, qEnd);
@@ -202,10 +213,7 @@ export function buildResponse(
 ): Uint8Array {
   try {
     if (!queryRaw || queryRaw.length < 12) {
-      const err = new Uint8Array(12);
-      err[2] = 0x81;
-      err[3] = 0x82; // Server Failure
-      return err;
+      return createServFail(queryRaw);
     }
 
     const header = new Uint8Array(12);
@@ -217,14 +225,12 @@ export function buildResponse(
     const qCount = (queryRaw[4] << 8) | queryRaw[5];
     for (let i = 0; i < qCount; i++) {
       const { read } = decodeName(queryRaw, qEnd);
-      if (read === 0 && qEnd < queryRaw.length) {
-        qEnd++;
-      } else {
-        qEnd += read + 4;
+      if (read === 0) {
+        return createServFail(queryRaw);
       }
+      qEnd += read + 4;
       if (qEnd > queryRaw.length) {
-        qEnd = queryRaw.length;
-        break;
+        return createServFail(queryRaw);
       }
     }
     const questionSection = queryRaw.slice(12, qEnd);

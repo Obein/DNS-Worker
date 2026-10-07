@@ -114,7 +114,8 @@ export class UdpDnsServer {
         ctx
       };
 
-      const request = new Request(`http://${rinfo.address}/dns-query`, {
+      const host = rinfo.address.includes(':') ? `[${rinfo.address}]` : rinfo.address;
+      const request = new Request(`http://${host}/dns-query`, {
         headers: {
           'CF-Connecting-IP': rinfo.address,
           'Accept': 'application/dns-message',
