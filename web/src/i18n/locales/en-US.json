@@ -401,7 +401,7 @@
     "noResult": "No result",
     "networkDetails": "Network Details",
     "clientSource": "Client (Source)",
-    "destination": "Destination (Parsed)",
+    "destination": "Destination",
     "quickActions": "Quick Actions",
     "actionAllow": "Allow",
     "actionBlock": "Block",

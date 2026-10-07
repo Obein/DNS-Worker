@@ -401,7 +401,7 @@
     "noResult": "결과 없음",
     "networkDetails": "네트워크 상세",
     "clientSource": "클라이언트 (소스)",
-    "destination": "목적지 (해석 주소)",
+    "destination": "목적지",
     "quickActions": "빠른 작업",
     "actionAllow": "허용",
     "actionBlock": "차단",

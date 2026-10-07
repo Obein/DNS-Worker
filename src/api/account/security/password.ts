@@ -57,12 +57,20 @@ export async function handlePasswordRequest(
 
   // POST /api/account/migrate-password (password migration to v2)
   if (action === "migrate-password" && request.method === "POST") {
-    const { clientHash } = (await request.json()) as { clientHash?: string };
+    const body = (await request.json()) as { clientHash?: string } & ReauthPayload;
+    const { clientHash } = body;
     if (!clientHash) {
       return new Response("Missing clientHash", { status: 400 });
     }
     const dbUser = await userModel.getById(user.id);
     if (!dbUser) return new Response("User not found", { status: 404 });
+
+    // Enforce re-authentication verification: must provide valid credentials (e.g. oldPassword)
+    const authResult = await verifyUserReauth(dbUser, body, env, request);
+    if (!authResult.success) {
+      await activityLog.record(user.id, "password_change_fail", clientIp, userAgent, { reason: authResult.reason, flow: "migration" }, sessionHash);
+      return new Response(authResult.error || "Authentication failed", { status: 400 });
+    }
 
     if ((dbUser.password_version ?? 1) === 1) {
       const hashedPassword = await hashPassword(clientHash, 2);

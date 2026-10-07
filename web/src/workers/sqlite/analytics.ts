@@ -5,7 +5,7 @@
  */
 
 import { getDatabase } from './database';
-import type { WorkerAnalyticsParams, WorkerAnalyticsResult } from './types';
+import type { WorkerAnalyticsParams, WorkerAnalyticsResult, WorkerQueryParamsISPs } from './types';
 
 /**
  * Computes multi-dimensional analytics for a specific time range and profile.
@@ -152,3 +152,62 @@ export function handleQueryAnalytics(params: WorkerAnalyticsParams): WorkerAnaly
     destinations
   };
 }
+
+/**
+ * Computes ISP distribution optionally filtered by country code from local SQLite.
+ *
+ * @param params - ISP query parameters.
+ * @returns Array of ISP items with name and query count.
+ */
+export function handleQueryISPs(params: WorkerQueryParamsISPs): { name: string; count: number }[] {
+  const db = getDatabase();
+  const { profileId, countryCode, since, until, accessPointId, limit = 250 } = params;
+
+  let baseWhere = 'profile_id = ? AND timestamp BETWEEN ? AND ?';
+  const baseBinds: (string | number)[] = [profileId, since, until];
+
+  if (accessPointId) {
+    baseWhere += ' AND access_point_id = ?';
+    baseBinds.push(accessPointId);
+  }
+
+  if (countryCode) {
+    baseWhere += ` AND (
+      UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?
+    )`;
+    baseBinds.push(countryCode.toUpperCase());
+  }
+
+  baseWhere += ` AND (
+    (dest_isp IS NOT NULL AND dest_isp != '')
+    OR
+    (dest_geoip IS NOT NULL AND json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+  )`;
+
+  const rows: { name: string; count: number }[] = [];
+  const stmt = db.prepare(`
+    SELECT 
+      COALESCE(dest_isp, json_extract(dest_geoip, '$.isp'), 'Unknown') as name,
+      count(*) as count 
+    FROM local_logs 
+    WHERE ${baseWhere}
+    GROUP BY name 
+    ORDER BY count DESC 
+    LIMIT ?;
+  `);
+
+  try {
+    stmt.bind([...baseBinds, limit]);
+    while (stmt.step()) {
+      const row = stmt.get<{ name: string; count: number }>({});
+      if (row && row.name) {
+        rows.push(row);
+      }
+    }
+  } finally {
+    stmt.finalize();
+  }
+
+  return rows;
+}
+

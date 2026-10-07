@@ -401,7 +401,7 @@
     "noResult": "Нет результата",
     "networkDetails": "Сетевые детали",
     "clientSource": "Клиент (источник)",
-    "destination": "Назначение (IP)",
+    "destination": "Назначение",
     "quickActions": "Быстрые действия",
     "actionAllow": "Разрешить",
     "actionBlock": "Блокировать",

@@ -139,11 +139,11 @@ export async function updateTotpSettings(skipPassword: boolean): Promise<void> {
 
 export const updateMfaSettings = updateTotpSettings;
 
-export async function migratePassword(clientHash: string): Promise<void> {
+export async function migratePassword(clientHash: string, oldPassword?: string): Promise<void> {
   const res = await fetch("/api/account/migrate-password", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ clientHash })
+    body: JSON.stringify({ clientHash, oldPassword })
   });
   if (!res.ok) throw new Error(await res.text());
 }

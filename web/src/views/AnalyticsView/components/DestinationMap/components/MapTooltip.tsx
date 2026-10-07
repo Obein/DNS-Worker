@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 import { getProfileAnalytics } from "../../../../../services";
+import { localDb } from "../../../../../services/localDb";
 
 interface MapTooltipProps {
   name: string;
@@ -64,23 +65,61 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
     }
 
     setLoading(true);
+
+    const nowTs = Math.floor(Date.now() / 1000);
+    let since: number;
+    let until = nowTs;
     let queryParams = `?country_code=${countryCode}&range=${range}`;
+
     if (range === "custom" && customRange.start && customRange.end) {
-      const startTs = Math.floor(new Date(customRange.start).getTime() / 1000);
-      const endTs = Math.floor(new Date(customRange.end).getTime() / 1000);
-      queryParams += `&start=${startTs}&end=${endTs}`;
+      since = Math.floor(new Date(customRange.start).getTime() / 1000);
+      until = Math.floor(new Date(customRange.end).getTime() / 1000);
+      queryParams += `&start=${since}&end=${until}`;
+    } else {
+      switch (range) {
+        case "10m": since = nowTs - 600; break;
+        case "1h": since = nowTs - 3600; break;
+        case "24h": since = nowTs - 86400; break;
+        case "7d": since = nowTs - 604800; break;
+        case "30d": since = nowTs - 2592000; break;
+        default: since = nowTs - 86400; break;
+      }
     }
+
     if (accessPointId) {
       queryParams += `&access_point_id=${accessPointId}`;
     }
 
     let isMounted = true;
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      // 1. Try Local-First SQLite query (for client-decrypted E2EE logs in OPFS)
+      try {
+        const localIsps = await localDb.queryISPs({
+          profileId,
+          countryCode,
+          since,
+          until,
+          accessPointId: accessPointId || undefined,
+        });
+        if (localIsps && localIsps.length > 0) {
+          onCacheIspRef.current(countryCode, localIsps);
+          if (isMounted) {
+            setIsps(localIsps);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (err) {
+        console.warn("[MapTooltip] Local SQLite ISP query failed, falling back to server:", err);
+      }
+
+      // 2. Fallback to server API (for plaintext profiles or unhydrated local DB)
       getProfileAnalytics(profileId, "isps", queryParams)
         .then((data: any) => {
-          onCacheIspRef.current(countryCode, data);
+          const list = Array.isArray(data) ? data : [];
+          onCacheIspRef.current(countryCode, list);
           if (isMounted) {
-            setIsps(data);
+            setIsps(list);
           }
         })
         .catch((e: any) => {

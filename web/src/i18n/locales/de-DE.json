@@ -401,7 +401,7 @@
     "noResult": "Kein Ergebnis",
     "networkDetails": "Netzwerkdetails",
     "clientSource": "Client (Quelle)",
-    "destination": "Ziel (Auflösungsadresse)",
+    "destination": "Ziel",
     "quickActions": "Schnellaktionen",
     "actionAllow": "Zulassen",
     "actionBlock": "Blockieren",

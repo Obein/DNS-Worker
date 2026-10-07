@@ -339,6 +339,21 @@ class LocalDbService {
   }
 
   /**
+   * Queries local ISP aggregations optionally filtered by country code from SQLite.
+   */
+  async queryISPs(params: {
+    profileId: string;
+    countryCode?: string;
+    since: number;
+    until: number;
+    accessPointId?: string;
+    limit?: number;
+  }): Promise<{ name: string; count: number }[]> {
+    await this.init();
+    return this.sendRequest<{ name: string; count: number }[]>('QUERY_ISPS', params);
+  }
+
+  /**
    * Cleans up local logs older than the specified retention days.
    */
   async cleanup(retentionDays: number): Promise<number> {

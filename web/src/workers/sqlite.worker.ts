@@ -13,6 +13,7 @@ import type {
   GetWatermarkPayload,
   WorkerQueryLogsParams,
   WorkerAnalyticsParams,
+  WorkerQueryParamsISPs,
   CleanupPayload,
   ClearProfilePayload,
   InitResult,
@@ -26,7 +27,7 @@ import {
   handleGetWatermark,
 } from './sqlite/sync';
 import { handleQueryLogs } from './sqlite/query';
-import { handleQueryAnalytics } from './sqlite/analytics';
+import { handleQueryAnalytics, handleQueryISPs } from './sqlite/analytics';
 import {
   handleCleanup,
   handleGetStorageInfo,
@@ -68,6 +69,9 @@ self.onmessage = async (e: MessageEvent<WorkerMessageRequest>): Promise<void> =>
         break;
       case 'QUERY_ANALYTICS':
         result = handleQueryAnalytics(payload as WorkerAnalyticsParams);
+        break;
+      case 'QUERY_ISPS':
+        result = handleQueryISPs(payload as WorkerQueryParamsISPs);
         break;
       case 'CLEANUP':
         result = handleCleanup(payload as CleanupPayload);

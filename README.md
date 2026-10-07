@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="ObexDNS Logo" width="128">
-  <h1>ObexDNS</h1>
+  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <h1>DNS Worker</h1>
   <p>Privacy-First Protective DNS Resolver & DoH / DoT Server</p>
   <p>Protect your first hop on the internet · Dual-Engine: Cloudflare Workers Edge or Standalone Server (VPS / Linux / macOS / Windows)</p>
   <p align="center">
@@ -18,31 +18,14 @@
 
 ## 📖 Introduction
 
-**ObexDNS** (formerly DNS Worker) is a high-performance, privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
+**DNS Worker**, as a privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
 
-Whether you need global edge resolution across 300+ cities or 100% self-hosted data sovereignty with classic UDP 53 and native Android Private DNS (DoT 853), ObexDNS provides an enterprise-grade resolver with granular filtering, instant local-first analytics, and post-quantum end-to-end encrypted query logs.
-
-### ⚖️ Dual-Engine Architecture & Deployment Matrix
-
-| Feature / Capability | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge |
-|---|---|---|
-| **Primary Use Case** | Complete data sovereignty, home lab, direct router DNS, Android DoT | Zero-maintenance, global low-latency edge resolution |
-| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
-| **Storage Backend** | Native Node.js SQLite (`node:sqlite`) on local NVMe/SSD | Cloudflare D1 (Global distributed serverless database) |
-| **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
-| **Data Sovereignty** | **100% Self-Sovereign** — zero cloud vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
-| **Router & LAN DNS** | **Direct UDP 53 listener** (point router/LAN DNS directly to server) | Requires a DoH client, proxy, or stub resolver upstream |
-| **Android Private DNS** | **Native DoT 853** with SNI Profile routing (`<profile_key>.dns.example.com`) | Supported via DoH URL or third-party DNS app |
-| **Zero-Knowledge PQC E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
-| **Local-First Web UI** | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis |
-| **Maintenance & Scaling** | Simple systemd service (`npm run service-create:linux`) | Zero server maintenance; scales automatically |
-| **Cost** | Runs on existing VPS or home server hardware | Free tier for personal usage |
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
 ### What is DNS over HTTPS (DoH) & DNS over TLS (DoT)?
 
-* **DNS over HTTPS (DoH / RFC 8484)**: Performs DNS queries over encrypted HTTPS connections. ObexDNS exposes DoH endpoints compatible with all modern browsers, operating systems, and stub resolvers.
-* **DNS over TLS (DoT / RFC 7858)**: Encrypts DNS queries directly over TLS on dedicated port 853. ObexDNS Standalone mode natively routes incoming DoT requests to isolated user profiles using TLS Server Name Indication (SNI), making it ideal for Android 9+ native Private DNS.
-* **Classic UDP DNS (RFC 1035)**: Standard plaintext DNS on port 53. ObexDNS Standalone mode provides ultra-low latency LAN resolution directly compatible with home routers and legacy network equipment.
+* **DNS over HTTPS (DoH / RFC 8484)**: Performs DNS queries over encrypted HTTPS connections. DNS Worker exposes DoH endpoints compatible with all modern browsers, operating systems, and stub resolvers.
+* **DNS over TLS (DoT / RFC 7858)**: Encrypts DNS queries directly over TLS on dedicated port 853. DNS Worker Standalone mode natively routes incoming DoT requests to isolated user profiles using TLS Server Name Indication (SNI), making it ideal for Android 9+ native Private DNS.
 
 ---
 
@@ -170,7 +153,7 @@ When a DNS request arrives, it goes through the following processing stages:
 
 ## 🚀 Deployment Guide
 
-ObexDNS offers two deployment methods tailored to different operational needs:
+DNS Worker offers two deployment methods tailored to different operational needs:
 * **Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)** — Best if you want complete control, classic UDP 53 for routers, and native Android DoT 853 on your own machine.
 * **Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)** — Best if you want a globally distributed, zero-cost, zero-maintenance DoH resolver on 300+ edge PoPs.
 
@@ -178,7 +161,7 @@ ObexDNS offers two deployment methods tailored to different operational needs:
 
 ### Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)
 
-Run ObexDNS directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
+Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
 
 #### Features in Standalone Mode
 * **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
@@ -204,8 +187,8 @@ Run ObexDNS directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.
 
 1. Clone repository and install dependencies:
 ```bash
-git clone https://github.com/Obein/DNS-Worker.git obexdns
-cd obexdns
+git clone https://github.com/Obein/DNS-Worker.git DNS-Worker
+cd DNS-Worker
 npm install
 ```
 
@@ -233,7 +216,7 @@ This generates `/etc/systemd/system/dns-worker.service` configured with `CAP_NET
 
 ### Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)
 
-Run ObexDNS across 300+ edge locations worldwide on Cloudflare Workers and D1 database.
+Run DNS Worker across 300+ edge locations worldwide on Cloudflare Workers and D1 database.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
@@ -298,6 +281,24 @@ If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
     *   **D1 database**: Select your `dns_worker_db` database.
 5.  Redeploy the Pages project for the bindings to take effect.
 
+### ⚖️ Dual-Engine Architecture & Deployment Matrix
+
+Whether you need global edge resolution across 300+ cities or 100% self-hosted data sovereignty with classic UDP 53 and native Android Private DNS (DoT 853), DNS Worker provides an enterprise-grade resolver with granular filtering, instant local-first analytics, and post-quantum end-to-end encrypted query logs.
+
+| Feature / Capability | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge |
+|---|---|---|
+| **Primary Use Case** | Complete data sovereignty, home lab, direct router DNS, Android DoT | Zero-maintenance, global low-latency edge resolution |
+| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
+| **Storage Backend** | Native Node.js SQLite (`node:sqlite`) on local NVMe/SSD | Cloudflare D1 (Global distributed serverless database) |
+| **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
+| **Data Sovereignty** | **100% Self-Sovereign** — zero cloud vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
+| **Router & LAN DNS** | **Direct UDP 53 listener** (point router/LAN DNS directly to server) | Requires a DoH client, proxy, or stub resolver upstream |
+| **Android Private DNS** | **Native DoT 853** with SNI Profile routing (`<profile_key>.dns.example.com`) | Supported via DoH URL or third-party DNS app |
+| **Zero-Knowledge PQC E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
+| **Local-First Web UI** | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis |
+| **Maintenance & Scaling** | Simple systemd service (`npm run service-create:linux`) | Zero server maintenance; scales automatically |
+| **Cost** | Runs on existing VPS or home server hardware | Free tier for personal usage |
+
 ---
 
 ## 💪 Powered by
@@ -305,7 +306,7 @@ If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
 * [Cloudflare Workers](https://workers.cloudflare.com/) & [D1 Database](https://developers.cloudflare.com/d1/)
 * [Node.js](https://nodejs.org/) (Native `node:sqlite` Engine)
 
-## 🚚 Dependencies & Technologies
+## 🚚 Dependencies
 
 * [React](https://github.com/facebook/react) & [Blueprint](https://github.com/palantir/blueprint) (Modern high-density UI)
 * [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
@@ -322,7 +323,7 @@ This project is licensed under the [AGPLv3](LICENSE) License.
 
 ## 📝 Summary
 
-ObexDNS gives you full control over your DNS resolution — with zero compromises on privacy, performance, or flexibility. By supporting both a high-efficiency standalone Node.js server and Cloudflare Workers global edge, it delivers an enterprise-grade Protective DNS system that is:
+DNS Worker gives you full control over your DNS resolution — with zero compromises on privacy, performance, or flexibility. By supporting both a high-efficiency standalone Node.js server and Cloudflare Workers global edge, it delivers an enterprise-grade Protective DNS system that is:
 
 -   **Dual-Engine Versatility**: Run completely Cloudflare-free on your own VPS with classic UDP 53 & DoT 853, or deploy globally on Cloudflare Workers edge for zero-maintenance DoH.
 -   **Full-Stack Protocol Support**: Classic UDP 53 for routers, Android Private DNS (DoT 853 with SNI profile routing), and DoH (RFC 8484).
@@ -330,7 +331,7 @@ ObexDNS gives you full control over your DNS resolution — with zero compromise
 -   **Local-First Speed**: Instant 0ms log filtering and analytics in your browser via SQLite WASM + OPFS, eliminating unnecessary database read quotas.
 -   **Granular Governance**: Multi-profile isolation, custom record redirection, ECH parameter rewriting, and Bloom-filter-accelerated adblocking subscriptions.
 
-Whether protecting a single device, an entire home network, or a distributed organization, ObexDNS provides an elegant, self-sovereign alternative to commercial DNS filtering services.
+Whether protecting a single device, an entire home network, or a distributed organization, DNS Worker provides an elegant, self-sovereign alternative to commercial DNS filtering services.
 
 <div align="center">
   <br>
@@ -338,5 +339,5 @@ Whether protecting a single device, an entire home network, or a distributed org
     <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
   </a>
   <br><br>
-  <b>If ObexDNS is useful to you, please consider giving it a ⭐</b>
+  <b>If DNS Worker is useful to you, please consider giving it a ⭐</b>
 </div>

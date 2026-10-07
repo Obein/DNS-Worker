@@ -97,7 +97,7 @@ export function useLoginAuth({
       }
       if (data.needsMigration && password) {
         const clientHash = await hashPasswordClient(password, username);
-        await migratePassword(clientHash);
+        await migratePassword(clientHash, password);
       }
       if (data.rotatedRecoveryKey && credentials.recoveryKey) {
         // Recovery key was used to login and automatically rotated

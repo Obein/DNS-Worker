@@ -21,7 +21,6 @@ export const NetworkDetailsSection: React.FC<NetworkDetailsSectionProps> = ({
   const clientIp = detailedLog?.client_ip || selectedLog.client_ip;
   const clientCountry = detailedLog?.geo_country || selectedLog.geo_country;
 
-  const destinationAddress = detailedLog?.answer || selectedLog.answer;
   let destCountryCode = detailedLog?.dest_country_code || selectedLog.dest_country_code;
   const destCountry = detailedLog?.dest_country || selectedLog.dest_country;
   const destIsp = detailedLog?.dest_isp || selectedLog.dest_isp;
@@ -81,45 +80,42 @@ export const NetworkDetailsSection: React.FC<NetworkDetailsSectionProps> = ({
 
           {/* Destination */}
           <div>
-            <div className="text-[10px] uppercase font-bold opacity-50 mb-1">
-              {t("logs.destination")}
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-mono text-xs break-all">
-                {destinationAddress || (loading ? <Spinner size={12} /> : "-")}
-              </span>
-              {destCountryCode && (
-                <Tag minimal title={destCountry || destCountryCode}>
-                  {getFlagEmoji(destCountryCode)}
+            <div className="flex justify-between items-center mb-1">
+              <div className="text-[10px] uppercase font-bold opacity-50">
+                {t("logs.destination")}
+              </div>
+              {(destCountryCode || loading) && (
+                <Tag minimal title={destCountry || destCountryCode || "Unknown"}>
+                  {destCountryCode ? getFlagEmoji(destCountryCode) : "-"}
                 </Tag>
               )}
             </div>
 
-            {loading && !geoDetails && !destinationAddress ? (
+            {loading && !geoDetails ? (
               <div className="flex items-center justify-center py-2">
                 <Spinner size={16} />
               </div>
-            ) : (
-              geoDetails && (
-                <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg mt-2">
-                  <div className="flex items-start gap-3">
-                    <MapPin size={16} className="oklch(60.9% 0.126 221.723) mt-1 shrink-0" />
-                    <div>
-                      {geoDetails.locationTitle && (
-                        <div className="font-bold text-sm">
-                          {geoDetails.locationTitle}
-                        </div>
-                      )}
-                      {(geoDetails.isp || geoDetails.as) && (
-                        <div className="text-xs opacity-70 mt-1">
-                          {geoDetails.isp}
-                          {geoDetails.as && <span className="opacity-60 block mt-0.5">{geoDetails.as}</span>}
-                        </div>
-                      )}
-                    </div>
+            ) : geoDetails ? (
+              <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg mt-1">
+                <div className="flex items-start gap-3">
+                  <MapPin size={16} className="oklch(60.9% 0.126 221.723) mt-1 shrink-0" />
+                  <div>
+                    {geoDetails.locationTitle && (
+                      <div className="font-bold text-sm">
+                        {geoDetails.locationTitle}
+                      </div>
+                    )}
+                    {(geoDetails.isp || geoDetails.as) && (
+                      <div className="text-xs opacity-70 mt-1">
+                        {geoDetails.isp}
+                        {geoDetails.as && <span className="opacity-60 block mt-0.5">{geoDetails.as}</span>}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )
+              </div>
+            ) : (
+              <div className="text-xs opacity-50 py-1">-</div>
             )}
           </div>
         </div>
