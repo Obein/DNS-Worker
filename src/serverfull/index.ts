@@ -21,6 +21,7 @@ import {
   formatHelpMenu,
   formatKeyValueSection
 } from './format';
+import { showServerfullStatus } from './status';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
@@ -37,37 +38,32 @@ function checkNodeVersion(): void {
   }
 }
 
-function printHelp(cliArgs?: ServerfullCliArgs): void {
+function printHelp(): void {
   const version = getPackageVersion();
-  const { config } = getServerfullConfig(cliArgs);
-
-  const udpStatus = config.disableUdp ? 'Disabled' : String(config.udpPort);
-  const dotStatus = config.disableDot ? 'Disabled' : String(config.dotPort);
-  const httpStatus = String(config.httpPort);
 
   const menu = formatHelpMenu({
     name: `DNS Worker v${version} (Serverfull Mode)`,
     description: 'Privacy-first DNS & DoH Resolver',
     usage: [
       'dns-worker [options]',
+      'dns-worker <command> [options]',
       'npx dns-worker [options]'
     ],
+    commands: [
+      { label: 'status', desc: 'Inspect service runtime status and database health' }
+    ],
     options: [
-      { label: '-p, --port <number>', desc: `Web Dashboard & DoH HTTP port (current: ${httpStatus}, default: 3000)` },
-      { label: '--dns-port <number>', desc: `Classic UDP DNS port (current: ${udpStatus}, default: 53)` },
-      { label: '--dot-port <number>', desc: `DoT (DNS over TLS) port (current: ${dotStatus}, default: 853)` },
-      { label: '-h, --host <address>', desc: `Network address to bind (current: ${config.host}, default: 0.0.0.0)` },
-      { label: '--db <path>', desc: `SQLite database file path (current: ${config.dbPath})` },
+      { label: '-s, --status', desc: 'Display service and database runtime status' },
+      { label: '-p, --port <number>', desc: 'Web Dashboard & DoH HTTP port (default: 3000)' },
+      { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
+      { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
+      { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
+      { label: '--db <path>', desc: 'SQLite database file path (default: ./data/dns_worker.sqlite)' },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
-      { label: '--disable-udp', desc: `Disable Classic UDP DNS server (current: ${config.disableUdp})` },
-      { label: '--disable-dot', desc: `Disable DoT server (current: ${config.disableDot})` },
+      { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
+      { label: '--disable-dot', desc: 'Disable DoT server' },
       { label: '-v, --version', desc: 'Display version number' },
       { label: '--help', desc: 'Display this help message' }
-    ],
-    services: [
-      { label: '• Web Dashboard & DoH (HTTP)', desc: `http://${config.host}:${httpStatus}` },
-      { label: '• Classic UDP DNS', desc: config.disableUdp ? 'Disabled' : `udp://${config.host}:${udpStatus}` },
-      { label: '• DNS over TLS (DoT)', desc: config.disableDot ? 'Disabled' : `tls://${config.host}:${dotStatus}` }
     ],
     envVars: [
       { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
@@ -77,13 +73,14 @@ function printHelp(cliArgs?: ServerfullCliArgs): void {
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
       { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
       { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
-    ]
+    ],
+    tip: "Run 'dns-worker status' to inspect active runtime status, port availability, and database health."
   });
 
   console.log(menu);
 }
 
-function parseCli(): ServerfullCliArgs {
+async function parseCli(): Promise<ServerfullCliArgs> {
   try {
     const { values, positionals } = parseArgs({
       options: {
@@ -95,6 +92,7 @@ function parseCli(): ServerfullCliArgs {
         'default-profile': { type: 'string' },
         'disable-udp': { type: 'boolean' },
         'disable-dot': { type: 'boolean' },
+        status: { type: 'boolean', short: 's' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
       },
@@ -102,7 +100,7 @@ function parseCli(): ServerfullCliArgs {
     });
 
     if (values.help || positionals[0]?.toLowerCase() === 'help') {
-      printHelp(values as ServerfullCliArgs);
+      printHelp();
       process.exit(0);
     }
 
@@ -111,14 +109,23 @@ function parseCli(): ServerfullCliArgs {
       process.exit(0);
     }
 
+    if (values.status || positionals[0]?.toLowerCase() === 'status') {
+      const { config, env } = getServerfullConfig(values as ServerfullCliArgs);
+      await showServerfullStatus(config, env.JWT_SECRET);
+      process.exit(0);
+    }
+
     if (positionals.length > 0) {
       console.error(formatDiagnostic({
         level: 'error',
         title: 'DNS Worker - CLI Argument Error',
         message: `Unrecognized command or argument "${positionals.join(' ')}".`,
-        solutions: ['Run dns-worker --help to inspect supported options and usage.']
+        solutions: [
+          "Run 'dns-worker status' to view runtime status.",
+          "Run 'dns-worker --help' to inspect supported options and usage."
+        ]
       }));
-      printHelp(values as ServerfullCliArgs);
+      printHelp();
       process.exit(1);
     }
 
@@ -129,7 +136,10 @@ function parseCli(): ServerfullCliArgs {
       level: 'error',
       title: 'DNS Worker - CLI Argument Error',
       message: errorMsg,
-      solutions: ['Run dns-worker --help to inspect supported options and usage.']
+      solutions: [
+        "Run 'dns-worker status' to view runtime status.",
+        "Run 'dns-worker --help' to inspect supported options and usage."
+      ]
     }));
     printHelp();
     process.exit(1);
@@ -138,7 +148,7 @@ function parseCli(): ServerfullCliArgs {
 
 async function bootstrap(): Promise<void> {
   checkNodeVersion();
-  const cliArgs = parseCli();
+  const cliArgs = await parseCli();
 
   console.log(formatBanner({
     title: `Initializing DNS Worker v${getPackageVersion()} (Serverfull)`,

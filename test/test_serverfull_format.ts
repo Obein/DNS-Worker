@@ -10,6 +10,7 @@ import {
   formatDiagnostic,
   formatPortError
 } from '../src/serverfull/format';
+import { inspectDatabase } from '../src/serverfull/status';
 
 function runUnitTests(): void {
   console.log('>>> [TEST] Starting Serverfull Declarative Formatting Unit Tests...');
@@ -21,21 +22,20 @@ function runUnitTests(): void {
     description: 'Privacy-first DNS & DoH Resolver',
     usage: 'dns-worker [options]',
     commands: [
-      { label: 'start', desc: 'Start server in background' }
+      { label: 'status', desc: 'Inspect service runtime status and database health' }
     ],
     options: [
-      { label: '-p, --port <number>', desc: 'HTTP port (current: 3000)' },
+      { label: '-s, --status', desc: 'Show status' },
+      { label: '-p, --port <number>', desc: 'HTTP port (default: 3000)' },
       { label: '--help', desc: 'Show this help message' }
     ],
-    services: [
-      { label: '• Web Dashboard', desc: 'http://0.0.0.0:3000' }
-    ]
+    tip: "Run 'dns-worker status' to inspect active runtime status."
   });
 
   if (!helpOutput.includes('dns-worker v1.1.1 - Privacy-first DNS & DoH Resolver')) {
     throw new Error('formatHelpMenu failed header check');
   }
-  if (!helpOutput.includes('Commands:') || !helpOutput.includes('Options:') || !helpOutput.includes('Current Service Ports:')) {
+  if (!helpOutput.includes('Commands:') || !helpOutput.includes('Options:') || !helpOutput.includes('Tip:')) {
     throw new Error('formatHelpMenu missing sections');
   }
   console.log('   ✓ formatHelpMenu passed.');
@@ -146,6 +146,14 @@ function runUnitTests(): void {
     throw new Error('formatPortError generic error fallback failed');
   }
   console.log('   ✓ formatPortError passed.');
+
+  // 6. Test inspectDatabase
+  console.log('6. Testing inspectDatabase...');
+  const nonExistentDb = inspectDatabase('./non_existent_file.sqlite');
+  if (nonExistentDb.exists !== false || !nonExistentDb.statusText.includes('Not Initialized')) {
+    throw new Error('inspectDatabase failed for non-existent database');
+  }
+  console.log('   ✓ inspectDatabase passed.');
 
   console.log('\n======================================================');
   console.log('   ALL FORMATTING UNIT TESTS PASSED SUCCESSFULLY!    ');

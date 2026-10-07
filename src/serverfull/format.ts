@@ -22,6 +22,7 @@ export interface HelpMenuConfig {
   options?: HelpItem[];
   services?: HelpItem[];
   envVars?: HelpItem[];
+  tip?: string | string[];
 }
 
 /**
@@ -31,7 +32,7 @@ export interface HelpMenuConfig {
  * @returns Formatted help menu string ready for console output.
  */
 export function formatHelpMenu(config: HelpMenuConfig): string {
-  const { name, description, usage, commands, options, services, envVars } = config;
+  const { name, description, usage, commands, options, services, envVars, tip } = config;
   const indent = '  ';
   const gap = 4; // Space between label column and description column
 
@@ -48,6 +49,14 @@ export function formatHelpMenu(config: HelpMenuConfig): string {
     return `\n${title}:\n${lines.join('\n')}`;
   };
 
+  const renderTip = (tipContent?: string | string[]): string => {
+    if (!tipContent) return '';
+    const lines = Array.isArray(tipContent)
+      ? tipContent.map((t) => `${indent}${t}`).join('\n')
+      : `${indent}${tipContent}`;
+    return `\nTip:\n${lines}`;
+  };
+
   const usageText = Array.isArray(usage)
     ? usage.map((u) => `${indent}${u}`).join('\n')
     : `${indent}${usage}`;
@@ -58,7 +67,8 @@ export function formatHelpMenu(config: HelpMenuConfig): string {
     renderSection('Commands', commands, cmdAndOptWidth),
     renderSection('Options', options, cmdAndOptWidth),
     renderSection('Current Service Ports', services),
-    renderSection('Environment Variables', envVars)
+    renderSection('Environment Variables', envVars),
+    renderTip(tip)
   ];
 
   return sections.filter(Boolean).join('\n') + '\n';
