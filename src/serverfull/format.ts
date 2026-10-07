@@ -26,6 +26,21 @@ export interface HelpMenuConfig {
 }
 
 /**
+ * Formats a declarative tip block with indentation.
+ *
+ * @param tip - Tip string or array of tip strings.
+ * @param indent - Left indentation string (default: '  ').
+ * @returns Formatted tip string.
+ */
+export function formatTip(tip: string | string[], indent: string = '  '): string {
+  if (!tip) return '';
+  const lines = Array.isArray(tip)
+    ? tip.map((t) => `${indent}${t}`).join('\n')
+    : `${indent}${tip}`;
+  return `\nTip:\n${lines}\n`;
+}
+
+/**
  * Formats a structured CLI help menu with dynamic column alignment.
  *
  * @param config - The help menu configuration structure.
@@ -49,17 +64,11 @@ export function formatHelpMenu(config: HelpMenuConfig): string {
     return `\n${title}:\n${lines.join('\n')}`;
   };
 
-  const renderTip = (tipContent?: string | string[]): string => {
-    if (!tipContent) return '';
-    const lines = Array.isArray(tipContent)
-      ? tipContent.map((t) => `${indent}${t}`).join('\n')
-      : `${indent}${tipContent}`;
-    return `\nTip:\n${lines}`;
-  };
-
   const usageText = Array.isArray(usage)
     ? usage.map((u) => `${indent}${u}`).join('\n')
     : `${indent}${usage}`;
+
+  const tipText = tip ? formatTip(tip, indent).trimEnd() : '';
 
   const sections = [
     `${name} - ${description}`,
@@ -68,10 +77,89 @@ export function formatHelpMenu(config: HelpMenuConfig): string {
     renderSection('Options', options, cmdAndOptWidth),
     renderSection('Current Service Ports', services),
     renderSection('Environment Variables', envVars),
-    renderTip(tip)
+    tipText
   ];
 
   return sections.filter(Boolean).join('\n') + '\n';
+}
+
+/**
+ * Item representing a CLI command and its description.
+ */
+export interface CommandItem {
+  command: string;
+  desc: string;
+}
+
+/**
+ * Configuration options for rendering a declarative command list.
+ */
+export interface CommandListConfig {
+  title?: string;
+  items: CommandItem[];
+  indent?: string;
+  gap?: number;
+}
+
+/**
+ * Formats a list of commands with dynamic column alignment.
+ *
+ * @param config - The command list configuration.
+ * @returns Formatted multi-line string with aligned commands and descriptions.
+ */
+export function formatCommandList(config: CommandListConfig): string {
+  const { title, items, indent = '  ', gap = 4 } = config;
+  if (!items || items.length === 0) return '';
+
+  const maxCmdWidth = Math.max(...items.map((i) => i.command.length), 0);
+  const lines = items.map(
+    (item) => `${indent}${item.command.padEnd(maxCmdWidth + gap)}# ${item.desc}`
+  );
+
+  if (title) {
+    return `${title}\n${lines.join('\n')}\n`;
+  }
+  return lines.join('\n') + '\n';
+}
+
+/**
+ * Configuration options for rendering a bordered content or log preview box.
+ */
+export interface LogBoxConfig {
+  title: string;
+  content: string;
+  borderChar?: '-' | '=' | '#' | '*';
+  minWidth?: number;
+  tip?: string;
+}
+
+/**
+ * Formats a declarative bordered content or log viewer block with title and optional tip.
+ *
+ * @param config - The log box configuration.
+ * @returns Formatted log box string.
+ */
+export function formatLogBox(config: LogBoxConfig): string {
+  const { title, content, borderChar = '-', minWidth = 60, tip } = config;
+  const headerText = `[${title}]`;
+  const borderLength = Math.max(minWidth, headerText.length + 8);
+  const border = borderChar.repeat(borderLength);
+
+  const leftPad = 3;
+  const rightPad = Math.max(3, borderLength - headerText.length - leftPad - 2);
+  const header = `${borderChar.repeat(leftPad)} ${headerText} ${borderChar.repeat(rightPad)}`;
+
+  const lines: string[] = [
+    header,
+    content,
+    border
+  ];
+
+  if (tip) {
+    lines.push(`Tip: ${tip}`);
+  }
+
+  return '\n' + lines.join('\n') + '\n';
 }
 
 /**
@@ -180,7 +268,7 @@ export function formatBanner(config: BannerConfig): string {
 /**
  * Severity level for diagnostic messages.
  */
-export type DiagnosticLevel = 'error' | 'warning' | 'info';
+export type DiagnosticLevel = 'error' | 'warning' | 'info' | 'success';
 
 /**
  * Configuration options for rendering a structured diagnostic or alert message.
@@ -235,7 +323,7 @@ export interface PortErrorConfig {
   serviceName: string;
   protocol: 'UDP' | 'DoT' | 'HTTP' | string;
   port: number;
-  err: any;
+  err: unknown;
   alternateOption: string;
   disableOption?: string;
 }
@@ -248,7 +336,7 @@ export interface PortErrorConfig {
  */
 export function formatPortError(config: PortErrorConfig): string {
   const { serviceName, protocol, port, err, alternateOption, disableOption } = config;
-  const errCode = err?.code;
+  const errCode = (err as { code?: string })?.code;
 
   if (errCode === 'EADDRINUSE') {
     const causes: string[] = [];
@@ -293,5 +381,6 @@ export function formatPortError(config: PortErrorConfig): string {
     });
   }
 
-  return `\n[${serviceName}] Startup Error: ${err?.message || String(err)}\n`;
+  const message = err instanceof Error ? err.message : String(err);
+  return `\n[${serviceName}] Startup Error: ${message}\n`;
 }

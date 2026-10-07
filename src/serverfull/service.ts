@@ -8,7 +8,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { formatBanner, formatDiagnostic } from './format';
+import {
+  formatBanner,
+  formatDiagnostic,
+  formatCommandList,
+  formatLogBox
+} from './format';
 
 export const SERVICE_NAME = 'dns-worker';
 export const SERVICE_FILE_NAME = `${SERVICE_NAME}.service`;
@@ -162,18 +167,24 @@ async function handleLinuxSystemd(action: string): Promise<void> {
           ]
         });
 
-        console.log('\n' + banner + '\n');
-        console.log('Useful service management commands:');
-        console.log('  dns-worker service status      # Check live status');
-        console.log('  dns-worker service logs        # Tail live syslog / journal logs');
-        console.log('  sudo dns-worker service restart # Restart service');
-        console.log('  sudo dns-worker service stop    # Stop service');
-        console.log('  sudo dns-worker service uninstall # Remove service\n');
-      } catch (err: any) {
+        const commandGuide = formatCommandList({
+          title: 'Useful service management commands:',
+          items: [
+            { command: 'dns-worker service status', desc: 'Check live status' },
+            { command: 'dns-worker service logs', desc: 'Tail live syslog / journal logs' },
+            { command: 'sudo dns-worker service restart', desc: 'Restart service' },
+            { command: 'sudo dns-worker service stop', desc: 'Stop service' },
+            { command: 'sudo dns-worker service uninstall', desc: 'Remove service' }
+          ]
+        });
+
+        console.log('\n' + banner + '\n\n' + commandGuide);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Service Installation Failed',
-          message: err.message || String(err),
+          message: errorMsg,
           solutions: [
             'Ensure systemd is running as PID 1 on your Linux distribution.',
             `Verify permissions to write to ${SYSTEMD_SERVICE_PATH}.`
@@ -206,12 +217,17 @@ async function handleLinuxSystemd(action: string): Promise<void> {
         }
 
         execSync('systemctl daemon-reload', { stdio: 'inherit' });
-        console.log(`\n[Success] DNS Worker systemd service removed from ${SYSTEMD_SERVICE_PATH}.\n`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Removed',
+          message: `DNS Worker systemd service removed from ${SYSTEMD_SERVICE_PATH}.`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Service Uninstall Failed',
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -235,12 +251,17 @@ async function handleLinuxSystemd(action: string): Promise<void> {
 
       try {
         execSync(`systemctl ${action} ${SERVICE_NAME}`, { stdio: 'inherit' });
-        console.log(`[Success] Executed: systemctl ${action} ${SERVICE_NAME}`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Action Executed',
+          message: `systemctl ${action} ${SERVICE_NAME}`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: `Service ${action} Failed`,
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -259,8 +280,13 @@ async function handleLinuxSystemd(action: string): Promise<void> {
     case 'logs': {
       try {
         execSync(`journalctl -u ${SERVICE_NAME} -f -n 50`, { stdio: 'inherit' });
-      } catch (err: any) {
-        console.error('[Service Logs] journalctl exited:', err.message || err);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Service Logs Error',
+          message: `journalctl exited: ${errorMsg}`
+        }));
       }
       break;
     }
@@ -337,18 +363,24 @@ async function handleWindowsTask(action: string): Promise<void> {
           ]
         });
 
-        console.log('\n' + banner + '\n');
-        console.log('Useful Windows service management commands:');
-        console.log('  dns-worker service status      # View task status');
-        console.log('  dns-worker service logs        # View recent service logs');
-        console.log('  dns-worker service restart     # Restart background task');
-        console.log('  dns-worker service stop        # Stop background task');
-        console.log('  dns-worker service uninstall   # Remove background task\n');
-      } catch (err: any) {
+        const commandGuide = formatCommandList({
+          title: 'Useful Windows service management commands:',
+          items: [
+            { command: 'dns-worker service status', desc: 'View task status' },
+            { command: 'dns-worker service logs', desc: 'View recent service logs' },
+            { command: 'dns-worker service restart', desc: 'Restart background task' },
+            { command: 'dns-worker service stop', desc: 'Stop background task' },
+            { command: 'dns-worker service uninstall', desc: 'Remove background task' }
+          ]
+        });
+
+        console.log('\n' + banner + '\n\n' + commandGuide);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Windows Service Installation Failed',
-          message: err.message || String(err),
+          message: errorMsg,
           solutions: [
             'Ensure you are running the terminal as Administrator.',
             'Verify that the Windows Task Scheduler service is active.'
@@ -380,12 +412,17 @@ async function handleWindowsTask(action: string): Promise<void> {
           fs.unlinkSync(WINDOWS_BAT_FILE);
         }
 
-        console.log(`\n[Success] Windows background task "${WINDOWS_TASK_NAME}" removed successfully.\n`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Removed',
+          message: `Windows background task "${WINDOWS_TASK_NAME}" removed successfully.`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Windows Service Removal Failed',
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -395,12 +432,17 @@ async function handleWindowsTask(action: string): Promise<void> {
     case 'start': {
       try {
         execSync(`schtasks /run /tn "${WINDOWS_TASK_NAME}"`, { stdio: 'inherit' });
-        console.log(`[Success] Started Windows background task: ${WINDOWS_TASK_NAME}`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Started',
+          message: `Started Windows background task: ${WINDOWS_TASK_NAME}`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Task Start Failed',
-          message: err.message || String(err),
+          message: errorMsg,
           solutions: [
             `Verify the task exists with 'dns-worker service status'.`,
             `Or reinstall with 'dns-worker service install' in Administrator terminal.`
@@ -414,12 +456,17 @@ async function handleWindowsTask(action: string): Promise<void> {
     case 'stop': {
       try {
         execSync(`schtasks /end /tn "${WINDOWS_TASK_NAME}"`, { stdio: 'inherit' });
-        console.log(`[Success] Stopped Windows background task: ${WINDOWS_TASK_NAME}`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Stopped',
+          message: `Stopped Windows background task: ${WINDOWS_TASK_NAME}`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Task Stop Failed',
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -430,12 +477,17 @@ async function handleWindowsTask(action: string): Promise<void> {
       try {
         try { execSync(`schtasks /end /tn "${WINDOWS_TASK_NAME}"`, { stdio: 'ignore' }); } catch {}
         execSync(`schtasks /run /tn "${WINDOWS_TASK_NAME}"`, { stdio: 'inherit' });
-        console.log(`[Success] Restarted Windows background task: ${WINDOWS_TASK_NAME}`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Restarted',
+          message: `Restarted Windows background task: ${WINDOWS_TASK_NAME}`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Task Restart Failed',
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -460,7 +512,14 @@ async function handleWindowsTask(action: string): Promise<void> {
 
     case 'logs': {
       if (!fs.existsSync(WINDOWS_LOG_FILE)) {
-        console.log(`\n[Logs] No log file found at ${WINDOWS_LOG_FILE} yet.\n`);
+        console.log(formatDiagnostic({
+          level: 'info',
+          title: 'Service Logs Notice',
+          message: `No log file found at ${WINDOWS_LOG_FILE} yet.`,
+          details: [
+            'The background service has not produced any log output or has not been started yet.'
+          ]
+        }));
         return;
       }
 
@@ -469,12 +528,19 @@ async function handleWindowsTask(action: string): Promise<void> {
         const lines = content.trim().split(/\r?\n/);
         const tailLines = lines.slice(-50).join('\n');
 
-        console.log(`\n--- [Recent 50 Service Log Lines: ${WINDOWS_LOG_FILE}] ---`);
-        console.log(tailLines);
-        console.log('------------------------------------------------------------');
-        console.log(`Tip: In PowerShell, run: Get-Content "${WINDOWS_LOG_FILE}" -Tail 50 -Wait\n`);
-      } catch (err: any) {
-        console.error(`[Logs] Error reading log file: ${err.message || err}`);
+        console.log(formatLogBox({
+          title: `Recent 50 Service Log Lines: ${WINDOWS_LOG_FILE}`,
+          content: tailLines,
+          borderChar: '-',
+          tip: `In PowerShell, run: Get-Content "${WINDOWS_LOG_FILE}" -Tail 50 -Wait`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Service Logs Error',
+          message: `Error reading log file: ${errorMsg}`
+        }));
       }
       break;
     }
@@ -517,8 +583,10 @@ export async function handleServiceAction(action: string): Promise<void> {
         'A systemd service unit template is provided below for manual reference:'
       ]
     }));
-    console.log('------------------------------------------------------');
-    console.log(unitContent);
-    console.log('------------------------------------------------------');
+    console.log(formatLogBox({
+      title: 'systemd service unit template',
+      content: unitContent.trim(),
+      borderChar: '-'
+    }));
   }
 }

@@ -8,7 +8,7 @@ import net from 'node:net';
 import dgram from 'node:dgram';
 import { DatabaseSync } from 'node:sqlite';
 import { ServerfullConfig } from './config';
-import { formatBanner, formatKeyValueSection } from './format';
+import { formatBanner, formatKeyValueSection, formatTip } from './format';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 
 /**
@@ -70,8 +70,9 @@ export function probeUdpPort(port: number, host: string): Promise<'active' | 'fr
       resolve(state);
     };
 
-    socket.once('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
+    socket.once('error', (err: unknown) => {
+      const code = (err as { code?: string })?.code;
+      if (code === 'EADDRINUSE') {
         finish('active');
       } else {
         finish('free');
@@ -165,10 +166,11 @@ export function inspectDatabase(dbPath: string): DbStatusInfo {
       profilesCount,
       statusText: `Ready (${details})`
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return {
       exists: true,
-      statusText: `Exists (Read warning: ${err.message || String(err)})`
+      statusText: `Exists (Read warning: ${errorMsg})`
     };
   }
 }
@@ -257,5 +259,21 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ]
   });
 
-  console.log([banner, servicesSection, databaseSection, envSection, ''].join('\n'));
+  let tipSection = '';
+  if (httpState === 'free' && (udpState === 'free' || config.disableUdp)) {
+    const serviceInstallCmd = process.platform === 'win32'
+      ? 'dns-worker service install (in Administrator terminal)'
+      : 'sudo dns-worker service install';
+
+    tipSection = formatTip([
+      'Services are currently stopped.',
+      `To run continuously as a persistent background daemon: ${serviceInstallCmd}`
+    ]);
+  }
+
+  const report = [banner, servicesSection, databaseSection, envSection, tipSection]
+    .filter(Boolean)
+    .join('\n');
+
+  console.log(report);
 }

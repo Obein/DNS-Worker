@@ -53,7 +53,7 @@ function printHelp(): void {
     ],
     commands: [
       { label: 'status', desc: 'Inspect service runtime status and database health' },
-      { label: 'service <action>', desc: 'Manage Linux systemd service (install, start, stop, restart, status, logs, uninstall)' }
+      { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, status, logs, uninstall)' }
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },
@@ -79,7 +79,9 @@ function printHelp(): void {
     ],
     tip: [
       "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
-      "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
+      process.platform === 'win32'
+        ? "Run 'dns-worker service install' (in Administrator terminal) to run as a persistent Windows background service."
+        : "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
     ]
   });
 
@@ -127,6 +129,10 @@ async function parseCli(): Promise<ServerfullCliArgs> {
       process.exit(0);
     }
 
+    const serviceInstallHint = process.platform === 'win32'
+      ? "Run 'dns-worker service install' in Administrator terminal to install Windows service."
+      : "Run 'sudo dns-worker service install' to install as a Linux systemd service.";
+
     if (positionals.length > 0) {
       console.error(formatDiagnostic({
         level: 'error',
@@ -134,7 +140,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         message: `Unrecognized command or argument "${positionals.join(' ')}".`,
         solutions: [
           "Run 'dns-worker status' to view runtime status.",
-          "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+          serviceInstallHint,
           "Run 'dns-worker --help' to inspect supported options and usage."
         ]
       }));
@@ -145,13 +151,17 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     return values as ServerfullCliArgs;
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const serviceInstallHint = process.platform === 'win32'
+      ? "Run 'dns-worker service install' in Administrator terminal to install Windows service."
+      : "Run 'sudo dns-worker service install' to install as a Linux systemd service.";
+
     console.error(formatDiagnostic({
       level: 'error',
       title: 'DNS Worker - CLI Argument Error',
       message: errorMsg,
       solutions: [
         "Run 'dns-worker status' to view runtime status.",
-        "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+        serviceInstallHint,
         "Run 'dns-worker --help' to inspect supported options and usage."
       ]
     }));
