@@ -288,7 +288,7 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
         if (totpResult.timeStep !== undefined) {
           const replayKey = `totp_used:${userId}:${totpResult.timeStep}`;
           if (await cacheUtils.get(cache, replayKey)) {
-            await activityLog.record(userId, 'totp_replay_blocked', clientIp, userAgent);
+            await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent, { reason: 'replay_blocked' });
             return new Response("TOTP code has already been used. Please wait for the next 30-second code.", { status: 400 });
           }
           await cacheUtils.set(cache, replayKey, 1, 90);
