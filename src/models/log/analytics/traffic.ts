@@ -62,13 +62,23 @@ export class LogTrafficAnalytics {
     interval: string,
     accessPointId?: string
   ): Promise<TimeSeriesTrendPoint[]> {
-    let queryStr = `SELECT ${interval} as timestamp, action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?`;
+    // Defensively sanitize SQL interval expression against an explicit allowlist
+    const SAFE_INTERVALS = new Set([
+      "(timestamp/60)*60",
+      "(timestamp/300)*300",
+      "(timestamp/900)*900",
+      "(timestamp/3600)*3600",
+      "(timestamp/86400)*86400"
+    ]);
+    const safeInterval = SAFE_INTERVALS.has(interval.trim()) ? interval.trim() : "(timestamp/3600)*3600";
+
+    let queryStr = `SELECT ${safeInterval} as timestamp, action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?`;
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";
       params.push(accessPointId);
     }
-    queryStr += ` GROUP BY ${interval}, action ORDER BY timestamp ASC`;
+    queryStr += ` GROUP BY ${safeInterval}, action ORDER BY timestamp ASC`;
     const { results } = await this.db
       .prepare(queryStr)
       .bind(...params)

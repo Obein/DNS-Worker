@@ -14,7 +14,7 @@ import {
 } from "../../lib/auth";
 import { importJwtSecret, signJWT } from "../../lib/jwt";
 import { verifyPassword } from "../../utils/crypto";
-import { verifyTOTP, findMatchingRecoveryKey, generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
+import { verifyTOTP, verifyTOTPWithStep, findMatchingRecoveryKey, generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
 import { UserModel } from "../../models/user";
 import { PasskeyModel } from "../../models/passkey";
 import { ActivityLogModel } from "../../models/activityLog";
@@ -165,11 +165,14 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
     const hasRecoveryKeys = !!user.totp_recovery_keys;
     const requiresMfa = hasTotp || hasPasskeys;
 
-    const hasMfaCredential = !!(passkeyAssertion || totpTokenHash || recoveryKey);
-    const mfaBypassPassword = requiresMfa && hasMfaCredential && !password;
+    // Hardware-backed Passkeys with WebAuthn user verification can serve as an independent passwordless factor.
+    // In contrast, TOTP codes and emergency recovery keys are strictly second factors and must never bypass
+    // password verification unless the user explicitly configured passwordless mode (user.totp_skip_password === 1).
+    const isPasswordlessPasskey = hasPasskeys && !!passkeyAssertion;
+    const skipPasswordAllowed = !!user.totp_skip_password || isPasswordlessPasskey;
 
-    // 验证密码 (若用户在密码面板选择“其他选项”直接提供 MFA 凭据，则允许通过 MFA 完成认证)
-    if (!user.totp_skip_password && !mfaBypassPassword) {
+    // 验证密码 (若用户未启用免密且未提供有效 Passkey 凭据，强制校验主密码)
+    if (!skipPasswordAllowed) {
       if (!password) {
         return new Response("Password is required", { status: 400 });
       }
@@ -270,8 +273,8 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
         isRecoverySuccess = true;
         recoveryRemaining = 1;
       } else if (hasTotp && totpTokenHash) {
-        const isValid = await verifyTOTP(user.totp_secret || '', totpTokenHash, totpSalt);
-        if (!isValid) {
+        const totpResult = await verifyTOTPWithStep(user.totp_secret || '', totpTokenHash, totpSalt);
+        if (!totpResult.valid) {
           await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent);
           const remaining = await recordFailedPreauthAttempt(cache, preauthToken, env);
           if (remaining <= 0) {
@@ -280,6 +283,17 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
             return new Response(`Invalid TOTP code. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`, { status: 400 });
           }
         }
+
+        // Anti-Replay: Reject token if this time step has already been consumed for this user
+        if (totpResult.timeStep !== undefined) {
+          const replayKey = `totp_used:${userId}:${totpResult.timeStep}`;
+          if (await cacheUtils.get(cache, replayKey)) {
+            await activityLog.record(userId, 'totp_replay_blocked', clientIp, userAgent);
+            return new Response("TOTP code has already been used. Please wait for the next 30-second code.", { status: 400 });
+          }
+          await cacheUtils.set(cache, replayKey, 1, 90);
+        }
+
         isTotpSuccess = true;
       } else {
         const remaining = await recordFailedPreauthAttempt(cache, preauthToken, env);

@@ -27,7 +27,7 @@ export class UserMfaModel {
     if (encryptedSecret && encryptedKeys) {
       const result = await this.db
         .prepare(
-          'UPDATE users SET totp_secret = NULL, totp_secret_encrypted = ?, totp_secret_dek = ?, totp_enabled = 1, totp_skip_password = 1, totp_recovery_keys = NULL, totp_recovery_keys_encrypted = ?, totp_recovery_keys_dek = ? WHERE id = ?'
+          'UPDATE users SET totp_secret = NULL, totp_secret_encrypted = ?, totp_secret_dek = ?, totp_enabled = 1, totp_skip_password = 0, totp_recovery_keys = NULL, totp_recovery_keys_encrypted = ?, totp_recovery_keys_dek = ? WHERE id = ?'
         )
         .bind(
           encryptedSecret.dataEncrypted,
@@ -42,7 +42,7 @@ export class UserMfaModel {
       // Fallback: plaintext storage if KEK is not configured
       const result = await this.db
         .prepare(
-          'UPDATE users SET totp_secret = ?, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 1, totp_skip_password = 1, totp_recovery_keys = ?, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?'
+          'UPDATE users SET totp_secret = ?, totp_secret_encrypted = NULL, totp_secret_dek = NULL, totp_enabled = 1, totp_skip_password = 0, totp_recovery_keys = ?, totp_recovery_keys_encrypted = NULL, totp_recovery_keys_dek = NULL WHERE id = ?'
         )
         .bind(secret, recoveryKeysStr, id)
         .run();

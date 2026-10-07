@@ -110,34 +110,64 @@ async function computeHOTP(secret: string, counter: number): Promise<string> {
  * @param token - 6-digit OTP string from the user
  * @returns true if the token is valid within the time window
  */
-export async function verifyTOTP(secret: string, token: string, salt?: string): Promise<boolean> {
-  if (!secret || !token) return false;
-  if (!salt && !TOTP_TOKEN_REGEX.test(token)) return false;
+export interface TotpVerificationResult {
+  valid: boolean;
+  timeStep?: number;
+}
+
+/**
+ * Verifies a TOTP token against a secret and returns the matched time step for anti-replay tracking.
+ *
+ * @param secret - Base32-encoded TOTP secret
+ * @param token - 6-digit OTP string or hashed token from the user
+ * @param salt - Optional salt if token was pre-hashed by client
+ * @returns TotpVerificationResult with valid status and matched timeStep
+ */
+export async function verifyTOTPWithStep(
+  secret: string,
+  token: string,
+  salt?: string
+): Promise<TotpVerificationResult> {
+  if (!secret || !token) return { valid: false };
+  if (!salt && !TOTP_TOKEN_REGEX.test(token)) return { valid: false };
 
   try {
     const timeStep = Math.floor(Date.now() / 1000 / 30);
 
     // Check current step and ±1 adjacent steps to tolerate clock skew
     for (const delta of [-1, 0, 1]) {
-      const expected = await computeHOTP(secret, timeStep + delta);
-      
+      const step = timeStep + delta;
+      const expected = await computeHOTP(secret, step);
+
       if (salt) {
         const data = new TextEncoder().encode(expected + salt);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashHex = Array.from(new Uint8Array(hashBuffer))
-          .map(b => b.toString(16).padStart(2, '0'))
+          .map((b) => b.toString(16).padStart(2, '0'))
           .join('');
-        if (hashHex === token) return true;
+        if (hashHex === token) return { valid: true, timeStep: step };
       } else {
-        if (expected === token) return true;
+        if (expected === token) return { valid: true, timeStep: step };
       }
     }
   } catch (e) {
     console.error("[TOTP Verification Error]:", e);
-    return false;
+    return { valid: false };
   }
 
-  return false;
+  return { valid: false };
+}
+
+/**
+ * Verifies a TOTP token against a secret, allowing ±1 time step (30s window).
+ * @param secret - Base32-encoded TOTP secret
+ * @param token - 6-digit OTP string from the user
+ * @param salt - Optional client salt for pre-hashed token
+ * @returns true if the token is valid within the time window
+ */
+export async function verifyTOTP(secret: string, token: string, salt?: string): Promise<boolean> {
+  const result = await verifyTOTPWithStep(secret, token, salt);
+  return result.valid;
 }
 
 /**

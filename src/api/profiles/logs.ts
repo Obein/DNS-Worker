@@ -172,7 +172,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
           headers: {
             'Content-Type': 'application/json',
             'X-Cache': 'HIT',
-            'Cache-Control': 'public, max-age=300'
+            'Cache-Control': 'private, no-cache'
           }
         });
       }
@@ -207,7 +207,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
         headers: {
           'Content-Type': 'application/json',
           'X-Cache': 'MISS',
-          'Cache-Control': 'public, max-age=300'
+          'Cache-Control': 'private, no-cache'
         }
       });
     }
@@ -220,7 +220,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
         headers: {
           'Content-Type': 'application/json',
           'X-Cache': 'HIT',
-          'Cache-Control': 'public, max-age=60'
+          'Cache-Control': 'private, no-cache'
         }
       });
     }
@@ -232,7 +232,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
       headers: {
         'Content-Type': 'application/json',
         'X-Cache': 'MISS',
-        'Cache-Control': 'public, max-age=60'
+        'Cache-Control': 'private, no-cache'
       }
     });
   }
