@@ -18,7 +18,7 @@
 
 ## 📖 Introduction
 
-**DNS Worker**, as a privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
+**DNS Worker**, a privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
