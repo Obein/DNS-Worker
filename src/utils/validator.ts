@@ -69,11 +69,43 @@ export const ACCESS_KEY_REGEX = /^[a-zA-Z0-9]{5,12}$/;
  */
 export const TOTP_TOKEN_REGEX = /^\d{6}$/;
 
-const FORBIDDEN_HOSTNAMES = [
+const FORBIDDEN_HOSTNAMES: readonly string[] = [
   'localhost',
   'metadata.google.internal', // GCP
+  'metadata.goog',
   '169.254.169.254',          // AWS/GCP/Azure IMDS
+  'instance-data',
+  'localtest.me',
 ];
+
+const FORBIDDEN_HOSTNAME_SUFFIXES: readonly string[] = [
+  '.localhost',
+  '.local',
+  '.internal',
+  '.lan',
+  '.home.arpa',
+  '.corp',
+  '.home',
+  '.localtest.me',
+];
+
+/**
+ * Extracts embedded IPv4 addresses from wildcard/dynamic DNS services (e.g. nip.io, sslip.io).
+ *
+ * @param hostname - Normalized lowercase hostname.
+ * @returns Extracted IPv4 string or null if not an embedded IP service.
+ */
+function extractEmbeddedDnsIp(hostname: string): string | null {
+  // Dot-separated IPv4: e.g. 127.0.0.1.nip.io, foo.192.168.1.1.sslip.io
+  const dotMatch = hostname.match(/(?:^|\.)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\.(?:nip\.io|sslip\.io)$/i);
+  if (dotMatch) return dotMatch[1];
+
+  // Dash-separated IPv4: e.g. 127-0-0-1.sslip.io, 10-0-0-1.nip.io
+  const dashMatch = hostname.match(/(?:^|\.)(\d{1,3})-(\d{1,3})-(\d{1,3})-(\d{1,3})\.(?:nip\.io|sslip\.io)$/i);
+  if (dashMatch) return `${dashMatch[1]}.${dashMatch[2]}.${dashMatch[3]}.${dashMatch[4]}`;
+
+  return null;
+}
 
 /**
  * Hardcoded standard private, loopback, link-local, multicast, and reserved CIDR ranges
@@ -182,6 +214,26 @@ export function isSafeUrl(urlString: string): boolean {
 
     if (FORBIDDEN_HOSTNAMES.includes(rawHostname) || FORBIDDEN_HOSTNAMES.includes(url.hostname.toLowerCase())) {
       return false;
+    }
+
+    // Check forbidden internal / mDNS / local suffixes
+    for (const suffix of FORBIDDEN_HOSTNAME_SUFFIXES) {
+      if (rawHostname.endsWith(suffix) || rawHostname === suffix.slice(1)) {
+        return false;
+      }
+    }
+
+    // Check cloud metadata endpoints
+    if (rawHostname.includes('metadata.google')) {
+      return false;
+    }
+
+    // Check wildcard dynamic DNS embedded IPs (nip.io, sslip.io)
+    const embeddedIp = extractEmbeddedDnsIp(rawHostname);
+    if (embeddedIp) {
+      if (!isPublicInternetIP(embeddedIp)) {
+        return false;
+      }
     }
 
     // Check if hostname is an IP and matches forbidden ranges

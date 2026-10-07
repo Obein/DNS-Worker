@@ -253,8 +253,12 @@ export async function handleLoginRequest(request: Request, env: Env): Promise<Re
           }
         }
       } else if ((hasTotp || hasPasskeys || hasRecoveryKeys) && recoveryKey) {
-        let storedHashes: string[] = [];
-        try { storedHashes = JSON.parse(user.totp_recovery_keys || '[]'); } catch { }
+        let storedHashes: any[] = [];
+        try {
+          const raw = user.totp_recovery_keys;
+          storedHashes = typeof raw === 'string' ? JSON.parse(raw || '[]') : (raw || []);
+          if (!Array.isArray(storedHashes)) storedHashes = [storedHashes];
+        } catch { }
         const matchIndex = await findMatchingRecoveryKey(recoveryKey, storedHashes);
         if (matchIndex === -1) {
           await activityLog.record(userId, 'totp_verify_fail', clientIp, userAgent, { method: 'recovery_key' });

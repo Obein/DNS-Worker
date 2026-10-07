@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
   <h1>DNS Worker</h1>
   <p>Privacy-First Protective DNS Resolver & DoH / DoT Server</p>
-  <p>Protect your first hop on the internet · Dual-Engine: Cloudflare Workers Edge or Standalone Server (VPS / Linux / macOS / Windows)</p>
+  <p>Protect your first hop on the internet</p>
   <p align="center">
     English | <a href="README_zh-CN.md">中文 (简体)</a> | <a href="README_zh-TW.md">中文 (正體)</a>
   </p>

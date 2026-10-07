@@ -28,15 +28,70 @@ export async function fetchListContent(
   timeoutMs: number,
   onDomain: (domain: string) => Promise<void>
 ): Promise<FetchListResult> {
-  if (!isSafeUrl(url)) {
-    return {
-      count: 0,
-      error: "Invalid list URL. Private networks and localhosts are not allowed.",
-    };
-  }
+  const deadline = Date.now() + timeoutMs;
+  let currentUrl = url;
+  let redirectCount = 0;
+  const MAX_REDIRECTS = 5;
+  let response: Response;
 
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    while (true) {
+      if (!isSafeUrl(currentUrl)) {
+        return {
+          count: 0,
+          error: "Invalid list URL. Private networks, localhosts, and internal domains are not allowed.",
+        };
+      }
+
+      const remainingTimeout = deadline - Date.now();
+      if (remainingTimeout <= 0) {
+        return { count: 0, error: "Request timed out" };
+      }
+
+      response = await fetch(currentUrl, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(remainingTimeout),
+      });
+
+      // Handle HTTP 3xx redirects securely (RFC 7231 / RFC 7538)
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) {
+          return {
+            count: 0,
+            error: `Redirect status ${response.status} without Location header`,
+          };
+        }
+
+        redirectCount++;
+        if (redirectCount > MAX_REDIRECTS) {
+          return {
+            count: 0,
+            error: `Too many redirects (max ${MAX_REDIRECTS})`,
+          };
+        }
+
+        try {
+          const nextUrl = new URL(location, currentUrl).toString();
+          const nextProto = new URL(nextUrl).protocol;
+          if (nextProto !== "http:" && nextProto !== "https:") {
+            return {
+              count: 0,
+              error: `Invalid redirect protocol: ${nextProto}`,
+            };
+          }
+          currentUrl = nextUrl;
+          continue;
+        } catch {
+          return {
+            count: 0,
+            error: `Invalid redirect location: ${location}`,
+          };
+        }
+      }
+
+      break;
+    }
 
     if (!response.ok) {
       return {

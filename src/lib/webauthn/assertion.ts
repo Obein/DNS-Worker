@@ -45,20 +45,15 @@ export async function verifyAuthenticationResponse(
     ? new URL(expectedOrigin)
     : new URL(`https://${expectedOrigin}`);
 
-  if (clientOriginUrl.hostname.toLowerCase() !== expectedOriginUrl.hostname.toLowerCase()) {
+  if (clientOriginUrl.origin.toLowerCase() !== expectedOriginUrl.origin.toLowerCase()) {
     throw new Error(
-      `WebAuthn origin mismatch: expected ${expectedOriginUrl.hostname}, received ${clientOriginUrl.hostname}`
+      `WebAuthn origin mismatch: expected ${expectedOriginUrl.origin}, received ${clientOriginUrl.origin}`
     );
   }
 
   const isLocalhost = clientOriginUrl.hostname === "localhost" || clientOriginUrl.hostname === "127.0.0.1";
   if (!isLocalhost && clientOriginUrl.protocol !== "https:") {
     throw new Error(`WebAuthn requires HTTPS origin, received: ${clientOriginUrl.protocol}`);
-  }
-  if (clientOriginUrl.protocol !== expectedOriginUrl.protocol) {
-    throw new Error(
-      `WebAuthn protocol mismatch: expected ${expectedOriginUrl.protocol}, received ${clientOriginUrl.protocol}`
-    );
   }
 
   // 2. Verify authenticatorData
