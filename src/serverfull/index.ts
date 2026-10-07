@@ -59,7 +59,7 @@ Environment Variables:
 
 function parseCli(): ServerfullCliArgs {
   try {
-    const { values } = parseArgs({
+    const { values, positionals } = parseArgs({
       options: {
         port: { type: 'string', short: 'p' },
         'dns-port': { type: 'string' },
@@ -75,7 +75,7 @@ function parseCli(): ServerfullCliArgs {
       allowPositionals: true
     });
 
-    if (values.help) {
+    if (values.help || positionals[0]?.toLowerCase() === 'help') {
       printHelp();
       process.exit(0);
     }
@@ -85,10 +85,17 @@ function parseCli(): ServerfullCliArgs {
       process.exit(0);
     }
 
+    if (positionals.length > 0) {
+      console.error(`\n[DNS Worker] CLI Argument Error: Unrecognized command or argument "${positionals.join(' ')}".`);
+      printHelp();
+      process.exit(1);
+    }
+
     return values as ServerfullCliArgs;
-  } catch (err: any) {
-    console.error(`[DNS Worker] CLI Argument Error: ${err.message}`);
-    console.error('Run "dns-worker --help" for available options.\n');
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`\n[DNS Worker] CLI Argument Error: ${errorMsg}`);
+    printHelp();
     process.exit(1);
   }
 }
