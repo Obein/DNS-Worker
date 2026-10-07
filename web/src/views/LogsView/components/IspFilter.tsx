@@ -53,7 +53,7 @@ export const IspFilter: React.FC<IspFilterProps> = ({
     setLoading(true);
     try {
       const nowTs = Math.floor(Date.now() / 1000);
-      let since = nowTs - 86400;
+      let since: number;
       let until = nowTs;
       const params = new URLSearchParams();
 

@@ -67,7 +67,7 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
     setLoading(true);
 
     const nowTs = Math.floor(Date.now() / 1000);
-    let since = nowTs - 86400;
+    let since: number;
     let until = nowTs;
     let queryParams = `?country_code=${countryCode}&range=${range}`;
 
