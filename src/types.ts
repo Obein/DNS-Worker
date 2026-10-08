@@ -37,6 +37,8 @@ export interface Env {
   LOG_CLEANUP_BATCH_LIMIT?: string | number;
   LOG_CLEANUP_DAILY_BUDGET?: string | number;
   DOMAIN_ROLLUP_MIN_COUNT?: string | number;
+  SERVERFULL_DOT_DOMAIN?: string;
+  DOT_DOMAIN?: string;
   [key: string]: any;
 }
 

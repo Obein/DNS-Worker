@@ -17,4 +17,5 @@ export interface ClientInfo {
   asOrganization: string;
   connectedProfileId?: string;
   substituteDomain?: string;
+  dotDomain?: string;
 }

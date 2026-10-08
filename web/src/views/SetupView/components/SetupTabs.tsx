@@ -16,6 +16,7 @@ export interface SetupTabsProps {
   allRegions: Record<string, RegionConfigItem>;
   selectedRegion: string;
   currentIps: { ip: string; area: string | null }[];
+  dotDomain?: string;
 }
 
 export const SetupTabs: React.FC<SetupTabsProps> = ({
@@ -27,6 +28,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   allRegions,
   selectedRegion,
   currentIps,
+  dotDomain,
 }) => {
   const { t } = useTranslation();
 
@@ -252,26 +254,63 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
             <H5 className="font-bold">{t("setup.androidTitle")}</H5>
             <p className="text-sm">{t("setup.androidDesc")}</p>
 
-            <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
-              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {t("setup.androidDotTitle", "私有 DNS (DoT - Serverfull 模式)")}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t("setup.androidDotDesc", "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：")}
-              </p>
-              <div className="flex items-center gap-2">
-                <Tag
-                  minimal
-                  interactive
-                  onClick={() => copyToClipboard(`${profileKey}.${window.location.hostname}`)}
-                  icon="duplicate"
-                  className="font-mono text-sm py-1 px-3"
-                  intent={Intent.PRIMARY}
-                >
-                  {`${profileKey}.${window.location.hostname}`}
-                </Tag>
-              </div>
-            </div>
+            {(() => {
+              const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(window.location.hostname) ||
+                                  window.location.hostname === "localhost" ||
+                                  window.location.hostname === "127.0.0.1" ||
+                                  window.location.hostname.includes(":");
+              const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
+              const effectiveDotDomain = cleanBaseDomain || (!isIpAddress ? window.location.hostname : "");
+
+              return (
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    {t("setup.androidDotTitle", "私有 DNS (DoT - Serverfull 模式)")}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {t("setup.androidDotDesc", "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：")}
+                  </p>
+
+                  {effectiveDotDomain ? (
+                    <div className="space-y-3 pt-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                        <Tag
+                          minimal
+                          interactive
+                          onClick={() => copyToClipboard(`${profileKey}.${effectiveDotDomain}`)}
+                          icon="duplicate"
+                          className="font-mono text-xs sm:text-sm py-1 px-3 self-start"
+                          intent={Intent.PRIMARY}
+                        >
+                          {`${profileKey}.${effectiveDotDomain}`}
+                        </Tag>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                          {t("setup.androidWildcardHint", "(通配符证书，路由至此配置)")}
+                        </span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                        <Tag
+                          minimal
+                          interactive
+                          onClick={() => copyToClipboard(effectiveDotDomain)}
+                          icon="duplicate"
+                          className="font-mono text-xs py-0.5 px-2.5 opacity-80 self-start"
+                        >
+                          {effectiveDotDomain}
+                        </Tag>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                          {t("setup.androidSingleDomainHint", "(单域名证书，路由至默认配置)")}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
+                      {t("setup.androidIpNotice", "检测到当前通过 IP 或本地地址访问面板。Android 原生私有 DNS 仅接受域名，请在 .env 中配置 SERVERFULL_DOT_DOMAIN (例如 dns.example.com) 后刷新。")}
+                    </Callout>
+                  )}
+                </div>
+              );
+            })()}
 
             <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
               {t("setup.androidWarning")}

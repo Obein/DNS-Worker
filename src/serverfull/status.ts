@@ -222,18 +222,19 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
       : `udp://${config.host}:${config.udpPort} [Stopped / Port Available]`;
 
   let dotStatusText = '';
+  const domainPart = config.dotDomain ? ` (${config.dotDomain})` : '';
   if (config.disableDot) {
     dotStatusText = 'Disabled (--disable-dot)';
   } else if (!tlsConfigured) {
-    dotStatusText = `tls://${config.host}:${config.dotPort} [Disabled - TLS Certificates Not Configured]`;
+    dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Disabled - TLS Certificates Not Configured]`;
   } else if (!tlsFilesExist) {
-    dotStatusText = `tls://${config.host}:${config.dotPort} [Warning - TLS Certificate Files Missing]`;
+    dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Warning - TLS Certificate Files Missing]`;
   } else if (dotState === 'active') {
     const dotOccupant = getPortOccupant(config.dotPort, 'TCP');
     const dotOccupantText = dotOccupant ? `: ${formatOccupantSummary(dotOccupant)}` : '';
-    dotStatusText = `tls://${config.host}:${config.dotPort} [Active / Listening${dotOccupantText}]`;
+    dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Active / Listening${dotOccupantText}]`;
   } else {
-    dotStatusText = `tls://${config.host}:${config.dotPort} [Stopped / Port Available]`;
+    dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Stopped / Port Available]`;
   }
 
   const defaultProfileText = config.defaultProfileKey
@@ -269,6 +270,10 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ]
   });
 
+  const dotDomainText = config.dotDomain
+    ? `${config.dotDomain} (Wildcard / Single-domain compatible)`
+    : 'Not Configured (Auto SNI prefix matching)';
+
   const envSection = formatKeyValueSection({
     title: '\nEnvironment & Security:',
     items: [
@@ -276,6 +281,7 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
       { label: 'Config Directory', value: getDefaultConfigDir() },
       { label: 'Config Source', value: configSourceText },
       { label: 'JWT Secret', value: jwtStatus },
+      { label: 'DoT Base Domain', value: dotDomainText },
       { label: 'Default Profile Key', value: defaultProfileText }
     ]
   });

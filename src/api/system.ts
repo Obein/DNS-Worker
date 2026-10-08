@@ -36,7 +36,8 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
       asn,
       asOrganization,
       connectedProfileId: connectedProfileId || null,
-      substituteDomain: env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN
+      substituteDomain: env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN,
+      dotDomain: env.SERVERFULL_DOT_DOMAIN || env.DOT_DOMAIN || null
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 

@@ -270,6 +270,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         allRegions={allRegions}
         selectedRegion={selectedRegion}
         currentIps={currentIps}
+        dotDomain={clientInfo?.dotDomain}
       />
 
       <AccessPointDrawer

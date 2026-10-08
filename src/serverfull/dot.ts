@@ -20,6 +20,7 @@ export interface DotServerOptions {
   tlsKeyPath: string;
   tlsCertPath: string;
   defaultProfileKey?: string;
+  dotDomain?: string;
   env: Env;
 }
 
@@ -98,7 +99,8 @@ export class DotDnsServer {
             console.error('[DoT] Runtime error:', err);
           });
           this.isRunning = true;
-          console.log(`[DoT] DNS over TLS listening on tls://${host}:${port}`);
+          const domainInfo = this.options.dotDomain ? ` (${this.options.dotDomain})` : '';
+          console.log(`[DoT] DNS over TLS listening on tls://${host}:${port}${domainInfo}`);
           resolve();
         });
       } catch (err) {
@@ -117,9 +119,27 @@ export class DotDnsServer {
     let buffer = Buffer.alloc(0);
 
     // Extract profile key from TLS SNI (e.g. "k7d9w2.dns.example.com" -> "k7d9w2")
-    const serverName = socket.servername || '';
+    const serverName = (socket.servername || '').toLowerCase().trim();
     let candidateKey = '';
-    if (serverName) {
+
+    const baseDomain = this.options.dotDomain?.toLowerCase().trim().replace(/^\*\./, '');
+    if (baseDomain && serverName) {
+      if (serverName === baseDomain) {
+        // Direct connection to base domain (single-domain cert or base domain client)
+        candidateKey = '';
+      } else if (serverName.endsWith('.' + baseDomain)) {
+        // Subdomain of base domain: e.g. "k7d9w2.dns.example.com" or "k7d9w2.sub.dns.example.com"
+        const prefix = serverName.slice(0, -(baseDomain.length + 1));
+        const firstPart = prefix.split('.')[0];
+        if (ACCESS_KEY_REGEX.test(firstPart)) {
+          candidateKey = firstPart;
+        } else if (ACCESS_KEY_REGEX.test(prefix)) {
+          candidateKey = prefix;
+        }
+      }
+    }
+
+    if (!candidateKey && serverName) {
       const firstPart = serverName.split('.')[0];
       if (ACCESS_KEY_REGEX.test(firstPart)) {
         candidateKey = firstPart;

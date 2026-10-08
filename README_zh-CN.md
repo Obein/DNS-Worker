@@ -162,6 +162,7 @@ DNS Worker 可完全脱离 Cloudflare Workers，直接在 Linux、Windows、macO
 |---|---|---|
 | `SERVERFULL_TLS_KEY_PATH` | TLS 私钥文件路径 (PEM 格式，亦兼容 `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | TLS 公钥/证书链文件路径 (PEM 格式，亦兼容 `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
+| `SERVERFULL_DOT_DOMAIN` | DoT 对外基准域名 (兼容通配符与单域名证书，别名: `DOT_DOMAIN`) | `dns.example.com` |
 | `SERVERFULL_UDP_PORT` | 经典 UDP DNS 监听端口 | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) 监听端口 | `853` |
 | `SERVERFULL_HTTP_PORT` | HTTP Web 面板与 DoH 监听端口 | `3000` |

@@ -35,8 +35,14 @@ SERVERFULL_DOT_PORT=853
 SERVERFULL_HTTP_PORT=3000
 
 # ------------------------------------------------------------------------------
-# TLS Certificate & Private Key (Required for DoT) / TLS 证书与私钥配置 (DoT 必需)
+# DNS over TLS (DoT) Domain & TLS Certificates / 加密 DoT 域名与 TLS 证书配置
 # ------------------------------------------------------------------------------
+# Base domain name for DoT service / DoT 对外基准域名
+# 用于 Android 原生私有 DNS 以及 Web 面板接入点引导展示 (如 dns.example.com)
+# - 若持有通配符证书 (*.dns.example.com): 客户端填入 <profileKey>.dns.example.com 实现精准路由
+# - 若持有单域名证书 (dns.example.com): 客户端直接填入 dns.example.com 自动路由至默认配置
+# SERVERFULL_DOT_DOMAIN=dns.example.com
+
 # Absolute path to your TLS private key (PEM format) / TLS 私钥路径 (兼容 SERFULL_TLS_KEY_PATH)
 SERVERFULL_TLS_KEY_PATH=/etc/letsencrypt/live/dns.example.com/privkey.pem
 

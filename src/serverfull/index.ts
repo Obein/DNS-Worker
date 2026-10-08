@@ -148,6 +148,7 @@ function printHelp(): void {
       { label: '-p, --port <number>', desc: 'Web Dashboard & DoH HTTP port (default: 3000)' },
       { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
       { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
+      { label: '--dot-domain <domain>', desc: 'Base domain name for DoT service (e.g. dns.example.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
       { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
@@ -160,6 +161,7 @@ function printHelp(): void {
       { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
       { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
       { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
+      { label: 'SERVERFULL_DOT_DOMAIN / DOT_DOMAIN', desc: 'Base domain name for DoT service' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
       { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
@@ -184,6 +186,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         port: { type: 'string', short: 'p' },
         'dns-port': { type: 'string' },
         'dot-port': { type: 'string' },
+        'dot-domain': { type: 'string' },
         host: { type: 'string', short: 'h' },
         db: { type: 'string' },
         'default-profile': { type: 'string' },
@@ -328,6 +331,7 @@ async function bootstrap(): Promise<void> {
     host: config.host,
     tlsKeyPath: config.tlsKeyPath,
     tlsCertPath: config.tlsCertPath,
+    dotDomain: config.dotDomain,
     defaultProfileKey: config.defaultProfileKey,
     env
   }) : null;
@@ -377,7 +381,7 @@ async function bootstrap(): Promise<void> {
       },
       {
         label: 'DoT (TLS DNS)',
-        value: hasTls ? `tls://${config.host}:${config.dotPort}` : 'Disabled / Not Configured'
+        value: hasTls ? `tls://${config.dotDomain || config.host}:${config.dotPort}` : 'Disabled / Not Configured'
       },
       {
         label: 'Web UI & DoH',

@@ -22,6 +22,7 @@ export interface ServerfullCliArgs {
   port?: string;
   'dns-port'?: string;
   'dot-port'?: string;
+  'dot-domain'?: string;
   host?: string;
   db?: string;
   'default-profile'?: string;
@@ -37,6 +38,7 @@ export interface ServerfullConfig {
   tlsCertPath: string;
   udpPort: number;
   dotPort: number;
+  dotDomain: string;
   httpPort: number;
   host: string;
   dbPath: string;
@@ -367,6 +369,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
 
   const udpPort = parseInt(cliArgs?.['dns-port'] || process.env.SERVERFULL_UDP_PORT || process.env.DNS_PORT || '53', 10);
   const dotPort = parseInt(cliArgs?.['dot-port'] || process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
+  const dotDomain = (cliArgs?.['dot-domain'] || process.env.SERVERFULL_DOT_DOMAIN || process.env.DOT_DOMAIN || '').trim();
   const httpPort = parseInt(cliArgs?.port || process.env.SERVERFULL_HTTP_PORT || process.env.PORT || '3000', 10);
   const host = cliArgs?.host || process.env.SERVERFULL_HOST || process.env.SERVERFULL_BIND_ADDRESS || '0.0.0.0';
   const defaultDbPath = getDefaultDbPath();
@@ -380,6 +383,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     tlsCertPath,
     udpPort,
     dotPort,
+    dotDomain,
     httpPort,
     host,
     dbPath,
@@ -419,6 +423,8 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS: process.env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS || 1,
     MAX_LOGS_PER_PROFILE: process.env.MAX_LOGS_PER_PROFILE || 500000,
     SERVERFULL_DEFAULT_PROFILE_KEY: defaultProfileKey,
+    SERVERFULL_DOT_DOMAIN: dotDomain,
+    DOT_DOMAIN: dotDomain,
     ...process.env
   };
 

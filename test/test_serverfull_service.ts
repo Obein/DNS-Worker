@@ -31,6 +31,7 @@ import {
   getDefaultConfigFilePath,
   ensurePersistentDirs,
   getOrInitPersistentJwtSecret,
+  getServerfullConfig,
   getLoadedEnvFiles
 } from '../src/serverfull/config';
 import {
@@ -227,6 +228,20 @@ function runServiceUnitTests(): void {
     throw new Error(`ensurePersistentDirs failed to seed configFile: ${dirs.configFile}`);
   }
   console.log(`   ✓ ensurePersistentDirs auto-seeding verified (configFile: ${dirs.configFile}).`);
+
+  // 10. Test SERVERFULL_DOT_DOMAIN resolution and wildcard compatibility
+  console.log('10. Testing SERVERFULL_DOT_DOMAIN resolution and wildcard compatibility...');
+  const customDomainConfig = getServerfullConfig({ 'dot-domain': 'dns.example.com' });
+  if (customDomainConfig.config.dotDomain !== 'dns.example.com') {
+    throw new Error(`Expected dotDomain 'dns.example.com', got '${customDomainConfig.config.dotDomain}'`);
+  }
+  if (customDomainConfig.env.SERVERFULL_DOT_DOMAIN !== 'dns.example.com') {
+    throw new Error(`Expected env.SERVERFULL_DOT_DOMAIN 'dns.example.com', got '${customDomainConfig.env.SERVERFULL_DOT_DOMAIN}'`);
+  }
+  if (!DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_DOT_DOMAIN=dns.example.com')) {
+    throw new Error('DEFAULT_ENV_SERVERFULL_TEMPLATE missing SERVERFULL_DOT_DOMAIN configuration');
+  }
+  console.log('   ✓ SERVERFULL_DOT_DOMAIN resolution and template verified.');
 
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');

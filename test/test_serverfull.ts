@@ -83,7 +83,8 @@ async function runTests() {
     ASSETS: null as any,
     JWT_SECRET: 'test_jwt_secret_serverfull_suite_000000',
     FAIL_OPEN_UPSTREAM: 'https://security.cloudflare-dns.com/dns-query',
-    SERVERFULL_DEFAULT_PROFILE_KEY: 'testkey123'
+    SERVERFULL_DEFAULT_PROFILE_KEY: 'testkey123',
+    SERVERFULL_DOT_DOMAIN: 'dns.local'
   };
 
   // Ports for testing
@@ -106,6 +107,7 @@ async function runTests() {
     host: '127.0.0.1',
     tlsKeyPath,
     tlsCertPath,
+    dotDomain: 'dns.local',
     defaultProfileKey: 'testkey123',
     env
   });
@@ -185,12 +187,15 @@ async function runTests() {
   console.log('\n>>> [TEST C] Testing HTTP Server (/api/clientinfo)...');
   const httpRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`);
   console.log('>>> [TEST C] HTTP status:', httpRes.status);
-  const clientInfoJson = await httpRes.json();
+  const clientInfoJson = await httpRes.json() as Record<string, any>;
   console.log('>>> [TEST C] ClientInfo response:', clientInfoJson);
   if (httpRes.status !== 200) {
     throw new Error(`Expected HTTP 200 from /api/clientinfo, got ${httpRes.status}`);
   }
-  console.log('>>> [TEST C] SUCCESS: HTTP Server works!');
+  if (clientInfoJson.dotDomain !== 'dns.local') {
+    throw new Error(`Expected clientInfo.dotDomain to be 'dns.local', got ${clientInfoJson.dotDomain}`);
+  }
+  console.log('>>> [TEST C] SUCCESS: HTTP Server & ClientInfo with dotDomain works!');
 
   // ── Cleanup ──
   console.log('\n>>> [CLEANUP] Stopping servers...');

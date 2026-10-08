@@ -158,6 +158,7 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 |---|---|---|
 | `SERVERFULL_TLS_KEY_PATH` | Absolute path to TLS private key file (PEM format, alias: `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | Absolute path to TLS certificate chain file (PEM format, alias: `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
+| `SERVERFULL_DOT_DOMAIN` | Base domain name for DoT service (wildcard & single-domain compatible, alias: `DOT_DOMAIN`) | `dns.example.com` |
 | `SERVERFULL_UDP_PORT` | Classic UDP DNS listening port | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
 | `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `3000` |
