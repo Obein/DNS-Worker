@@ -20,6 +20,9 @@ import { writeDefaultConfigFile } from './defaults';
 
 export interface ServerfullCliArgs {
   port?: string;
+  'http-port'?: string;
+  'https-port'?: string;
+  'disable-https'?: boolean;
   'dns-port'?: string;
   'dot-port'?: string;
   'dot-domain'?: string;
@@ -40,11 +43,13 @@ export interface ServerfullConfig {
   dotPort: number;
   dotDomain: string;
   httpPort: number;
+  httpsPort: number;
   host: string;
   dbPath: string;
   defaultProfileKey: string;
   disableUdp: boolean;
   disableDot: boolean;
+  disableHttps: boolean;
   packageRoot: string;
 }
 
@@ -370,13 +375,15 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   const udpPort = parseInt(cliArgs?.['dns-port'] || process.env.SERVERFULL_UDP_PORT || process.env.DNS_PORT || '53', 10);
   const dotPort = parseInt(cliArgs?.['dot-port'] || process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
   const dotDomain = (cliArgs?.['dot-domain'] || process.env.SERVERFULL_DOT_DOMAIN || process.env.DOT_DOMAIN || '').trim();
-  const httpPort = parseInt(cliArgs?.port || process.env.SERVERFULL_HTTP_PORT || process.env.PORT || '3000', 10);
+  const httpPort = parseInt(cliArgs?.['http-port'] || cliArgs?.port || process.env.SERVERFULL_HTTP_PORT || process.env.HTTP_PORT || process.env.PORT || '10080', 10);
+  const httpsPort = parseInt(cliArgs?.['https-port'] || process.env.SERVERFULL_HTTPS_PORT || process.env.HTTPS_PORT || '10443', 10);
   const host = cliArgs?.host || process.env.SERVERFULL_HOST || process.env.SERVERFULL_BIND_ADDRESS || '0.0.0.0';
   const defaultDbPath = getDefaultDbPath();
   const dbPath = cliArgs?.db || process.env.SERVERFULL_DB_PATH || process.env.DB_PATH || defaultDbPath;
   const defaultProfileKey = cliArgs?.['default-profile'] || process.env.SERVERFULL_DEFAULT_PROFILE_KEY || process.env.DEFAULT_PROFILE_KEY || '';
   const disableUdp = Boolean(cliArgs?.['disable-udp'] || process.env.SERVERFULL_DISABLE_UDP === 'true');
   const disableDot = Boolean(cliArgs?.['disable-dot'] || process.env.SERVERFULL_DISABLE_DOT === 'true');
+  const disableHttps = Boolean(cliArgs?.['disable-https'] || process.env.SERVERFULL_DISABLE_HTTPS === 'true');
 
   const config: ServerfullConfig = {
     tlsKeyPath,
@@ -385,11 +392,13 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     dotPort,
     dotDomain,
     httpPort,
+    httpsPort,
     host,
     dbPath,
     defaultProfileKey,
     disableUdp,
     disableDot,
+    disableHttps,
     packageRoot
   };
 

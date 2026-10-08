@@ -11,12 +11,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dgram from 'node:dgram';
 import tls from 'node:tls';
+import https from 'node:https';
 import { execSync } from 'node:child_process';
 import { initNodeGlobals } from '../src/serverfull/cache';
 import { initServerfullDb } from '../src/serverfull/db';
 import { UdpDnsServer } from '../src/serverfull/udp';
 import { DotDnsServer } from '../src/serverfull/dot';
-import { HttpServer } from '../src/serverfull/http';
+import { HttpServer, HttpsServer } from '../src/serverfull/http';
 import { buildDNSQuery, parseDNSAnswer } from '../src/utils/dns';
 import { Env } from '../src/types';
 
@@ -91,6 +92,7 @@ async function runTests() {
   const UDP_TEST_PORT = 15353;
   const DOT_TEST_PORT = 18853;
   const HTTP_TEST_PORT = 23300;
+  const HTTPS_TEST_PORT = 24443;
 
   // 5. Start UDP Server
   const udpServer = new UdpDnsServer({
@@ -113,13 +115,23 @@ async function runTests() {
   });
   await dotServer.start();
 
-  // 7. Start HTTP Server
+  // 7. Start HTTP Server (port 23300)
   const httpServer = new HttpServer({
     port: HTTP_TEST_PORT,
     host: '127.0.0.1',
     env
   });
   await httpServer.start();
+
+  // 8. Start HTTPS Server (port 24443)
+  const httpsServer = new HttpsServer({
+    port: HTTPS_TEST_PORT,
+    host: '127.0.0.1',
+    certPath: tlsCertPath,
+    keyPath: tlsKeyPath,
+    env
+  });
+  await httpsServer.start();
 
   // ── TEST A: UDP DNS Query (Internal verification domain 'obex TXT') ──
   console.log('\n>>> [TEST A] Testing UDP DNS Resolution (obex TXT)...');
@@ -197,11 +209,32 @@ async function runTests() {
   }
   console.log('>>> [TEST C] SUCCESS: HTTP Server & ClientInfo with dotDomain works!');
 
+  // ── TEST D: HTTPS Web UI / ClientInfo API ──
+  console.log('\n>>> [TEST D] Testing HTTPS Server (/api/clientinfo)...');
+  const httpsRes = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = https.get(`https://127.0.0.1:${HTTPS_TEST_PORT}/api/clientinfo`, { rejectUnauthorized: false }, (res) => {
+      let data = '';
+      res.on('data', (c) => data += c);
+      res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
+    });
+    req.on('error', reject);
+  });
+  console.log('>>> [TEST D] HTTPS status:', httpsRes.status);
+  const httpsClientInfo = JSON.parse(httpsRes.body) as Record<string, any>;
+  if (httpsRes.status !== 200) {
+    throw new Error(`Expected HTTPS 200 from /api/clientinfo, got ${httpsRes.status}`);
+  }
+  if (httpsClientInfo.dotDomain !== 'dns.local') {
+    throw new Error(`Expected HTTPS clientInfo.dotDomain to be 'dns.local', got ${httpsClientInfo.dotDomain}`);
+  }
+  console.log('>>> [TEST D] SUCCESS: HTTPS Server & ClientInfo works with TLS!');
+
   // ── Cleanup ──
   console.log('\n>>> [CLEANUP] Stopping servers...');
   await udpServer.stop();
   await dotServer.stop();
   await httpServer.stop();
+  await httpsServer.stop();
   const { flushLogBatch } = await import('../src/pipeline/logBatcher');
   try { await flushLogBatch(env); } catch {}
   db.rawDb.close();

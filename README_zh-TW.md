@@ -153,7 +153,7 @@ DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macO
 #### 獨立模式核心特性
 * **經典 UDP DNS (連接埠 53)**：標準的 RFC 1035 UDP DNS 解析服務，可直接填入路由器 WAN/LAN 或系統 DNS 設定中。
 * **DNS over TLS / DoT (連接埠 853)**：標準的 RFC 7858 加密 DNS，原生支援 Android 9+ 系統自帶的「私人 DNS」（Private DNS），並支援透過 SNI（如 `<profile_key>.dns.example.com`）自動路由到指定的 Profile。
-* **Web 控制台與 DoH (預設連接埠 3000)**：全功能 React 管理面板與 REST API，開箱即用。
+* **Web 控制台與 DoH**：HTTP 明文存取 (預設連接埠 10080) 與 HTTPS 安全加密存取 (預設連接埠 10443，配置有效 TLS 憑證後自動啟用)。全功能 React 管理面板與 REST API，開箱即用。
 * **本地 SQLite 資料庫**：自動執行遷移腳本初始化資料表結構，無需任何雲端依賴。
 
 #### 環境變數配置 (在 `.env.serverfull`、`.env` 或系統環境變數中配置)
@@ -162,12 +162,14 @@ DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macO
 |---|---|---|
 | `SERVERFULL_TLS_KEY_PATH` | TLS 私鑰檔案路徑 (PEM 格式，亦相容 `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | TLS 公鑰/憑證鏈檔案路徑 (PEM 格式，亦相容 `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
-| `SERVERFULL_DOT_DOMAIN` | DoT 對外基準網域名稱 (相容萬用字元與單網域名稱憑證，別名: `DOT_DOMAIN`) | `dns.example.com` |
+| `SERVERFULL_DOT_DOMAIN` | DoT 與 HTTPS 對外基準網域名稱 (相容萬用字元與單網域名稱憑證，別名: `DOT_DOMAIN`) | `dns.example.com` |
 | `SERVERFULL_UDP_PORT` | 經典 UDP DNS 監聽連接埠 | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) 監聽連接埠 | `853` |
-| `SERVERFULL_HTTP_PORT` | HTTP Web 面板與 DoH 監聽連接埠 | `3000` |
+| `SERVERFULL_HTTP_PORT` | HTTP Web 面板與 DoH 監聽連接埠 | `10080` |
+| `SERVERFULL_HTTPS_PORT` | HTTPS Web 面板與 DoH 監聽連接埠 (需有效憑證) | `10443` |
+| `SERVERFULL_DISABLE_HTTPS` | 停用 HTTPS Web 面板服務 | `false` |
 | `SERVERFULL_HOST` | 監聽位址 | `0.0.0.0` |
-| `SERVERFULL_DB_PATH` | 本地 SQLite 資料庫檔案路徑 | `./data/dns_worker.sqlite` |
+| `SERVERFULL_DB_PATH` | 本地 SQLite 資料庫檔案路徑 | Linux: `/var/lib/dns-worker/dns_worker.sqlite`, Windows: `%ProgramData%\DNS-Worker\dns_worker.sqlite` |
 | `SERVERFULL_DEFAULT_PROFILE_KEY` | UDP DNS 或無 SNI 時的預設設定 Profile Key | 首個建立的 Profile |
 | `JWT_SECRET` | 工作階段 Token 加密金鑰 | 自訂安全字串 |
 

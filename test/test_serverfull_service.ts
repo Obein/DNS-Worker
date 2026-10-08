@@ -45,6 +45,11 @@ import {
   DEFAULT_ENV_SERVERFULL_TEMPLATE,
   writeDefaultConfigFile
 } from '../src/serverfull/defaults';
+import {
+  inspectTlsCertificate,
+  getCertbotCommand,
+  getCertbotDiagnosticOptions
+} from '../src/serverfull/cert';
 
 function runServiceUnitTests(): void {
   console.log('>>> [TEST] Starting Modular Service Provider Unit Tests (SRP)...');
@@ -242,6 +247,46 @@ function runServiceUnitTests(): void {
     throw new Error('DEFAULT_ENV_SERVERFULL_TEMPLATE missing SERVERFULL_DOT_DOMAIN configuration');
   }
   console.log('   ✓ SERVERFULL_DOT_DOMAIN resolution and template verified.');
+
+  // 11. Test HTTP (10080) and HTTPS (10443) default ports, cert inspection and certbot guidance
+  console.log('11. Testing HTTP/HTTPS ports, certificate inspection, and certbot guidance...');
+  delete process.env.SERVERFULL_HTTP_PORT;
+  delete process.env.HTTP_PORT;
+  delete process.env.PORT;
+  delete process.env.SERVERFULL_HTTPS_PORT;
+  delete process.env.HTTPS_PORT;
+  const defaultPortConfig = getServerfullConfig();
+  if (defaultPortConfig.config.httpPort !== 10080) {
+    throw new Error(`Expected default httpPort 10080, got ${defaultPortConfig.config.httpPort}`);
+  }
+  if (defaultPortConfig.config.httpsPort !== 10443) {
+    throw new Error(`Expected default httpsPort 10443, got ${defaultPortConfig.config.httpsPort}`);
+  }
+  if (!DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_HTTP_PORT=10080') ||
+      !DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_HTTPS_PORT=10443')) {
+    throw new Error('DEFAULT_ENV_SERVERFULL_TEMPLATE missing HTTP 10080 or HTTPS 10443 configuration');
+  }
+
+  const certbotCmd = getCertbotCommand('my.domain');
+  if (certbotCmd !== 'certbot certonly -d *.my.domain --manual --preferred-challenges dns') {
+    throw new Error(`Unexpected certbot command: ${certbotCmd}`);
+  }
+
+  const missingDiag = getCertbotDiagnosticOptions('missing', 'my.domain');
+  if (!missingDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain'))) {
+    throw new Error('getCertbotDiagnosticOptions missing command solution');
+  }
+
+  const nonWildcardDiag = getCertbotDiagnosticOptions('non_wildcard', 'my.domain');
+  if (!nonWildcardDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain'))) {
+    throw new Error('getCertbotDiagnosticOptions non_wildcard missing command solution');
+  }
+
+  const emptyCert = inspectTlsCertificate('', '');
+  if (emptyCert.configured || emptyCert.filesExist || emptyCert.isWildcard) {
+    throw new Error('inspectTlsCertificate on empty paths should return false');
+  }
+  console.log('   ✓ HTTP 10080 / HTTPS 10443 ports, cert inspection, and certbot guidance verified.');
 
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');

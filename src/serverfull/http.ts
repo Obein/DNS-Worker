@@ -1,9 +1,10 @@
 /**
  * @file http.ts
- * @description Node.js HTTP server hosting Web UI, REST API, and DoH endpoints for Serverfull mode.
+ * @description Node.js HTTP & HTTPS servers hosting Web UI, REST API, and DoH endpoints for Serverfull mode.
  */
 
 import http from 'node:http';
+import https from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Buffer } from 'node:buffer';
@@ -15,6 +16,15 @@ import { formatPortError } from './format';
 export interface HttpServerOptions {
   port: number;
   host: string;
+  staticDir?: string;
+  env: Env;
+}
+
+export interface HttpsServerOptions {
+  port: number;
+  host: string;
+  certPath: string;
+  keyPath: string;
   staticDir?: string;
   env: Env;
 }
@@ -34,99 +44,74 @@ const MIME_TYPES: Record<string, string> = {
   '.wasm': 'application/wasm'
 };
 
-export class HttpServer {
-  private server: http.Server | null = null;
-  private isRunning: boolean = false;
+/**
+ * Attaches the static asset file-serving handler to the worker Env if not already attached.
+ *
+ * @param env - The Cloudflare/Serverfull Env object.
+ * @param staticDir - Optional path to the directory containing static frontend files.
+ */
+export function attachStaticAssetHandler(env: Env, staticDir?: string): void {
+  if (env.ASSETS) return;
 
-  constructor(private options: HttpServerOptions) {
-    const staticDir = options.staticDir || path.join(getPackageRoot(), 'static');
+  const targetDir = staticDir || path.join(getPackageRoot(), 'static');
 
-    // Attach static asset provider to env.ASSETS
-    this.options.env.ASSETS = {
-      fetch: async (req: Request): Promise<Response> => {
-        try {
-          const url = new URL(req.url);
-          let pathname = decodeURIComponent(url.pathname);
-          if (pathname === '/' || pathname === '') {
-            pathname = '/index.html';
-          }
-
-          const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
-          const filePath = path.join(staticDir, safePath);
-
-          if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-            const ext = path.extname(filePath).toLowerCase();
-            const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-            const fileContent = fs.readFileSync(filePath);
-
-            return new Response(fileContent, {
-              status: 200,
-              headers: {
-                'Content-Type': contentType,
-                'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable',
-                'Cross-Origin-Opener-Policy': 'same-origin',
-                'Cross-Origin-Embedder-Policy': 'credentialless',
-                'Cross-Origin-Resource-Policy': 'same-origin'
-              }
-            });
-          }
-
-          return new Response('Not Found', { status: 404 });
-        } catch (err) {
-          return new Response('Asset Error', { status: 500 });
+  env.ASSETS = {
+    fetch: async (req: Request): Promise<Response> => {
+      try {
+        const url = new URL(req.url);
+        let pathname = decodeURIComponent(url.pathname);
+        if (pathname === '/' || pathname === '') {
+          pathname = '/index.html';
         }
+
+        const safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+        const filePath = path.join(targetDir, safePath);
+
+        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+          const ext = path.extname(filePath).toLowerCase();
+          const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+          const fileContent = fs.readFileSync(filePath);
+
+          return new Response(fileContent, {
+            status: 200,
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable',
+              'Cross-Origin-Opener-Policy': 'same-origin',
+              'Cross-Origin-Embedder-Policy': 'credentialless',
+              'Cross-Origin-Resource-Policy': 'same-origin'
+            }
+          });
+        }
+
+        return new Response('Not Found', { status: 404 });
+      } catch {
+        return new Response('Asset Error', { status: 500 });
       }
-    };
-  }
+    }
+  };
+}
 
-  start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const { port, host } = this.options;
-
-      this.server = http.createServer(async (req: http.IncomingMessage, res: http.ServerResponse) => {
-        await this.handleHttpRequest(req, res);
-      });
-
-      // Optimize HTTP keepalive timeouts and disable Nagle's algorithm for low-latency DoH
-      this.server.keepAliveTimeout = 65000;
-      this.server.headersTimeout = 66000;
-      this.server.on('connection', (socket) => {
-        socket.setNoDelay(true);
-      });
-
-      const startupErrorHandler = (err: any) => {
-        this.server = null;
-
-        console.error(formatPortError({
-          serviceName: 'Web Dashboard & DoH (HTTP)',
-          protocol: 'HTTP',
-          port,
-          err,
-          alternateOption: `-p, --port <port> (e.g. --port ${port + 1})`
-        }));
-
-        reject(err);
-      };
-
-      this.server.once('error', startupErrorHandler);
-
-      this.server.listen(port, host, () => {
-        this.server?.removeListener('error', startupErrorHandler);
-        this.server?.on('error', (err: Error) => {
-          console.error('[HTTP Server] Runtime error:', err);
-        });
-        this.isRunning = true;
-        console.log(`[HTTP Server] Web Dashboard & DoH listening on http://${host}:${port}`);
-        resolve();
-      });
-    });
-  }
-
-  private async handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+/**
+ * Creates a shared request dispatch handler for Node.js http and https servers.
+ *
+ * @param env - Application Env bindings.
+ * @param defaultProto - Default protocol ('http' or 'https').
+ * @param host - Bound host address.
+ * @param port - Bound port number.
+ * @returns Request handler callback for http/https.createServer.
+ */
+export function createHttpRequestHandler(
+  env: Env,
+  defaultProto: 'http' | 'https',
+  host: string,
+  port: number
+): (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void> {
+  return async (req: http.IncomingMessage, res: http.ServerResponse): Promise<void> => {
     try {
-      const proto = (req.headers['x-forwarded-proto'] as string) || 'http';
-      const host = req.headers.host || `${this.options.host}:${this.options.port}`;
-      const fullUrl = new URL(req.url || '/', `${proto}://${host}`);
+      const proto = (req.headers['x-forwarded-proto'] as string) || defaultProto;
+      const hostHeader = req.headers.host || `${host}:${port}`;
+      const fullUrl = new URL(req.url || '/', `${proto}://${hostHeader}`);
 
       const headers = new Headers();
       for (const [k, v] of Object.entries(req.headers)) {
@@ -171,12 +156,12 @@ export class HttpServer {
 
       const ctx: ExecutionContext = {
         waitUntil(promise: Promise<any>) {
-          promise.catch((err) => console.error('[HTTP Background Task Error]:', err));
+          promise.catch((err) => console.error(`[${defaultProto.toUpperCase()} Background Task Error]:`, err));
         },
         passThroughOnException() {}
       } as any;
 
-      const response = await worker.fetch(request, this.options.env, ctx);
+      const response = await worker.fetch(request, env, ctx);
 
       res.statusCode = response.status;
       res.statusMessage = response.statusText;
@@ -195,13 +180,67 @@ export class HttpServer {
       }
       res.end();
     } catch (err: any) {
-      console.error('[HTTP Server] Request processing failed:', err);
+      console.error(`[${defaultProto.toUpperCase()} Server] Request processing failed:`, err);
       if (!res.headersSent) {
         res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ error: 'Internal Server Error', message: err.message }));
+        res.end(JSON.stringify({ error: 'Internal Server Error', message: err?.message || String(err) }));
       }
     }
+  };
+}
+
+/**
+ * Plain HTTP Server hosting Web UI and DoH (default port: 10080).
+ */
+export class HttpServer {
+  private server: http.Server | null = null;
+  private isRunning: boolean = false;
+
+  constructor(private options: HttpServerOptions) {
+    attachStaticAssetHandler(this.options.env, this.options.staticDir);
+  }
+
+  start(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const { port, host, env } = this.options;
+      const handler = createHttpRequestHandler(env, 'http', host, port);
+
+      this.server = http.createServer(handler);
+
+      // Optimize HTTP keepalive timeouts and disable Nagle's algorithm for low-latency DoH
+      this.server.keepAliveTimeout = 65000;
+      this.server.headersTimeout = 66000;
+      this.server.on('connection', (socket) => {
+        socket.setNoDelay(true);
+      });
+
+      const startupErrorHandler = (err: any) => {
+        this.server = null;
+
+        console.error(formatPortError({
+          serviceName: 'Web Dashboard & DoH (HTTP)',
+          protocol: 'HTTP',
+          port,
+          err,
+          alternateOption: `--http-port <port> (e.g. --http-port ${port + 1})`
+        }));
+
+        reject(err);
+      };
+
+      this.server.once('error', startupErrorHandler);
+
+      this.server.listen(port, host, () => {
+        this.server?.removeListener('error', startupErrorHandler);
+        this.server?.on('error', (err: Error) => {
+          console.error('[HTTP Server] Runtime error:', err);
+        });
+        this.isRunning = true;
+        console.log(`[HTTP Server] Web Dashboard & DoH listening on http://${host}:${port}`);
+        resolve();
+      });
+    });
   }
 
   stop(): Promise<void> {
@@ -210,6 +249,81 @@ export class HttpServer {
         this.server.close(() => {
           this.isRunning = false;
           console.log('[HTTP Server] Service stopped.');
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
+  }
+}
+
+/**
+ * Secure HTTPS Server hosting Web UI and DoH (default port: 10443).
+ * Activated only when valid TLS certificates are provided.
+ */
+export class HttpsServer {
+  private server: https.Server | null = null;
+  private isRunning: boolean = false;
+
+  constructor(private options: HttpsServerOptions) {
+    attachStaticAssetHandler(this.options.env, this.options.staticDir);
+  }
+
+  start(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const { port, host, certPath, keyPath, env } = this.options;
+
+      try {
+        const cert = fs.readFileSync(certPath);
+        const key = fs.readFileSync(keyPath);
+
+        const handler = createHttpRequestHandler(env, 'https', host, port);
+        this.server = https.createServer({ cert, key }, handler);
+
+        this.server.keepAliveTimeout = 65000;
+        this.server.headersTimeout = 66000;
+        this.server.on('connection', (socket) => {
+          socket.setNoDelay(true);
+        });
+
+        const startupErrorHandler = (err: any) => {
+          this.server = null;
+
+          console.error(formatPortError({
+            serviceName: 'Web Dashboard & DoH (HTTPS)',
+            protocol: 'HTTPS',
+            port,
+            err,
+            alternateOption: `--https-port <port> (e.g. --https-port ${port + 1})`
+          }));
+
+          reject(err);
+        };
+
+        this.server.once('error', startupErrorHandler);
+
+        this.server.listen(port, host, () => {
+          this.server?.removeListener('error', startupErrorHandler);
+          this.server?.on('error', (err: Error) => {
+            console.error('[HTTPS Server] Runtime error:', err);
+          });
+          this.isRunning = true;
+          console.log(`[HTTPS Server] Web Dashboard & DoH listening on https://${host}:${port}`);
+          resolve();
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  stop(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.server && this.isRunning) {
+        this.server.close(() => {
+          this.isRunning = false;
+          console.log('[HTTPS Server] Service stopped.');
           resolve();
         });
       } else {

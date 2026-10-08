@@ -17,6 +17,7 @@ import {
 import { formatBanner, formatKeyValueSection, formatTip } from './format';
 import { getPortOccupant, formatOccupantSummary } from './port';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
+import { inspectTlsCertificate, getCertbotCommand } from './cert';
 
 /**
  * Result of a network port accessibility probe.
@@ -189,16 +190,17 @@ export function inspectDatabase(dbPath: string): DbStatusInfo {
  * @param envJwtSecret - The JWT_SECRET environment variable value.
  */
 export async function showServerfullStatus(config: ServerfullConfig, envJwtSecret?: string): Promise<void> {
-  const [httpState, udpState, dotState] = await Promise.all([
+  const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
+  const canProbeHttps = !config.disableHttps && certInfo.configured && certInfo.filesExist;
+
+  const [httpState, httpsState, udpState, dotState] = await Promise.all([
     probeTcpPort(config.httpPort, config.host),
+    canProbeHttps ? probeTcpPort(config.httpsPort, config.host) : Promise.resolve('disabled' as const),
     !config.disableUdp ? probeUdpPort(config.udpPort, config.host) : Promise.resolve('disabled' as const),
     !config.disableDot ? probeTcpPort(config.dotPort, config.host) : Promise.resolve('disabled' as const)
   ]);
 
   const dbStatus = inspectDatabase(config.dbPath);
-
-  const tlsConfigured = Boolean(config.tlsKeyPath && config.tlsCertPath);
-  const tlsFilesExist = tlsConfigured && fs.existsSync(config.tlsKeyPath) && fs.existsSync(config.tlsCertPath);
 
   let jwtStatus = 'Default (Insecure fallback, please configure JWT_SECRET)';
   if (isUsableJwtSecret(envJwtSecret)) {
@@ -213,6 +215,21 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ? `http://${config.host}:${config.httpPort} [Active / Listening${httpOccupantText}]`
     : `http://${config.host}:${config.httpPort} [Stopped / Port Available]`;
 
+  let httpsStatusText = '';
+  if (config.disableHttps) {
+    httpsStatusText = 'Disabled (--disable-https)';
+  } else if (!certInfo.configured) {
+    httpsStatusText = `https://${config.host}:${config.httpsPort} [Disabled - TLS Certificates Not Configured]`;
+  } else if (!certInfo.filesExist) {
+    httpsStatusText = `https://${config.host}:${config.httpsPort} [Warning - TLS Certificate Files Missing]`;
+  } else if (httpsState === 'active') {
+    const httpsOccupant = getPortOccupant(config.httpsPort, 'TCP');
+    const httpsOccupantText = httpsOccupant ? `: ${formatOccupantSummary(httpsOccupant)}` : '';
+    httpsStatusText = `https://${config.host}:${config.httpsPort} [Active / Listening${httpsOccupantText}]`;
+  } else {
+    httpsStatusText = `https://${config.host}:${config.httpsPort} [Stopped / Port Available]`;
+  }
+
   const udpOccupant = (!config.disableUdp && udpState === 'active') ? getPortOccupant(config.udpPort, 'UDP') : null;
   const udpOccupantText = udpOccupant ? `: ${formatOccupantSummary(udpOccupant)}` : '';
   const udpStatusText = config.disableUdp
@@ -225,9 +242,9 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
   const domainPart = config.dotDomain ? ` (${config.dotDomain})` : '';
   if (config.disableDot) {
     dotStatusText = 'Disabled (--disable-dot)';
-  } else if (!tlsConfigured) {
+  } else if (!certInfo.configured) {
     dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Disabled - TLS Certificates Not Configured]`;
-  } else if (!tlsFilesExist) {
+  } else if (!certInfo.filesExist) {
     dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Warning - TLS Certificate Files Missing]`;
   } else if (dotState === 'active') {
     const dotOccupant = getPortOccupant(config.dotPort, 'TCP');
@@ -250,7 +267,8 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
   const servicesSection = formatKeyValueSection({
     title: '\nService Transports:',
     items: [
-      { label: 'Web Dashboard & DoH', value: httpStatusText },
+      { label: 'Web Dashboard (HTTP)', value: httpStatusText },
+      { label: 'Web Dashboard (HTTPS)', value: httpsStatusText },
       { label: 'Classic UDP DNS', value: udpStatusText },
       { label: 'DNS over TLS (DoT)', value: dotStatusText }
     ]
@@ -270,6 +288,19 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ]
   });
 
+  let tlsCertText = 'Not Configured (HTTP only, HTTPS & DoT disabled)';
+  if (certInfo.configured) {
+    if (!certInfo.filesExist) {
+      tlsCertText = 'Configured [Files Missing]';
+    } else if (certInfo.error) {
+      tlsCertText = `Configured [Invalid Certificate: ${certInfo.error}]`;
+    } else {
+      const typeStr = certInfo.isWildcard ? 'Wildcard (*.domain)' : 'Single Domain';
+      const expireStr = certInfo.expiresAt ? certInfo.expiresAt.toISOString().split('T')[0] : 'Unknown';
+      tlsCertText = `Valid (${typeStr}, Expires: ${expireStr})`;
+    }
+  }
+
   const dotDomainText = config.dotDomain
     ? `${config.dotDomain} (Wildcard / Single-domain compatible)`
     : 'Not Configured (Auto SNI prefix matching)';
@@ -280,23 +311,33 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
       { label: 'Node.js Runtime', value: `v${process.versions.node} (${process.platform} ${process.arch})` },
       { label: 'Config Directory', value: getDefaultConfigDir() },
       { label: 'Config Source', value: configSourceText },
+      { label: 'TLS Certificate', value: tlsCertText },
       { label: 'JWT Secret', value: jwtStatus },
       { label: 'DoT Base Domain', value: dotDomainText },
       { label: 'Default Profile Key', value: defaultProfileText }
     ]
   });
 
-  let tipSection = '';
+  const tips: string[] = [];
   if (httpState === 'free' && (udpState === 'free' || config.disableUdp)) {
     const serviceInstallCmd = process.platform === 'win32'
       ? 'dns-worker service install (in Administrator terminal)'
       : 'sudo dns-worker service install';
 
-    tipSection = formatTip([
-      'Services are currently stopped.',
-      `To run continuously as a persistent background daemon: ${serviceInstallCmd}`
-    ]);
+    tips.push('Services are currently stopped.');
+    tips.push(`To run continuously as a persistent background daemon: ${serviceInstallCmd}`);
   }
+
+  const certbotCmd = getCertbotCommand(config.dotDomain);
+  if (!certInfo.configured || !certInfo.filesExist) {
+    tips.push(`To enable secure HTTPS (port ${config.httpsPort}) and DoT (port ${config.dotPort}):`);
+    tips.push(`  ${certbotCmd}`);
+  } else if (!certInfo.isWildcard) {
+    tips.push('Current certificate is single-domain. To support per-profile DoT (<profile>.domain):');
+    tips.push(`  ${certbotCmd}`);
+  }
+
+  const tipSection = tips.length > 0 ? formatTip(tips) : '';
 
   const report = [banner, servicesSection, databaseSection, envSection, tipSection]
     .filter(Boolean)

@@ -23,7 +23,8 @@ import { DEFAULT_ENV_SERVERFULL_TEMPLATE, writeDefaultConfigFile } from './defau
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
-import { HttpServer } from './http';
+import { HttpServer, HttpsServer } from './http';
+import { inspectTlsCertificate, getCertbotDiagnosticOptions } from './cert';
 import { flushLogBatch } from '../pipeline/logBatcher';
 import worker from '../index';
 import { ExecutionContext } from '../types';
@@ -145,10 +146,12 @@ function printHelp(): void {
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },
-      { label: '-p, --port <number>', desc: 'Web Dashboard & DoH HTTP port (default: 3000)' },
+      { label: '-p, --port, --http-port <number>', desc: 'Plain HTTP Web Dashboard & DoH port (default: 10080)' },
+      { label: '--https-port <number>', desc: 'Secure HTTPS Web Dashboard & DoH port (default: 10443)' },
+      { label: '--disable-https', desc: 'Disable HTTPS Web Dashboard server' },
       { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
       { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
-      { label: '--dot-domain <domain>', desc: 'Base domain name for DoT service (e.g. dns.example.com)' },
+      { label: '--dot-domain <domain>', desc: 'Base domain name for DoT & HTTPS service (e.g. dns.example.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
       { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
@@ -158,14 +161,16 @@ function printHelp(): void {
       { label: '--help', desc: 'Display this help message' }
     ],
     envVars: [
-      { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
+      { label: 'PORT / HTTP_PORT / SERVERFULL_HTTP_PORT', desc: 'Plain HTTP Web Dashboard & DoH port' },
+      { label: 'HTTPS_PORT / SERVERFULL_HTTPS_PORT', desc: 'Secure HTTPS Web Dashboard & DoH port' },
+      { label: 'SERVERFULL_DISABLE_HTTPS', desc: 'Disable HTTPS Web Dashboard server' },
       { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
       { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
-      { label: 'SERVERFULL_DOT_DOMAIN / DOT_DOMAIN', desc: 'Base domain name for DoT service' },
+      { label: 'SERVERFULL_DOT_DOMAIN / DOT_DOMAIN', desc: 'Base domain name for DoT & HTTPS service' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
-      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
-      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
+      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for HTTPS & DoT' },
+      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for HTTPS & DoT' }
     ],
     tip: [
       "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
@@ -184,6 +189,9 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     const { values, positionals } = parseArgs({
       options: {
         port: { type: 'string', short: 'p' },
+        'http-port': { type: 'string' },
+        'https-port': { type: 'string' },
+        'disable-https': { type: 'boolean' },
         'dns-port': { type: 'string' },
         'dot-port': { type: 'string' },
         'dot-domain': { type: 'string' },
@@ -293,12 +301,30 @@ async function bootstrap(): Promise<void> {
   // 2. Load environment variables & configurations
   const { config, env } = getServerfullConfig(cliArgs);
 
+  // 3. Inspect TLS certificate and determine HTTPS / DoT availability
+  const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
+  const canStartHttps = certInfo.configured && certInfo.filesExist && !config.disableHttps;
+
+  // Print Certbot diagnostic guidance if certificate is not configured or not wildcard
+  if (!certInfo.configured || !certInfo.filesExist) {
+    console.log(formatDiagnostic(getCertbotDiagnosticOptions('missing', config.dotDomain)));
+  } else if (!certInfo.isWildcard) {
+    console.log(formatDiagnostic(getCertbotDiagnosticOptions('non_wildcard', config.dotDomain)));
+  }
+
+  const httpsDisplay = config.disableHttps
+    ? 'Disabled (--disable-https)'
+    : canStartHttps
+      ? `https://${config.host}:${config.httpsPort}`
+      : 'Disabled (TLS Certificates Not Configured)';
+
   console.log(formatKeyValueSection({
     title: '[Services] Configured Ports & Transports:',
     items: [
-      { label: 'Web Dashboard & DoH', value: `http://${config.host}:${config.httpPort}` },
+      { label: 'Web Dashboard & DoH (HTTP)', value: `http://${config.host}:${config.httpPort}` },
+      { label: 'Web Dashboard & DoH (HTTPS)', value: httpsDisplay },
       { label: 'Classic UDP DNS', value: config.disableUdp ? 'Disabled' : `udp://${config.host}:${config.udpPort}` },
-      { label: 'DNS over TLS (DoT)', value: config.disableDot ? 'Disabled' : `tls://${config.host}:${config.dotPort}` }
+      { label: 'DNS over TLS (DoT)', value: config.disableDot ? 'Disabled' : (certInfo.configured && certInfo.filesExist ? `tls://${config.host}:${config.dotPort}` : 'Disabled (TLS Certificates Not Configured)') }
     ]
   }));
 
@@ -314,11 +340,11 @@ async function bootstrap(): Promise<void> {
     }));
   }
 
-  // 3. Initialize SQLite D1 adapter and execute schema migrations
+  // 4. Initialize SQLite D1 adapter and execute schema migrations
   const db = initServerfullDb(config.dbPath);
   env.DB = db;
 
-  // 4. Initialize servers
+  // 5. Initialize servers
   const udpServer = !config.disableUdp ? new UdpDnsServer({
     port: config.udpPort,
     host: config.host,
@@ -342,12 +368,21 @@ async function bootstrap(): Promise<void> {
     env
   });
 
-  // 5. Start all server transports
+  const httpsServer = canStartHttps ? new HttpsServer({
+    port: config.httpsPort,
+    host: config.host,
+    certPath: config.tlsCertPath,
+    keyPath: config.tlsKeyPath,
+    env
+  }) : null;
+
+  // 6. Start all server transports
   if (udpServer) await udpServer.start();
   if (dotServer) await dotServer.start();
   await httpServer.start();
+  if (httpsServer) await httpsServer.start();
 
-  // 6. Start scheduled cron jobs (every 60 seconds)
+  // 7. Start scheduled cron jobs (every 60 seconds)
   const cronTimer = setInterval(async () => {
     try {
       const scheduledEvent = {
@@ -369,7 +404,7 @@ async function bootstrap(): Promise<void> {
     }
   }, 60000);
 
-  const hasTls = !!(dotServer && config.tlsKeyPath && config.tlsCertPath);
+  const hasTls = !!(certInfo.configured && certInfo.filesExist);
   console.log(formatBanner({
     title: 'DNS Worker (Serverfull Mode) Started Successfully',
     borderChar: '=',
@@ -381,11 +416,15 @@ async function bootstrap(): Promise<void> {
       },
       {
         label: 'DoT (TLS DNS)',
-        value: hasTls ? `tls://${config.dotDomain || config.host}:${config.dotPort}` : 'Disabled / Not Configured'
+        value: (dotServer && hasTls) ? `tls://${config.dotDomain || config.host}:${config.dotPort}` : 'Disabled / Not Configured'
       },
       {
-        label: 'Web UI & DoH',
+        label: 'Web UI & DoH (HTTP)',
         value: `http://${config.host}:${config.httpPort}`
+      },
+      {
+        label: 'Web UI & DoH (HTTPS)',
+        value: httpsServer ? `https://${config.dotDomain || config.host}:${config.httpsPort}` : 'Disabled / Not Configured'
       },
       {
         label: 'SQLite Database',
@@ -394,7 +433,7 @@ async function bootstrap(): Promise<void> {
     ]
   }));
 
-  // 7. Handle graceful shutdown
+  // 8. Handle graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`\n[Serverfull] Received ${signal}. Shutting down gracefully...`);
     clearInterval(cronTimer);
@@ -402,7 +441,8 @@ async function bootstrap(): Promise<void> {
     await Promise.all([
       udpServer?.stop(),
       dotServer?.stop(),
-      httpServer.stop()
+      httpServer.stop(),
+      httpsServer?.stop()
     ]);
 
     try {

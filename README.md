@@ -149,7 +149,7 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 #### Features in Standalone Mode
 * **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
 * **DNS over TLS / DoT (Port 853)**: RFC 7858 encrypted DNS, natively supported by Android 9+ "Private DNS", with SNI-based Profile routing (e.g. `<profile_key>.dns.example.com`).
-* **Web Dashboard & DoH (Default Port 3000)**: Full-featured React management dashboard and REST API.
+* **Web Dashboard & DoH**: Plain HTTP (Default Port 10080) and Secure HTTPS (Default Port 10443, activated when TLS certificates are configured). Full-featured React management dashboard and REST API.
 * **Local SQLite Database**: Automatically executes schema migrations out-of-the-box without cloud dependencies.
 
 #### Environment Variables (Configure in `.env.serverfull`, `.env`, or system environment)
@@ -158,10 +158,12 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 |---|---|---|
 | `SERVERFULL_TLS_KEY_PATH` | Absolute path to TLS private key file (PEM format, alias: `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | Absolute path to TLS certificate chain file (PEM format, alias: `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
-| `SERVERFULL_DOT_DOMAIN` | Base domain name for DoT service (wildcard & single-domain compatible, alias: `DOT_DOMAIN`) | `dns.example.com` |
+| `SERVERFULL_DOT_DOMAIN` | Base domain name for DoT & HTTPS service (wildcard & single-domain compatible, alias: `DOT_DOMAIN`) | `dns.example.com` |
 | `SERVERFULL_UDP_PORT` | Classic UDP DNS listening port | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
-| `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `3000` |
+| `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `10080` |
+| `SERVERFULL_HTTPS_PORT` | HTTPS Web Dashboard & DoH listening port (requires valid TLS cert) | `10443` |
+| `SERVERFULL_DISABLE_HTTPS` | Disable HTTPS Web Dashboard server | `false` |
 | `SERVERFULL_HOST` | Listening host IP | `0.0.0.0` |
 | `SERVERFULL_DB_PATH` | Local SQLite database file path | Linux: `/var/lib/dns-worker/dns_worker.sqlite`, Windows: `%ProgramData%\DNS-Worker\dns_worker.sqlite` |
 | `SERVERFULL_DEFAULT_PROFILE_KEY` | Default Profile key when no SNI or profile identifier is provided | First created profile |
