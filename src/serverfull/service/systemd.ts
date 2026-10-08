@@ -5,6 +5,7 @@
  */
 
 import fs from 'node:fs';
+import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { ServiceAction, ServiceExecDetails } from './types';
 import { getServiceExecDetails, isLinuxRoot } from './env';
@@ -13,6 +14,7 @@ import {
   formatDiagnostic,
   formatCommandList
 } from '../format';
+import { writeDefaultConfigFile } from '../defaults';
 
 export const SERVICE_NAME = 'dns-worker';
 export const SERVICE_FILE_NAME = `${SERVICE_NAME}.service`;
@@ -85,10 +87,12 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
       try {
         // Ensure persistent state directory /var/lib/dns-worker exists with proper user ownership
         const dataDir = '/var/lib/dns-worker';
+        const defaultEnvPath = path.join(dataDir, '.env');
         try {
           if (!fs.existsSync(dataDir)) {
             fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
           }
+          writeDefaultConfigFile(defaultEnvPath, false);
           if (details.user && details.user !== 'root') {
             try {
               execSync(`chown -R ${details.user} ${dataDir}`);
@@ -110,6 +114,7 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
             { label: 'Service File', value: SYSTEMD_SERVICE_PATH },
             { label: 'Running As User', value: `${details.user} (CAP_NET_BIND_SERVICE)` },
             { label: 'Data Directory', value: dataDir },
+            { label: 'Config File', value: defaultEnvPath },
             { label: 'Privileged Ports', value: 'Port 53 & 853 enabled without root' },
             { label: 'Auto-restart', value: 'Enabled on system boot (Restart=always)' }
           ]

@@ -1,6 +1,12 @@
 import { Env } from '../types';
 import { cacheUtils } from '../utils/cache';
 import { getPresetEchFrontingDomains } from '../utils/ech/constants';
+import {
+  DEFAULT_PRESET_UPSTREAMS,
+  DEFAULT_PRESET_EXTERNAL_FILTERS,
+  DEFAULT_IP_REGION_CN,
+  DEFAULT_SUBSTITUTE_DOMAIN
+} from '../constants/presets';
 
 /**
  * Handles system/utility routes like /api/clientinfo and /api/substitute
@@ -30,7 +36,7 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
       asn,
       asOrganization,
       connectedProfileId: connectedProfileId || null,
-      substituteDomain: env.SUBSTITUTE_DOMAIN || "pages.dev"
+      substituteDomain: env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -52,11 +58,14 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
         }
       }
     }
+    if (Object.keys(regions).length === 0) {
+      regions['CN'] = DEFAULT_IP_REGION_CN;
+    }
     return new Response(JSON.stringify(regions), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname === '/api/substitute') {
-    const subDomain = env.SUBSTITUTE_DOMAIN || "pages.dev";
+    const subDomain = env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN;
     let substituteDomainIp: string | null = null;
     let substituteDomainIpv6: string | null = null;
 
@@ -105,12 +114,32 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
   }
 
   if (url.pathname === '/api/presets/upstreams') {
-    const upstreams = env.PRESET_UPSTREAMS ? JSON.parse(env.PRESET_UPSTREAMS) : [];
+    let upstreams = DEFAULT_PRESET_UPSTREAMS;
+    if (env.PRESET_UPSTREAMS) {
+      try {
+        const parsed = JSON.parse(env.PRESET_UPSTREAMS);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          upstreams = parsed;
+        }
+      } catch (e) {
+        console.warn("[System API] Failed to parse PRESET_UPSTREAMS from env:", e);
+      }
+    }
     return new Response(JSON.stringify(upstreams), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname === '/api/presets/filters') {
-    const filters = env.PRESET_EXTERNAL_FILTERS ? JSON.parse(env.PRESET_EXTERNAL_FILTERS) : [];
+    let filters = DEFAULT_PRESET_EXTERNAL_FILTERS;
+    if (env.PRESET_EXTERNAL_FILTERS) {
+      try {
+        const parsed = JSON.parse(env.PRESET_EXTERNAL_FILTERS);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          filters = parsed;
+        }
+      } catch (e) {
+        console.warn("[System API] Failed to parse PRESET_EXTERNAL_FILTERS from env:", e);
+      }
+    }
     return new Response(JSON.stringify(filters), { headers: { 'Content-Type': 'application/json' } });
   }
 

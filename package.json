@@ -12,6 +12,7 @@
     "dist/",
     "static/",
     "migrations/",
+    ".env.serverfull",
     "README.md",
     "LICENSE"
   ],

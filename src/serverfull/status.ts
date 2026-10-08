@@ -7,7 +7,12 @@ import fs from 'node:fs';
 import net from 'node:net';
 import dgram from 'node:dgram';
 import { DatabaseSync } from 'node:sqlite';
-import { ServerfullConfig } from './config';
+import {
+  ServerfullConfig,
+  getDefaultDataDir,
+  getDefaultConfigFilePath,
+  getLoadedEnvFiles
+} from './config';
 import { formatBanner, formatKeyValueSection, formatTip } from './format';
 import { getPortOccupant, formatOccupantSummary } from './port';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
@@ -249,11 +254,17 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ]
   });
 
+  const loadedEnvs = getLoadedEnvFiles();
+  const configSourceText = loadedEnvs.length > 0
+    ? `${loadedEnvs.join(', ')} [Loaded]`
+    : `None found (Using built-in presets & defaults; default path: ${getDefaultConfigFilePath()})`;
+
   const databaseSection = formatKeyValueSection({
     title: '\nDatabase & Storage:',
     items: [
       { label: 'SQLite Path', value: config.dbPath },
-      { label: 'Database Status', value: dbStatus.statusText }
+      { label: 'Database Status', value: dbStatus.statusText },
+      { label: 'Persistent Data Dir', value: getDefaultDataDir() }
     ]
   });
 
@@ -261,6 +272,7 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     title: '\nEnvironment & Security:',
     items: [
       { label: 'Node.js Runtime', value: `v${process.versions.node} (${process.platform} ${process.arch})` },
+      { label: 'Config Source', value: configSourceText },
       { label: 'JWT Secret', value: jwtStatus },
       { label: 'Default Profile Key', value: defaultProfileText }
     ]

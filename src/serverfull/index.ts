@@ -4,14 +4,19 @@
  * Starts Classic UDP DNS, DoT (DNS over TLS), HTTP Web Dashboard & DoH, and scheduled cron jobs.
  */
 
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { initNodeGlobals } from './cache';
 import {
   getPackageVersion,
   getServerfullConfig,
   getDefaultDbPath,
+  getDefaultDataDir,
+  getDefaultConfigFilePath,
+  getLoadedEnvFiles,
   ServerfullCliArgs
 } from './config';
+import { DEFAULT_ENV_SERVERFULL_TEMPLATE, writeDefaultConfigFile } from './defaults';
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
@@ -24,7 +29,8 @@ import {
   formatBanner,
   formatDiagnostic,
   formatHelpMenu,
-  formatKeyValueSection
+  formatKeyValueSection,
+  formatTip
 } from './format';
 import { showServerfullStatus } from './status';
 import { handleServiceAction } from './service';
@@ -44,6 +50,73 @@ function checkNodeVersion(): void {
   }
 }
 
+function handleConfigCommand(subAction: string, targetArg?: string): void {
+  if (subAction === 'path') {
+    console.log(getDefaultConfigFilePath());
+    return;
+  }
+
+  if (subAction === 'template') {
+    process.stdout.write(DEFAULT_ENV_SERVERFULL_TEMPLATE);
+    return;
+  }
+
+  if (subAction === 'init') {
+    const targetPath = targetArg ? path.resolve(targetArg) : getDefaultConfigFilePath();
+    const result = writeDefaultConfigFile(targetPath, false);
+    if (result.created) {
+      console.log(formatDiagnostic({
+        level: 'success',
+        title: 'Configuration File Initialized',
+        message: `Successfully wrote default .env configuration template to: ${result.path}`,
+        solutions: [
+          'Edit this file to customize ports, TLS paths, and DNS settings.',
+          "Run 'dns-worker status' to verify loaded configuration."
+        ]
+      }));
+    } else {
+      console.log(formatDiagnostic({
+        level: 'warning',
+        title: 'Configuration File Already Exists',
+        message: `A configuration file already exists at: ${result.path}`,
+        solutions: [
+          'Edit the existing file directly.',
+          "To view the clean template, run 'dns-worker config template'."
+        ]
+      }));
+    }
+    return;
+  }
+
+  // Default: 'show'
+  const loaded = getLoadedEnvFiles();
+  const loadedText = loaded.length > 0 ? loaded.join('\n    ') : 'None (Using built-in presets & defaults)';
+
+  const banner = formatBanner({
+    title: 'DNS Worker Configuration Summary',
+    borderChar: '=',
+    bullet: '• '
+  });
+
+  const section = formatKeyValueSection({
+    title: '\nActive Configuration Paths:',
+    items: [
+      { label: 'Persistent Data Dir', value: getDefaultDataDir() },
+      { label: 'Default Config Path', value: getDefaultConfigFilePath() },
+      { label: 'Default SQLite Path', value: getDefaultDbPath() },
+      { label: 'Loaded Config Files', value: loadedText }
+    ]
+  });
+
+  const tip = formatTip([
+    "To generate a clean .env template file: dns-worker config init",
+    "To print the configuration file path: dns-worker config path",
+    "To view the raw template: dns-worker config template"
+  ]);
+
+  console.log([banner, section, tip].join('\n'));
+}
+
 function printHelp(): void {
   const version = getPackageVersion();
 
@@ -53,11 +126,13 @@ function printHelp(): void {
     usage: [
       'dns-worker [options]',
       'dns-worker status [options]',
+      'dns-worker config [action]',
       'dns-worker service <action>',
       'npx dns-worker [options]'
     ],
     commands: [
       { label: 'status', desc: 'Inspect service runtime status and database health' },
+      { label: 'config [action]', desc: 'Manage configuration (show, path, init, template)' },
       { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, status, logs, uninstall)' }
     ],
     options: [
@@ -84,6 +159,7 @@ function printHelp(): void {
     ],
     tip: [
       "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
+      "Run 'dns-worker config init' to create an editable .env configuration file.",
       process.platform === 'win32'
         ? "Run 'dns-worker service install' (in Administrator terminal) to run as a persistent Windows background service."
         : "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
@@ -125,6 +201,13 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     if (values.status || positionals[0]?.toLowerCase() === 'status') {
       const { config, env } = getServerfullConfig(values as ServerfullCliArgs);
       await showServerfullStatus(config, env.JWT_SECRET);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'config') {
+      const subAction = positionals[1]?.toLowerCase() || 'show';
+      const targetArg = positionals[2];
+      handleConfigCommand(subAction, targetArg);
       process.exit(0);
     }
 

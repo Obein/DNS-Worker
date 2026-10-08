@@ -8,6 +8,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { Env } from '../types';
+import {
+  DEFAULT_PRESET_UPSTREAMS,
+  DEFAULT_PRESET_EXTERNAL_FILTERS,
+  DEFAULT_IP_REGION_CN,
+  DEFAULT_SUBSTITUTE_DOMAIN,
+  DEFAULT_FAIL_OPEN_UPSTREAM
+} from '../constants/presets';
 
 export interface ServerfullCliArgs {
   port?: string;
@@ -76,44 +83,6 @@ export function getPackageVersion(): string {
 }
 
 /**
- * Parses simple KEY=VALUE dotenv files.
- */
-function loadDotEnv(filePath: string): void {
-  try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const lines = content.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        const eqIdx = trimmed.indexOf('=');
-        if (eqIdx !== -1) {
-          const key = trimmed.slice(0, eqIdx).trim();
-          let val = trimmed.slice(eqIdx + 1).trim();
-          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-            val = val.slice(1, -1);
-          }
-          if (!(key in process.env)) {
-            process.env[key] = val;
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn(`[Config] Failed to read ${filePath}:`, err);
-  }
-}
-
-/**
- * Loads configuration files from root workspace directory.
- */
-export function loadEnvFiles(rootDir: string = process.cwd()): void {
-  loadDotEnv(path.join(rootDir, '.dev.vars'));
-  loadDotEnv(path.join(rootDir, '.env'));
-  loadDotEnv(path.join(rootDir, '.env.serverfull'));
-}
-
-/**
  * Resolves the fixed platform-specific default persistent data directory.
  * - Linux: /var/lib/dns-worker (with automatic fallback to ~/.local/share/dns-worker for unprivileged non-root users if /var/lib is not writable)
  * - Windows: %ProgramData%\DNS-Worker (e.g. C:\ProgramData\DNS-Worker)
@@ -164,6 +133,127 @@ export function getDefaultDbPath(): string {
 }
 
 /**
+ * Parsed and loaded environment files tracker.
+ */
+const loadedEnvFiles: string[] = [];
+
+/**
+ * Returns list of environment files successfully loaded into process.env.
+ */
+export function getLoadedEnvFiles(): readonly string[] {
+  return loadedEnvFiles;
+}
+
+/**
+ * Resolves the platform-specific default configuration file path.
+ */
+export function getDefaultConfigFilePath(): string {
+  return path.join(getDefaultDataDir(), '.env');
+}
+
+/**
+ * Parses simple KEY=VALUE dotenv files.
+ * Returns true if file was successfully read.
+ */
+function loadDotEnv(filePath: string): boolean {
+  try {
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          let val = trimmed.slice(eqIdx + 1).trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.slice(1, -1);
+          }
+          if (!(key in process.env)) {
+            process.env[key] = val;
+          }
+        }
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn(`[Config] Failed to read ${filePath}:`, err);
+  }
+  return false;
+}
+
+/**
+ * Loads configuration files from multiple hierarchical search paths:
+ * 1. Current working directory: .dev.vars, .env, .env.serverfull
+ * 2. Persistent system data directory: <DataDir>/.env (e.g. /var/lib/dns-worker/.env or %ProgramData%\\DNS-Worker\\.env)
+ * 3. Linux system config directory: /etc/dns-worker/.env or /etc/default/dns-worker
+ * 4. Package distribution root: <packageRoot>/.env.serverfull
+ */
+export function loadEnvFiles(rootDir: string = process.cwd()): string[] {
+  loadedEnvFiles.length = 0;
+
+  const candidatePaths = [
+    // 1. Current working directory
+    path.join(rootDir, '.dev.vars'),
+    path.join(rootDir, '.env'),
+    path.join(rootDir, '.env.serverfull'),
+
+    // 2. Persistent system data directory
+    getDefaultConfigFilePath(),
+
+    // 3. Linux standard system paths
+    process.platform === 'linux' ? '/etc/dns-worker/.env' : null,
+    process.platform === 'linux' ? '/etc/default/dns-worker' : null,
+
+    // 4. Package distribution root
+    path.join(getPackageRoot(), '.env.serverfull')
+  ].filter((p): p is string => Boolean(p));
+
+  const uniquePaths = Array.from(new Set(candidatePaths));
+  for (const filePath of uniquePaths) {
+    if (loadDotEnv(filePath)) {
+      loadedEnvFiles.push(filePath);
+    }
+  }
+
+  return loadedEnvFiles;
+}
+
+/**
+ * Resolves or initializes a stable, persistent JWT secret.
+ * Precedence:
+ * 1. process.env.JWT_SECRET (if explicitly configured)
+ * 2. <DataDir>/.jwt_secret (if previously generated and persisted)
+ * 3. Generates 256-bit cryptographically secure hex string and persists it to <DataDir>/.jwt_secret
+ */
+export function getOrInitPersistentJwtSecret(dataDir: string = getDefaultDataDir()): string {
+  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim().length > 0) {
+    return process.env.JWT_SECRET.trim();
+  }
+
+  const secretFile = path.join(dataDir, '.jwt_secret');
+  try {
+    if (fs.existsSync(secretFile)) {
+      const existing = fs.readFileSync(secretFile, 'utf-8').trim();
+      if (existing.length >= 16) {
+        return existing;
+      }
+    }
+  } catch {}
+
+  // Generate 256-bit secure random secret (64 hex characters)
+  const newSecret = Buffer.from(crypto.randomBytes(32)).toString('hex');
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(secretFile, newSecret, { encoding: 'utf-8', mode: 0o600 });
+  } catch {}
+  return newSecret;
+}
+
+/**
  * Loads Serverfull-specific options and builds the standard Env interface.
  */
 export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: ServerfullConfig; env: Env } {
@@ -207,8 +297,12 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   const env: Env = {
     DB: null as any, // Set by db.ts
     ASSETS: null as any, // Set by http.ts
-    JWT_SECRET: process.env.JWT_SECRET || 'dns_worker_serverfull_secret_' + crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''),
-    FAIL_OPEN_UPSTREAM: process.env.FAIL_OPEN_UPSTREAM || 'https://freedns.controld.com/no-ads-malware-typo',
+    JWT_SECRET: getOrInitPersistentJwtSecret(),
+    FAIL_OPEN_UPSTREAM: process.env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM,
+    SUBSTITUTE_DOMAIN: process.env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN,
+    PRESET_UPSTREAMS: process.env.PRESET_UPSTREAMS || JSON.stringify(DEFAULT_PRESET_UPSTREAMS),
+    PRESET_EXTERNAL_FILTERS: process.env.PRESET_EXTERNAL_FILTERS || JSON.stringify(DEFAULT_PRESET_EXTERNAL_FILTERS),
+    IP_REGION_CN: process.env.IP_REGION_CN || JSON.stringify(DEFAULT_IP_REGION_CN),
     MAX_ACCESS_POINTS_PER_PROFILE: process.env.MAX_ACCESS_POINTS_PER_PROFILE || 100,
     MAX_PROFILES_PER_USER: process.env.MAX_PROFILES_PER_USER || 10,
     DEFAULT_SESSION_EXPIRATION_MINUTES: process.env.DEFAULT_SESSION_EXPIRATION_MINUTES || 1440,

@@ -15,6 +15,7 @@ import {
   formatCommandList,
   formatLogBox
 } from '../format';
+import { writeDefaultConfigFile } from '../defaults';
 
 export const WINDOWS_TASK_NAME = 'DNS-Worker';
 export const WINDOWS_DATA_DIR = path.join(process.env.ProgramData || 'C:\\ProgramData', 'DNS-Worker');
@@ -61,6 +62,9 @@ export async function handleWindowsTask(action: ServiceAction | string): Promise
           fs.mkdirSync(WINDOWS_DATA_DIR, { recursive: true });
         }
 
+        const defaultEnvPath = path.join(WINDOWS_DATA_DIR, '.env');
+        writeDefaultConfigFile(defaultEnvPath, false);
+
         const batContent = generateWindowsBat(details);
         fs.writeFileSync(WINDOWS_BAT_FILE, batContent, 'utf-8');
 
@@ -83,6 +87,7 @@ export async function handleWindowsTask(action: ServiceAction | string): Promise
             { label: 'Task Name', value: WINDOWS_TASK_NAME },
             { label: 'Account', value: 'NT AUTHORITY\\SYSTEM (Highest Privileges)' },
             { label: 'Auto-Start', value: 'On system startup (/sc onstart)' },
+            { label: 'Config File', value: defaultEnvPath },
             { label: 'Launcher Script', value: WINDOWS_BAT_FILE },
             { label: 'Log Output', value: WINDOWS_LOG_FILE }
           ]

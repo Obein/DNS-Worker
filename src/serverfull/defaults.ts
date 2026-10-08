@@ -1,0 +1,199 @@
+/**
+ * @file defaults.ts
+ * @description Embedded configuration template and persistent file initializers for Serverfull mode.
+ * Allows dns-worker to initialize, export, and inspect its complete configuration without external files.
+ */
+
+import fs from 'node:fs';
+import path from 'node:path';
+
+/**
+ * Built-in canonical .env configuration template with comprehensive explanations.
+ */
+export const DEFAULT_ENV_SERVERFULL_TEMPLATE = `# ==============================================================================
+# DNS Worker - Serverfull Mode Environment Configuration (.env.serverfull)
+# ==============================================================================
+# You can edit this file directly, or copy it to .env:
+#   可以直接在此文件修改配置，亦可选择复制为 .env (cp .env.serverfull .env)
+# The server will automatically load .env, .env.serverfull, or system persistent .env.
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Server Network & Port Configuration / 服务网络与端口监听
+# ------------------------------------------------------------------------------
+# Listening host / 监听网卡地址 (0.0.0.0 listens on all interfaces)
+SERVERFULL_HOST=0.0.0.0
+
+# Classic UDP DNS listening port / 经典 UDP DNS 监听端口 (RFC 1035, default: 53)
+SERVERFULL_UDP_PORT=53
+
+# DNS over TLS (DoT) listening port / 加密 DoT 监听端口 (RFC 7858, default: 853)
+SERVERFULL_DOT_PORT=853
+
+# Web Dashboard & DoH listening port / Web 管理面板与 DoH 监听端口 (default: 3000)
+SERVERFULL_HTTP_PORT=3000
+
+# ------------------------------------------------------------------------------
+# TLS Certificate & Private Key (Required for DoT) / TLS 证书与私钥配置 (DoT 必需)
+# ------------------------------------------------------------------------------
+# Absolute path to your TLS private key (PEM format) / TLS 私钥路径 (兼容 SERFULL_TLS_KEY_PATH)
+SERVERFULL_TLS_KEY_PATH=/etc/letsencrypt/live/dns.example.com/privkey.pem
+
+# Absolute path to your TLS certificate chain (PEM format) / TLS 证书/公钥路径 (兼容 SERVERFULL_TLS_PUB_PATH)
+SERVERFULL_TLS_CERT_PATH=/etc/letsencrypt/live/dns.example.com/fullchain.pem
+
+# ------------------------------------------------------------------------------
+# Database Configuration / 本地 SQLite 数据库配置
+# ------------------------------------------------------------------------------
+# Local SQLite database file path / 本地 SQLite 数据库文件存储路径
+# Default: Linux: /var/lib/dns-worker/dns_worker.sqlite, Windows: %ProgramData%\\DNS-Worker\\dns_worker.sqlite
+# 默认值: Linux 使用 /var/lib/dns-worker/dns_worker.sqlite, Windows 使用 %ProgramData%\\DNS-Worker\\dns_worker.sqlite
+# Automatically applies all migrations on startup / 启动时自动执行表结构初始化与迁移
+# SERVERFULL_DB_PATH=
+
+# ------------------------------------------------------------------------------
+# Default Profile Routing / 默认解析配置路由
+# ------------------------------------------------------------------------------
+# Profile key to use for queries arriving via UDP or DoT without SNI matching
+# 经典 UDP DNS 或无 SNI 匹配的 DoT 请求所使用的默认 Profile Key。留空则默认自动使用首个创建的 Profile。
+# SERVERFULL_DEFAULT_PROFILE_KEY=your_default_profile_key_here
+
+# ------------------------------------------------------------------------------
+# Security & Session Secret / 会话安全与密钥配置
+# ------------------------------------------------------------------------------
+# Secret key for JWT session token signing (Please replace with a strong random string!)
+# JWT 会话签名密钥 (留空时程序会自动在数据目录生成并持久化 256 位安全随机密钥)
+# JWT_SECRET=replace_with_a_secure_random_jwt_secret_string_32chars_min
+
+# (Optional) Key Encryption Key for sensitive fields envelope encryption (e.g. TOTP secrets)
+# (选填) 敏感数据信封加密密钥 (如 TOTP 密钥及恢复密钥)
+# KEK_v1=replace_with_a_secure_random_kek_secret
+
+# Session duration for authenticated users by default (in minutes) / 默认会话有效期 (分钟)
+# DEFAULT_SESSION_EXPIRATION_MINUTES=1440
+
+# Session duration for authenticated users when keeping logged in option is selected (in days) / 记住登录态会话有效期 (天)
+# OPTIONAL_SESSION_EXPIRATION_DAYS=7
+
+# Access Token expiration time (in minutes) / 短效访问令牌有效期 (分钟)
+# ACCESS_TOKEN_EXPIRATION_MINUTES=1
+
+# Maximum allowed distance (in km) between session login and current request / 会话异地登录允许的最大距离 (公里)
+# SESSION_GEO_DISTANCE_KM=50
+
+# TTL for temporary pre-auth session during login (in seconds) / 登录双因素认证临时预认证会话有效期 (秒)
+# PREAUTH_TTL_SECONDS=300
+
+# Throttle interval for updating session "last active" status in database (in seconds) / 会话活跃时间写入数据库节流间隔 (秒)
+# SESSION_LAST_ACTIVE_UPDATE_INTERVAL=60
+
+# In-memory authentication micro-cache TTL for dashboard requests (in seconds) / 鉴权内存微缓存有效期 (秒)
+# AUTH_CACHE_TTL_SEC=30
+
+# ------------------------------------------------------------------------------
+# DNS Upstream & Fallback Settings / DNS 上游与回退配置
+# ------------------------------------------------------------------------------
+# Fail-open upstream when no matching rules/filters are hit, or during emergency fallback
+# 兜底回退上游 DNS 地址 (支持 HTTPS/DoH、TLS/DoT 如 tls://1.1.1.1、TCP 如 tcp://1.1.1.1:53、DNS Stamps sdns://)
+FAIL_OPEN_UPSTREAM=https://freedns.controld.com/no-ads-malware-typo
+
+# Substitute domain for resolving DoH domain names
+# 用于解析 DoH 域名 IP 的辅助域名
+SUBSTITUTE_DOMAIN=www.okx.com
+
+# Throttle interval for updating profile "last active" status (in seconds) / 活跃状态写入节流时间间隔 (秒)
+# THROTTLE_ACTIVE_SEC=3600
+
+# ------------------------------------------------------------------------------
+# Blocklist Sync & Bloom Filter Settings (Optional) / 规则同步与布隆过滤器配置 (选填)
+# ------------------------------------------------------------------------------
+# Bloom Filter false positive rate / 布隆过滤器假阳性率 (默认万分之一)
+# BLOOM_FALSE_POSITIVE_RATE=0.0001
+
+# Expected maximum domains per profile for bloom filter allocation / 单配置布隆过滤器预分配的最大域名数
+# MAX_SYNC_DOMAINS=1000000
+
+# Maximum domains processed from a single list per sync cycle / 单次同步中单个规则列表最多处理的域名数
+# MAX_LIST_DOMAINS=500000
+
+# In-memory retention time for profile bloom filters (in milliseconds) / 内存中缓存布隆过滤器有效时长 (毫秒)
+# BLOOM_MEM_TTL=600000
+
+# Timeout threshold when downloading upstream blocklists (in milliseconds) / 下载外部规则列表超时阈值 (毫秒)
+# SYNC_TIMEOUT_MS=30000
+
+# Minimum interval between automated blocklist profile syncs (in seconds) / 自动同步外部规则列表最小间隔 (秒)
+# SYNC_PROFILE_INTERVAL_SEC=86400
+
+# ------------------------------------------------------------------------------
+# Quotas, Retention & Inactivity Policy (Optional) / 系统配额、日志保留与闲置清理策略 (选填)
+# ------------------------------------------------------------------------------
+# Maximum number of profiles allowed per user / 单用户允许创建的最大配置数
+# MAX_PROFILES_PER_USER=10
+
+# Maximum number of access points allowed per profile / 单配置允许创建的最大接入点数
+# MAX_ACCESS_POINTS_PER_PROFILE=100
+
+# Hard cap on log retention days for admin user (overrides per-profile user setting) / 管理员日志最长保留天数上限
+# MAX_LOG_RETENTION_DAYS=30
+
+# Default log retention days for admin user / 管理员日志默认保留天数
+# DEFAULT_LOG_RETENTION_DAYS=7
+
+# Hard cap on log retention days for normal users / 普通用户日志最长保留天数上限
+# NORMAL_USER_MAX_LOG_RETENTION_DAYS=7
+
+# Default log retention days for normal users / 普通用户日志默认保留天数
+# NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS=1
+
+# Hard cap on log row count per profile / 单配置日志最大存储行数上限 (防撑满磁盘)
+# MAX_LOGS_PER_PROFILE=500000
+
+# Number of days of inactivity before account query logs are cleared / 连续无解析请求达到此阈值时自动清理日志 (天)
+# INACTIVITY_THRESHOLD_DAYS=180
+
+# Maximum log rows deleted per cron cleanup run across all profiles / 每轮定时清理最大删除日志行数
+# LOG_CLEANUP_BATCH_LIMIT=1000
+
+# Daily budget for log row deletions across all profiles / 每日清理最大删除日志配额预算 (默认: 20000)
+# LOG_CLEANUP_DAILY_BUDGET=20000
+
+# Minimum query count threshold for domain hourly rollup aggregation / 域名小时聚合最小请求次数阈值
+# DOMAIN_ROLLUP_MIN_COUNT=2
+
+# ------------------------------------------------------------------------------
+# Preset Upstream Services & External Filters (Optional) / 预设上游服务与外部过滤规则 (选填)
+# ------------------------------------------------------------------------------
+# Preset Upstream Services (JSON string) / 预设上游服务列表 (JSON 字符串)
+PRESET_UPSTREAMS='[{"label":"settings.presetCloudflareSecurity","url":"https://security.cloudflare-dns.com/dns-query"},{"label":"settings.presetCloudflareFamilies","url":"https://family.cloudflare-dns.com/dns-query"},{"label":"Cloudflare","url":"https://cloudflare-dns.com/dns-query"},{"label":"settings.presetQuad9","url":"https://dns.quad9.net/dns-query"},{"label":"settings.presetQuad9Ecs","url":"https://dns11.quad9.net/dns-query"},{"label":"settings.presetControlDFree","url":"https://freedns.controld.com/no-ads-malware-typo"},{"label":"settings.presetControlDUncensored","url":"https://freedns.controld.com/uncensored"},{"label":"settings.presetAdGuard","url":"https://dns.adguard-dns.com/dns-query"},{"label":"settings.presetAdGuardFamily","url":"https://family.adguard-dns.com/dns-query"},{"label":"Cloudflare Security (1.1.1.2)","url":"tcp://1.1.1.2:53"},{"label":"Cloudflare (1.1.1.1)","url":"tcp://1.1.1.1:53"},{"label":"Quad9 ECS (9.9.9.11)","url":"tcp://9.9.9.11:9953"},{"label":"Google (8.8.8.8)","url":"tcp://8.8.8.8:53"}]'
+
+# Preset External Filters (JSON string) / 预设外部规则过滤列表 (JSON 字符串)
+PRESET_EXTERNAL_FILTERS='[{"label":"filtering.presetOisdBig","url":"https://big.oisd.nl"},{"label":"filtering.presetOisdNsfw","url":"https://nsfw.oisd.nl"},{"label":"filtering.presetAdGuard","url":"https://adguardteam.github.io/AdguardFilters/BaseFilter/sections/adservers.txt"},{"label":"filtering.presetStevenBlack","url":"https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"}]'
+
+# Preset ECH Fronting (outer SNI) domains (JSON string) / 预设 ECH 前置外层 SNI 域名 (JSON 字符串)
+PRESET_ECH_FRONTING_DOMAINS='["cloudflare-ech.com","crypto.cloudflare.com","one.one.one.one","www.cloudflare.com","encryptedsni.com","cdnjs.com"]'
+
+# Substitute Region IPs mapping (JSON string) / 辅助域名各区域解析 IP 映射 (JSON 字符串)
+IP_REGION_CN='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area":"SG"},{"ip":"104.18.47.174","area":"HK"},{"ip":"104.19.50.3","area":"HK"}]'
+`;
+
+/**
+ * Initializes or seeds a persistent configuration file with the default template.
+ *
+ * @param targetPath - Absolute or relative file path to write.
+ * @param force - If true, overwrite existing file.
+ * @returns Object with success flag and message.
+ */
+export function writeDefaultConfigFile(targetPath: string, force: boolean = false): { created: boolean; path: string } {
+  const dir = path.dirname(targetPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  if (fs.existsSync(targetPath) && !force) {
+    return { created: false, path: targetPath };
+  }
+
+  fs.writeFileSync(targetPath, DEFAULT_ENV_SERVERFULL_TEMPLATE, 'utf-8');
+  return { created: true, path: targetPath };
+}

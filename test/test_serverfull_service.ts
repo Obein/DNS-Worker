@@ -21,10 +21,27 @@ import {
   WINDOWS_BAT_FILE,
   generateWindowsBat
 } from '../src/serverfull/service/schtasks';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
 import {
   getDefaultDataDir,
-  getDefaultDbPath
+  getDefaultDbPath,
+  getDefaultConfigFilePath,
+  getOrInitPersistentJwtSecret,
+  getLoadedEnvFiles
 } from '../src/serverfull/config';
+import {
+  DEFAULT_PRESET_UPSTREAMS,
+  DEFAULT_PRESET_EXTERNAL_FILTERS,
+  DEFAULT_IP_REGION_CN,
+  DEFAULT_SUBSTITUTE_DOMAIN,
+  DEFAULT_FAIL_OPEN_UPSTREAM
+} from '../src/constants/presets';
+import {
+  DEFAULT_ENV_SERVERFULL_TEMPLATE,
+  writeDefaultConfigFile
+} from '../src/serverfull/defaults';
 
 function runServiceUnitTests(): void {
   console.log('>>> [TEST] Starting Modular Service Provider Unit Tests (SRP)...');
@@ -117,6 +134,67 @@ function runServiceUnitTests(): void {
     throw new Error(`On Windows, dataDir should contain ProgramData, got: ${dataDir}`);
   }
   console.log(`   ✓ Persistent path resolution passed (DataDir=${dataDir}, DbPath=${dbPath}).`);
+
+  // 6. Test Canonical Built-in Presets
+  console.log('6. Testing Canonical Built-in Presets...');
+  if (!Array.isArray(DEFAULT_PRESET_UPSTREAMS) || DEFAULT_PRESET_UPSTREAMS.length === 0) {
+    throw new Error('DEFAULT_PRESET_UPSTREAMS must be non-empty array');
+  }
+  if (!Array.isArray(DEFAULT_PRESET_EXTERNAL_FILTERS) || DEFAULT_PRESET_EXTERNAL_FILTERS.length === 0) {
+    throw new Error('DEFAULT_PRESET_EXTERNAL_FILTERS must be non-empty array');
+  }
+  if (!Array.isArray(DEFAULT_IP_REGION_CN) || DEFAULT_IP_REGION_CN.length === 0) {
+    throw new Error('DEFAULT_IP_REGION_CN must be non-empty array');
+  }
+  if (DEFAULT_SUBSTITUTE_DOMAIN !== 'www.okx.com' || !DEFAULT_FAIL_OPEN_UPSTREAM) {
+    throw new Error('DEFAULT_SUBSTITUTE_DOMAIN or DEFAULT_FAIL_OPEN_UPSTREAM invalid');
+  }
+  console.log('   ✓ Built-in presets constants passed.');
+
+  // 7. Test Persistent JWT Secret Initialization
+  console.log('7. Testing getOrInitPersistentJwtSecret stability...');
+  const tempTestDir = path.join(os.tmpdir(), `test_jwt_${Date.now()}`);
+  try {
+    fs.mkdirSync(tempTestDir, { recursive: true });
+    // First call generates and persists secret
+    const secret1 = getOrInitPersistentJwtSecret(tempTestDir);
+    if (!secret1 || secret1.length < 32) {
+      throw new Error(`Generated secret too short: ${secret1}`);
+    }
+    // Second call must return identical persisted secret
+    const secret2 = getOrInitPersistentJwtSecret(tempTestDir);
+    if (secret1 !== secret2) {
+      throw new Error(`Persistent secret mismatch: ${secret1} vs ${secret2}`);
+    }
+    console.log('   ✓ getOrInitPersistentJwtSecret stability verified.');
+  } finally {
+    try { fs.rmSync(tempTestDir, { recursive: true, force: true }); } catch {}
+  }
+
+  // 8. Test Default Config File Seeding and Template
+  console.log('8. Testing writeDefaultConfigFile and template...');
+  const configPath = getDefaultConfigFilePath();
+  if (!configPath.endsWith('.env')) {
+    throw new Error(`getDefaultConfigFilePath must end with .env: ${configPath}`);
+  }
+  if (!DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_HOST=0.0.0.0') ||
+      !DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('PRESET_UPSTREAMS=')) {
+    throw new Error('DEFAULT_ENV_SERVERFULL_TEMPLATE missing required variables');
+  }
+  const tempConfigPath = path.join(os.tmpdir(), `test_config_${Date.now()}`, '.env');
+  try {
+    const res1 = writeDefaultConfigFile(tempConfigPath, false);
+    if (!res1.created || !fs.existsSync(tempConfigPath)) {
+      throw new Error('writeDefaultConfigFile failed to create config file');
+    }
+    const res2 = writeDefaultConfigFile(tempConfigPath, false);
+    if (res2.created) {
+      throw new Error('writeDefaultConfigFile should not overwrite without force=true');
+    }
+    console.log('   ✓ writeDefaultConfigFile template test passed.');
+  } finally {
+    try { fs.rmSync(path.dirname(tempConfigPath), { recursive: true, force: true }); } catch {}
+  }
 
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');
