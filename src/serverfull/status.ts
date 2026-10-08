@@ -10,6 +10,7 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   ServerfullConfig,
   getDefaultDataDir,
+  getDefaultConfigDir,
   getDefaultConfigFilePath,
   getLoadedEnvFiles
 } from './config';
@@ -272,6 +273,7 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     title: '\nEnvironment & Security:',
     items: [
       { label: 'Node.js Runtime', value: `v${process.versions.node} (${process.platform} ${process.arch})` },
+      { label: 'Config Directory', value: getDefaultConfigDir() },
       { label: 'Config Source', value: configSourceText },
       { label: 'JWT Secret', value: jwtStatus },
       { label: 'Default Profile Key', value: defaultProfileText }

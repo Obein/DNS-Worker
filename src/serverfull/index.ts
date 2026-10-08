@@ -12,7 +12,9 @@ import {
   getServerfullConfig,
   getDefaultDbPath,
   getDefaultDataDir,
+  getDefaultConfigDir,
   getDefaultConfigFilePath,
+  ensurePersistentDirs,
   getLoadedEnvFiles,
   ServerfullCliArgs
 } from './config';
@@ -92,6 +94,7 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
   }
 
   // Default: 'show'
+  ensurePersistentDirs();
   const loaded = getLoadedEnvFiles();
   const loadedText = loaded.length > 0 ? loaded.join('\n    ') : 'None (Using built-in presets & defaults)';
 
@@ -105,6 +108,7 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
     title: '\nActive Configuration Paths:',
     items: [
       { label: 'Persistent Data Dir', value: getDefaultDataDir() },
+      { label: 'Config Directory', value: getDefaultConfigDir() },
       { label: 'Default Config Path', value: getDefaultConfigFilePath() },
       { label: 'Default SQLite Path', value: getDefaultDbPath() },
       { label: 'Loaded Config Files', value: loadedText }

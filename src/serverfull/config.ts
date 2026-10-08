@@ -133,6 +133,79 @@ export function getDefaultDbPath(): string {
 }
 
 /**
+ * Resolves the platform-specific default configuration directory.
+ * - Linux: /etc/dns-worker (with automatic fallback to ~/.config/dns-worker for unprivileged non-root users if /etc is not writable)
+ * - Windows: %ProgramData%\DNS-Worker (e.g. C:\ProgramData\DNS-Worker)
+ * - macOS: ~/Library/Application Support/DNS-Worker
+ */
+export function getDefaultConfigDir(): string {
+  if (process.platform === 'win32') {
+    const programData = process.env.ProgramData || path.join(process.env.SystemDrive || 'C:', 'ProgramData');
+    return path.join(programData, 'DNS-Worker');
+  }
+
+  if (process.platform === 'linux') {
+    const systemEtc = '/etc/dns-worker';
+    // If running as root, or if /etc/dns-worker already exists and is writable
+    if (typeof process.getuid === 'function' && process.getuid() === 0) {
+      return systemEtc;
+    }
+    if (fs.existsSync(systemEtc)) {
+      try {
+        fs.accessSync(systemEtc, fs.constants.W_OK);
+        return systemEtc;
+      } catch {
+        /* Not writable by current user, fall through */
+      }
+    }
+    // For unprivileged user when system /etc/dns-worker is not provisioned,
+    // use standard XDG config directory: ~/.config/dns-worker
+    const homeDir = process.env.HOME || '/tmp';
+    const xdgConfigHome = process.env.XDG_CONFIG_HOME || path.join(homeDir, '.config');
+    return path.join(xdgConfigHome, 'dns-worker');
+  }
+
+  if (process.platform === 'darwin') {
+    const homeDir = process.env.HOME || '/tmp';
+    return path.join(homeDir, 'Library', 'Application Support', 'DNS-Worker');
+  }
+
+  return path.join(process.cwd(), 'config');
+}
+
+/**
+ * Resolves the platform-specific default configuration file path.
+ * - Linux: /etc/dns-worker/.env
+ * - Windows: %ProgramData%\DNS-Worker\.env
+ * - macOS: ~/Library/Application Support/DNS-Worker/.env
+ */
+export function getDefaultConfigFilePath(): string {
+  return path.join(getDefaultConfigDir(), '.env');
+}
+
+/**
+ * Ensures system persistent directories (Persistent Data Dir and Config Directory) exist if writable.
+ */
+export function ensurePersistentDirs(): { dataDir: string; configDir: string } {
+  const dataDir = getDefaultDataDir();
+  const configDir = getDefaultConfigDir();
+
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+    }
+  } catch {}
+
+  try {
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+    }
+  } catch {}
+
+  return { dataDir, configDir };
+}
+
+/**
  * Parsed and loaded environment files tracker.
  */
 const loadedEnvFiles: string[] = [];
@@ -142,13 +215,6 @@ const loadedEnvFiles: string[] = [];
  */
 export function getLoadedEnvFiles(): readonly string[] {
   return loadedEnvFiles;
-}
-
-/**
- * Resolves the platform-specific default configuration file path.
- */
-export function getDefaultConfigFilePath(): string {
-  return path.join(getDefaultDataDir(), '.env');
 }
 
 /**
@@ -186,8 +252,8 @@ function loadDotEnv(filePath: string): boolean {
 /**
  * Loads configuration files from multiple hierarchical search paths:
  * 1. Current working directory: .dev.vars, .env, .env.serverfull
- * 2. Persistent system data directory: <DataDir>/.env (e.g. /var/lib/dns-worker/.env or %ProgramData%\\DNS-Worker\\.env)
- * 3. Linux system config directory: /etc/dns-worker/.env or /etc/default/dns-worker
+ * 2. System config directory: /etc/dns-worker/.env on Linux, %ProgramData%\\DNS-Worker\\.env on Windows
+ * 3. Linux system config directory & compatibility paths
  * 4. Package distribution root: <packageRoot>/.env.serverfull
  */
 export function loadEnvFiles(rootDir: string = process.cwd()): string[] {
@@ -199,12 +265,13 @@ export function loadEnvFiles(rootDir: string = process.cwd()): string[] {
     path.join(rootDir, '.env'),
     path.join(rootDir, '.env.serverfull'),
 
-    // 2. Persistent system data directory
+    // 2. Standard system configuration file (/etc/dns-worker/.env on Linux)
     getDefaultConfigFilePath(),
 
-    // 3. Linux standard system paths
+    // 3. Linux standard system paths & compatibility fallbacks
     process.platform === 'linux' ? '/etc/dns-worker/.env' : null,
     process.platform === 'linux' ? '/etc/default/dns-worker' : null,
+    process.platform === 'linux' ? path.join(getDefaultDataDir(), '.env') : null,
 
     // 4. Package distribution root
     path.join(getPackageRoot(), '.env.serverfull')
@@ -257,6 +324,7 @@ export function getOrInitPersistentJwtSecret(dataDir: string = getDefaultDataDir
  * Loads Serverfull-specific options and builds the standard Env interface.
  */
 export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: ServerfullConfig; env: Env } {
+  ensurePersistentDirs();
   loadEnvFiles();
 
   const packageRoot = getPackageRoot();

@@ -26,8 +26,10 @@ import path from 'node:path';
 import os from 'node:os';
 import {
   getDefaultDataDir,
+  getDefaultConfigDir,
   getDefaultDbPath,
   getDefaultConfigFilePath,
+  ensurePersistentDirs,
   getOrInitPersistentJwtSecret,
   getLoadedEnvFiles
 } from '../src/serverfull/config';
@@ -84,6 +86,12 @@ function runServiceUnitTests(): void {
   if (!unit.includes('StateDirectory=dns-worker')) {
     throw new Error('generateSystemdUnit missing StateDirectory=dns-worker');
   }
+  if (!unit.includes('ConfigurationDirectory=dns-worker')) {
+    throw new Error('generateSystemdUnit missing ConfigurationDirectory=dns-worker');
+  }
+  if (!unit.includes('EnvironmentFile=-/etc/dns-worker/.env')) {
+    throw new Error('generateSystemdUnit missing EnvironmentFile=-/etc/dns-worker/.env');
+  }
   if (!unit.includes('AmbientCapabilities=CAP_NET_BIND_SERVICE')) {
     throw new Error('generateSystemdUnit missing CAP_NET_BIND_SERVICE');
   }
@@ -120,20 +128,30 @@ function runServiceUnitTests(): void {
   }
   console.log('   ✓ generateWindowsBat and constants passed.');
 
-  // 5. Test Persistent Storage Path Resolvers
-  console.log('5. Testing getDefaultDataDir and getDefaultDbPath...');
+  // 5. Test Persistent Storage & Configuration Path Resolvers
+  console.log('5. Testing getDefaultDataDir, getDefaultConfigDir and paths...');
   const dataDir = getDefaultDataDir();
+  const configDir = getDefaultConfigDir();
   const dbPath = getDefaultDbPath();
+  const configPath = getDefaultConfigFilePath();
   if (!dataDir || typeof dataDir !== 'string') {
     throw new Error('getDefaultDataDir must return non-empty string');
+  }
+  if (!configDir || typeof configDir !== 'string') {
+    throw new Error('getDefaultConfigDir must return non-empty string');
   }
   if (!dbPath || !dbPath.endsWith('dns_worker.sqlite')) {
     throw new Error(`getDefaultDbPath must end with dns_worker.sqlite, got: ${dbPath}`);
   }
-  if (process.platform === 'win32' && !dataDir.includes('ProgramData')) {
-    throw new Error(`On Windows, dataDir should contain ProgramData, got: ${dataDir}`);
+  if (!configPath || !configPath.endsWith('.env')) {
+    throw new Error(`getDefaultConfigFilePath must end with .env, got: ${configPath}`);
   }
-  console.log(`   ✓ Persistent path resolution passed (DataDir=${dataDir}, DbPath=${dbPath}).`);
+  if (process.platform === 'win32') {
+    if (!dataDir.includes('ProgramData') || !configDir.includes('ProgramData')) {
+      throw new Error(`On Windows, dataDir and configDir should contain ProgramData`);
+    }
+  }
+  console.log(`   ✓ Path resolution passed (DataDir=${dataDir}, ConfigDir=${configDir}, DbPath=${dbPath}, ConfigPath=${configPath}).`);
 
   // 6. Test Canonical Built-in Presets
   console.log('6. Testing Canonical Built-in Presets...');
@@ -173,9 +191,9 @@ function runServiceUnitTests(): void {
 
   // 8. Test Default Config File Seeding and Template
   console.log('8. Testing writeDefaultConfigFile and template...');
-  const configPath = getDefaultConfigFilePath();
-  if (!configPath.endsWith('.env')) {
-    throw new Error(`getDefaultConfigFilePath must end with .env: ${configPath}`);
+  const templateTargetConfig = getDefaultConfigFilePath();
+  if (!templateTargetConfig.endsWith('.env')) {
+    throw new Error(`getDefaultConfigFilePath must end with .env: ${templateTargetConfig}`);
   }
   if (!DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_HOST=0.0.0.0') ||
       !DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('PRESET_UPSTREAMS=')) {

@@ -45,6 +45,12 @@ LimitNOFILE=65535
 # Automatically provision and preserve /var/lib/dns-worker persistent state directory
 StateDirectory=dns-worker
 
+# Automatically provision and preserve /etc/dns-worker configuration directory
+ConfigurationDirectory=dns-worker
+
+# Load environment configuration file from /etc/dns-worker/.env
+EnvironmentFile=-/etc/dns-worker/.env
+
 # Grant capability to bind ports 53 and 853 without running as full root
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
@@ -85,17 +91,26 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
       const unitContent = generateSystemdUnit(details);
 
       try {
-        // Ensure persistent state directory /var/lib/dns-worker exists with proper user ownership
+        // Ensure persistent state directory /var/lib/dns-worker (Persistent Data Dir)
+        // and configuration directory /etc/dns-worker (Config Data Dir) exist with proper user ownership
         const dataDir = '/var/lib/dns-worker';
-        const defaultEnvPath = path.join(dataDir, '.env');
+        const configDir = '/etc/dns-worker';
+        const configFile = path.join(configDir, '.env');
+
         try {
           if (!fs.existsSync(dataDir)) {
             fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
           }
-          writeDefaultConfigFile(defaultEnvPath, false);
+          if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+          }
+          writeDefaultConfigFile(configFile, false);
           if (details.user && details.user !== 'root') {
             try {
               execSync(`chown -R ${details.user} ${dataDir}`);
+            } catch {}
+            try {
+              execSync(`chown -R ${details.user} ${configDir}`);
             } catch {}
           }
         } catch {}
@@ -113,8 +128,9 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
           items: [
             { label: 'Service File', value: SYSTEMD_SERVICE_PATH },
             { label: 'Running As User', value: `${details.user} (CAP_NET_BIND_SERVICE)` },
-            { label: 'Data Directory', value: dataDir },
-            { label: 'Config File', value: defaultEnvPath },
+            { label: 'Persistent Data Dir', value: dataDir },
+            { label: 'Config Directory', value: configDir },
+            { label: 'Config File', value: configFile },
             { label: 'Privileged Ports', value: 'Port 53 & 853 enabled without root' },
             { label: 'Auto-restart', value: 'Enabled on system boot (Restart=always)' }
           ]
