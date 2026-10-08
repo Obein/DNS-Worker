@@ -62,12 +62,13 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
   }
 
   if (subAction === 'init') {
-    const targetPath = targetArg ? path.resolve(targetArg) : getDefaultConfigFilePath();
-    const result = writeDefaultConfigFile(targetPath, false);
+    const isForce = process.argv.includes('--force') || targetArg === '--force';
+    const effectivePath = (targetArg && targetArg !== '--force') ? path.resolve(targetArg) : getDefaultConfigFilePath();
+    const result = writeDefaultConfigFile(effectivePath, isForce);
     if (result.created) {
       console.log(formatDiagnostic({
         level: 'success',
-        title: 'Configuration File Initialized',
+        title: isForce ? 'Configuration File Overwritten' : 'Configuration File Initialized',
         message: `Successfully wrote default .env configuration template to: ${result.path}`,
         solutions: [
           'Edit this file to customize ports, TLS paths, and DNS settings.',
@@ -77,11 +78,13 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
     } else {
       console.log(formatDiagnostic({
         level: 'warning',
-        title: 'Configuration File Already Exists',
-        message: `A configuration file already exists at: ${result.path}`,
+        title: 'Configuration File Already Exists (Untouched)',
+        message: `An existing configuration file was detected and preserved at: ${result.path}`,
         solutions: [
-          'Edit the existing file directly.',
-          "To view the clean template, run 'dns-worker config template'."
+          'Your existing settings and secrets remain completely intact.',
+          'Edit the existing file directly to modify options.',
+          "To view the new version's full template, run: dns-worker config template",
+          "To force overwrite with the latest default template, run: dns-worker config init --force"
         ]
       }));
     }
