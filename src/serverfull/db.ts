@@ -204,6 +204,19 @@ export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoo
     fs.mkdirSync(dir, { recursive: true });
   }
 
+  // Seamlessly migrate legacy database from ./data/dns_worker.sqlite if target database does not exist yet
+  if (!fs.existsSync(dbPath)) {
+    const legacyPath = path.join(process.cwd(), 'data', 'dns_worker.sqlite');
+    if (fs.existsSync(legacyPath) && path.resolve(legacyPath) !== path.resolve(dbPath)) {
+      try {
+        fs.copyFileSync(legacyPath, dbPath);
+        console.log(`[SQLite D1] Seamlessly migrated existing database from ${legacyPath} to ${dbPath}`);
+      } catch {
+        /* If copy fails, fresh database will be initialized */
+      }
+    }
+  }
+
   console.log(`[SQLite D1] Connecting to database at: ${dbPath}`);
   const rawDb = new DatabaseSync(dbPath);
 

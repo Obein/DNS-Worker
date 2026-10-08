@@ -162,7 +162,7 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 | `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
 | `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `3000` |
 | `SERVERFULL_HOST` | Listening host IP | `0.0.0.0` |
-| `SERVERFULL_DB_PATH` | Local SQLite database file path | `./data/dns_worker.sqlite` |
+| `SERVERFULL_DB_PATH` | Local SQLite database file path | Linux: `/var/lib/dns-worker/dns_worker.sqlite`, Windows: `%ProgramData%\DNS-Worker\dns_worker.sqlite` |
 | `SERVERFULL_DEFAULT_PROFILE_KEY` | Default Profile key when no SNI or profile identifier is provided | First created profile |
 | `JWT_SECRET` | Session authentication token secret key | Auto-generated secure random string |
 

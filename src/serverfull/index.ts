@@ -6,7 +6,12 @@
 
 import { parseArgs } from 'node:util';
 import { initNodeGlobals } from './cache';
-import { getPackageVersion, getServerfullConfig, ServerfullCliArgs } from './config';
+import {
+  getPackageVersion,
+  getServerfullConfig,
+  getDefaultDbPath,
+  ServerfullCliArgs
+} from './config';
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
@@ -61,7 +66,7 @@ function printHelp(): void {
       { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
       { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
-      { label: '--db <path>', desc: 'SQLite database file path (default: ./data/dns_worker.sqlite)' },
+      { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
       { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
       { label: '--disable-dot', desc: 'Disable DoT server' },

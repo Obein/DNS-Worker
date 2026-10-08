@@ -114,6 +114,56 @@ export function loadEnvFiles(rootDir: string = process.cwd()): void {
 }
 
 /**
+ * Resolves the fixed platform-specific default persistent data directory.
+ * - Linux: /var/lib/dns-worker (with automatic fallback to ~/.local/share/dns-worker for unprivileged non-root users if /var/lib is not writable)
+ * - Windows: %ProgramData%\DNS-Worker (e.g. C:\ProgramData\DNS-Worker)
+ * - macOS: ~/Library/Application Support/DNS-Worker
+ */
+export function getDefaultDataDir(): string {
+  if (process.platform === 'win32') {
+    const programData = process.env.ProgramData || path.join(process.env.SystemDrive || 'C:', 'ProgramData');
+    return path.join(programData, 'DNS-Worker');
+  }
+
+  if (process.platform === 'linux') {
+    const systemVarLib = '/var/lib/dns-worker';
+    // If running as root, or if /var/lib/dns-worker already exists and is writable
+    if (typeof process.getuid === 'function' && process.getuid() === 0) {
+      return systemVarLib;
+    }
+    if (fs.existsSync(systemVarLib)) {
+      try {
+        fs.accessSync(systemVarLib, fs.constants.W_OK);
+        return systemVarLib;
+      } catch {
+        /* Not writable by current user, fall through */
+      }
+    }
+    // For unprivileged user when system /var/lib/dns-worker is not provisioned,
+    // use standard XDG user data directory: ~/.local/share/dns-worker
+    const homeDir = process.env.HOME || '/tmp';
+    const xdgDataHome = process.env.XDG_DATA_HOME || path.join(homeDir, '.local', 'share');
+    return path.join(xdgDataHome, 'dns-worker');
+  }
+
+  if (process.platform === 'darwin') {
+    const homeDir = process.env.HOME || '/tmp';
+    return path.join(homeDir, 'Library', 'Application Support', 'DNS-Worker');
+  }
+
+  return path.join(process.cwd(), 'data');
+}
+
+/**
+ * Resolves the fixed platform-specific default SQLite database file path.
+ *
+ * @returns Persistent SQLite database file path.
+ */
+export function getDefaultDbPath(): string {
+  return path.join(getDefaultDataDir(), 'dns_worker.sqlite');
+}
+
+/**
  * Loads Serverfull-specific options and builds the standard Env interface.
  */
 export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: ServerfullConfig; env: Env } {
@@ -134,7 +184,8 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   const dotPort = parseInt(cliArgs?.['dot-port'] || process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
   const httpPort = parseInt(cliArgs?.port || process.env.SERVERFULL_HTTP_PORT || process.env.PORT || '3000', 10);
   const host = cliArgs?.host || process.env.SERVERFULL_HOST || process.env.SERVERFULL_BIND_ADDRESS || '0.0.0.0';
-  const dbPath = cliArgs?.db || process.env.SERVERFULL_DB_PATH || process.env.DB_PATH || path.join(process.cwd(), 'data', 'dns_worker.sqlite');
+  const defaultDbPath = getDefaultDbPath();
+  const dbPath = cliArgs?.db || process.env.SERVERFULL_DB_PATH || process.env.DB_PATH || defaultDbPath;
   const defaultProfileKey = cliArgs?.['default-profile'] || process.env.SERVERFULL_DEFAULT_PROFILE_KEY || process.env.DEFAULT_PROFILE_KEY || '';
   const disableUdp = Boolean(cliArgs?.['disable-udp'] || process.env.SERVERFULL_DISABLE_UDP === 'true');
   const disableDot = Boolean(cliArgs?.['disable-dot'] || process.env.SERVERFULL_DISABLE_DOT === 'true');

@@ -40,6 +40,9 @@ Restart=always
 RestartSec=5
 LimitNOFILE=65535
 
+# Automatically provision and preserve /var/lib/dns-worker persistent state directory
+StateDirectory=dns-worker
+
 # Grant capability to bind ports 53 and 853 without running as full root
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
@@ -80,6 +83,19 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
       const unitContent = generateSystemdUnit(details);
 
       try {
+        // Ensure persistent state directory /var/lib/dns-worker exists with proper user ownership
+        const dataDir = '/var/lib/dns-worker';
+        try {
+          if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+          }
+          if (details.user && details.user !== 'root') {
+            try {
+              execSync(`chown -R ${details.user} ${dataDir}`);
+            } catch {}
+          }
+        } catch {}
+
         fs.writeFileSync(SYSTEMD_SERVICE_PATH, unitContent, 'utf-8');
 
         execSync('systemctl daemon-reload', { stdio: 'inherit' });
@@ -93,6 +109,7 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
           items: [
             { label: 'Service File', value: SYSTEMD_SERVICE_PATH },
             { label: 'Running As User', value: `${details.user} (CAP_NET_BIND_SERVICE)` },
+            { label: 'Data Directory', value: dataDir },
             { label: 'Privileged Ports', value: 'Port 53 & 853 enabled without root' },
             { label: 'Auto-restart', value: 'Enabled on system boot (Restart=always)' }
           ]

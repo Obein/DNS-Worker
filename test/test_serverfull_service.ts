@@ -21,6 +21,10 @@ import {
   WINDOWS_BAT_FILE,
   generateWindowsBat
 } from '../src/serverfull/service/schtasks';
+import {
+  getDefaultDataDir,
+  getDefaultDbPath
+} from '../src/serverfull/config';
 
 function runServiceUnitTests(): void {
   console.log('>>> [TEST] Starting Modular Service Provider Unit Tests (SRP)...');
@@ -60,6 +64,9 @@ function runServiceUnitTests(): void {
   };
   const unit = generateSystemdUnit(dummyDetails);
 
+  if (!unit.includes('StateDirectory=dns-worker')) {
+    throw new Error('generateSystemdUnit missing StateDirectory=dns-worker');
+  }
   if (!unit.includes('AmbientCapabilities=CAP_NET_BIND_SERVICE')) {
     throw new Error('generateSystemdUnit missing CAP_NET_BIND_SERVICE');
   }
@@ -95,6 +102,21 @@ function runServiceUnitTests(): void {
     throw new Error('WINDOWS_TASK_NAME mismatch');
   }
   console.log('   ✓ generateWindowsBat and constants passed.');
+
+  // 5. Test Persistent Storage Path Resolvers
+  console.log('5. Testing getDefaultDataDir and getDefaultDbPath...');
+  const dataDir = getDefaultDataDir();
+  const dbPath = getDefaultDbPath();
+  if (!dataDir || typeof dataDir !== 'string') {
+    throw new Error('getDefaultDataDir must return non-empty string');
+  }
+  if (!dbPath || !dbPath.endsWith('dns_worker.sqlite')) {
+    throw new Error(`getDefaultDbPath must end with dns_worker.sqlite, got: ${dbPath}`);
+  }
+  if (process.platform === 'win32' && !dataDir.includes('ProgramData')) {
+    throw new Error(`On Windows, dataDir should contain ProgramData, got: ${dataDir}`);
+  }
+  console.log(`   ✓ Persistent path resolution passed (DataDir=${dataDir}, DbPath=${dbPath}).`);
 
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');
