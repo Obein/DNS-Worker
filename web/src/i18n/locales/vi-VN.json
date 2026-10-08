@@ -45,7 +45,9 @@
     "delete": "Xóa",
     "rename": "Đổi tên",
     "disable": "Vô hiệu hóa",
-    "confirmDisable": "Xác nhận vô hiệu hóa"
+    "confirmDisable": "Xác nhận vô hiệu hóa",
+    "modeServerfull": "Chế độ Serverfull",
+    "modeCloudflare": "Chế độ Cloudflare Worker"
   },
   "nav": {
     "setup": "Thiết lập",
@@ -249,7 +251,7 @@
     "downloadConfig": "Tải tệp cấu hình",
     "appleInstallHint": "Sau khi tải về, vui lòng đi tới \"Cài đặt\" > \"Đã tải về hồ sơ\" để cài đặt",
     "windows": "MS Windows",
-    "windowsTitle": "Cấu hình Windows 11 [Vùng: {{region}}]",
+    "windowsTitle": "Cấu hình Windows 11",
     "windowsStep0": "Cài đặt > Mạng & Internet",
     "windowsStep1": "Thuộc tính > Máy chủ DNS > Chỉnh sửa > Thủ công.",
     "windowsStep2": "Chọn và nhập DNS IP:",
@@ -291,7 +293,8 @@
     "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
     "h3Desc": "Các trình duyệt hiện đại (Chrome/Firefox/Safari) tự động thương lượng mã hóa HTTP/3 và ECH thông qua bản ghi Alt-Svc và RFC 9460 HTTPS:",
     "ddrHint": "Tích hợp RFC 9460 Phần 8 DDR (Discovery of Designated Resolvers), cho phép máy khách tự động thương lượng và nâng cấp lên DoQ/DoT và ECH qua truy vấn _dns.",
-    "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey."
+    "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey.",
+    "detecting": "Đang phát hiện..."
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",
@@ -943,7 +946,26 @@
     "stepDeployDashDesc": "If bạn đã hoàn tất mọi cấu hình qua Bảng điều khiển Cloudflare, hãy truy cập tab Triển khai của Worker và nhấp vào nút 'Triển khai' hoặc 'Triển khai lại'.",
     "jwtGeneratorTitle": "Bộ tạo JWT_SECRET An toàn",
     "jwtGeneratorDesc": "Sử dụng bộ tạo khóa an toàn mật mã này để tạo mã bí mật chữ số ngẫu nhiên gồm 64 ký tự cho env.JWT_SECRET.",
-    "regenerate": "Tạo lại"
+    "regenerate": "Tạo lại",
+    "serverfullTitle": "Hướng dẫn triển khai & khởi tạo DNS Worker Serverfull",
+    "serverfullSubtitle": "Phiên bản của bạn đang chạy ở chế độ Serverfull (Độc lập). Thực hiện theo các bước sau để khởi tạo cơ sở dữ liệu và cấu hình môi trường.",
+    "serverfullDbStatus": "Cơ sở dữ liệu SQLite (Thư mục dữ liệu cục bộ)",
+    "serverfullDbConfigured": "Đã sẵn sàng & Khởi tạo",
+    "serverfullDbMissing": "Thiếu tệp cơ sở dữ liệu",
+    "serverfullDbMissingHint": "Cơ sở dữ liệu thường được tự động khởi tạo khi cài đặt. Nếu bị thiếu, vui lòng cài đặt lại hoặc khởi động lại dịch vụ.",
+    "serverfullJwtStatus": "Khóa bí mật JWT (Cấu hình .env)",
+    "serverfullJwtConfigured": "Đã cấu hình",
+    "serverfullJwtMissing": "Chưa cấu hình",
+    "serverfullJwtMissingHint": "JWT_SECRET có thể được chỉnh sửa trong .env (hoặc /etc/dns-worker/.env). Dán khóa bí mật được tạo bên dưới và khởi động lại dịch vụ.",
+    "serverfullStepInstallTitle": "1. Kiểm tra hoặc cài đặt lại (Khởi tạo cơ sở dữ liệu)",
+    "serverfullStepInstallDesc": "Nếu thiếu cơ sở dữ liệu SQLite, hãy cài đặt lại toàn cục để tự động khởi tạo:",
+    "serverfullStepInstallCmd": "sudo npm install -g dns-worker@latest",
+    "serverfullStepEnvTitle": "2. Cấu hình JWT_SECRET trong .env",
+    "serverfullStepEnvDesc": "Chỉnh sửa /etc/dns-worker/.env và điền khóa bí mật được tạo bên dưới:",
+    "serverfullStepEnvCmd": "sudo nano /etc/dns-worker/.env\n# Đặt JWT_SECRET=<khóa_được_tạo_bên_dưới>",
+    "serverfullStepServiceTitle": "3. Khởi động lại và kiểm tra dịch vụ",
+    "serverfullStepServiceDesc": "Khởi động lại dịch vụ sau khi lưu cấu hình và kiểm tra trạng thái hoạt động:",
+    "serverfullStepServiceCmd": "sudo dns-worker service restart\nsudo dns-worker status"
   },
   "meta": {
     "defaultDesc": "Phân giải DNS an toàn, nhanh chóng và có thể tùy chỉnh cho tất cả các thiết bị của bạn. Dựa trên Cloudflare Workers, mã nguồn mở và tập trung vào quyền riêng tư.",

@@ -45,7 +45,9 @@
     "delete": "Supprimer",
     "rename": "Renommer",
     "disable": "Désactiver",
-    "confirmDisable": "Confirmer la désactivation"
+    "confirmDisable": "Confirmer la désactivation",
+    "modeServerfull": "Mode Serverfull",
+    "modeCloudflare": "Mode Cloudflare Worker"
   },
   "nav": {
     "setup": "Installation",
@@ -249,7 +251,7 @@
     "downloadConfig": "Télécharger le profil de configuration",
     "appleInstallHint": "Après le téléchargement, accédez à Paramètres > Profil téléchargé pour l'installer",
     "windows": "MS Windows",
-    "windowsTitle": "Configuration Windows 11 [Région : {{region}}]",
+    "windowsTitle": "Configuration Windows 11",
     "windowsStep0": "Paramètres > Réseau et Internet",
     "windowsStep1": "Propriétés > Attribution du serveur DNS > Modifier > Manuel.",
     "windowsStep2": "Sélectionnez et saisissez les IP DNS :",
@@ -291,7 +293,8 @@
     "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
     "h3Desc": "Les navigateurs modernes (Chrome/Firefox/Safari) négocient automatiquement HTTP/3 et le chiffrement ECH via les enregistrements Alt-Svc et HTTPS RFC 9460 :",
     "ddrHint": "Intégré avec la section 8 de la RFC 9460 DDR (Discovery of Designated Resolvers), permettant aux clients de négocier et de passer automatiquement à DoQ/DoT et ECH via des requêtes _dns.",
-    "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey."
+    "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey.",
+    "detecting": "Détection en cours..."
   },
   "rules": {
     "title": "Règles personnalisées",
@@ -943,7 +946,26 @@
     "stepDeployDashDesc": "Si vous avez effectué toutes les configurations via le Tableau de Bord Cloudflare, accédez à l'onglet Déploiements de votre Worker et cliquez sur 'Déployer' ou 'Redéployer'.",
     "jwtGeneratorTitle": "Générateur Sécurisé de JWT_SECRET",
     "jwtGeneratorDesc": "Utilisez ce générateur de clé cryptographiquement sécurisé pour générer un secret alphanumérique aléatoire de 64 caractères pour votre env.JWT_SECRET.",
-    "regenerate": "Régénérer"
+    "regenerate": "Régénérer",
+    "serverfullTitle": "Guide de déploiement et configuration DNS Worker Serverfull",
+    "serverfullSubtitle": "Votre instance s'exécute en mode Serverfull (autonome). Suivez ces étapes pour initialiser la base de données et configurer les paramètres.",
+    "serverfullDbStatus": "Base de données SQLite (Répertoire de données local)",
+    "serverfullDbConfigured": "Prêt et initialisé",
+    "serverfullDbMissing": "Fichier de base de données manquant",
+    "serverfullDbMissingHint": "La base de données est normalement initialisée lors de l'installation. Si elle est manquante, réinstallez ou redémarrez le service pour déclencher l'initialisation.",
+    "serverfullJwtStatus": "Clé secrète JWT (Configuration .env)",
+    "serverfullJwtConfigured": "Configuré",
+    "serverfullJwtMissing": "Non configuré",
+    "serverfullJwtMissingHint": "JWT_SECRET peut être modifié dans .env (ou /etc/dns-worker/.env). Collez la clé générée ci-dessous et redémarrez le service.",
+    "serverfullStepInstallTitle": "1. Vérifier ou réinstaller (Initialiser la base de données)",
+    "serverfullStepInstallDesc": "Si la base de données SQLite est manquante, réinstallez globalement :",
+    "serverfullStepInstallCmd": "sudo npm install -g dns-worker@latest",
+    "serverfullStepEnvTitle": "2. Configurer JWT_SECRET dans .env",
+    "serverfullStepEnvDesc": "Modifiez /etc/dns-worker/.env et insérez la clé générée ci-dessous :",
+    "serverfullStepEnvCmd": "sudo nano /etc/dns-worker/.env\n# Définir JWT_SECRET=<clé_générée_ci-dessous>",
+    "serverfullStepServiceTitle": "3. Redémarrer et vérifier le service",
+    "serverfullStepServiceDesc": "Redémarrez le service après modification et vérifiez le statut :",
+    "serverfullStepServiceCmd": "sudo dns-worker service restart\nsudo dns-worker status"
   },
   "meta": {
     "defaultDesc": "Résolution DNS sécurisée, rapide et personnalisable pour tous vos appareils. Basé sur Cloudflare Workers, open source et axé sur la confidentialité.",

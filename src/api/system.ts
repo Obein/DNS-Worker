@@ -27,6 +27,14 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     const asn = cf?.asn ? Number(cf.asn) : (request.headers.get("CF-ASN") ? Number(request.headers.get("CF-ASN")) : 0);
     const asOrganization = cf?.asOrganization || request.headers.get("CF-AS-Org") || "UNKNOWN";
 
+    const isServerfull = Boolean(
+      env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+      env.SERVERFULL_HOST !== undefined ||
+      env.SERVERFULL_DOT_DOMAIN !== undefined ||
+      env.SERVERFULL_HTTP_PORT !== undefined ||
+      env.SERVERFULL_HTTPS_PORT !== undefined
+    );
+
     return new Response(JSON.stringify({
       ip: clientIp,
       country,
@@ -37,7 +45,9 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
       asOrganization,
       connectedProfileId: connectedProfileId || null,
       substituteDomain: env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN,
-      dotDomain: env.SERVERFULL_DOT_DOMAIN || env.DOT_DOMAIN || null
+      dotDomain: env.SERVERFULL_DOT_DOMAIN || env.DOT_DOMAIN || null,
+      isServerfull,
+      mode: isServerfull ? 'serverfull' : 'cloudflare'
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
@@ -171,6 +181,106 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
       });
     } catch (e) {
       return new Response("Error fetching icon", { status: 500 });
+    }
+  }
+
+  if (url.pathname === '/api/geoip') {
+    const targetIp = url.searchParams.get('ip') || request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+    if (
+      targetIp === '127.0.0.1' ||
+      targetIp === 'localhost' ||
+      targetIp === '::1' ||
+      targetIp.startsWith('192.168.') ||
+      targetIp.startsWith('10.') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(targetIp)
+    ) {
+      return new Response(JSON.stringify({
+        success: true,
+        ip: targetIp,
+        city: 'Local',
+        country: 'Private Network',
+        flag: { emoji: '🏠' }
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    try {
+      const geoRes = await fetch(`https://ipwho.is/${encodeURIComponent(targetIp)}`, {
+        signal: AbortSignal.timeout(3000)
+      });
+      if (geoRes.ok) {
+        const data = await geoRes.json();
+        return new Response(JSON.stringify(data), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    } catch (e) {
+      console.warn(`[System API] Failed resolving geoip for ${targetIp}:`, e);
+    }
+    return new Response(JSON.stringify({ success: false, ip: targetIp }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  if (url.pathname === '/api/resolve') {
+    const domain = url.searchParams.get('name') || url.searchParams.get('domain');
+    if (!domain) {
+      return new Response(JSON.stringify({ error: "Missing domain parameter" }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Direct IPv4 check
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(domain)) {
+      return new Response(JSON.stringify({ ipv4: [domain], ipv6: [] }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Direct IPv6 check
+    if (/^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$/.test(domain)) {
+      return new Response(JSON.stringify({ ipv4: [], ipv6: [domain] }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const resolveDoH = async (type: 'A' | 'AAAA'): Promise<string[]> => {
+      const servers = ['https://cloudflare-dns.com/dns-query', 'https://1.1.1.1/dns-query'];
+      for (const s of servers) {
+        try {
+          const res = await fetch(`${s}?name=${encodeURIComponent(domain)}&type=${type}`, {
+            headers: { Accept: 'application/dns-json' },
+            signal: AbortSignal.timeout(3000)
+          });
+          if (res.ok) {
+            const data = await res.json() as any;
+            if (Array.isArray(data?.Answer) && data.Answer.length > 0) {
+              const typeNum = type === 'A' ? 1 : 28;
+              return data.Answer
+                .filter((ans: any) => ans.type === typeNum && typeof ans.data === 'string')
+                .map((ans: any) => ans.data as string);
+            }
+          }
+        } catch {
+          // Continue to next server
+        }
+      }
+      return [];
+    };
+
+    try {
+      const [ipv4, ipv6] = await Promise.all([
+        resolveDoH('A'),
+        resolveDoH('AAAA')
+      ]);
+      return new Response(JSON.stringify({ ipv4, ipv6 }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ ipv4: [], ipv6: [], error: String(e) }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
   }
 

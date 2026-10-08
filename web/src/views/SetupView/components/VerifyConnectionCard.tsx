@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { Section, SectionCard, Button, Spinner, Intent, PopoverNext } from "@blueprintjs/core";
+import React from "react";
+import { Section, SectionCard, Button, Spinner, Intent } from "@blueprintjs/core";
 import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import type {  ClientInfo  } from "../types";
+import type { ClientInfo } from "../types";
 
 export interface VerifyConnectionCardProps {
   isVerifying: boolean;
@@ -15,7 +15,8 @@ export interface VerifyConnectionCardProps {
   setShowIp: (show: boolean) => void;
   showLocation: boolean;
   setShowLocation: (show: boolean) => void;
-  traceInfo: { colo: string; raw: string } | null;
+  traceInfo?: { colo: string; raw: string } | null;
+  edgeLocation?: string | null;
 }
 
 export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
@@ -29,9 +30,9 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
   showLocation,
   setShowLocation,
   traceInfo,
+  edgeLocation,
 }) => {
   const { t } = useTranslation();
-  const [isTracePopoverOpen, setIsTracePopoverOpen] = useState(false);
 
   return (
     <Section title={t("setup.verifyConnection")} icon={<Activity size={16} />}>
@@ -71,7 +72,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
           </div>
 
           {clientInfo && (
-            <div className={`grid grid-cols-1 gap-4 ${traceInfo ? "sm:grid-cols-2 md:grid-cols-3" : "md:grid-cols-2"}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3">
                 <Globe size={18} className="text-blue-500 mt-1" />
                 <div className="flex-1 min-w-0">
@@ -104,32 +105,15 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                   </div>
                 </div>
               </div>
-              {traceInfo && (
-                <PopoverNext
-                  isOpen={isTracePopoverOpen}
-                  onInteraction={(nextOpenState) => setIsTracePopoverOpen(nextOpenState)}
-                  placement="bottom"
-                  content={
-                    <div className="p-4 max-w-sm max-h-60 overflow-auto font-mono text-xs bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-lg rounded-lg">
-                      <div className="font-bold border-b border-gray-100 dark:border-gray-800 pb-2 mb-2">/cdn-cgi/trace</div>
-                      <pre className="whitespace-pre-wrap">{traceInfo.raw}</pre>
-                    </div>
-                  }
-                >
-                  <div 
-                    className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 cursor-pointer select-none"
-                    onDoubleClick={() => setIsTracePopoverOpen(true)}
-                  >
-                    <Server size={18} className="text-purple-500 mt-1" />
-                    <div className="min-w-0">
-                      <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.edgeServer")}</div>
-                      <div className="font-bold truncate">
-                        {traceInfo.colo}
-                      </div>
-                    </div>
+              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none">
+                <Server size={18} className="text-purple-500 mt-1" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.edgeServer")}</div>
+                  <div className="font-bold truncate" title={edgeLocation || traceInfo?.colo || ""}>
+                    {edgeLocation || traceInfo?.colo || t("setup.detecting")}
                   </div>
-                </PopoverNext>
-              )}
+                </div>
+              </div>
             </div>
           )}
         </div>

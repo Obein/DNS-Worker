@@ -45,7 +45,9 @@
     "delete": "刪除",
     "rename": "重新命名",
     "disable": "停用",
-    "confirmDisable": "確認停用"
+    "confirmDisable": "確認停用",
+    "modeServerfull": "Serverfull 模式",
+    "modeCloudflare": "Cloudflare Worker 模式"
   },
   "nav": {
     "setup": "安裝",
@@ -249,7 +251,7 @@
     "downloadConfig": "下載設定描述檔",
     "appleInstallHint": "下載後請前往「設定」>「已下載的設定描述檔」進行安裝",
     "windows": "MS Windows",
-    "windowsTitle": "Windows 11 配置 [地區: {{region}}]",
+    "windowsTitle": "Windows 11 設定",
     "windowsStep0": "設定 > 網路與網際網路",
     "windowsStep1": "屬性 > DNS 伺服器 > 編輯 > 手動。",
     "windowsStep2": "選擇並填入 DNS IP：",
@@ -291,7 +293,8 @@
     "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
     "h3Desc": "支援現代瀏覽器 (Chrome/Firefox/Safari) 透過 Alt-Svc 及 RFC 9460 HTTPS 記錄自動協商 HTTP/3 和 ECH 加密：",
     "ddrHint": "服務已整合 RFC 9460 Section 8 DDR (Discovery of Designated Resolvers)，支援用戶端透過 _dns 網域查詢自動協商並升級至 DoQ / DoT 與 ECH。",
-    "e2eeDesc": "使用專屬後量子混合金鑰 (P256-MLKEM768) 在邊緣即刻加密 DNS 日誌。雲端無法窺視，資料僅在通過您的硬體 Passkey 授權的客戶端本地解密並分析。"
+    "e2eeDesc": "使用專屬後量子混合金鑰 (P256-MLKEM768) 在邊緣即刻加密 DNS 日誌。雲端無法窺視，資料僅在通過您的硬體 Passkey 授權的客戶端本地解密並分析。",
+    "detecting": "正在檢測..."
   },
   "rules": {
     "title": "自訂規則",
@@ -943,7 +946,26 @@
     "stepDeployDashDesc": "如果您已透過 Cloudflare 網頁控制台完成了所有綁定配置，請進入您的 Worker 控制面板的 Deployments (部署) 索引標籤下，點擊“部署”按鈕進行發布上線。",
     "jwtGeneratorTitle": "安全 JWT_SECRET 產生器",
     "jwtGeneratorDesc": "使用此加密安全的隨機數產生器產生 64 位元字元的隨機字母數字組合，用於 env.JWT_SECRET。",
-    "regenerate": "重新產生"
+    "regenerate": "重新產生",
+    "serverfullTitle": "DNS Worker Serverfull 部署與初始化指南",
+    "serverfullSubtitle": "系統檢測到目前運行於 Serverfull (獨立服務) 模式。請依照以下步驟完成設定與狀態初始化。",
+    "serverfullDbStatus": "SQLite 資料庫 (本機資料目錄)",
+    "serverfullDbConfigured": "已初始化就緒",
+    "serverfullDbMissing": "資料庫檔案缺失",
+    "serverfullDbMissingHint": "資料庫通常在安裝後即自動初始化。若檢測到資料庫缺失，請重新執行安裝或重啟服務以觸發自動初始化。",
+    "serverfullJwtStatus": "JWT 金鑰 (設定檔)",
+    "serverfullJwtConfigured": "已設定",
+    "serverfullJwtMissing": "未設定",
+    "serverfullJwtMissingHint": "JWT_SECRET 可在設定檔 (.env 或 /etc/dns-worker/.env) 中進行修改。請將產生的安全金鑰填入後重啟服務生效。",
+    "serverfullStepInstallTitle": "1. 檢查或重新安裝（初始化資料庫）",
+    "serverfullStepInstallDesc": "若 SQLite 資料庫缺失，可執行全域重新安裝命令以自動建立資料目錄並完成資料庫初始化：",
+    "serverfullStepInstallCmd": "sudo npm install -g dns-worker@latest",
+    "serverfullStepEnvTitle": "2. 在 .env 中設定 JWT_SECRET",
+    "serverfullStepEnvDesc": "編輯服務設定檔 /etc/dns-worker/.env，填入下方產生的 JWT_SECRET 金鑰：",
+    "serverfullStepEnvCmd": "sudo nano /etc/dns-worker/.env\n# 設定 JWT_SECRET=<下方產生的金鑰>",
+    "serverfullStepServiceTitle": "3. 重啟並驗證系統服務",
+    "serverfullStepServiceDesc": "修改設定後重啟後台服務，並檢查運行狀態：",
+    "serverfullStepServiceCmd": "sudo dns-worker service restart\nsudo dns-worker status"
   },
   "meta": {
     "defaultDesc": "為您的所有裝置提供安全、快速且可自訂的 DNS 解析。基於 Cloudflare Workers 構建，開源且注重隱私。",

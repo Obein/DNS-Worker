@@ -1,42 +1,26 @@
 import React from "react";
-import { H3, ButtonGroup, Button } from "@blueprintjs/core";
-import { Navigation } from "lucide-react";
+import { H3 } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import type {  RegionConfigItem  } from "../../../config/regions";
+import { DeploymentModeBadge } from "../../../components/DeploymentMode";
 
 export interface SetupHeaderProps {
-  isMobile: boolean;
-  selectedRegion: string;
-  setSelectedRegion: (region: string) => void;
-  allRegions: Record<string, RegionConfigItem>;
+  isMobile?: boolean;
 }
 
-export const SetupHeader: React.FC<SetupHeaderProps> = ({ isMobile, selectedRegion, setSelectedRegion, allRegions }) => {
+export const SetupHeader: React.FC<SetupHeaderProps> = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
-        <H3 className="font-bold text-gray-900 dark:text-white">{t("setup.title")}</H3>
-        <p className="bp6-text-muted">{t("setup.subtitle")}</p>
+        <H3 className="font-bold text-gray-900 dark:text-white m-0">{t("setup.title")}</H3>
+        <p className="bp6-text-muted m-0 mt-1">{t("setup.subtitle")}</p>
       </div>
 
-      <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-        <span className="text-[10px] font-bold uppercase opacity-50 flex items-center gap-1">
-          <Navigation size={10} /> {t("setup.regionOptimization")}
-        </span>
-        <ButtonGroup minimal fill={isMobile}>
-          {Object.keys(allRegions).map((key) => (
-            <Button
-              key={key}
-              active={selectedRegion === key}
-              onClick={() => setSelectedRegion(key)}
-              text={isMobile ? key.split("_")[0] : key.replace("_", " ")}
-              small
-            />
-          ))}
-        </ButtonGroup>
+      <div className="flex items-center">
+        <DeploymentModeBadge />
       </div>
     </div>
   );
 };
+

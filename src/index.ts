@@ -191,13 +191,22 @@ export default {
             isDbMissing = true;
           }
           const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
+          const isServerfull = Boolean(
+            env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+            env.SERVERFULL_HOST !== undefined ||
+            env.SERVERFULL_DOT_DOMAIN !== undefined ||
+            env.SERVERFULL_HTTP_PORT !== undefined ||
+            env.SERVERFULL_HTTPS_PORT !== undefined
+          );
 
           let configStr = "{}";
           try {
              configStr = JSON.stringify({
                nonce,
                isDbMissing,
-               isJwtSecretMissing
+               isJwtSecretMissing,
+               isServerfull,
+               mode: isServerfull ? 'serverfull' : 'cloudflare'
              });
           } catch (e) { }
           

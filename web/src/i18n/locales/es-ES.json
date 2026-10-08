@@ -45,7 +45,9 @@
     "delete": "Eliminar",
     "rename": "Renombrar",
     "disable": "Desactivar",
-    "confirmDisable": "Confirmar desactivación"
+    "confirmDisable": "Confirmar desactivación",
+    "modeServerfull": "Modo Serverfull",
+    "modeCloudflare": "Modo Cloudflare Worker"
   },
   "nav": {
     "setup": "Instalación",
@@ -249,7 +251,7 @@
     "downloadConfig": "Descargar perfil de configuración",
     "appleInstallHint": "Después de la descarga, ve a Ajustes > Perfil descargado para realizar la instalación",
     "windows": "MS Windows",
-    "windowsTitle": "Configuración de Windows 11 [Región: {{region}}]",
+    "windowsTitle": "Configuración de Windows 11",
     "windowsStep0": "Configuración > Red e Internet",
     "windowsStep1": "Propiedades > Asignación de servidor DNS > Editar > Manual.",
     "windowsStep2": "Selecciona e introduce las IP de DNS:",
@@ -291,7 +293,8 @@
     "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
     "h3Desc": "Los navegadores modernos (Chrome/Firefox/Safari) negocian automáticamente HTTP/3 y cifrado ECH a través de registros Alt-Svc y HTTPS RFC 9460:",
     "ddrHint": "Integrado con RFC 9460 Sección 8 DDR (Discovery of Designated Resolvers), lo que permite a los clientes negociar y actualizar automáticamente a DoQ/DoT y ECH mediante consultas _dns.",
-    "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey."
+    "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey.",
+    "detecting": "Detectando..."
   },
   "rules": {
     "title": "Reglas personalizadas",
@@ -943,7 +946,26 @@
     "stepDeployDashDesc": "Si completó todas las configuraciones a través del Panel de Cloudflare, vaya a la pestaña de Despliegues de su Worker y haga clic en 'Desplegar' o 'Volver a desplegar'.",
     "jwtGeneratorTitle": "Generador Seguro de JWT_SECRET",
     "jwtGeneratorDesc": "Use este generador de claves criptográficamente seguro para generar un secreto alfanumérico aleatorio de 64 caracteres para su env.JWT_SECRET.",
-    "regenerate": "Regenerar"
+    "regenerate": "Regenerar",
+    "serverfullTitle": "Guía de despliegue y configuración de DNS Worker Serverfull",
+    "serverfullSubtitle": "Su instancia se ejecuta en modo Serverfull (independiente). Siga estos pasos para inicializar la base de datos y configurar las variables.",
+    "serverfullDbStatus": "Base de datos SQLite (Directorio de datos local)",
+    "serverfullDbConfigured": "Listo e inicializado",
+    "serverfullDbMissing": "Archivo de base de datos faltante",
+    "serverfullDbMissingHint": "La base de datos normalmente se inicializa en la instalación. Si falta, reinstale el paquete o reinicie el servicio para inicializarlo.",
+    "serverfullJwtStatus": "Secreto JWT (Configuración .env)",
+    "serverfullJwtConfigured": "Configurado",
+    "serverfullJwtMissing": "No configurado",
+    "serverfullJwtMissingHint": "JWT_SECRET se puede modificar en .env (o /etc/dns-worker/.env). Pegue el secreto generado a continuación y reinicie el servicio.",
+    "serverfullStepInstallTitle": "1. Verificar o reinstalar (Inicializar base de datos)",
+    "serverfullStepInstallDesc": "Si falta la base de datos SQLite, reinstale globalmente para crear el directorio e inicializar el esquema:",
+    "serverfullStepInstallCmd": "sudo npm install -g dns-worker@latest",
+    "serverfullStepEnvTitle": "2. Configurar JWT_SECRET en .env",
+    "serverfullStepEnvDesc": "Edite /etc/dns-worker/.env e inserte el secreto generado abajo:",
+    "serverfullStepEnvCmd": "sudo nano /etc/dns-worker/.env\n# Configure JWT_SECRET=<secreto_generado_abajo>",
+    "serverfullStepServiceTitle": "3. Reiniciar y verificar el servicio",
+    "serverfullStepServiceDesc": "Reinicie el servicio del sistema tras guardar la configuración y verifique su estado:",
+    "serverfullStepServiceCmd": "sudo dns-worker service restart\nsudo dns-worker status"
   },
   "meta": {
     "defaultDesc": "Resolución DNS segura, rápida y personalizable para todos sus dispositivos. Basado en Cloudflare Workers, de código abierto y enfocado en la privacidad.",

@@ -3,7 +3,6 @@ import { Tabs, Tab, H5, Button, Icon, Intent, Tag, Callout } from "@blueprintjs/
 import { Globe, AppWindowMac, Monitor, Terminal, Smartphone, Router, ExternalLink, Zap } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import type {  RegionConfigItem  } from "../../../config/regions";
 import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
 import { StepStampWatermark } from "./StepStampWatermark";
 
@@ -13,8 +12,6 @@ export interface SetupTabsProps {
   profileKey: string;
   profileName?: string;
   accessPointName?: string;
-  allRegions: Record<string, RegionConfigItem>;
-  selectedRegion: string;
   currentIps: { ip: string; area: string | null }[];
   dotDomain?: string;
 }
@@ -25,8 +22,6 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   profileKey,
   profileName,
   accessPointName,
-  allRegions,
-  selectedRegion,
   currentIps,
   dotDomain,
 }) => {
@@ -129,9 +124,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
         panel={
           <div className="space-y-4 md:ml-4 mt-4 md:mt-0">
             <H5 className="font-bold">
-              {t("setup.windowsTitle", {
-                region: allRegions[selectedRegion]?.label || t("setup.otherRegion"),
-              })}
+              {t("setup.windowsTitle")}
             </H5>
             <ol className="list-decimal list-inside space-y-4 text-sm leading-relaxed">
               <li>

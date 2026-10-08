@@ -45,7 +45,9 @@
     "delete": "Delete",
     "rename": "Rename",
     "disable": "Disable",
-    "confirmDisable": "Confirm Disable"
+    "confirmDisable": "Confirm Disable",
+    "modeServerfull": "Serverfull Mode",
+    "modeCloudflare": "Cloudflare Worker Mode"
   },
   "nav": {
     "setup": "Setup",
@@ -249,7 +251,7 @@
     "downloadConfig": "Download Profile",
     "appleInstallHint": "After downloading, go to 'Settings' > 'Profile Downloaded' to install.",
     "windows": "MS Windows",
-    "windowsTitle": "Windows 11 Config [Region: {{region}}]",
+    "windowsTitle": "Windows 11 Configuration",
     "windowsStep0": "Settings > Network & internet",
     "windowsStep1": "Properties > DNS server assignment > Edit > Manual.",
     "windowsStep2": "Fill in DNS IPs:",
@@ -291,7 +293,8 @@
     "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
     "h3Desc": "Modern browsers (Chrome/Firefox/Safari) automatically negotiate HTTP/3 and ECH encryption via Alt-Svc and RFC 9460 HTTPS records:",
     "ddrHint": "Integrated with RFC 9460 Section 8 DDR (Discovery of Designated Resolvers), enabling clients to automatically negotiate and upgrade to DoQ/DoT and ECH via _dns queries.",
-    "e2eeDesc": "Encrypts DNS logs at the edge with your unique post-quantum hybrid key (P256-MLKEM768). The cloud cannot inspect logs; data is decrypted and analyzed only on devices authorized by your hardware Passkey."
+    "e2eeDesc": "Encrypts DNS logs at the edge with your unique post-quantum hybrid key (P256-MLKEM768). The cloud cannot inspect logs; data is decrypted and analyzed only on devices authorized by your hardware Passkey.",
+    "detecting": "Detecting..."
   },
   "rules": {
     "title": "Custom Rules",
@@ -943,7 +946,26 @@
     "stepDeployDashDesc": "If you completed all configurations via the Cloudflare Dashboard, go to your Worker's Deployments tab, click 'Deploy' or 'Re-deploy' to publish the latest configurations.",
     "jwtGeneratorTitle": "Secure JWT_SECRET Generator",
     "jwtGeneratorDesc": "Use this cryptographically secure key generator to generate a random 64-character alphanumeric secret for your env.JWT_SECRET.",
-    "regenerate": "Regenerate"
+    "regenerate": "Regenerate",
+    "serverfullTitle": "DNS Worker Serverfull Setup & Deployment Guide",
+    "serverfullSubtitle": "Your instance is running in Serverfull (Standalone) mode. Follow the steps below to initialize database and configure environment parameters.",
+    "serverfullDbStatus": "SQLite Database (Persistent Data Dir)",
+    "serverfullDbConfigured": "Ready & Initialized",
+    "serverfullDbMissing": "Database File Missing",
+    "serverfullDbMissingHint": "The database is normally initialized upon installation. If it is missing, please reinstall or restart the service to trigger auto-initialization.",
+    "serverfullJwtStatus": "JWT Secret (.env Config)",
+    "serverfullJwtConfigured": "Configured",
+    "serverfullJwtMissing": "Not Configured",
+    "serverfullJwtMissingHint": "JWT_SECRET can be modified in .env (or /etc/dns-worker/.env). Paste the generated secret below and restart the service.",
+    "serverfullStepInstallTitle": "1. Check or Reinstall (Initialize Database)",
+    "serverfullStepInstallDesc": "If the SQLite database is missing, reinstall globally to automatically create the data directory and initialize schema:",
+    "serverfullStepInstallCmd": "sudo npm install -g dns-worker@latest",
+    "serverfullStepEnvTitle": "2. Configure JWT_SECRET in .env",
+    "serverfullStepEnvDesc": "Edit /etc/dns-worker/.env and insert the JWT_SECRET generated below:",
+    "serverfullStepEnvCmd": "sudo nano /etc/dns-worker/.env\n# Set JWT_SECRET=<generated_secret_below>",
+    "serverfullStepServiceTitle": "3. Restart & Verify Service",
+    "serverfullStepServiceDesc": "Restart the system daemon after modifying configuration and check service status:",
+    "serverfullStepServiceCmd": "sudo dns-worker service restart\nsudo dns-worker status"
   },
   "meta": {
     "defaultDesc": "Secure, fast, and customizable DNS resolution for all your devices. Based on Cloudflare Workers. Open-source and privacy-focused.",
