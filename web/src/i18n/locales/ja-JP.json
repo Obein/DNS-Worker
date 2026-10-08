@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "アクセスポイント",
     "currentAccessPoint": "現在のアクセスポイント",
     "selectAccessPointToConfigure": "設定するアクセスポイントを選択",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "RFC 9250 (DNS over QUIC) および RFC 9460 (HTTP/3 & Encrypted Client Hello) をネイティブサポートし、0-RTT の高速ハンドシェイクと SNI 盗聴防止を提供します。",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "AdGuard、Clash Meta (Mihomo)、Sing-box などの最新クライアントに対応：",
+    "doqWildcardHint": "(ワイルドカード証明書、このプロファイルにルーティング)",
+    "doqSingleDomainHint": "(単一ドメイン証明書、デフォルトプロファイルにルーティング)",
+    "doqIpNotice": "DoQ には TLS 証明書と有効なドメイン名が必要です。.env に SERVERFULL_DOT_DOMAIN を設定して再読み込みしてください。",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "最新のブラウザ (Chrome/Firefox/Safari) は、Alt-Svc および RFC 9460 HTTPS レコードを介して HTTP/3 と ECH 暗号化を自動ネゴシエーションします：",
+    "ddrHint": "RFC 9460 Section 8 DDR (Discovery of Designated Resolvers) を統合済み。クライアントは _dns クエリを通じて自動的に DoQ / DoT および ECH にアップグレード可能です。",
     "e2eeDesc": "独自のエッジ耐量子ハイブリッド鍵 (P256-MLKEM768) で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。"
   },
   "rules": {

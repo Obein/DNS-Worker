@@ -31,6 +31,9 @@ export interface ServerfullCliArgs {
   'default-profile'?: string;
   'disable-udp'?: boolean;
   'disable-dot'?: boolean;
+  'ech-enabled'?: boolean;
+  'ech-config'?: string;
+  'ech-fronting-domain'?: string;
   status?: boolean;
   version?: boolean;
   help?: boolean;
@@ -50,6 +53,9 @@ export interface ServerfullConfig {
   disableUdp: boolean;
   disableDot: boolean;
   disableHttps: boolean;
+  echEnabled: boolean;
+  echConfig: string;
+  echFrontingDomain: string;
   packageRoot: string;
 }
 
@@ -384,6 +390,11 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   const disableUdp = Boolean(cliArgs?.['disable-udp'] || process.env.SERVERFULL_DISABLE_UDP === 'true');
   const disableDot = Boolean(cliArgs?.['disable-dot'] || process.env.SERVERFULL_DISABLE_DOT === 'true');
   const disableHttps = Boolean(cliArgs?.['disable-https'] || process.env.SERVERFULL_DISABLE_HTTPS === 'true');
+  const echEnabled = cliArgs?.['ech-enabled'] !== undefined
+    ? Boolean(cliArgs['ech-enabled'])
+    : (process.env.SERVERFULL_ECH_ENABLED === undefined || process.env.SERVERFULL_ECH_ENABLED === 'true' || process.env.SERVERFULL_ECH_ENABLED === '1');
+  const echConfig = (cliArgs?.['ech-config'] || process.env.SERVERFULL_ECH_CONFIG || '').trim();
+  const echFrontingDomain = (cliArgs?.['ech-fronting-domain'] || process.env.SERVERFULL_ECH_FRONTING_DOMAIN || 'cloudflare-ech.com').trim();
 
   const config: ServerfullConfig = {
     tlsKeyPath,
@@ -399,6 +410,9 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     disableUdp,
     disableDot,
     disableHttps,
+    echEnabled,
+    echConfig,
+    echFrontingDomain,
     packageRoot
   };
 
@@ -434,6 +448,12 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     SERVERFULL_DEFAULT_PROFILE_KEY: defaultProfileKey,
     SERVERFULL_DOT_DOMAIN: dotDomain,
     DOT_DOMAIN: dotDomain,
+    SERVERFULL_HTTPS_PORT: httpsPort,
+    SERVERFULL_DOT_PORT: dotPort,
+    SERVERFULL_HTTP_PORT: httpPort,
+    SERVERFULL_ECH_ENABLED: echEnabled ? 'true' : 'false',
+    SERVERFULL_ECH_CONFIG: echConfig,
+    SERVERFULL_ECH_FRONTING_DOMAIN: echFrontingDomain,
     ...process.env
   };
 

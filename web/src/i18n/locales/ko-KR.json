@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "액세스 포인트",
     "currentAccessPoint": "현재 액세스 포인트",
     "selectAccessPointToConfigure": "구성할 액세스 포인트 선택",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "RFC 9250 (DNS over QUIC) 및 RFC 9460 (HTTP/3 & Encrypted Client Hello)을 기본 지원하며, 0-RTT 초고속 핸드셰이크와 SNI 엿보기 방지 기능을 제공합니다.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "AdGuard, Clash Meta (Mihomo), Sing-box 등 최신 클라이언트와 호환됩니다:",
+    "doqWildcardHint": "(와일드카드 인증서, 이 프로필로 라우팅)",
+    "doqSingleDomainHint": "(단일 도메인 인증서, 기본 프로필로 라우팅)",
+    "doqIpNotice": "DoQ는 TLS 인증서와 유효한 도메인 이름이 필요합니다. .env에 SERVERFULL_DOT_DOMAIN을 설정한 후 새로고침하세요.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "최신 브라우저(Chrome/Firefox/Safari)는 Alt-Svc 및 RFC 9460 HTTPS 레코드를 통해 HTTP/3 및 ECH 암호화를 자동 협상합니다:",
+    "ddrHint": "RFC 9460 섹션 8 DDR (Discovery of Designated Resolvers)이 통합되어 있어 클라이언트가 _dns 쿼리를 통해 DoQ/DoT 및 ECH로 자동 협상 및 업그레이드할 수 있습니다.",
     "e2eeDesc": "전용 양자내성 하이브리드 키(P256-MLKEM768)를 사용하여 엣지에서 즉시 DNS 로그를 암호화합니다. 클라우드에서는 볼 수 없으며 하드웨어 Passkey로 인증된 브라우저에서만 복호화됩니다."
   },
   "rules": {

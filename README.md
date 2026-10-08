@@ -35,7 +35,9 @@
 -   ⚡ **Full-Stack Protocol Support**:
     -   **Classic UDP 53**: Standard RFC 1035 DNS for routers and LAN devices.
     -   **DoT 853 (DNS over TLS)**: RFC 7858 encrypted DNS with TLS SNI profile routing (`<profile_key>.dns.example.com`), natively compatible with Android Private DNS.
-    -   **DoH (DNS over HTTPS)**: RFC 8484 encrypted DNS over HTTP/2 and HTTP/3.
+    -   **DoH (DNS over HTTPS)**: RFC 8484 encrypted DNS over HTTP/2 and HTTP/3 (Alt-Svc).
+    -   **DoQ (DNS over QUIC)**: Compatible with RFC 9250 encrypted DNS with 0-RTT handshake; upstream & client support for `quic://` / `doq://` endpoints and DNS Stamp 0x04.
+    -   **ECH (Encrypted Client Hello)**: RFC 9460 HTTPS/SVCB and RFC 9460 Section 8 DDR (Discovery of Designated Resolvers) support, broadcasting outer SNI and ECHConfigList.
 -   🚀 **Ultra-fast Resolution**: Edge-accelerated caching and multi-tier memory pipelines for sub-millisecond query responses.
 -   🗒️ **Multi-Profile Management**: Create independent configurations with isolated endpoints, rules, and upstream settings.
 -   🛡️ **Granular Filtering**:
@@ -159,6 +161,9 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 | `SERVERFULL_TLS_KEY_PATH` | Absolute path to TLS private key file (PEM format, alias: `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | Absolute path to TLS certificate chain file (PEM format, alias: `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
 | `SERVERFULL_DOT_DOMAIN` | Base domain name for DoT & HTTPS service (wildcard & single-domain compatible, alias: `DOT_DOMAIN`) | `dns.example.com` |
+| `SERVERFULL_ECH_ENABLED` | Broadcast and enable ECH (Encrypted Client Hello) | `true` |
+| `SERVERFULL_ECH_CONFIG` | Custom Base64-encoded ECHConfigList (optional) | Auto-generated |
+| `SERVERFULL_ECH_FRONTING_DOMAIN` | ECH outer SNI fronting domain (public_name) | `cloudflare-ech.com` |
 | `SERVERFULL_UDP_PORT` | Classic UDP DNS listening port | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
 | `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `10080` |

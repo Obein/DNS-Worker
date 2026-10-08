@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "接入点",
     "currentAccessPoint": "当前接入点",
     "selectAccessPointToConfigure": "选择接入点以配置",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "原生支持 RFC 9250 (DNS over QUIC) 与 RFC 9460 (HTTP/3 & Encrypted Client Hello)，具备 0-RTT 极速握手与防 SNI 窥探能力。",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "适用于 AdGuard、Clash Meta (Mihomo)、Sing-box 等现代客户端：",
+    "doqWildcardHint": "(通配符证书，路由至此配置)",
+    "doqSingleDomainHint": "(单域名证书，路由至默认配置)",
+    "doqIpNotice": "DoQ 需要 TLS 证书与有效域名，请在配置中填入 SERVERFULL_DOT_DOMAIN 后刷新。",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "支持现代浏览器 (Chrome/Firefox/Safari) 通过 Alt-Svc 及 RFC 9460 HTTPS 记录自动协商 HTTP/3 和 ECH 加密：",
+    "ddrHint": "服务已集成 RFC 9460 Section 8 DDR (Discovery of Designated Resolvers)，支持客户端通过 _dns 域名查询自动协商并升级至 DoQ / DoT 与 ECH。",
     "e2eeDesc": "使用专属后量子混合密钥 (P256-MLKEM768) 在边缘即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。"
   },
   "rules": {

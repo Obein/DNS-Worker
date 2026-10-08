@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Access Points",
     "currentAccessPoint": "Current Access Point",
     "selectAccessPointToConfigure": "Select Access Point to Configure",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Native support for RFC 9250 (DNS over QUIC) and RFC 9460 (HTTP/3 & Encrypted Client Hello), featuring 0-RTT handshakes and anti-SNI inspection protection.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Compatible with modern clients such as AdGuard, Clash Meta (Mihomo), Sing-box, etc.:",
+    "doqWildcardHint": "(Wildcard certificate, routes to this profile)",
+    "doqSingleDomainHint": "(Single-domain certificate, routes to default profile)",
+    "doqIpNotice": "DoQ requires a TLS certificate and a valid domain name. Please set SERVERFULL_DOT_DOMAIN in .env and refresh.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Modern browsers (Chrome/Firefox/Safari) automatically negotiate HTTP/3 and ECH encryption via Alt-Svc and RFC 9460 HTTPS records:",
+    "ddrHint": "Integrated with RFC 9460 Section 8 DDR (Discovery of Designated Resolvers), enabling clients to automatically negotiate and upgrade to DoQ/DoT and ECH via _dns queries.",
     "e2eeDesc": "Encrypts DNS logs at the edge with your unique post-quantum hybrid key (P256-MLKEM768). The cloud cannot inspect logs; data is decrypted and analyzed only on devices authorized by your hardware Passkey."
   },
   "rules": {

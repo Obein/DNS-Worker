@@ -305,6 +305,18 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ? `${config.dotDomain} (Wildcard / Single-domain compatible)`
     : 'Not Configured (Auto SNI prefix matching)';
 
+  const http3Status = (!config.disableHttps && certInfo.configured && certInfo.filesExist)
+    ? `Enabled via Alt-Svc (UDP :${config.httpsPort}, RFC 9114)`
+    : 'Disabled (Requires active HTTPS with TLS certificate)';
+
+  const doqStatus = (certInfo.configured && certInfo.filesExist)
+    ? `Compatible (RFC 9250 / RFC 9460 DDR, UDP :${config.dotPort})`
+    : 'Disabled (Requires TLS certificate)';
+
+  const echStatus = config.echEnabled
+    ? `Enabled (RFC 9460, Outer SNI: ${config.echFrontingDomain || 'cloudflare-ech.com'})`
+    : 'Disabled';
+
   const envSection = formatKeyValueSection({
     title: '\nEnvironment & Security:',
     items: [
@@ -314,6 +326,9 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
       { label: 'TLS Certificate', value: tlsCertText },
       { label: 'JWT Secret', value: jwtStatus },
       { label: 'DoT Base Domain', value: dotDomainText },
+      { label: 'HTTP/3 (h3)', value: http3Status },
+      { label: 'DNS over QUIC (DoQ)', value: doqStatus },
+      { label: 'ECH (Encrypted Client Hello)', value: echStatus },
       { label: 'Default Profile Key', value: defaultProfileText }
     ]
   });
@@ -336,6 +351,8 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     tips.push('Current certificate is single-domain. To support per-profile DoT (<profile>.domain):');
     tips.push(`  ${certbotCmd}`);
   }
+
+  tips.push("Run 'dns-worker ech' to view active ECH configuration, outer SNI, and RFC 9460 DNS records.");
 
   const tipSection = tips.length > 0 ? formatTip(tips) : '';
 

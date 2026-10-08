@@ -36,7 +36,9 @@
 - ⚡ **全協定覆蓋**：
   - **經典 UDP 53**：標準 RFC 1035 UDP DNS，路由器與內網設備隨插即用。
   - **DoT 853 (DNS over TLS)**：標準 RFC 7858 加密 DNS，支援 SNI Profile 路由（如 `<profile_key>.dns.example.com`），完美契合 Android 原生私人 DNS。
-  - **DoH (DNS over HTTPS)**：標準 RFC 8484 加密 DNS，支援 HTTP/2 與 HTTP/3。
+  - **DoH (DNS over HTTPS)**：標準 RFC 8484 加密 DNS，支援 HTTP/2 與 HTTP/3 (Alt-Svc)。
+  - **DoQ (DNS over QUIC)**：相容 RFC 9250 加密 DNS，支援 0-RTT 極速交握並防隊頭阻塞；上游與客戶端支援 `quic://` / `doq://` 協定及 DNS Stamp 0x04。
+  - **ECH (Encrypted Client Hello)**：支援 RFC 9460 HTTPS/SVCB 紀錄與 RFC 9460 Section 8 DDR（Designated Resolvers 自動探索），廣播 outer SNI 與 ECHConfigList，徹底消除 SNI 明文洩漏。
 - 🚀 **極速解析**：記憶體與邊緣分層加速，奈秒/微秒級回應。
 - 🗒️ **多配置管理 (Profiles)**：支援建立多個獨立配置，每個配置擁有唯一的端點與規則集合。
 - 🛡️ **精細過濾**：
@@ -163,6 +165,9 @@ DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macO
 | `SERVERFULL_TLS_KEY_PATH` | TLS 私鑰檔案路徑 (PEM 格式，亦相容 `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
 | `SERVERFULL_TLS_CERT_PATH` | TLS 公鑰/憑證鏈檔案路徑 (PEM 格式，亦相容 `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
 | `SERVERFULL_DOT_DOMAIN` | DoT 與 HTTPS 對外基準網域名稱 (相容萬用字元與單網域名稱憑證，別名: `DOT_DOMAIN`) | `dns.example.com` |
+| `SERVERFULL_ECH_ENABLED` | 是否啟用並廣播 ECH (Encrypted Client Hello) | `true` |
+| `SERVERFULL_ECH_CONFIG` | 自訂 Base64 格式 ECHConfigList (選填) | 自動生成 |
+| `SERVERFULL_ECH_FRONTING_DOMAIN` | ECH 外層偽裝網域名稱 (outer SNI public_name) | `cloudflare-ech.com` |
 | `SERVERFULL_UDP_PORT` | 經典 UDP DNS 監聽連接埠 | `53` |
 | `SERVERFULL_DOT_PORT` | DoT (TLS) 監聽連接埠 | `853` |
 | `SERVERFULL_HTTP_PORT` | HTTP Web 面板與 DoH 監聽連接埠 | `10080` |

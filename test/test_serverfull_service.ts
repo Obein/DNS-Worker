@@ -50,6 +50,8 @@ import {
   getCertbotCommand,
   getCertbotDiagnosticOptions
 } from '../src/serverfull/cert';
+import { resolveUpstreamEndpoint } from '../src/pipeline/resolver/transport';
+import { buildCloudflareEchConfig } from '../src/utils/ech';
 
 function runServiceUnitTests(): void {
   console.log('>>> [TEST] Starting Modular Service Provider Unit Tests (SRP)...');
@@ -268,17 +270,17 @@ function runServiceUnitTests(): void {
   }
 
   const certbotCmd = getCertbotCommand('my.domain');
-  if (certbotCmd !== 'certbot certonly -d *.my.domain --manual --preferred-challenges dns') {
+  if (certbotCmd !== 'certbot certonly -d *.my.domain -d my.domain --manual --preferred-challenges dns') {
     throw new Error(`Unexpected certbot command: ${certbotCmd}`);
   }
 
   const missingDiag = getCertbotDiagnosticOptions('missing', 'my.domain');
-  if (!missingDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain'))) {
+  if (!missingDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain -d my.domain'))) {
     throw new Error('getCertbotDiagnosticOptions missing command solution');
   }
 
   const nonWildcardDiag = getCertbotDiagnosticOptions('non_wildcard', 'my.domain');
-  if (!nonWildcardDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain'))) {
+  if (!nonWildcardDiag.solutions?.some((s: string) => s.includes('certbot certonly -d *.my.domain -d my.domain'))) {
     throw new Error('getCertbotDiagnosticOptions non_wildcard missing command solution');
   }
 
@@ -287,6 +289,32 @@ function runServiceUnitTests(): void {
     throw new Error('inspectTlsCertificate on empty paths should return false');
   }
   console.log('   ✓ HTTP 10080 / HTTPS 10443 ports, cert inspection, and certbot guidance verified.');
+
+  // 12. Testing ECH, HTTP/3, and DoQ configuration & resolution
+  console.log('12. Testing ECH, HTTP/3, and DoQ configuration & transport...');
+  if (!DEFAULT_ENV_SERVERFULL_TEMPLATE.includes('SERVERFULL_ECH_ENABLED')) {
+    throw new Error('DEFAULT_ENV_SERVERFULL_TEMPLATE missing SERVERFULL_ECH_ENABLED');
+  }
+  const echTestConfig = getServerfullConfig({
+    'ech-enabled': true,
+    'ech-fronting-domain': 'test.cloudflare-ech.com'
+  });
+  if (echTestConfig.config.echEnabled !== true || echTestConfig.config.echFrontingDomain !== 'test.cloudflare-ech.com') {
+    throw new Error('getServerfullConfig failed to parse ech options');
+  }
+  const generatedEch = buildCloudflareEchConfig('test.cloudflare-ech.com');
+  if (!generatedEch || typeof generatedEch !== 'string') {
+    throw new Error('buildCloudflareEchConfig failed to generate base64 string');
+  }
+  const quicEp = resolveUpstreamEndpoint('quic://dns.quad9.net');
+  if (quicEp.diagMethod !== 'DoQ' || !quicEp.diagTarget.includes('quic://')) {
+    throw new Error(`resolveUpstreamEndpoint failed for quic://, got: ${JSON.stringify(quicEp)}`);
+  }
+  const doqEp = resolveUpstreamEndpoint('doq://1.1.1.1:853');
+  if (doqEp.diagMethod !== 'DoQ' || doqEp.diagTarget !== 'quic://1.1.1.1:853') {
+    throw new Error(`resolveUpstreamEndpoint failed for doq://, got: ${JSON.stringify(doqEp)}`);
+  }
+  console.log('   ✓ ECH, HTTP/3, and DoQ configuration & transport verified.');
 
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');

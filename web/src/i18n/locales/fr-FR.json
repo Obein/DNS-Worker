@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Points d'accès",
     "currentAccessPoint": "Point d'accès actuel",
     "selectAccessPointToConfigure": "Sélectionner le point d'accès à configurer",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Prise en charge native de la RFC 9250 (DNS over QUIC) et de la RFC 9460 (HTTP/3 & Encrypted Client Hello), avec établissement 0-RTT et protection contre l'inspection du SNI.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Compatible avec les clients modernes tels qu'AdGuard, Clash Meta (Mihomo), Sing-box, etc. :",
+    "doqWildcardHint": "(Certificat générique, redirige vers ce profil)",
+    "doqSingleDomainHint": "(Certificat de domaine unique, redirige vers le profil par défaut)",
+    "doqIpNotice": "DoQ requiert un certificat TLS et un nom de domaine valide. Veuillez définir SERVERFULL_DOT_DOMAIN dans .env puis actualiser.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Les navigateurs modernes (Chrome/Firefox/Safari) négocient automatiquement HTTP/3 et le chiffrement ECH via les enregistrements Alt-Svc et HTTPS RFC 9460 :",
+    "ddrHint": "Intégré avec la section 8 de la RFC 9460 DDR (Discovery of Designated Resolvers), permettant aux clients de négocier et de passer automatiquement à DoQ/DoT et ECH via des requêtes _dns.",
     "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey."
   },
   "rules": {

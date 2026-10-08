@@ -167,8 +167,16 @@ export function createHttpRequestHandler(
       res.statusMessage = response.statusText;
 
       response.headers.forEach((val, key) => {
-        res.setHeader(key, val);
+        if (defaultProto === 'https' && key.toLowerCase() === 'alt-svc') {
+          res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400, h3-29=":${port}"; ma=86400`);
+        } else {
+          res.setHeader(key, val);
+        }
       });
+
+      if (defaultProto === 'https' && !res.hasHeader('Alt-Svc')) {
+        res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400, h3-29=":${port}"; ma=86400`);
+      }
 
       if (response.body) {
         const reader = response.body.getReader();

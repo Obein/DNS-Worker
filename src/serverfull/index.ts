@@ -38,6 +38,7 @@ import {
 } from './format';
 import { showServerfullStatus } from './status';
 import { handleServiceAction } from './service';
+import { buildCloudflareEchConfig } from '../utils/ech';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
@@ -126,6 +127,49 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
   console.log([banner, section, tip].join('\n'));
 }
 
+function handleEchCommand(cliArgs?: ServerfullCliArgs): void {
+  const { config } = getServerfullConfig(cliArgs);
+  const frontingDomain = config.echFrontingDomain || 'cloudflare-ech.com';
+  const echConfigBase64 = config.echConfig || buildCloudflareEchConfig(frontingDomain);
+  const domain = config.dotDomain || 'dns.example.com';
+
+  const banner = formatBanner({
+    title: 'Encrypted Client Hello (ECH) & DNS Service Records',
+    borderChar: '=',
+    bullet: '• '
+  });
+
+  const section = formatKeyValueSection({
+    title: '\nActive ECH Configuration & Outer SNI:',
+    items: [
+      { label: 'ECH Status', value: config.echEnabled ? 'Enabled (Active)' : 'Disabled' },
+      { label: 'Fronting Domain (Outer SNI)', value: frontingDomain },
+      { label: 'ECHConfigList (Base64)', value: echConfigBase64 },
+      { label: 'Target Base Domain', value: domain },
+      { label: 'HTTPS (H3) Port', value: String(config.httpsPort) },
+      { label: 'DoT / DoQ Port', value: String(config.dotPort) }
+    ]
+  });
+
+  const ddrRecord = `_dns.${domain}. 300 IN SVCB 1 . alpn="doq,dot" port=${config.dotPort} ech="${echConfigBase64}"`;
+  const httpsRecord = `${domain}. 300 IN HTTPS 1 . alpn="h3,h2" port=${config.httpsPort} ech="${echConfigBase64}"`;
+
+  const dnsSection = `\nStandard DNS Service Binding Records (RFC 9460 & RFC 9460 Section 8 DDR):
+  • DDR SVCB Record (DoQ/DoT auto-discovery):
+    ${ddrRecord}
+
+  • HTTPS Service Record (HTTP/3 & ECH):
+    ${httpsRecord}`;
+
+  const tip = formatTip([
+    'Publish the DDR SVCB record in your authoritative DNS zone to enable automatic DoQ & DoT discovery.',
+    'Publish the HTTPS record to enable browser HTTP/3 (h3) and ECH negotiation without SNI leakage.',
+    `Test client ECH support with: curl --ech true https://${domain}`
+  ]);
+
+  console.log([banner, section, dnsSection, tip].join('\n'));
+}
+
 function printHelp(): void {
   const version = getPackageVersion();
 
@@ -135,12 +179,14 @@ function printHelp(): void {
     usage: [
       'dns-worker [options]',
       'dns-worker status [options]',
+      'dns-worker ech [options]',
       'dns-worker config [action]',
       'dns-worker service <action>',
       'npx dns-worker [options]'
     ],
     commands: [
       { label: 'status', desc: 'Inspect service runtime status and database health' },
+      { label: 'ech', desc: 'Display active ECH configuration, outer SNI, and DNS RR records' },
       { label: 'config [action]', desc: 'Manage configuration (show, path, init, template)' },
       { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, status, logs, uninstall)' }
     ],
@@ -152,6 +198,9 @@ function printHelp(): void {
       { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
       { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
       { label: '--dot-domain <domain>', desc: 'Base domain name for DoT & HTTPS service (e.g. dns.example.com)' },
+      { label: '--ech-enabled <boolean>', desc: 'Enable or disable ECH broadcast (true/false, default: true)' },
+      { label: '--ech-config <base64>', desc: 'Custom Base64-encoded ECHConfigList' },
+      { label: '--ech-fronting-domain <domain>', desc: 'ECH outer SNI fronting domain (default: cloudflare-ech.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
       { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
@@ -167,6 +216,9 @@ function printHelp(): void {
       { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
       { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
       { label: 'SERVERFULL_DOT_DOMAIN / DOT_DOMAIN', desc: 'Base domain name for DoT & HTTPS service' },
+      { label: 'SERVERFULL_ECH_ENABLED', desc: 'Enable or disable ECH (true/false)' },
+      { label: 'SERVERFULL_ECH_CONFIG', desc: 'Custom Base64-encoded ECHConfigList' },
+      { label: 'SERVERFULL_ECH_FRONTING_DOMAIN', desc: 'Fronting domain for ECH outer SNI' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
       { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for HTTPS & DoT' },
@@ -174,6 +226,7 @@ function printHelp(): void {
     ],
     tip: [
       "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
+      "Run 'dns-worker ech' to view active ECH configuration, outer SNI, and RFC 9460 DNS records.",
       "Run 'dns-worker config init' to create an editable .env configuration file.",
       process.platform === 'win32'
         ? "Run 'dns-worker service install' (in Administrator terminal) to run as a persistent Windows background service."
@@ -200,6 +253,9 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         'default-profile': { type: 'string' },
         'disable-udp': { type: 'boolean' },
         'disable-dot': { type: 'boolean' },
+        'ech-enabled': { type: 'boolean' },
+        'ech-config': { type: 'string' },
+        'ech-fronting-domain': { type: 'string' },
         status: { type: 'boolean', short: 's' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
@@ -220,6 +276,11 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     if (values.status || positionals[0]?.toLowerCase() === 'status') {
       const { config, env } = getServerfullConfig(values as ServerfullCliArgs);
       await showServerfullStatus(config, env.JWT_SECRET);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'ech') {
+      handleEchCommand(values as ServerfullCliArgs);
       process.exit(0);
     }
 

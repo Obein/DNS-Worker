@@ -47,7 +47,7 @@ SERVERFULL_HTTPS_PORT=10443
 # - 若持有单域名证书 (dns.example.com): 客户端直接填入 dns.example.com 自动路由至默认配置
 #
 # 提示: 若尚未申请证书，可使用 certbot 申请免费通配符证书:
-#   certbot certonly -d *.your.domain --manual --preferred-challenges dns
+#   certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns
 # SERVERFULL_DOT_DOMAIN=dns.example.com
 
 # Absolute path to your TLS private key (PEM format) / TLS 私钥路径 (兼容 SERFULL_TLS_KEY_PATH)
@@ -55,6 +55,19 @@ SERVERFULL_TLS_KEY_PATH=/etc/letsencrypt/live/dns.example.com/privkey.pem
 
 # Absolute path to your TLS certificate chain (PEM format) / TLS 证书/公钥路径 (兼容 SERVERFULL_TLS_PUB_PATH)
 SERVERFULL_TLS_CERT_PATH=/etc/letsencrypt/live/dns.example.com/fullchain.pem
+
+# ------------------------------------------------------------------------------
+# ECH, HTTP/3 & DNS over QUIC (DoQ) / 加密 ECH、HTTP/3 与 DoQ 配置
+# ------------------------------------------------------------------------------
+# Broadcast & enable ECH for HTTPS & TLS / 为 HTTPS 与 TLS 广播并启用 ECH (true/false, default: true)
+# 客户端查询 RFC 9460 HTTPS/SVCB 及 RFC 9460 Section 8 DDR 时自动合成携带 ECHConfig 参数的响应
+SERVERFULL_ECH_ENABLED=true
+
+# Custom Base64-encoded ECHConfigList / 自定义 Base64 格式 ECHConfigList (选填，留空则根据外层域名自动生成)
+# SERVERFULL_ECH_CONFIG=
+
+# Fronting domain (outer SNI public_name) for ECH / ECH 外层 SNI 前置域名 (默认: cloudflare-ech.com)
+SERVERFULL_ECH_FRONTING_DOMAIN=cloudflare-ech.com
 
 # ------------------------------------------------------------------------------
 # Database Configuration / 本地 SQLite 数据库配置

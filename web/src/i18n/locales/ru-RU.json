@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Точки доступа",
     "currentAccessPoint": "Текущая точка доступа",
     "selectAccessPointToConfigure": "Выберите точку доступа для настройки",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Нативная поддержка RFC 9250 (DNS over QUIC) и RFC 9460 (HTTP/3 & Encrypted Client Hello) с рукопожатием 0-RTT и защитой от перехвата SNI.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Совместимо с современными клиентами, такими как AdGuard, Clash Meta (Mihomo), Sing-box и др.:",
+    "doqWildcardHint": "(Wildcard-сертификат, маршрутизирует в этот профиль)",
+    "doqSingleDomainHint": "(Сертификат для одного домена, маршрутизирует в профиль по умолчанию)",
+    "doqIpNotice": "Для DoQ требуется TLS-сертификат и действительный домен. Укажите SERVERFULL_DOT_DOMAIN в .env и обновите страницу.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Современные браузеры (Chrome/Firefox/Safari) автоматически согласовывают HTTP/3 и шифрование ECH через записи Alt-Svc и RFC 9460 HTTPS:",
+    "ddrHint": "Интегрирован RFC 9460 Section 8 DDR (Discovery of Designated Resolvers): клиенты могут автоматически согласовывать и переходить на DoQ/DoT и ECH через запросы к _dns.",
     "e2eeDesc": "Шифрует журналы DNS на границе с помощью постквантового гибридного ключа (P256-MLKEM768). Облако не имеет доступа к данным; расшифровка происходит только локально с Passkey."
   },
   "rules": {

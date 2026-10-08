@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Điểm truy cập",
     "currentAccessPoint": "Điểm truy cập hiện tại",
     "selectAccessPointToConfigure": "Chọn điểm truy cập để định cấu hình",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Hỗ trợ gốc cho RFC 9250 (DNS over QUIC) và RFC 9460 (HTTP/3 & Encrypted Client Hello), sở hữu bắt tay 0-RTT siêu tốc và bảo vệ chống theo dõi SNI.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Tương thích với các ứng dụng hiện đại như AdGuard, Clash Meta (Mihomo), Sing-box, v.v.:",
+    "doqWildcardHint": "(Chứng chỉ ký tự đại diện wildcard, định tuyến đến cấu hình này)",
+    "doqSingleDomainHint": "(Chứng chỉ tên miền đơn, định tuyến đến cấu hình mặc định)",
+    "doqIpNotice": "DoQ yêu cầu chứng chỉ TLS và tên miền hợp lệ. Vui lòng thiết lập SERVERFULL_DOT_DOMAIN trong .env rồi tải lại.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Các trình duyệt hiện đại (Chrome/Firefox/Safari) tự động thương lượng mã hóa HTTP/3 và ECH thông qua bản ghi Alt-Svc và RFC 9460 HTTPS:",
+    "ddrHint": "Tích hợp RFC 9460 Phần 8 DDR (Discovery of Designated Resolvers), cho phép máy khách tự động thương lượng và nâng cấp lên DoQ/DoT và ECH qua truy vấn _dns.",
     "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey."
   },
   "rules": {

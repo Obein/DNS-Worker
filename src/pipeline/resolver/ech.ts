@@ -61,11 +61,47 @@ export async function processBestEffortEch(
   let parsedAnswers = initialParsedAnswers;
   let effectiveReason = initialReason;
 
-  if (isHttpsOrSvcb && echEnabled) {
-    await ensureCloudflareIpRangesLoaded(context.env.DB);
-    const existingIpv4s: string[] = [];
-    const existingIpv6s: string[] = [];
-    let existingEch: string | undefined;
+  if (isHttpsOrSvcb) {
+    const serverDomain = (context.env.SERVERFULL_DOT_DOMAIN || context.env.DOT_DOMAIN || "").toLowerCase().trim();
+    const queryLower = query.name.toLowerCase().trim();
+    const isDdrQuery = queryLower.startsWith("_dns.") || Boolean(serverDomain && (queryLower === `_dns.${serverDomain}` || queryLower.endsWith(`._dns.${serverDomain}`)));
+    const isServerDomainQuery = Boolean(serverDomain && (queryLower === serverDomain || queryLower.endsWith(`.${serverDomain}`)));
+
+    if (isDdrQuery || isServerDomainQuery) {
+      const frontingDomain =
+        context.env.SERVERFULL_ECH_FRONTING_DOMAIN ||
+        (typeof settings.best_effort_ech === "object" && settings.best_effort_ech?.fronting_domain) ||
+        DEFAULT_ECH_FRONTING_DOMAIN;
+      const echConfigBase64 = context.env.SERVERFULL_ECH_CONFIG || buildCloudflareEchConfig(frontingDomain);
+      const httpsPort = context.env.SERVERFULL_HTTPS_PORT || context.env.HTTPS_PORT || 10443;
+      const dotPort = context.env.SERVERFULL_DOT_PORT || context.env.DOT_PORT || 853;
+
+      if (isDdrQuery) {
+        // RFC 9460 Section 8: Discovery of Designated Resolvers (DDR) for DoQ (853), DoT (853), and DoH3 with ECH
+        const targetType = query.type === "HTTPS" || query.type === "TYPE65" ? "HTTPS" : "SVCB";
+        const ddrSvcb = `1 . alpn=doq,dot port=${dotPort} ech=${echConfigBase64}`;
+        answer = buildResponse(query.raw, targetType, ddrSvcb, 300, 0);
+        parsedAnswers = parseDNSAnswer(answer);
+        effectiveReason = "DDR SVCB (DoQ/DoT/H3/ECH)";
+        return { answer, parsedAnswers, effectiveReason };
+      }
+
+      if (isServerDomainQuery) {
+        // RFC 9460 HTTPS Service Binding: Advertises HTTP/3 (alpn=h3,h2), port, and ECH
+        const targetType = query.type === "SVCB" || query.type === "TYPE64" ? "SVCB" : "HTTPS";
+        const serverHttps = `1 . alpn=h3,h2 port=${httpsPort} ech=${echConfigBase64}`;
+        answer = buildResponse(query.raw, targetType, serverHttps, 300, 0);
+        parsedAnswers = parseDNSAnswer(answer);
+        effectiveReason = "Server HTTPS (H3/ECH)";
+        return { answer, parsedAnswers, effectiveReason };
+      }
+    }
+
+    if (echEnabled) {
+      await ensureCloudflareIpRangesLoaded(context.env.DB);
+      const existingIpv4s: string[] = [];
+      const existingIpv6s: string[] = [];
+      let existingEch: string | undefined;
 
     for (const a of parsedAnswers) {
       const v4Match = a.data.match(/ipv4hint=([^\s]+)/);
@@ -132,6 +168,7 @@ export async function processBestEffortEch(
       effectiveReason = "ECH Rewritten";
     }
   }
+}
 
   return { answer, parsedAnswers, effectiveReason };
 }

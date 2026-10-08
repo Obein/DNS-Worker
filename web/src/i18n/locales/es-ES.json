@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Puntos de acceso",
     "currentAccessPoint": "Punto de acceso actual",
     "selectAccessPointToConfigure": "Seleccionar punto de acceso para configurar",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Soporte nativo para RFC 9250 (DNS over QUIC) y RFC 9460 (HTTP/3 & Encrypted Client Hello), con negociación 0-RTT y protección contra inspección de SNI.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Compatible con clientes modernos como AdGuard, Clash Meta (Mihomo), Sing-box, etc.:",
+    "doqWildcardHint": "(Certificado comodín, enruta a este perfil)",
+    "doqSingleDomainHint": "(Certificado de dominio único, enruta al perfil predeterminado)",
+    "doqIpNotice": "DoQ requiere un certificado TLS y un nombre de dominio válido. Configure SERVERFULL_DOT_DOMAIN en .env y actualice.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Los navegadores modernos (Chrome/Firefox/Safari) negocian automáticamente HTTP/3 y cifrado ECH a través de registros Alt-Svc y HTTPS RFC 9460:",
+    "ddrHint": "Integrado con RFC 9460 Sección 8 DDR (Discovery of Designated Resolvers), lo que permite a los clientes negociar y actualizar automáticamente a DoQ/DoT y ECH mediante consultas _dns.",
     "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey."
   },
   "rules": {

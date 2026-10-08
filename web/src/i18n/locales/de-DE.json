@@ -280,6 +280,17 @@
     "accessPointsCardTitle": "Zugangspunkte",
     "currentAccessPoint": "Aktueller Zugangspunkt",
     "selectAccessPointToConfigure": "Zugangspunkt zum Konfigurieren auswählen",
+    "quic": "QUIC & HTTP/3",
+    "quicTitle": "DNS over QUIC (DoQ) & HTTP/3 (DoH3)",
+    "quicDesc": "Native Unterstützung für RFC 9250 (DNS over QUIC) und RFC 9460 (HTTP/3 & Encrypted Client Hello) mit 0-RTT-Handshake und Schutz vor SNI-Inspektion.",
+    "doqTitle": "DNS over QUIC (DoQ - RFC 9250)",
+    "doqAppHint": "Kompatibel mit modernen Clients wie AdGuard, Clash Meta (Mihomo), Sing-box usw.:",
+    "doqWildcardHint": "(Wildcard-Zertifikat, leitet zu diesem Profil weiter)",
+    "doqSingleDomainHint": "(Einzeldomänen-Zertifikat, leitet zum Standardprofil weiter)",
+    "doqIpNotice": "DoQ erfordert ein TLS-Zertifikat und einen gültigen Domänennamen. Bitte SERVERFULL_DOT_DOMAIN in .env festlegen und neu laden.",
+    "h3Title": "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)",
+    "h3Desc": "Moderne Browser (Chrome/Firefox/Safari) verhandeln HTTP/3 und ECH-Verschlüsselung automatisch über Alt-Svc und RFC 9460 HTTPS-Einträge:",
+    "ddrHint": "RFC 9460 Abschnitt 8 DDR (Discovery of Designated Resolvers) integriert: Clients können über _dns-Abfragen automatisch DoQ/DoT und ECH aushandeln und upgraden.",
     "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem Post-Quanten-Hybridschlüssel (P256-MLKEM768). Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey."
   },
   "rules": {

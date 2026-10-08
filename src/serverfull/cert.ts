@@ -123,7 +123,7 @@ export function inspectTlsCertificate(certPath: string, keyPath: string): TlsCer
  */
 export function getCertbotCommand(targetDomain?: string): string {
   const cleanDomain = targetDomain ? targetDomain.replace(/^\*\./, '').trim() : 'your.domain';
-  return `certbot certonly -d *.${cleanDomain} --manual --preferred-challenges dns`;
+  return `certbot certonly -d *.${cleanDomain} -d ${cleanDomain} --manual --preferred-challenges dns`;
 }
 
 /**
