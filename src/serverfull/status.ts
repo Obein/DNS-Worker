@@ -9,6 +9,7 @@ import dgram from 'node:dgram';
 import { DatabaseSync } from 'node:sqlite';
 import { ServerfullConfig } from './config';
 import { formatBanner, formatKeyValueSection, formatTip } from './format';
+import { getPortOccupant, formatOccupantSummary } from './port';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 
 /**
@@ -200,14 +201,18 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
       : 'Configured (Warning: Shorter than 32 characters)';
   }
 
+  const httpOccupant = httpState === 'active' ? getPortOccupant(config.httpPort, 'TCP') : null;
+  const httpOccupantText = httpOccupant ? `: ${formatOccupantSummary(httpOccupant)}` : '';
   const httpStatusText = httpState === 'active'
-    ? `http://${config.host}:${config.httpPort} [Active / Listening]`
+    ? `http://${config.host}:${config.httpPort} [Active / Listening${httpOccupantText}]`
     : `http://${config.host}:${config.httpPort} [Stopped / Port Available]`;
 
+  const udpOccupant = (!config.disableUdp && udpState === 'active') ? getPortOccupant(config.udpPort, 'UDP') : null;
+  const udpOccupantText = udpOccupant ? `: ${formatOccupantSummary(udpOccupant)}` : '';
   const udpStatusText = config.disableUdp
     ? 'Disabled (--disable-udp)'
     : udpState === 'active'
-      ? `udp://${config.host}:${config.udpPort} [Active / In Use]`
+      ? `udp://${config.host}:${config.udpPort} [Active / In Use${udpOccupantText}]`
       : `udp://${config.host}:${config.udpPort} [Stopped / Port Available]`;
 
   let dotStatusText = '';
@@ -218,7 +223,9 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
   } else if (!tlsFilesExist) {
     dotStatusText = `tls://${config.host}:${config.dotPort} [Warning - TLS Certificate Files Missing]`;
   } else if (dotState === 'active') {
-    dotStatusText = `tls://${config.host}:${config.dotPort} [Active / Listening]`;
+    const dotOccupant = getPortOccupant(config.dotPort, 'TCP');
+    const dotOccupantText = dotOccupant ? `: ${formatOccupantSummary(dotOccupant)}` : '';
+    dotStatusText = `tls://${config.host}:${config.dotPort} [Active / Listening${dotOccupantText}]`;
   } else {
     dotStatusText = `tls://${config.host}:${config.dotPort} [Stopped / Port Available]`;
   }

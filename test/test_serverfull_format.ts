@@ -121,9 +121,10 @@ function runUnitTests(): void {
     port: 53,
     err: { code: 'EADDRINUSE' },
     alternateOption: '--dns-port 5353',
-    disableOption: '--disable-udp'
+    disableOption: '--disable-udp',
+    occupant: { processName: 'systemd-resolved', pid: 762 }
   });
-  if (!addrInUseUdp.includes('[Port Conflict] UDP DNS port 53 is already in use.') || !addrInUseUdp.includes('systemd-resolved')) {
+  if (!addrInUseUdp.includes('[Port Conflict] UDP DNS port 53 is already in use') || !addrInUseUdp.includes('systemd-resolved')) {
     throw new Error('formatPortError EADDRINUSE UDP failed');
   }
 

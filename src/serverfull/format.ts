@@ -316,6 +316,8 @@ export function formatDiagnostic(config: DiagnosticConfig): string {
   return '\n' + sections.filter(Boolean).join('\n') + '\n';
 }
 
+import { getPortOccupant, formatOccupantSummary, PortOccupant } from './port';
+
 /**
  * Configuration options for rendering a network socket or port startup error.
  */
@@ -326,6 +328,7 @@ export interface PortErrorConfig {
   err: unknown;
   alternateOption: string;
   disableOption?: string;
+  occupant?: PortOccupant | null;
 }
 
 /**
@@ -339,23 +342,65 @@ export function formatPortError(config: PortErrorConfig): string {
   const errCode = (err as { code?: string })?.code;
 
   if (errCode === 'EADDRINUSE') {
+    const proto = protocol === 'UDP' ? 'UDP' : 'TCP';
+    const occupant = config.occupant !== undefined ? config.occupant : getPortOccupant(port, proto);
+    const occupantSummary = occupant ? formatOccupantSummary(occupant) : null;
+
     const causes: string[] = [];
-    if (protocol === 'UDP' && port === 53) {
-      causes.push('Linux: systemd-resolved is listening on port 53 (stop it or configure DNSStubListener=no).');
-      causes.push('Another DNS server (bind9, dnsmasq, AdGuard Home) is running.');
-    } else {
-      causes.push(`Another service or application is already listening on ${protocol} port ${port}.`);
+    const details: string[] = [];
+    const solutions: string[] = [];
+
+    if (occupantSummary) {
+      details.push(`Occupying Program: ${occupantSummary}`);
     }
 
-    const solutions = [
-      `Use ${alternateOption} to specify an alternate port.`,
-      disableOption ? `Or use ${disableOption} to disable this transport.` : null
-    ].filter(Boolean) as string[];
+    if (protocol === 'UDP' && port === 53) {
+      if (occupant?.processName.includes('systemd-resolve')) {
+        causes.push('systemd-resolved is occupying port 53 via its local DNS stub listener (127.0.0.53).');
+        solutions.push("Disable systemd-resolved DNSStubListener (set 'DNSStubListener=no' in /etc/systemd/resolved.conf, then run 'systemctl restart systemd-resolved').");
+      } else if (occupant?.serviceName === 'SharedAccess') {
+        causes.push('Windows Internet Connection Sharing (ICS) / Mobile Hotspot is occupying UDP port 53.');
+        solutions.push("Stop Internet Connection Sharing / Mobile Hotspot in Windows Network Settings (or run: 'Stop-Service SharedAccess' in PowerShell).");
+      } else if (occupant) {
+        causes.push(`Program '${occupantSummary}' is currently listening on UDP port 53.`);
+        if (occupant.pid) {
+          const killCmd = process.platform === 'win32'
+            ? `taskkill /PID ${occupant.pid} /F`
+            : `sudo kill ${occupant.pid}`;
+          solutions.push(`Terminate conflicting process: '${killCmd}'`);
+        }
+      } else {
+        causes.push('Linux: systemd-resolved or another DNS server (bind9, dnsmasq, AdGuard Home) is listening on port 53.');
+        causes.push('Windows: Internet Connection Sharing (ICS) or another service is listening on port 53.');
+      }
+    } else {
+      if (occupant) {
+        causes.push(`Program '${occupantSummary}' is currently listening on ${protocol} port ${port}.`);
+        if (occupant.pid) {
+          const killCmd = process.platform === 'win32'
+            ? `taskkill /PID ${occupant.pid} /F`
+            : `sudo kill ${occupant.pid}`;
+          solutions.push(`Terminate conflicting process: '${killCmd}'`);
+        }
+      } else {
+        causes.push(`Another service or application is already listening on ${protocol} port ${port}.`);
+      }
+    }
+
+    solutions.push(`Use ${alternateOption} to specify an alternate port.`);
+    if (disableOption) {
+      solutions.push(`Or use ${disableOption} to disable this transport.`);
+    }
+
+    const message = occupantSummary
+      ? `${serviceName} port ${port} is already in use by ${occupantSummary}.`
+      : `${serviceName} port ${port} is already in use.`;
 
     return formatDiagnostic({
       level: 'error',
       title: 'Port Conflict',
-      message: `${serviceName} port ${port} is already in use.`,
+      message,
+      details: details.length > 0 ? details : undefined,
       causes,
       solutions
     });
