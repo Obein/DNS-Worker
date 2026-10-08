@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { Env } from '../types';
 import {
@@ -15,6 +16,7 @@ import {
   DEFAULT_SUBSTITUTE_DOMAIN,
   DEFAULT_FAIL_OPEN_UPSTREAM
 } from '../constants/presets';
+import { writeDefaultConfigFile } from './defaults';
 
 export interface ServerfullCliArgs {
   port?: string;
@@ -185,10 +187,15 @@ export function getDefaultConfigFilePath(): string {
 
 /**
  * Ensures system persistent directories (Persistent Data Dir and Config Directory) exist if writable.
+ * Optionally auto-seeds the default configuration file if not already present.
+ *
+ * @param autoSeedConfig - If true (default), automatically writes the default configuration template to the config file if missing.
+ * @returns Persistent paths for data directory, configuration directory, and configuration file.
  */
-export function ensurePersistentDirs(): { dataDir: string; configDir: string } {
+export function ensurePersistentDirs(autoSeedConfig: boolean = true): { dataDir: string; configDir: string; configFile: string } {
   const dataDir = getDefaultDataDir();
   const configDir = getDefaultConfigDir();
+  const configFile = getDefaultConfigFilePath();
 
   try {
     if (!fs.existsSync(dataDir)) {
@@ -202,7 +209,26 @@ export function ensurePersistentDirs(): { dataDir: string; configDir: string } {
     }
   } catch {}
 
-  return { dataDir, configDir };
+  if (autoSeedConfig) {
+    try {
+      writeDefaultConfigFile(configFile, false);
+    } catch {}
+  }
+
+  // If running with sudo under Linux, ensure ownership of dataDir and configDir is assigned to the real user
+  if (process.platform === 'linux' && process.env.SUDO_USER && process.env.SUDO_USER !== 'root') {
+    const sudoUser = process.env.SUDO_USER.trim();
+    if (/^[a-zA-Z0-9._-]+$/.test(sudoUser)) {
+      try {
+        execSync(`chown -R ${sudoUser} "${dataDir}"`);
+      } catch {}
+      try {
+        execSync(`chown -R ${sudoUser} "${configDir}"`);
+      } catch {}
+    }
+  }
+
+  return { dataDir, configDir, configFile };
 }
 
 /**
@@ -257,6 +283,7 @@ function loadDotEnv(filePath: string): boolean {
  * 4. Package distribution root: <packageRoot>/.env.serverfull
  */
 export function loadEnvFiles(rootDir: string = process.cwd()): string[] {
+  ensurePersistentDirs(true);
   loadedEnvFiles.length = 0;
 
   const candidatePaths = [

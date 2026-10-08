@@ -20,6 +20,7 @@
     "node": ">=22.5.0"
   },
   "scripts": {
+    "postinstall": "node -e \"try{const f=require('path').join(__dirname,'dist','serverfull.mjs');if(require('fs').existsSync(f)){require('child_process').spawnSync(process.execPath,[f,'postinstall'],{stdio:'inherit'});}}catch(e){}\"",
     "dev": "npm run db:migrate:dev && concurrently \"npm run ui:dev\" \"wrangler dev\"",
     "start": "npm run build && wrangler dev",
     "start:serverfull": "npm run build:serverfull && node --enable-source-maps dist/serverfull.mjs",

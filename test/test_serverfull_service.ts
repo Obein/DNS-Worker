@@ -214,6 +214,20 @@ function runServiceUnitTests(): void {
     try { fs.rmSync(path.dirname(tempConfigPath), { recursive: true, force: true }); } catch {}
   }
 
+  // 9. Test ensurePersistentDirs auto-seeding
+  console.log('9. Testing ensurePersistentDirs auto-seeding...');
+  const dirs = ensurePersistentDirs(true);
+  if (!dirs.dataDir || !dirs.configDir || !dirs.configFile) {
+    throw new Error('ensurePersistentDirs must return dataDir, configDir, and configFile');
+  }
+  if (!fs.existsSync(dirs.configDir)) {
+    throw new Error(`ensurePersistentDirs failed to create configDir: ${dirs.configDir}`);
+  }
+  if (!fs.existsSync(dirs.configFile)) {
+    throw new Error(`ensurePersistentDirs failed to seed configFile: ${dirs.configFile}`);
+  }
+  console.log(`   ✓ ensurePersistentDirs auto-seeding verified (configFile: ${dirs.configFile}).`);
+
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');
   console.log('======================================================');

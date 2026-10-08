@@ -15,6 +15,7 @@ import {
   getDefaultConfigDir,
   getDefaultConfigFilePath,
   ensurePersistentDirs,
+  loadEnvFiles,
   getLoadedEnvFiles,
   ServerfullCliArgs
 } from './config';
@@ -94,7 +95,7 @@ function handleConfigCommand(subAction: string, targetArg?: string): void {
   }
 
   // Default: 'show'
-  ensurePersistentDirs();
+  loadEnvFiles();
   const loaded = getLoadedEnvFiles();
   const loadedText = loaded.length > 0 ? loaded.join('\n    ') : 'None (Using built-in presets & defaults)';
 
@@ -221,6 +222,15 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     if (positionals[0]?.toLowerCase() === 'service') {
       const action = positionals[1]?.toLowerCase() || 'status';
       await handleServiceAction(action);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'postinstall') {
+      try {
+        const { dataDir, configDir, configFile } = ensurePersistentDirs(true);
+        console.log(`[dns-worker] Initialized data directory: ${dataDir}`);
+        console.log(`[dns-worker] Initialized configuration file: ${configFile}`);
+      } catch {}
       process.exit(0);
     }
 

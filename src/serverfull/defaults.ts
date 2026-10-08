@@ -6,6 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 
 /**
  * Built-in canonical .env configuration template with comprehensive explanations.
@@ -187,13 +188,21 @@ IP_REGION_CN='[{"ip":"198.41.222.102","area":"SG"},{"ip":"173.245.59.246","area"
 export function writeDefaultConfigFile(targetPath: string, force: boolean = false): { created: boolean; path: string } {
   const dir = path.dirname(targetPath);
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
   }
 
   if (fs.existsSync(targetPath) && !force) {
     return { created: false, path: targetPath };
   }
 
-  fs.writeFileSync(targetPath, DEFAULT_ENV_SERVERFULL_TEMPLATE, 'utf-8');
+  fs.writeFileSync(targetPath, DEFAULT_ENV_SERVERFULL_TEMPLATE, { encoding: 'utf-8', mode: 0o644 });
+  if (process.platform === 'linux' && process.env.SUDO_USER && process.env.SUDO_USER !== 'root') {
+    const sudoUser = process.env.SUDO_USER.trim();
+    if (/^[a-zA-Z0-9._-]+$/.test(sudoUser)) {
+      try {
+        execSync(`chown ${sudoUser} "${targetPath}"`);
+      } catch {}
+    }
+  }
   return { created: true, path: targetPath };
 }
