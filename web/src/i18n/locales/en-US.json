@@ -693,7 +693,19 @@
       "enableSwitchDesc": "Encrypts domain names, client IPs, response records, and upstream latency on the edge before persisting to cloud storage.",
       "trustBoundaryTitle": "Security & Trust Boundary Notice",
       "trustBoundaryDesc": "All DNS query traffic inevitably passes through the hosting server (Cloudflare Workers edge nodes or self-hosted server runtime) during resolution, where queries are processed in memory before being encrypted and saved. This feature strictly protects data at rest in the cloud database (D1 / persistent storage) from data leaks or offline analysis; it does not conceal active network traffic from the hosting server processing the request.",
-      "initFailed": "Failed to initialize End-to-End Encryption"
+      "initFailed": "Failed to initialize End-to-End Encryption",
+      "enrollPasskeyBtn": "Enroll Current Passkey",
+      "enrollPasskeySuccess": "Passkey successfully enrolled into E2EE!",
+      "enrollPasskeyFailed": "Failed to enroll Passkey",
+      "resetKeypairBtn": "Reset Keypair",
+      "confirmResetBtn": "Confirm Reset & Re-generate",
+      "resetKeypairTitle": "Reset E2EE Keypair",
+      "resetKeypairDesc": "If your recovery key does not match or cannot decrypt, and no passkeys are enrolled, resetting will purge old keys from the server and generate a brand-new post-quantum (P256-MLKEM768) keypair.",
+      "resetKeypairPasskeyNotice": "Confirming will immediately invoke your configured Passkey to encrypt and authorize the new keypair.",
+      "resetKeypairRecoveryNotice": "Confirming will prompt you to enter your current Recovery Key to generate and encrypt the new keypair.",
+      "resetAndInitPasskeySuccess": "Keypair successfully reset and re-encrypted with your Passkey!",
+      "resetSuccessEnterRecovery": "Old keys purged. Please initialize a new keypair with your Recovery Key.",
+      "resetFailed": "Failed to reset keypair"
     },
     "jwtSecretWarningTitle": "Security Notice: Weak JWT Secret",
     "jwtSecretWarningDesc": "The current JWT_SECRET is shorter than 32 characters, which introduces potential security risks. Please configure the KEK_v1 environment variable before rotating JWT_SECRET to ensure existing envelope-encrypted TOTP and recovery keys remain decryptable.",
@@ -888,7 +900,8 @@
       "descOneWay": "Emergency Recovery Key is the sole credential to regain account access and decrypt E2EE data if all Passkeys or authenticators are lost. To maintain zero-knowledge security, it is stored as a one-way irreversible hash, cannot be viewed in plaintext on the web, and can only be rotated using the current Recovery Key or existing Passkey. The key rotates automatically upon use.",
       "keyRequired": "Recovery key is required",
       "verifyBtn": "Recovery Key",
-      "verifyPromptLabel": "Original Recovery Key"
+      "verifyPromptLabel": "Original Recovery Key",
+      "rotateSuccessE2eeWarning": "Recovery Key successfully rotated! Note: Because E2EE was previously locked and could not be decrypted, old E2EE data still requires the previous recovery key to unlock, or you can click \"Reset Keypair\" below."
     },
     "verifyIdentity": "Security Verification",
     "verifyIdentityDesc": "To protect your account security, please verify your identity before proceeding.",

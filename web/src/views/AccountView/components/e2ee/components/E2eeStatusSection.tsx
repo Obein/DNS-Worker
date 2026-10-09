@@ -17,6 +17,8 @@ export interface E2eeStatusSectionProps {
   onLockDevice: () => void;
   onUnlockPasskey: () => Promise<void>;
   onOpenRecoveryUnlockDialog: () => void;
+  onEnrollPasskey?: () => Promise<void>;
+  onOpenResetAlert?: () => void;
 }
 
 export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
@@ -31,7 +33,9 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
   onUpgradeToPqc,
   onLockDevice,
   onUnlockPasskey,
-  onOpenRecoveryUnlockDialog
+  onOpenRecoveryUnlockDialog,
+  onEnrollPasskey,
+  onOpenResetAlert
 }) => {
   const { t } = useTranslation();
 
@@ -106,10 +110,20 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
             {t("account.e2ee.deviceState")}:
           </span>
           {isUnlocked ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
                 {t("account.e2ee.unlocked")}
               </Tag>
+              {hasPasskey && (status?.wrappedPasskeys?.length || 0) === 0 && onEnrollPasskey && (
+                <Button
+                  small
+                  intent={Intent.PRIMARY}
+                  icon={<KeyRound size={12} />}
+                  text={t("account.e2ee.enrollPasskeyBtn", "关联当前通行密钥")}
+                  loading={processing}
+                  onClick={onEnrollPasskey}
+                />
+              )}
               <Button
                 small
                 minimal
@@ -121,7 +135,7 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              {hasPasskey && (
+              {hasPasskey && (status?.wrappedPasskeys?.length || 0) > 0 && (
                 <Button
                   small
                   minimal
@@ -140,6 +154,16 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                 text={t("account.e2ee.unlockRecoveryButton")}
                 onClick={onOpenRecoveryUnlockDialog}
               />
+              {onOpenResetAlert && (
+                <Button
+                  small
+                  minimal
+                  intent={Intent.DANGER}
+                  icon="reset"
+                  text={t("account.e2ee.resetKeypairBtn", "重置密钥对")}
+                  onClick={onOpenResetAlert}
+                />
+              )}
             </div>
           )}
         </div>

@@ -693,7 +693,19 @@
       "trustBoundaryDesc": "所有 DNS 查詢流量在網路解析時必然會經過託管伺服器（Cloudflare Workers 邊緣節點或自建主機執行階段），伺服器在執行階段記憶體中處理解析後將記錄加密寫入。本功能僅用於保護雲端持久化資料庫（D1 / 資料倉儲）免受靜態資料洩漏或離線分析，無法向正在處理轉發請求的託管伺服器隱藏即時網路流量。",
       "initFailed": "初始化端對端加密失敗",
       "lockDevice": "鎖定此裝置",
-      "lockSuccess": "已鎖定，私鑰已從本機清除"
+      "lockSuccess": "已鎖定，私鑰已從本機清除",
+      "enrollPasskeyBtn": "關聯當前通行金鑰",
+      "enrollPasskeySuccess": "已成功將通行金鑰關聯至端到端加密！",
+      "enrollPasskeyFailed": "關聯通行金鑰失敗",
+      "resetKeypairBtn": "重置金鑰對",
+      "confirmResetBtn": "確認重置並重新生成",
+      "resetKeypairTitle": "重置端到端加密金鑰對",
+      "resetKeypairDesc": "如果您的恢復金鑰不匹配或無法解密，且未關聯通行金鑰，重置金鑰對將從服務端清除舊金鑰，並為您重新生成全新的後量子 (P256-MLKEM768) 金鑰對。",
+      "resetKeypairPasskeyNotice": "確認後將立即調用您當前已配置的通行金鑰 (Passkey) 完成新金鑰對的加密與授權。",
+      "resetKeypairRecoveryNotice": "確認後將引導您輸入當前恢復金鑰以完成新金鑰對的生成與加密。",
+      "resetAndInitPasskeySuccess": "金鑰對已成功重置並使用通行金鑰重新加密！",
+      "resetSuccessEnterRecovery": "舊金鑰已清除，請使用恢復金鑰初始化新金鑰對。",
+      "resetFailed": "重置金鑰對失敗"
     },
     "jwtSecretWarningTitle": "安全提示：JWT 金鑰強度較弱",
     "jwtSecretWarningDesc": "目前 JWT_SECRET 長度小於 32 位元字元，存在潛在安全隱患。請先設定環境變數 KEK_v1 完成憑證信封加密遷移，然後再輪換 JWT_SECRET，以防止既有加密的 TOTP 或復原金鑰無法解密。",
@@ -888,7 +900,8 @@
       "descOneWay": "緊急恢復密鑰是在您遺失所有通行密鑰 (Passkey) 或身份驗證器時，恢復帳號存取及端對端解密資料的唯一憑據。為確保零知識安全，恢復密鑰採用單向不可逆雜湊儲存，無法在網頁端檢視明文，僅支援透過原恢復密鑰或現有 Passkey 進行輪換。密鑰一旦被使用將立即自動輪換。",
       "keyRequired": "請輸入緊急恢復密鑰",
       "verifyBtn": "恢復密鑰",
-      "verifyPromptLabel": "原恢復密鑰 (Original Recovery Key)"
+      "verifyPromptLabel": "原恢復密鑰 (Original Recovery Key)",
+      "rotateSuccessE2eeWarning": "恢復金鑰已成功輪換！注意：由於端到端加密此前處於鎖定狀態且未能解密，舊 E2EE 密文仍需使用輪換前的舊恢復金鑰解鎖，或可在下方端到端加密卡片中點擊「重置金鑰對」。"
     },
     "verifyIdentity": "安全身分核驗",
     "verifyIdentityDesc": "為了保護您的帳戶安全，執行此敏感操作前請先驗證您的身分。",

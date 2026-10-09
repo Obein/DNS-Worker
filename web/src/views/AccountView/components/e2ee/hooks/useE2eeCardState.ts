@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../../../types";
 import { e2ee } from "../../../../../services";
 import type { ProfileE2eeStatus } from "../../../../../services";
-import { rotateRecoveryKey } from "../../../../../services/account";
+import { rotateRecoveryKey, getPasskeys } from "../../../../../services/account";
 
 export interface UseE2eeCardStateProps {
   user: UserInfo;
@@ -273,6 +273,73 @@ export function useE2eeCardState({
     });
   };
 
+  const [isResetAlertOpen, setIsResetAlertOpen] = useState<boolean>(false);
+
+  const handleEnrollPasskey = async () => {
+    setProcessing(true);
+    try {
+      const passkeys = await getPasskeys();
+      const passkeyId = passkeys.length > 0 ? passkeys[0].id : "primary";
+      const success = await e2ee.wrapCurrentKeyForPasskey(passkeyId);
+      if (success) {
+        toasterRef.current?.show({
+          message: t("account.e2ee.enrollPasskeySuccess", "已成功将通行密钥关联至端到端加密！"),
+          intent: Intent.SUCCESS,
+          icon: "tick"
+        });
+        await loadStatus();
+        onRefresh?.();
+      } else {
+        throw new Error(t("account.e2ee.enrollPasskeyFailed", "关联通行密钥失败"));
+      }
+    } catch (err: unknown) {
+      console.error("[useE2eeCardState] Enroll passkey failed:", err);
+      toasterRef.current?.show({
+        message: (err as Error).message || t("account.e2ee.enrollPasskeyFailed", "关联通行密钥失败"),
+        intent: Intent.DANGER,
+        icon: "error"
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleResetAndReinit = async () => {
+    setProcessing(true);
+    try {
+      await fetch("/api/account/e2ee?purge=true", { method: "DELETE" });
+      e2ee.clearStorage();
+
+      if (hasPasskey) {
+        await e2ee.enableUserE2ee();
+        toasterRef.current?.show({
+          message: t("account.e2ee.resetAndInitPasskeySuccess", "密钥对已成功重置并使用通行密钥重新加密！"),
+          intent: Intent.SUCCESS,
+          icon: "tick"
+        });
+      } else {
+        toasterRef.current?.show({
+          message: t("account.e2ee.resetSuccessEnterRecovery", "旧密钥已清除，请使用恢复密钥初始化新密钥对。"),
+          intent: Intent.WARNING,
+          icon: "refresh"
+        });
+        setInitRecoveryDialogOpen(true);
+      }
+      await loadStatus();
+      onRefresh?.();
+    } catch (err: unknown) {
+      console.error("[useE2eeCardState] Reset keypair failed:", err);
+      toasterRef.current?.show({
+        message: (err as Error).message || t("account.e2ee.resetFailed", "重置密钥对失败"),
+        intent: Intent.DANGER,
+        icon: "error"
+      });
+    } finally {
+      setProcessing(false);
+      setIsResetAlertOpen(false);
+    }
+  };
+
   const handleCopyRotatedKey = (k: string) => {
     navigator.clipboard.writeText(k);
     setCopiedKey(true);
@@ -312,6 +379,10 @@ export function useE2eeCardState({
     handleUpgradeToPqc,
     handleInitWithRecoveryKey,
     handleLockDevice,
-    handleCopyRotatedKey
+    handleCopyRotatedKey,
+    isResetAlertOpen,
+    setIsResetAlertOpen,
+    handleResetAndReinit,
+    handleEnrollPasskey
   };
 }

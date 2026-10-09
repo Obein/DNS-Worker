@@ -144,7 +144,13 @@ export const RecoveryKeyInput: React.FC<RecoveryKeyInputProps> = ({
                 maxLength={6}
                 value={group}
                 disabled={disabled}
-                placeholder="000000"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                data-1p-ignore="true"
+                data-lpignore="true"
+                data-bwignore="true"
                 onChange={(e) => handleGroupChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
                 onPaste={(e) => handlePaste(idx, e)}

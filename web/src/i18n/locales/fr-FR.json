@@ -693,7 +693,19 @@
       "trustBoundaryDesc": "Tout le trafic de requêtes DNS transite inévitablement par le serveur d'hébergement (nœuds Cloudflare Workers ou serveur autonome) lors de la résolution, où les requêtes sont traitées en mémoire avant d'être écrites sous forme chiffrée. Cette fonctionnalité protège les données au repos dans la base de données cloud (D1) ; elle ne masque pas le trafic réseau en direct au serveur d'hébergement qui traite la requête.",
       "initFailed": "Échec de l'initialisation du chiffrement de bout en bout",
       "lockDevice": "Verrouiller cet appareil",
-      "lockSuccess": "Verrouillé, clé privée effacée du stockage local"
+      "lockSuccess": "Verrouillé, clé privée effacée du stockage local",
+      "enrollPasskeyBtn": "Associer la clé d'accès actuelle",
+      "enrollPasskeySuccess": "Clé d'accès associée avec succès au chiffrement de bout en bout !",
+      "enrollPasskeyFailed": "Échec de l'association de la clé d'accès",
+      "resetKeypairBtn": "Réinitialiser la paire de clés",
+      "confirmResetBtn": "Confirmer la réinitialisation et la régénération",
+      "resetKeypairTitle": "Réinitialiser la paire de clés E2EE",
+      "resetKeypairDesc": "Si votre clé de secours ne correspond pas ou ne parvient pas à déchiffrer, et qu'aucune clé d'accès n'est enregistrée, la réinitialisation effacera les anciennes clés du serveur et générera une toute nouvelle paire de clés post-quantique (P256-MLKEM768).",
+      "resetKeypairPasskeyNotice": "La confirmation invoquera immédiatement votre clé d'accès configurée pour chiffrer et autoriser la nouvelle paire de clés.",
+      "resetKeypairRecoveryNotice": "La confirmation vous invitera à saisir votre clé de secours actuelle pour générer et chiffrer la nouvelle paire de clés.",
+      "resetAndInitPasskeySuccess": "Paire de clés réinitialisée avec succès et rechiffrée avec votre clé d'accès !",
+      "resetSuccessEnterRecovery": "Anciennes clés purgées. Veuillez initialiser une nouvelle paire de clés avec votre clé de secours.",
+      "resetFailed": "Échec de la réinitialisation de la paire de clés"
     },
     "jwtSecretWarningTitle": "Avis de sécurité : Secret JWT faible",
     "jwtSecretWarningDesc": "Le JWT_SECRET actuel comporte moins de 32 caractères, ce qui présente des risques potentiels pour la sécurité. Veuillez configurer la variable d'environnement KEK_v1 avant de renouveler JWT_SECRET afin de garantir que les clés TOTP et de récupération chiffrées par enveloppe restent déchiffrables.",
@@ -888,7 +900,8 @@
       "descOneWay": "La clé de récupération d'urgence est le seul moyen de récupérer l'accès au compte et de déchiffrer les données E2EE en cas de perte de tous les Passkeys ou authentificateurs. Pour garantir la sécurité zéro-connaissance, elle est stockée sous forme de hachage irréversible et ne peut pas être affichée en texte clair sur le Web. Elle ne peut être renouvelée qu'à l'aide de la clé d'origine ou d'un Passkey existant. Elle est automatiquement renouvelée après utilisation.",
       "keyRequired": "La clé de récupération est requise",
       "verifyBtn": "Clé de récupération",
-      "verifyPromptLabel": "Clé de récupération d'origine"
+      "verifyPromptLabel": "Clé de récupération d'origine",
+      "rotateSuccessE2eeWarning": "Clé de secours renouvelée avec succès ! Remarque : Comme le E2EE était verrouillé et n'a pas pu être déchiffré, les anciennes données nécessitent toujours la clé précédente, ou vous pouvez cliquer sur « Réinitialiser la paire de clés » ci-dessous."
     },
     "verifyIdentity": "Vérification de sécurité",
     "verifyIdentityDesc": "Pour protéger votre compte, veuillez vérifier votre identité avant de continuer.",
