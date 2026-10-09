@@ -1,9 +1,9 @@
 ---
-title: CLI 命令手册
-description: dns-worker 命令行工具的指令与参数全参考。
+title: CLI 命令手冊
+description: dns-worker 命令列工具的指令與引數全參考。
 ---
 
-全局安装 `npm install -g dns-worker` 后，可通过 `dns-worker` 执行以下命令：
+全域性安裝 `npm install -g dns-worker` 後，可通過 `dns-worker` 執行以下命令：
 
 ## 主命令
 
@@ -11,22 +11,22 @@ description: dns-worker 命令行工具的指令与参数全参考。
 dns-worker [options]
 ```
 
-直接以前台进程运行 DNS Worker。支持传入命令行选项覆盖 `.env` 配置，例如：
-- `-p, --port, --http-port <number>`：指定 HTTP 端口
-- `--https-port <number>`：指定 HTTPS 端口
-- `--dns-port <number>`：指定 UDP DNS 端口
-- `--dot-port <number>`：指定 DoT 端口
-- `--dot-domain <domain>`：指定对外基准域名
+直接以前臺程序執行 DNS Worker。支援傳入命令列選項覆蓋 `.env` 配置，例如：
+- `-p, --port, --http-port <number>`：指定 HTTP 埠
+- `--https-port <number>`：指定 HTTPS 埠
+- `--dns-port <number>`：指定 UDP DNS 埠
+- `--dot-port <number>`：指定 DoT 埠
+- `--dot-domain <domain>`：指定對外基準域名
 
 ---
 
-## 状态与诊断：`status`
+## 狀態與診斷：`status`
 
 ```bash
 dns-worker status
 ```
 
-快速诊断服务运行时状态、端口监听情况、TLS 证书有效性及 SQLite 数据库连通性。
+快速診斷服務執行時狀態、埠監聽情況、TLS 證書有效性及 SQLite 資料庫連通性。
 
 ---
 
@@ -48,7 +48,7 @@ dns-worker config template
 
 ---
 
-## 后台服务管理：`service`
+## 後臺服務管理：`service`
 
 ```bash
 # 安装系统服务（可选 --user <username>）

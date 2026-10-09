@@ -7,10 +7,10 @@ description: 了解 DNS Worker 的设计哲学、双引擎架构与核心能力�
 
 **DNS Worker** 是一套专为现代隐私与防护而设计的 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**：
 
-1. **🖥️ 独立服务器模式 (Serverfull / Standalone)**：
-   完全脱离 Cloudflare 基础设施，直接运行在您的自有 VPS、家用 Linux / Windows 服务器上。采用 Node.js 原生内置 `node:sqlite` 存储，原生监听经典 UDP 53、DoT 853 与 Web 面板 / DoH。
-2. **☁️ 边缘模式 (Cloudflare Workers Serverless)**：
-   免运维运行在 Cloudflare 全球 300+ 城市的分布式边缘节点，搭配分布式 D1 数据库，实现零服务器硬件成本与全球极速响应。
+1. **☁️ 边缘模式 (Cloudflare Workers Serverless / 首选推荐)**：
+   免运维运行在 Cloudflare 全球 300+ 城市的分布式边缘节点，搭配 D1 分布式数据库，享受零服务器维护成本、全球 Anycast 就近加速与亚毫秒级极速响应。
+2. **🖥️ 独立服务器模式 (Serverfull / 自建可选方案)**：
+   完全脱离 Cloudflare 基础设施，直接运行在您的自有 VPS、家用 Linux / Windows 主机上。采用 Node.js 原生内置 `node:sqlite` 存储，原生监听经典 UDP 53、DoT 853（基于 TLS SNI 路由）与 Web 面板 / DoH。
 
 ---
 

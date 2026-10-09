@@ -214,7 +214,11 @@ async function runTests() {
   const httpsRes = await new Promise<{ status: number; body: string }>((resolve, reject) => {
     const req = https.get(
       `https://127.0.0.1:${HTTPS_TEST_PORT}/api/clientinfo`,
-      { ca: fs.readFileSync(path.resolve('test', 'tmp', 'tls', 'ca.crt')) },
+      {
+        servername: 'dns.local',
+        ca: fs.readFileSync(tlsCertPath),
+        rejectUnauthorized: true
+      },
       (res) => {
         let data = '';
         res.on('data', (c) => data += c);

@@ -1,30 +1,30 @@
 ---
-title: 项目概述
-description: 了解 DNS Worker 的设计哲学、双引擎架构与核心能力。
+title: 專案概述
+description: 瞭解 DNS Worker 的設計哲學、雙引擎架構與核心能力。
 ---
 
-## 什么是 DNS Worker？
+## 什麼是 DNS Worker？
 
-**DNS Worker** 是一套专为现代隐私与防护而设计的 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**：
+**DNS Worker** 是一套專為現代隱私與防護而設計的 Protective DNS 解析系統，採用**雙引擎架構（Dual-Engine Architecture）**：
 
-1. **🖥️ 独立服务器模式 (Serverfull / Standalone)**：
-   完全脱离 Cloudflare 基础设施，直接运行在您的自有 VPS、家用 Linux / Windows 服务器上。采用 Node.js 原生内置 `node:sqlite` 存储，原生监听经典 UDP 53、DoT 853 与 Web 面板 / DoH。
-2. **☁️ 边缘模式 (Cloudflare Workers Serverless)**：
-   免运维运行在 Cloudflare 全球 300+ 城市的分布式边缘节点，搭配分布式 D1 数据库，实现零服务器硬件成本与全球极速响应。
+1. **☁️ 邊緣模式 (Cloudflare Workers Serverless / 首選推薦)**：
+   免運維執行在 Cloudflare 全球 300+ 城市的分散式邊緣節點，搭配 D1 分散式資料庫，享受零伺服器維護成本、全球 Anycast 就近加速與亞毫秒級極速響應。
+2. **🖥️ 獨立伺服器模式 (Serverfull / 自建可選方案)**：
+   完全脫離 Cloudflare 基礎設施，直接執行在您的自有 VPS、家用 Linux / Windows 主機上。採用 Node.js 原生內建 `node:sqlite` 儲存，原生監聽經典 UDP 53、DoT 853（基於 TLS SNI 路由）與 Web 面板 / DoH。
 
 ---
 
-## 协议与核心能力
+## 協議與核心能力
 
-### 1. 全协议覆盖
-* **经典 UDP 53 (RFC 1035)**：为路由器和内网设备提供即插即用的原生 DNS 解析。
-* **DoT 853 (RFC 7858)**：基于 TLS 加密传输，原生适配 Android 9+“私有 DNS”，通过 TLS SNI 实现多配置自动路由（如 `<profileKey>.dns.example.com`）。
-* **DoH (RFC 8484)**：支持 HTTP/2 与 HTTP/3 (Alt-Svc) 加密解析，兼容主流现代浏览器。
-* **DoQ (RFC 9250)**：支持基于 QUIC 的 0-RTT 极速握手，无队头阻塞。
-* **ECH 与 DDR (RFC 9460)**：广播 Encrypted Client Hello 参数与外层伪装 SNI，配合 DDR 实现加密 DNS 自动发现。
+### 1. 全協議覆蓋
+* **經典 UDP 53 (RFC 1035)**：為路由器和內網裝置提供即插即用的原生 DNS 解析。
+* **DoT 853 (RFC 7858)**：基於 TLS 加密傳輸，原生適配 Android 9+“私有 DNS”，通過 TLS SNI 實現多配置自動路由（如 `<profileKey>.dns.example.com`）。
+* **DoH (RFC 8484)**：支援 HTTP/2 與 HTTP/3 (Alt-Svc) 加密解析，相容主流現代瀏覽器。
+* **DoQ (RFC 9250)**：支援基於 QUIC 的 0-RTT 極速握手，無隊頭阻塞。
+* **ECH 與 DDR (RFC 9460)**：廣播 Encrypted Client Hello 引數與外層偽裝 SNI，配合 DDR 實現加密 DNS 自動發現。
 
-### 2. 本地优先 (Local-First) 架构
-基于浏览器端原生 OPFS (Origin Private File System) 与 WebAssembly SQLite，用户端查询日志和聚合统计全部在本地 0ms 瞬间渲染，支持离线分析，后台自动执行轻量双向同步，大幅节省数据库计费与带宽。
+### 2. 本地優先 (Local-First) 架構
+基於瀏覽器端原生 OPFS (Origin Private File System) 與 WebAssembly SQLite，使用者端查詢日誌和聚合統計全部在本地 0ms 瞬間渲染，支援離線分析，後臺自動執行輕量雙向同步，大幅節省資料庫計費與頻寬。
 
-### 3. 后量子零知识端到端加密 (E2EE)
-引入 NIST FIPS 203 **P256-MLKEM768** 混合格密码学，配合硬件通行密钥（WebAuthn / Passkey）及恢复密钥。服务器只保存高强度加密密文，解密与私钥计算严格限定在用户的受信任设备内。
+### 3. 後量子零知識端到端加密 (E2EE)
+引入 NIST FIPS 203 **P256-MLKEM768** 混合格密碼學，配合硬體通行金鑰（WebAuthn / Passkey）及恢復金鑰。伺服器只儲存高強度加密密文，解密與私鑰計算嚴格限定在使用者的受信任裝置內。

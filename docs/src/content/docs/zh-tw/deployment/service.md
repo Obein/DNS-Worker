@@ -1,13 +1,13 @@
 ---
-title: 常驻后台服务管理 (systemd & Windows)
-description: 在 Linux systemd 与 Windows 计划任务中以守护进程运行 DNS Worker。
+title: 常駐後臺服務管理 (systemd & Windows)
+description: 在 Linux systemd 與 Windows 計劃任務中以守護程序執行 DNS Worker。
 ---
 
-DNS Worker 内置完善的服务生命周期管理器，可一键完成服务的注册、配置、启停与自启。
+DNS Worker 內建完善的服務生命週期管理器，可一鍵完成服務的註冊、配置、啟停與自啟。
 
-## Linux systemd 服务
+## Linux systemd 服務
 
-### 1. 服务安装与注册
+### 1. 服務安裝與註冊
 
 ```bash
 # 默认以调用 sudo 的当前用户运行（推荐）
@@ -17,8 +17,8 @@ sudo dns-worker service install
 sudo dns-worker service install --user root
 ```
 
-:::tip[安全机制提示]
-为遵循最小权限原则，服务默认以非 root 用户运行，并通过 Linux 内核特权 `CAP_NET_BIND_SERVICE` 绑定 53 与 853 端口。
+:::tip[安全機制提示]
+為遵循最小許可權原則，服務預設以非 root 使用者執行，並通過 Linux 核心特權 `CAP_NET_BIND_SERVICE` 繫結 53 與 853 埠。
 :::
 
 ### 2. 常用管理命令
@@ -48,9 +48,9 @@ sudo dns-worker service uninstall
 
 ---
 
-## Windows 计划任务
+## Windows 計劃任務
 
-在 Windows 环境下以管理员身份运行 PowerShell 或 CMD：
+在 Windows 環境下以管理員身份執行 PowerShell 或 CMD：
 
 ```powershell
 # 安装计划任务并在系统启动时自启

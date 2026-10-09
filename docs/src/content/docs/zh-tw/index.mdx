@@ -1,17 +1,17 @@
 ---
-title: DNS Worker 官方技术文档
-description: 隐私优先 Protective DNS 解析器 & DoH / DoT 服务端，双引擎自主架构。
+title: DNS Worker 使用者文件
+description: 隱私優先 Protective DNS 解析器 & DoH / DoT 服務端，雙引擎自主架構。
 template: splash
 hero:
-  tagline: 保护您的互联网第一跳 · 全栈协议覆盖 · 本地优先 0ms 分析 · NIST FIPS 203 后量子零知识 E2EE
+  tagline: 保護您的網際網路第一跳 · 全棧協議覆蓋 · 本地優先 0ms 分析 · NIST FIPS 203 後量子零知識 E2EE
   image:
     file: ../../../assets/logo.webp
   actions:
-    - text: 快速开始
+    - text: 快速開始
       link: /DNS-Worker/guide/quickstart/
       icon: right-arrow
       variant: primary
-    - text: GitHub 仓库
+    - text: GitHub 倉庫
       link: https://github.com/Obein/DNS-Worker
       icon: external
       variant: secondary
@@ -20,16 +20,16 @@ hero:
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
-  <Card title="双引擎自由架构" icon="rocket">
-    既支持完全脱离 Cloudflare 在自有 VPS / 家用主机上独立部署，独享经典 UDP 53 与 DoT 853；亦可无服务器部署于 Cloudflare 300+ 边缘节点。
+  <Card title="Serverless 邊緣優先" icon="rocket">
+    專為 Cloudflare Workers & D1 打造，全球 300+ 邊緣資料中心免運維執行；同時支援在自有 VPS / 路由器上獨立部署 Serverfull 模式。
   </Card>
-  <Card title="全栈协议覆盖" icon="setting">
-    原生支持 Classic UDP 53、DoT 853（TLS SNI 路由）、DoH（RFC 8484 over HTTP/2 & HTTP/3）、DoQ（RFC 9250）与 ECH / DDR（RFC 9460）。
+  <Card title="全棧協議覆蓋" icon="setting">
+    原生支援 Classic UDP 53、DoT 853（TLS SNI 路由）、DoH（RFC 8484 over HTTP/2 & HTTP/3）、DoQ（RFC 9250）與 ECH / DDR（RFC 9460）。
   </Card>
-  <Card title="后量子零知识 E2EE" icon="shield">
-    基于 NIST FIPS 203 **P256-MLKEM768** 后量子混合格密码学与硬件通行密钥（Passkey / WebAuthn），全面抵御前向量子计算窥探。
+  <Card title="後量子零知識 E2EE" icon="shield">
+    基於 NIST FIPS 203 **P256-MLKEM768** 後量子混合格密碼學與硬體通行金鑰（Passkey / WebAuthn），全面抵禦前向量子計算窺探。
   </Card>
-  <Card title="本地优先 (Local-First)" icon="laptop">
-    嵌入浏览器端 SQLite（WASM + OPFS）驱动，日志筛选与统计图表 0ms 瞬间渲染，离线可用且彻底节省数据库读配额。
+  <Card title="本地優先 (Local-First)" icon="laptop">
+    嵌入瀏覽器端 SQLite（WASM + OPFS）驅動，日誌篩選與統計圖表 0ms 瞬間渲染，離線可用且徹底節省資料庫讀配額。
   </Card>
 </CardGrid>
