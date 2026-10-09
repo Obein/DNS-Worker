@@ -39,7 +39,40 @@ export function inspectTlsCertificate(certPath: string, keyPath: string): TlsCer
     };
   }
 
-  const filesExist = fs.existsSync(certPath) && fs.existsSync(keyPath);
+  let certAccessible = false;
+  let keyAccessible = false;
+  let accessError: string | undefined;
+
+  try {
+    fs.accessSync(certPath, fs.constants.R_OK);
+    certAccessible = true;
+  } catch (err: unknown) {
+    const errCode = (err as { code?: string })?.code;
+    const errMsg = err instanceof Error ? err.message : String(err);
+    if (errCode === 'EACCES') {
+      accessError = `Permission denied (EACCES) reading certPath: ${certPath}`;
+    } else if (errCode === 'ENOENT') {
+      accessError = `Certificate file not found: ${certPath}`;
+    } else {
+      accessError = `Cannot read certPath (${certPath}): ${errMsg}`;
+    }
+  }
+
+  try {
+    fs.accessSync(keyPath, fs.constants.R_OK);
+    keyAccessible = true;
+  } catch (err: unknown) {
+    const errCode = (err as { code?: string })?.code;
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const keyMsg = errCode === 'EACCES'
+      ? `Permission denied (EACCES) reading keyPath: ${keyPath}`
+      : errCode === 'ENOENT'
+        ? `Private key file not found: ${keyPath}`
+        : `Cannot read keyPath (${keyPath}): ${errMsg}`;
+    accessError = accessError ? `${accessError}; ${keyMsg}` : keyMsg;
+  }
+
+  const filesExist = certAccessible && keyAccessible;
   if (!filesExist) {
     return {
       configured: true,
@@ -48,7 +81,8 @@ export function inspectTlsCertificate(certPath: string, keyPath: string): TlsCer
       keyPath,
       isWildcard: false,
       domains: [],
-      expiresAt: null
+      expiresAt: null,
+      error: accessError
     };
   }
 

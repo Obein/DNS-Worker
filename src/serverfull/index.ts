@@ -368,8 +368,23 @@ async function bootstrap(): Promise<void> {
   const canStartDot = !config.disableDot && certInfo.configured && certInfo.filesExist && certInfo.isWildcard;
 
   // Print Certbot diagnostic guidance if certificate is not configured or not wildcard
-  if (!certInfo.configured || !certInfo.filesExist) {
+  if (!certInfo.configured) {
     console.log(formatDiagnostic(getCertbotDiagnosticOptions('missing', config.dotDomain)));
+  } else if (!certInfo.filesExist) {
+    console.log(formatDiagnostic({
+      level: 'warning',
+      title: 'TLS Certificate Files Inaccessible',
+      message: certInfo.error || 'Configured TLS certificate or private key files could not be read on disk.',
+      details: [
+        `Cert path : ${config.tlsCertPath}`,
+        `Key path  : ${config.tlsKeyPath}`,
+        `Running as: ${process.env.USER || process.env.USERNAME || 'unknown'}`
+      ],
+      solutions: [
+        'Check that the paths configured in .env exist and are accessible.',
+        'If using Let\'s Encrypt (/etc/letsencrypt/), grant read permissions to the service user (e.g. chmod 755 /etc/letsencrypt/{live,archive} and chmod 644 on keys).'
+      ]
+    }));
   } else if (!certInfo.isWildcard) {
     console.log(formatDiagnostic(getCertbotDiagnosticOptions('non_wildcard', config.dotDomain)));
   }
@@ -378,15 +393,19 @@ async function bootstrap(): Promise<void> {
     ? 'Disabled (--disable-https)'
     : canStartHttps
       ? `https://${config.host}:${config.httpsPort}`
-      : 'Disabled (TLS Certificates Not Configured)';
+      : !certInfo.configured
+        ? 'Disabled (TLS Certificates Not Configured)'
+        : `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`;
 
   const dotDisplay = config.disableDot
     ? 'Disabled (--disable-dot)'
-    : !certInfo.configured || !certInfo.filesExist
+    : !certInfo.configured
       ? 'Disabled (TLS Certificates Not Configured)'
-      : !certInfo.isWildcard
-        ? 'Paused (Requires Wildcard Certificate *.domain)'
-        : `tls://${config.host}:${config.dotPort}`;
+      : !certInfo.filesExist
+        ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+        : !certInfo.isWildcard
+          ? 'Paused (Requires Wildcard Certificate *.domain)'
+          : `tls://${config.host}:${config.dotPort}`;
 
   console.log(formatKeyValueSection({
     title: '[Services] Configured Ports & Transports:',
@@ -486,7 +505,15 @@ async function bootstrap(): Promise<void> {
       },
       {
         label: 'DoT (TLS DNS)',
-        value: (dotServer && hasTls) ? `tls://${config.dotDomain || config.host}:${config.dotPort}` : 'Disabled / Not Configured'
+        value: (dotServer && hasTls)
+          ? `tls://${config.dotDomain || config.host}:${config.dotPort}`
+          : (!certInfo.configured)
+            ? 'Disabled / Not Configured'
+            : (!certInfo.filesExist)
+              ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+              : (!certInfo.isWildcard)
+                ? 'Paused (Requires Wildcard Certificate *.domain)'
+                : 'Disabled'
       },
       {
         label: 'Web UI & DoH (HTTP)',
@@ -494,7 +521,13 @@ async function bootstrap(): Promise<void> {
       },
       {
         label: 'Web UI & DoH (HTTPS)',
-        value: httpsServer ? `https://${config.dotDomain || config.host}:${config.httpsPort}` : 'Disabled / Not Configured'
+        value: httpsServer
+          ? `https://${config.dotDomain || config.host}:${config.httpsPort}`
+          : (!certInfo.configured)
+            ? 'Disabled / Not Configured'
+            : (!certInfo.filesExist)
+              ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+              : 'Disabled'
       },
       {
         label: 'SQLite Database',

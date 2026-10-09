@@ -369,14 +369,36 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
 
   const packageRoot = getPackageRoot();
 
-  // Support both SERVERFULL_TLS_KEY_PATH and SERFULL_TLS_KEY_PATH
-  const tlsKeyPath = process.env.SERVERFULL_TLS_KEY_PATH || process.env.SERFULL_TLS_KEY_PATH || '';
-  // Support SERVERFULL_TLS_CERT_PATH and public key aliases
-  const tlsCertPath = process.env.SERVERFULL_TLS_CERT_PATH || 
-                      process.env.SERVERFULL_TLS_PUB_PATH || 
-                      process.env.SERVERFULL_TLS_PUBLIC_KEY_PATH ||
-                      process.env.SERFULL_TLS_CERT_PATH ||
-                      process.env.SERFULL_TLS_PUB_PATH || '';
+  // Support SERVERFULL_TLS_KEY_PATH and standard aliases
+  const tlsKeyPath = (
+    process.env.SERVERFULL_TLS_KEY_PATH ||
+    process.env.SERFULL_TLS_KEY_PATH ||
+    process.env.TLS_KEY_PATH ||
+    process.env.SSL_KEY_PATH ||
+    process.env.SERVERFULL_TLS_KEY ||
+    process.env.TLS_KEY ||
+    process.env.SSL_KEY ||
+    process.env.KEY_PATH ||
+    process.env.KEY_FILE ||
+    ''
+  ).trim();
+
+  // Support SERVERFULL_TLS_CERT_PATH and standard aliases
+  const tlsCertPath = (
+    process.env.SERVERFULL_TLS_CERT_PATH || 
+    process.env.SERVERFULL_TLS_PUB_PATH || 
+    process.env.SERVERFULL_TLS_PUBLIC_KEY_PATH ||
+    process.env.SERFULL_TLS_CERT_PATH ||
+    process.env.SERFULL_TLS_PUB_PATH ||
+    process.env.TLS_CERT_PATH ||
+    process.env.SSL_CERT_PATH ||
+    process.env.SERVERFULL_TLS_CERT ||
+    process.env.TLS_CERT ||
+    process.env.SSL_CERT ||
+    process.env.CERT_PATH ||
+    process.env.CERT_FILE ||
+    ''
+  ).trim();
 
   const udpPort = parseInt(cliArgs?.['dns-port'] || process.env.SERVERFULL_UDP_PORT || process.env.DNS_PORT || '53', 10);
   const dotPort = parseInt(cliArgs?.['dot-port'] || process.env.SERVERFULL_DOT_PORT || process.env.DOT_PORT || '853', 10);
