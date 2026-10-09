@@ -180,32 +180,91 @@ DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macO
 
 #### 快速啟動
 
-1. 複製程式碼倉庫並安裝依賴：
+##### 方式 1：全域安裝或 npx 極速啟動（推薦）
+```bash
+# 全域安裝
+npm install -g dns-worker
+
+# 初始化配置與持久化目錄 (/etc/dns-worker/.env)
+dns-worker config init
+
+# 啟動服務測試
+dns-worker
+```
+
+##### 方式 2：複製源碼啟動
 ```bash
 git clone https://github.com/Obein/DNS-Worker.git DNS-Worker
 cd DNS-Worker
 npm install
-```
-
-2. 配置環境變數：
-專案內建提供開箱即用的設定檔範本 `.env.serverfull`。您可以直接修改，也可以複製為 `.env`：
-```bash
 cp .env.serverfull .env
-nano .env
-```
-
-3. 編譯前端並啟動獨立服務：
-```bash
 npm run start:serverfull
 ```
 
-4. 註冊為 Linux 系統常駐服務 (systemd)：
+#### 常駐背景服務管理 (Linux systemd & Windows)
+
+DNS Worker 內建完善的服務生命週期管理系統。在 Linux 下會自動建立並配置具有 `CAP_NET_BIND_SERVICE` 特權的 systemd 服務，在 Windows 下會自動配置排程工作：
+
 ```bash
-sudo npm run service-create:linux
-sudo systemctl start dns-worker
-sudo systemctl status dns-worker
+# 安裝並註冊系統服務（預設以當前非 root 呼叫使用者執行，支援指定 --user）
+sudo dns-worker service install [--user <username>]
+
+# 常用服務管理指令
+sudo dns-worker service status     # 查看服務執行狀態
+sudo dns-worker service logs       # 查看並追蹤即時日誌
+sudo dns-worker service restart    # 重啟服務
+sudo dns-worker service enable     # 設定開機自啟
+sudo dns-worker service disable    # 取消開機自啟
+sudo dns-worker service stop       # 停止服務
+sudo dns-worker service uninstall  # 徹底解除安裝服務
 ```
-該命令會自動產生 `/etc/systemd/system/dns-worker.service`，配置 `CAP_NET_BIND_SERVICE` 特權連接埠（53/853）綁定能力並配置開機自啟。
+
+> **從源碼安裝**：在專案根目錄下亦可執行 `sudo npm run service-create:linux` 快速安裝。
+
+#### TLS 憑證配置與權限安全最佳實踐
+
+##### 1. 服務執行特權與安全機制
+為遵循 Linux 生產環境的**最小權限原則（Principle of Least Privilege）**，系統服務安裝時預設以一般使用者（即當時執行 `sudo` 的使用者）執行，並透過 Linux 核心特權 `AmbientCapabilities=CAP_NET_BIND_SERVICE` 綁定 53（UDP DNS）與 853（DoT）低位特權連接埠。這樣既無需以 root 身分執行整個 Node.js 行程，又具備低連接埠綁定能力。
+
+##### 2. Let's Encrypt / Certbot 憑證權限配置
+Certbot 預設產生的目錄為 `0700 (root:root)`，私密金鑰為 `0600 (root:root)`，一般使用者無法直接讀取。**絕不建議將私密金鑰設為全域可讀（如 chmod 644）**。推薦採用以下方案之一：
+
+* **最佳實踐：使用標準的 `ssl-cert` 使用者群組授權（最優雅，無需 root）**
+  ```bash
+  # 1. 確保系統存在 ssl-cert 使用者群組並將服務執行使用者加入
+  sudo groupadd -f ssl-cert
+  sudo usermod -a -G ssl-cert <username>
+
+  # 2. 將憑證私密金鑰所屬群組設為 ssl-cert，並嚴格限制為群組唯讀 (0640)
+  sudo chgrp ssl-cert /etc/letsencrypt/live/<your-domain>/privkey.pem
+  sudo chmod 640 /etc/letsencrypt/live/<your-domain>/privkey.pem
+
+  # 3. 允許 ssl-cert 群組檢索目錄
+  sudo chgrp ssl-cert /etc/letsencrypt/live /etc/letsencrypt/archive
+  sudo chmod 750 /etc/letsencrypt/live /etc/letsencrypt/archive
+
+  # 4. 重啟服務生效
+  sudo dns-worker service restart
+  ```
+
+* **方案二：專有憑證目錄隔離 + Certbot Hook（強隔離性，0600 權限）**
+  將憑證同步至 `/etc/dns-worker/certs/`，屬主直接設為執行使用者並將私密金鑰權限鎖定為 `0600`，並在 `/etc/letsencrypt/renewal-hooks/deploy/` 配置自動複製指令碼。
+
+* **方案三：獨立專屬 VPS 直接以 `root` 執行**
+  若該主機為專用於 DNS Worker 的獨立單機，亦可在安裝時直接指定以 root 身分執行：
+  ```bash
+  sudo dns-worker service install --user root
+  # 或直接修改服務檔案中的 User=root 並執行 sudo systemctl daemon-reload
+  ```
+
+##### 3. DoT 萬用字元憑證要求
+DoT（DNS over TLS）透過 TLS SNI 將用戶端請求精準路由到不同的 Profile（如 `<profileKey>.dns.example.com`）。因此：
+- 啟用 DoT **必須配置包含萬用字元的憑證**（同時涵蓋 `*.your.domain` 與 `your.domain`）。
+- 若配置的是單網域憑證，HTTPS Web 儀表板和 DoH 正常運作，但 DoT 會處於安全暫停狀態（`Paused (Requires Wildcard Certificate *.domain)`）。
+- 申請免費萬用字元憑證範例（Certbot DNS 挑戰）：
+  ```bash
+  certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns
+  ```
 
 ---
 

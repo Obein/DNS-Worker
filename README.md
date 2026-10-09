@@ -176,32 +176,91 @@ Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22
 
 #### Quick Start
 
-1. Clone repository and install dependencies:
+##### Method 1: Global npm Installation or npx (Recommended)
+```bash
+# Install globally
+npm install -g dns-worker
+
+# Initialize configuration and persistent directories (/etc/dns-worker/.env)
+dns-worker config init
+
+# Start server for testing
+dns-worker
+```
+
+##### Method 2: Run from Cloned Source
 ```bash
 git clone https://github.com/Obein/DNS-Worker.git DNS-Worker
 cd DNS-Worker
 npm install
-```
-
-2. Configure environment variables:
-The project provides an out-of-the-box configuration template `.env.serverfull`. You can modify it directly or copy it to `.env`:
-```bash
 cp .env.serverfull .env
-nano .env
-```
-
-3. Build frontend and start Standalone Server:
-```bash
 npm run start:serverfull
 ```
 
-4. Production deployment as a Linux systemd background service:
+#### Background Service Management (Linux systemd & Windows)
+
+DNS Worker provides built-in lifecycle management for background services. On Linux, it provisions a systemd unit with `CAP_NET_BIND_SERVICE` privileges; on Windows, it creates a Scheduled Task:
+
 ```bash
-sudo npm run service-create:linux
-sudo systemctl start dns-worker
-sudo systemctl status dns-worker
+# Install and register system service (runs unprivileged as invoking user by default, optional --user)
+sudo dns-worker service install [--user <username>]
+
+# Common service management commands
+sudo dns-worker service status     # Inspect live status
+sudo dns-worker service logs       # Tail real-time service logs
+sudo dns-worker service restart    # Restart service
+sudo dns-worker service enable     # Enable autostart on system boot
+sudo dns-worker service disable    # Disable autostart on system boot
+sudo dns-worker service stop       # Stop service
+sudo dns-worker service uninstall  # Completely remove service
 ```
-This generates `/etc/systemd/system/dns-worker.service` configured with `CAP_NET_BIND_SERVICE` privileges to bind privileged ports 53 and 853 without running as root, with automatic restart on reboot.
+
+> **From Source Repository**: You can also run `sudo npm run service-create:linux` in the project root directory.
+
+#### TLS Certificate Configuration & Security Best Practices
+
+##### 1. Service Privileges & Principle of Least Privilege
+To follow the Linux **Principle of Least Privilege**, the background service installs and runs as an unprivileged user (the invoking user when calling `sudo`) by default. Linux kernel capabilities (`AmbientCapabilities=CAP_NET_BIND_SERVICE`) are granted to bind privileged ports 53 (UDP DNS) and 853 (DoT) without running the Node.js runtime as root.
+
+##### 2. Let's Encrypt / Certbot Permissions
+Certbot generates certificates with `0700 (root:root)` on parent directories and `0600 (root:root)` on private keys (`privkey.pem`). An unprivileged user cannot read them by default, leading to `Permission denied (EACCES)`. **Never make private keys world-readable (`chmod 644`)**. Choose one of the recommended approaches below:
+
+* **Best Practice: Standard `ssl-cert` Group Delegation (Cleanest, No Root)**
+  ```bash
+  # 1. Ensure the ssl-cert group exists and add the service user to it
+  sudo groupadd -f ssl-cert
+  sudo usermod -a -G ssl-cert <username>
+
+  # 2. Grant group read permission on the private key (0640)
+  sudo chgrp ssl-cert /etc/letsencrypt/live/<your-domain>/privkey.pem
+  sudo chmod 640 /etc/letsencrypt/live/<your-domain>/privkey.pem
+
+  # 3. Allow ssl-cert group traversal through live and archive directories
+  sudo chgrp ssl-cert /etc/letsencrypt/live /etc/letsencrypt/archive
+  sudo chmod 750 /etc/letsencrypt/live /etc/letsencrypt/archive
+
+  # 4. Restart service to apply
+  sudo dns-worker service restart
+  ```
+
+* **Option 2: Isolated Certificate Directory + Certbot Hook (Strict 0600 Isolation)**
+  Copy certificates to `/etc/dns-worker/certs/`, set ownership to the service user, lock private keys to `chmod 600`, and place an automated copy script in `/etc/letsencrypt/renewal-hooks/deploy/`.
+
+* **Option 3: Dedicated Standalone VPS Running as `root`**
+  For dedicated, single-purpose DNS servers with no multi-user sharing, you can install the service as root directly:
+  ```bash
+  sudo dns-worker service install --user root
+  # Or change User=root in /etc/systemd/system/dns-worker.service and run sudo systemctl daemon-reload
+  ```
+
+##### 3. Wildcard Certificate Requirement for DoT
+DoT (DNS over TLS) routes encrypted queries to specific user profiles via TLS Server Name Indication (`<profileKey>.dns.example.com`).
+- Enabling DoT **requires a wildcard certificate** covering both `*.your.domain` and `your.domain`.
+- If a single-domain certificate is configured, the HTTPS Web Dashboard and DoH will run normally, while DoT will remain safely paused (`Paused (Requires Wildcard Certificate *.domain)`).
+- Obtain a free wildcard certificate using Certbot with DNS challenge:
+  ```bash
+  certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns
+  ```
 
 ---
 
