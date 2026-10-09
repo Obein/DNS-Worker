@@ -185,7 +185,11 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
   }
 
   if (url.pathname === '/api/geoip') {
-    const targetIp = url.searchParams.get('ip') || request.headers.get("CF-Connecting-IP") || "127.0.0.1";
+    const rawIp = url.searchParams.get('ip');
+    const connectingIp = request.headers.get("CF-Connecting-IP");
+    const targetIp = (rawIp || connectingIp || "").trim();
+
+    // Check if explicitly requesting local/private IP
     if (
       targetIp === '127.0.0.1' ||
       targetIp === 'localhost' ||
@@ -204,8 +208,11 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     }
 
     try {
-      const geoRes = await fetch(`https://ipwho.is/${encodeURIComponent(targetIp)}`, {
-        signal: AbortSignal.timeout(3000)
+      // If a specific public target IP was requested, query that IP;
+      // otherwise query without IP parameter so ipwho.is resolves the caller's / server's public egress IP.
+      const geoUrl = targetIp ? `https://ipwho.is/${encodeURIComponent(targetIp)}` : 'https://ipwho.is/';
+      const geoRes = await fetch(geoUrl, {
+        signal: AbortSignal.timeout(3500)
       });
       if (geoRes.ok) {
         const data = await geoRes.json();
@@ -214,9 +221,9 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
         });
       }
     } catch (e) {
-      console.warn(`[System API] Failed resolving geoip for ${targetIp}:`, e);
+      console.warn(`[System API] Failed resolving geoip for ${targetIp || 'server'}:`, e);
     }
-    return new Response(JSON.stringify({ success: false, ip: targetIp }), {
+    return new Response(JSON.stringify({ success: false, ip: targetIp || 'unknown' }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
@@ -253,12 +260,12 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
             signal: AbortSignal.timeout(3000)
           });
           if (res.ok) {
-            const data = await res.json() as any;
+            const data = (await res.json()) as { Answer?: Array<{ type: number; data: string }> };
             if (Array.isArray(data?.Answer) && data.Answer.length > 0) {
               const typeNum = type === 'A' ? 1 : 28;
               return data.Answer
-                .filter((ans: any) => ans.type === typeNum && typeof ans.data === 'string')
-                .map((ans: any) => ans.data as string);
+                .filter((ans) => ans.type === typeNum && typeof ans.data === 'string')
+                .map((ans) => ans.data);
             }
           }
         } catch {
@@ -269,10 +276,30 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     };
 
     try {
-      const [ipv4, ipv6] = await Promise.all([
+      let [ipv4, ipv6] = await Promise.all([
         resolveDoH('A'),
         resolveDoH('AAAA')
       ]);
+
+      // In Node.js / Serverfull runtime, fallback to native DNS resolution if DoH returned empty
+      if (ipv4.length === 0 && ipv6.length === 0 && typeof process !== 'undefined' && process.versions?.node) {
+        try {
+          const dnsPromises = await import('node:dns/promises');
+          const [res4, res6] = await Promise.allSettled([
+            dnsPromises.resolve4(domain),
+            dnsPromises.resolve6(domain)
+          ]);
+          if (res4.status === 'fulfilled' && Array.isArray(res4.value)) {
+            ipv4 = res4.value;
+          }
+          if (res6.status === 'fulfilled' && Array.isArray(res6.value)) {
+            ipv6 = res6.value;
+          }
+        } catch {
+          // Ignore native DNS lookup errors
+        }
+      }
+
       return new Response(JSON.stringify({ ipv4, ipv6 }), {
         headers: { 'Content-Type': 'application/json' }
       });

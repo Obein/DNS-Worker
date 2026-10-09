@@ -19,6 +19,7 @@ import {
   getProfileDetails,
   getDomainGeoLocation,
   resolveDomainDnsIps,
+  isDummyOrPlaceholderDomain,
 } from "../../services";
 
 export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, profileName, toasterRef }) => {
@@ -102,7 +103,23 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
       }
 
       // Determine active target domain for DNS IP resolution & Geo location
-      const domainToResolve = clientData.dotDomain || window.location.hostname;
+      // Avoid RFC 2606 dummy placeholders (e.g. dns.example.com)
+      const isLocalHost = (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "::1" ||
+        window.location.hostname.startsWith("192.168.") ||
+        window.location.hostname.startsWith("10.") ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(window.location.hostname)
+      );
+
+      const hasValidDotDomain = Boolean(
+        clientData.dotDomain && !isDummyOrPlaceholderDomain(clientData.dotDomain)
+      );
+
+      const domainToResolve = (isLocalHost && hasValidDotDomain)
+        ? clientData.dotDomain!
+        : (hasValidDotDomain ? clientData.dotDomain! : (window.location.hostname || ""));
 
       // Fetch geographic location of the current domain from the frontend
       getDomainGeoLocation(domainToResolve)

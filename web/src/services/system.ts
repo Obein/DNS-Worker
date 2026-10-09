@@ -153,11 +153,51 @@ export async function resolveDomainDnsIps(domain: string): Promise<{ ipv4: strin
 }
 
 /**
+ * Detects RFC 2606 and documentation placeholder domains that cannot be resolved in reality.
+ */
+export function isDummyOrPlaceholderDomain(domain?: string | null): boolean {
+  if (!domain) return true;
+  const d = domain.trim().toLowerCase();
+  if (!d) return true;
+  return (
+    d === "dns.example.com" ||
+    d === "example.com" ||
+    d.endsWith(".example.com") ||
+    d.endsWith(".example") ||
+    d.endsWith(".example.net") ||
+    d.endsWith(".example.org") ||
+    d.endsWith(".invalid") ||
+    d.endsWith(".test")
+  );
+}
+
+/**
  * Fetches geographic location for a domain or IP from the frontend.
  * Queries https://ipwho.is/ directly with fallback to backend /api/geoip.
  */
 export async function getDomainGeoLocation(domain: string): Promise<string> {
   const cleanDomain = domain.trim().toLowerCase();
+
+  // Handle dummy or unconfigured placeholder domains
+  if (isDummyOrPlaceholderDomain(cleanDomain)) {
+    try {
+      const res = await fetch("/api/geoip");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.country && data.country !== "Private Network") {
+          const parts: string[] = [];
+          if (data.city && data.city !== "Local") parts.push(data.city);
+          if (data.region && data.region !== data.city) parts.push(data.region);
+          if (data.country) parts.push(data.country);
+          const flag = data.flag?.emoji ? ` ${data.flag.emoji}` : "";
+          const loc = parts.join(", ");
+          if (loc) return `${loc}${flag}`;
+        }
+      }
+    } catch {}
+    return "";
+  }
+
   if (!cleanDomain || cleanDomain === "localhost" || cleanDomain === "127.0.0.1" || cleanDomain === "::1") {
     return "Localhost / 127.0.0.1 🏠";
   }
@@ -180,7 +220,23 @@ export async function getDomainGeoLocation(domain: string): Promise<string> {
     } else if (resolved.ipv6.length > 0) {
       targetIp = resolved.ipv6[0];
     } else {
-      return cleanDomain;
+      // Resolution failed - fallback to server-side geoip detection
+      try {
+        const res = await fetch("/api/geoip");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.country && data.country !== "Private Network") {
+            const parts: string[] = [];
+            if (data.city && data.city !== "Local") parts.push(data.city);
+            if (data.region && data.region !== data.city) parts.push(data.region);
+            if (data.country) parts.push(data.country);
+            const flag = data.flag?.emoji ? ` ${data.flag.emoji}` : "";
+            const loc = parts.join(", ");
+            if (loc) return `${loc}${flag}`;
+          }
+        }
+      } catch {}
+      return "";
     }
   }
 
@@ -193,11 +249,12 @@ export async function getDomainGeoLocation(domain: string): Promise<string> {
       const data = await res.json();
       if (data.success) {
         const parts: string[] = [];
-        if (data.city) parts.push(data.city);
+        if (data.city && data.city !== "Local") parts.push(data.city);
         if (data.region && data.region !== data.city) parts.push(data.region);
         if (data.country) parts.push(data.country);
         const flag = data.flag?.emoji ? ` ${data.flag.emoji}` : "";
-        return (parts.join(", ") || targetIp) + flag;
+        const loc = parts.join(", ");
+        if (loc) return `${loc}${flag}`;
       }
     }
   } catch {
@@ -210,18 +267,19 @@ export async function getDomainGeoLocation(domain: string): Promise<string> {
       const data = await res.json();
       if (data.success) {
         const parts: string[] = [];
-        if (data.city) parts.push(data.city);
+        if (data.city && data.city !== "Local") parts.push(data.city);
         if (data.region && data.region !== data.city) parts.push(data.region);
         if (data.country) parts.push(data.country);
         const flag = data.flag?.emoji ? ` ${data.flag.emoji}` : "";
-        return (parts.join(", ") || targetIp) + flag;
+        const loc = parts.join(", ");
+        if (loc) return `${loc}${flag}`;
       }
     }
   } catch {
     // Ignore error
   }
 
-  return targetIp;
+  return "";
 }
 
 

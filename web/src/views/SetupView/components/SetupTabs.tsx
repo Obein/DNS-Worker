@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
 import { StepStampWatermark } from "./StepStampWatermark";
 import { useDeploymentMode } from "../../../hooks/useDeploymentMode";
+import { isDummyOrPlaceholderDomain } from "../../../services";
 
 export interface SetupTabsProps {
   isMobile: boolean;
@@ -261,7 +262,8 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                                     window.location.hostname === "127.0.0.1" ||
                                     window.location.hostname.includes(":");
                 const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
-                const effectiveDotDomain = cleanBaseDomain || (!isIpAddress ? window.location.hostname : "");
+                const isDummy = isDummyOrPlaceholderDomain(cleanBaseDomain);
+                const effectiveDotDomain = (!isDummy && cleanBaseDomain) || (!isIpAddress ? window.location.hostname : "");
 
                 return (
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">

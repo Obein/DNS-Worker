@@ -227,7 +227,27 @@ async function runTests() {
   if (httpsClientInfo.dotDomain !== 'dns.local') {
     throw new Error(`Expected HTTPS clientInfo.dotDomain to be 'dns.local', got ${httpsClientInfo.dotDomain}`);
   }
-  // ── TEST E: HTTP Auth Refresh & Multi-Cookie Handling ──
+
+  // ── TEST D2: Public System Endpoints (/api/resolve & /api/geoip) ──
+  console.log('\n>>> [TEST D2] Testing Public /api/resolve and /api/geoip APIs...');
+  const resolveIpRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/resolve?name=1.1.1.1`);
+  if (resolveIpRes.status !== 200) {
+    throw new Error(`Expected HTTP 200 from /api/resolve, got ${resolveIpRes.status}`);
+  }
+  const resolveIpJson = await resolveIpRes.json() as { ipv4: string[]; ipv6: string[] };
+  if (!resolveIpJson.ipv4.includes('1.1.1.1')) {
+    throw new Error(`Expected /api/resolve to recognize 1.1.1.1, got: ${JSON.stringify(resolveIpJson)}`);
+  }
+
+  const geoipLocalRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/geoip?ip=127.0.0.1`);
+  if (geoipLocalRes.status !== 200) {
+    throw new Error(`Expected HTTP 200 from /api/geoip, got ${geoipLocalRes.status}`);
+  }
+  const geoipLocalJson = await geoipLocalRes.json() as { success: boolean; country: string };
+  if (!geoipLocalJson.success || geoipLocalJson.country !== 'Private Network') {
+    throw new Error(`Expected private network geoip for 127.0.0.1, got: ${JSON.stringify(geoipLocalJson)}`);
+  }
+  console.log('>>> [TEST D2] SUCCESS: /api/resolve and /api/geoip public endpoints verified!');
   console.log('\n>>> [TEST E] Testing Auth Refresh & RTR Grace Window on HTTP...');
   const { createSession } = await import('../src/lib/auth');
   const { session, refreshToken } = await createSession(env, 'user1', '127.0.0.1', 'Serverfull-Test-Agent', 0.0, 0.0, false);
