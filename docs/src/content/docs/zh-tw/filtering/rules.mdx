@@ -5,63 +5,11 @@ sidebar:
   order: 1
 ---
 
-DNS Worker 內建企業級保護性域名過濾引擎，能夠在亞毫秒級延遲下併發評估數十萬條攔截規則。它可以在網路層為您的家庭與企業裝置築起堅實防線，攔截侵入性廣告、行為追蹤器、釣魚欺詐、惡意軟體、挖礦程式以及殭屍網路命令與控制（C2）域名。
-
----
-
-## 1. 威脅防禦與保護能力
-
-DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建立 TCP 握手或發起 TLS 協商之前即掐斷隱患連線。
-
-### 核心攔截威脅類別
-- **惡意軟體與 C2 域名**：攔截勒索病毒回撥、特洛伊木馬分發點、殭屍網路控制端及可疑活動域名。
-- **釣魚與欺詐網站**：阻斷仿冒金融機構、憑證竊取頁面及釣魚詐騙域名。
-- **侵入式廣告與追蹤器**：在所有移動應用、智慧電視和網頁中靜默遮蔽橫幅廣告、影片插播廣告、彈窗及跨站行為分析追蹤。
-- **系統與裝置遙測**：阻斷 Windows、macOS、Android、智慧音箱及各類 IoT 裝置的激進診斷資料收集。
-- **挖礦程式**：阻止瀏覽器挖礦指令碼與後臺加密貨幣挖礦連線。
-
----
-
-## 2. Web 管理面板規則配置
-
-### 訂閱外部規則黑名單
-
-在 Web 管理面板左側導航中進入 **Filters**（規則訂閱），檢視和管理當前接入點訂閱的外部黑名單。
-
-![規則訂閱與外部黑名單](/DNS-Worker/screenshots/dns.obex-filter.webp)
-
-1. 在 **External Blocklists**（外部規則列表）區域，點選 **Add Subscription**（新增訂閱）。
-2. 輸入訂閱 URL（相容標準 Adblock Plus 語法、Hosts 檔案及純域名列表格式）。
-3. 官方推薦的主流過濾源：
-   - **OISD Big**：`https://big.oisd.nl`（全面平衡的廣告與追蹤攔截源）
-   - **AdGuard Base**：`https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
-   - **HaGeZi Multi PRO++**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt`（高強度威脅攔截）
-   - **StevenBlack Hosts**：`https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
-4. 點選 **Save & Sync**（儲存並同步）。DNS Worker 會解析規則並生成緊湊布隆過濾器快取：
-   - **域名總數**：顯示解析出的有效去重規則數（通常達數十萬條）。
-   - **同步狀態**：顯示 `Normal`（正常同步）、`Outdated`（需更新）或 `Missing`（同步失敗）。
-   - **自動排程**：系統後臺 Cron 任務會定期自動抓取最新規則，無需人工維護。
-
----
-
-### 自定義白名單、黑名單與重寫規則
-
-進入 **Rules**（自定義規則）頁面，根據特定需求配置即時生效的個性化規則：
-
-![自定義規則管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
-
-- **Allowlist (白名單)**：直接放行的信任域名，優先於外部規則（用於解除誤殺或保障公司業務通道）。
-- **Blocklist (黑名單)**：明確禁止解析的惡意或廣告域名，攔截優先順序最高。
-- **DNS Rewrites (重寫 / 重定向)**：將特定域名解析至指定 IP 地址或內網主機（例如區域網自建服務，或強制開啟 SafeSearch 如 `forcesafesearch.google.com`）。
-- **支援匹配語法**：
-  - 精確域名：`ad.example.com`
-  - 子域名萬用字元：`*.tracking.company.com` 或 `||adservice.google.com^`
-  - 正規表示式：`^analytics-[0-9]+\..*---
-title: 域名過濾與威脅攔截
-description: 全面的保護性 DNS 過濾引擎、廣告與惡意域名攔截、訂閱管理、自定義規則、Bloom filter 加速引擎以及過濾環境變數參考。
-sidebar:
-  order: 1
----
+import { Image } from 'astro:assets';
+import filterImg from '../../../../../screenshots/dns.obex-filter.webp';
+import rulesImg from '../../../../../screenshots/dns.obex-rules.webp';
+import logImg from '../../../../../screenshots/dns.obex-log.webp';
+import logDetailImg from '../../../../../screenshots/dns.obex-log_detail.webp';
 
 DNS Worker 內建企業級保護性域名過濾引擎，能夠在亞毫秒級延遲下併發評估數十萬條攔截規則。它可以在網路層為您的家庭與企業裝置築起堅實防線，攔截侵入性廣告、行為追蹤器、釣魚欺詐、惡意軟體、挖礦程式以及殭屍網路命令與控制（C2）域名。
 
@@ -86,7 +34,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 
 在 Web 管理面板左側導航中進入 **Filters**（規則訂閱），檢視和管理當前接入點訂閱的外部黑名單。
 
-![規則訂閱與外部黑名單](/DNS-Worker/screenshots/dns.obex-filter.webp)
+<Image src={filterImg} alt="規則訂閱與外部黑名單" format="webp" />
 
 1. 在 **External Blocklists**（外部規則列表）區域，點選 **Add Subscription**（新增訂閱）。
 2. 輸入訂閱 URL（相容標準 Adblock Plus 語法、Hosts 檔案及純域名列表格式）。
@@ -106,7 +54,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 
 進入 **Rules**（自定義規則）頁面，根據特定需求配置即時生效的個性化規則：
 
-![自定義規則管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
+<Image src={rulesImg} alt="自定義規則管理" format="webp" />
 
 - **Allowlist (白名單)**：直接放行的信任域名，優先於外部規則（用於解除誤殺或保障公司業務通道）。
 - **Blocklist (黑名單)**：明確禁止解析的惡意或廣告域名，攔截優先順序最高。
@@ -114,7 +62,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 - **支援匹配語法**：
   - 精確域名：`ad.example.com`
   - 子域名萬用字元：`*.tracking.company.com` 或 `||adservice.google.com^`
-  - 正規表示式：
+  - 正規表示式：`^analytics-[0-9]+\..*$`
 
 ---
 
@@ -134,7 +82,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 
 進入 **Logs**（查詢日誌）頁面，即時監控網路威脅攔截情況與正常請求流動：
 
-![即時查詢日誌與威脅阻斷](/DNS-Worker/screenshots/dns.obex-log.webp)
+<Image src={logImg} alt="即時查詢日誌與威脅阻斷" format="webp" />
 
 - **即時狀態標識**：
   - `BLOCK` (紅色)：命中黑名單或惡意規則的請求，展示合成的攔截 IP（`0.0.0.0`）及命中原因。
@@ -142,7 +90,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
   - `REWRITE` (藍色)：命中重寫規則並返回預設重定向目標的請求。
 - **威脅審計抽屜**：點選任意日誌條目即可滑出詳細審計抽屜，精準檢視命中的規則來源、客戶端 IP、地理歸屬、上游解析耗時及端到端加密狀態。
 
-![查詢日誌詳情審計抽屜](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+<Image src={logDetailImg} alt="查詢日誌詳情審計抽屜" format="webp" />
 
 ---
 

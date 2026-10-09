@@ -5,13 +5,17 @@ sidebar:
   order: 4
 ---
 
+import { Image } from 'astro:assets';
+import loginImg from '../../../../screenshots/dns.obex-login.webp';
+import settingsImg from '../../../../screenshots/dns.obex-settings.webp';
+
 DNS Worker implements defense-in-depth zero-trust security standards across both its backend resolution pipelines and Web Dashboard. This guide details the authentication protocol, key rotation mechanics, and security environment variables.
 
 ---
 
 ## 1. Web Dashboard Zero-Trust Authentication
 
-![Web Dashboard Biometric Authentication](/DNS-Worker/screenshots/dns.obex-login.webp)
+<Image src={loginImg} alt="Web Dashboard Biometric Authentication" format="webp" />
 
 The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 
@@ -42,7 +46,7 @@ The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 
 Configure your master security keys, Passkeys, and Post-Quantum E2EE directly in the **Account & Security Settings** card:
 
-![Security & Account Settings](/DNS-Worker/screenshots/dns.obex-settings.webp)
+<Image src={settingsImg} alt="Security & Account Settings" format="webp" />
 
 Sensitive data at rest — including client session tokens and private query logs — is protected using two-tier envelope encryption:
 

@@ -5,6 +5,12 @@ sidebar:
   order: 1
 ---
 
+import { Image } from 'astro:assets';
+import filterImg from '../../../../../screenshots/dns.obex-filter.webp';
+import rulesImg from '../../../../../screenshots/dns.obex-rules.webp';
+import logImg from '../../../../../screenshots/dns.obex-log.webp';
+import logDetailImg from '../../../../../screenshots/dns.obex-log_detail.webp';
+
 DNS Worker 内置企业级保护性域名过滤引擎，能够在亚毫秒级延迟下并发评估数十万条拦截规则。它可以在网络层为您的家庭与企业设备筑起坚实防线，拦截侵入性广告、行为追踪器、钓鱼欺诈、恶意软件、挖矿程序以及僵尸网络命令与控制（C2）域名。
 
 ---
@@ -28,7 +34,7 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 
 在 Web 管理面板左侧导航中进入 **Filters**（规则订阅），查看和管理当前接入点订阅的外部黑名单。
 
-![规则订阅与外部黑名单](/DNS-Worker/screenshots/dns.obex-filter.webp)
+<Image src={filterImg} alt="规则订阅与外部黑名单" format="webp" />
 
 1. 在 **External Blocklists**（外部规则列表）区域，点击 **Add Subscription**（添加订阅）。
 2. 输入订阅 URL（兼容标准 Adblock Plus 语法、Hosts 文件及纯域名列表格式）。
@@ -48,7 +54,7 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 
 进入 **Rules**（自定义规则）页面，根据特定需求配置实时生效的个性化规则：
 
-![自定义规则管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
+<Image src={rulesImg} alt="自定义规则管理" format="webp" />
 
 - **Allowlist (白名单)**：直接放行的信任域名，优先于外部规则（用于解除误杀或保障公司业务通道）。
 - **Blocklist (黑名单)**：明确禁止解析的恶意或广告域名，拦截优先级最高。
@@ -76,7 +82,7 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 
 进入 **Logs**（查询日志）页面，实时监控网络威胁拦截情况与正常请求流动：
 
-![实时查询日志与威胁阻断](/DNS-Worker/screenshots/dns.obex-log.webp)
+<Image src={logImg} alt="实时查询日志与威胁阻断" format="webp" />
 
 - **实时状态标识**：
   - `BLOCK` (红色)：命中黑名单或恶意规则的请求，展示合成的拦截 IP（`0.0.0.0`）及命中原因。
@@ -84,7 +90,7 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
   - `REWRITE` (蓝色)：命中重写规则并返回预设重定向目标的请求。
 - **威胁审计抽屉**：点击任意日志条目即可滑出详细审计抽屉，精准查看命中的规则来源、客户端 IP、地理归属、上游解析耗时及端到端加密状态。
 
-![查询日志详情审计抽屉](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+<Image src={logDetailImg} alt="查询日志详情审计抽屉" format="webp" />
 
 ---
 

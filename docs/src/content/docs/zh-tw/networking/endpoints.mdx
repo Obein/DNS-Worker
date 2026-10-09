@@ -5,6 +5,11 @@ sidebar:
   order: 1
 ---
 
+import { Image } from 'astro:assets';
+import endpointsImg from '../../../../../screenshots/dns.obex-endpoints.webp';
+import profileSelectImg from '../../../../../screenshots/dns.obex-profile_select.webp';
+import setupImg from '../../../../../screenshots/dns.obex-setup.webp';
+
 在 DNS Worker 中，**接入點**（也稱 **Profile** 或配置策略）是一個相互隔離的安全策略域。每個接入點擁有獨立的路由金鑰、自定義過濾規則、上游解析器以及查詢日誌留存時長。
 
 通過配置不同的接入點，您可以輕鬆實現精細化分流管理——例如為手機配置強力去廣告策略，為兒童平板開啟安全搜尋保護，同時為開發伺服器保留無攔截直連通道。
@@ -13,7 +18,7 @@ sidebar:
 
 ## 1. Web 面板中建立與管理接入點
 
-![接入點管理面板](/DNS-Worker/screenshots/dns.obex-endpoints.webp)
+<Image src={endpointsImg} alt="接入點管理面板" format="webp" />
 
 ### 步驟 1：訪問管理面板
 1. 開啟 DNS Worker Web 控制面板（例如 `https://dns.example.com` 或 `http://<server-ip>:10080`）。
@@ -39,7 +44,7 @@ sidebar:
 
 在 Web 控制面板的任意頁面，都可以通過頂部或左側的下拉選單極速切換當前檢視與操作的接入點：
 
-![多接入點快速切換](/DNS-Worker/screenshots/dns.obex-profile_select.webp)
+<Image src={profileSelectImg} alt="多接入點快速切換" format="webp" />
 
 ### 步驟 4：檢視接入點金鑰
 系統會自動為每個新建接入點生成唯一的加密 **Profile Key**（如 `a8f9c2d14e...`）。該金鑰在 DoH 請求路徑與 DoT SNI 握手過程中作為精確路由標識。
@@ -66,7 +71,7 @@ DNS Worker 支援所有主流現代加密 DNS 協議以及傳統 UDP DNS。
 
 Web 控制面板內建了針對各個作業系統的互動式客戶端配置指南：
 
-![客戶端互動式配置引導](/DNS-Worker/screenshots/dns.obex-setup.webp)
+<Image src={setupImg} alt="客戶端互動式配置引導" format="webp" />
 
 ### Android 9+（原生私有 DNS）
 Android 原生支援通過 853 埠發起 DNS over TLS：

@@ -30,9 +30,6 @@ DNS Worker 為查詢日誌提供了行業領先的**後量子零知識端到端�
    - 結合經典橢圓曲線與 **P256-MLKEM768**，防範 Shor 量子分解演算法破解。
 3. **每小時動態輪換 KEM DEK**：
    - 資料加密金鑰（DEK）每小時自動輪換，收斂金鑰暴露視窗。
-   - 封裝密文（`kem_ct`）與輪換生命週期安全記錄於資料庫中：
-
-![Cloudflare D1 後量子 KEM 封裝金鑰表](/DNS-Worker/screenshots/d1-studio-kem.png)
-
+   - 封裝密文（`kem_ct`）與輪換生命週期安全記錄於資料庫中。
 4. **硬體通行金鑰（WebAuthn）防護**：
    - 使用者藉助裝置生物識別（Touch ID、Face ID、Windows Hello 或 YubiKey）解密主私鑰，私鑰解密僅在受信任客戶端瀏覽器內完成。

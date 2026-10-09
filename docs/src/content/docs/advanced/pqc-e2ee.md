@@ -30,9 +30,6 @@ If you require mathematical zero-knowledge privacy for your DNS query logs:
    - Combines classical elliptic curve cryptography with **P256-MLKEM768**, offering quantum resistance against Shor's algorithm.
 3. **Hourly Rotating KEM DEKs**:
    - Data Encryption Keys rotate every hour, minimizing exposure windows.
-   - Encapsulated key ciphertexts (`kem_ct`) and ephemeral key identifiers are stored safely in the database:
-
-![Cloudflare D1 Post-Quantum KEM Keys Encapsulation](/DNS-Worker/screenshots/d1-studio-kem.png)
-
+   - Encapsulated key ciphertexts (`kem_ct`) and ephemeral key identifiers are stored safely in the database.
 4. **Hardware Passkey Protection (WebAuthn)**:
    - Users decrypt the master recovery key using biometrics (Touch ID, Face ID, Windows Hello, or YubiKey). Private key decryption occurs strictly in-browser on authorized devices.

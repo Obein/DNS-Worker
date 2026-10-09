@@ -52,6 +52,4 @@ npm run deploy
 
 ## Cloudflare D1 数据库 Studio 查验
 
-部署完成后，所有用户、接入点、过滤规则及查询日志均持久化于 Cloudflare D1 分布式数据库中。您可以在 Cloudflare 控制台的 D1 Studio 中直接检索表数据与架构：
-
-![Cloudflare D1 数据库 Studio 与数据检索](/DNS-Worker/screenshots/d1-studio-logs.png)
+部署完成后，所有用户、接入点、过滤规则及查询日志均持久化于 Cloudflare D1 分布式数据库中。您可以在 Cloudflare 控制台导航至 **Workers & Pages** > **D1** > 目标数据库 > **Console / Explore Data** 直接检索表数据与架构。

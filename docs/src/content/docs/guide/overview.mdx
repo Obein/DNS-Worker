@@ -3,6 +3,12 @@ title: Project Overview
 description: Learn about the design philosophy, dual-engine architecture, and core capabilities of DNS Worker.
 ---
 
+import { Image } from 'astro:assets';
+import statsImg from '../../../../screenshots/dns.obex-stats.webp';
+import statsDestImg from '../../../../screenshots/dns.obex-stats_dest.webp';
+import mobileStatsImg from '../../../../screenshots/dns.obex-mobile_stats.webp';
+import mobileLogImg from '../../../../screenshots/dns.obex-mobile_log.webp';
+
 ## What is DNS Worker?
 
 **DNS Worker** is a modern, privacy-first Protective DNS resolution platform built with an innovative **Dual-Engine Architecture**:
@@ -18,7 +24,7 @@ description: Learn about the design philosophy, dual-engine architecture, and co
 
 DNS Worker comes with a built-in modern Web Dashboard that provides real-time visualization of query traffic, latency distribution, and security metrics:
 
-![DNS Worker Web Dashboard Analytics](/DNS-Worker/screenshots/dns.obex-stats.webp)
+<Image src={statsImg} alt="DNS Worker Web Dashboard Analytics" format="webp" />
 
 - **Comprehensive Security Metrics**: Track total requests, intercepted ads & malicious queries, average latency, and 24-hour traffic trends.
 - **Top Blocked & Permitted Domains**: Identify high-frequency tracker beacons and rogue domains at a glance.
@@ -27,7 +33,7 @@ DNS Worker comes with a built-in modern Web Dashboard that provides real-time vi
 
 ## Global Routing & Destination Analytics
 
-![Geographic Resolution Destinations Map](/DNS-Worker/screenshots/dns.obex-stats_dest.webp)
+<Image src={statsDestImg} alt="Geographic Resolution Destinations Map" format="webp" />
 
 DNS Worker automatically maps DNS resolution destinations and upstream recursive servers geographically, enabling you to inspect where your traffic is routed across the globe in real time.
 
@@ -56,4 +62,4 @@ DNS Worker is fully responsive, delivering a smooth mobile management experience
 
 | Mobile Security Analytics | Mobile Query Audit Stream |
 | :---: | :---: |
-| ![Mobile Analytics](/DNS-Worker/screenshots/dns.obex-mobile_stats.webp) | ![Mobile Query Logs](/DNS-Worker/screenshots/dns.obex-mobile_log.webp) |
+| <Image src={mobileStatsImg} alt="Mobile Security Analytics" format="webp" /> | <Image src={mobileLogImg} alt="Mobile Query Audit Stream" format="webp" /> |

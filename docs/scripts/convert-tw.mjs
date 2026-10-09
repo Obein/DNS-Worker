@@ -58,17 +58,17 @@ function convertMarkdown(content) {
 
   // 5. Restore markdown links
   for (const { key, replacement } of links) {
-    converted = converted.replace(key, replacement);
+    converted = converted.replace(key, () => replacement);
   }
 
   // 6. Restore inline code
   for (const { key, content: inlineContent } of inlineCodes) {
-    converted = converted.replace(key, inlineContent);
+    converted = converted.replace(key, () => inlineContent);
   }
 
   // 7. Restore fenced code blocks
   for (const { key, content: blockContent } of codeBlocks) {
-    converted = converted.replace(key, blockContent);
+    converted = converted.replace(key, () => blockContent);
   }
 
   return converted;

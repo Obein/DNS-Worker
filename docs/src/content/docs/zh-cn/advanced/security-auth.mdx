@@ -5,13 +5,17 @@ sidebar:
   order: 4
 ---
 
+import { Image } from 'astro:assets';
+import loginImg from '../../../../../screenshots/dns.obex-login.webp';
+import settingsImg from '../../../../../screenshots/dns.obex-settings.webp';
+
 DNS Worker 在后台解析管道与 Web 控制面板中全面践行零信任深度防御安全标准。本篇全面解析身份鉴权协议、信封密钥轮换机制以及核心安全环境变量。
 
 ---
 
 ## 1. Web 控制面板零信任身份鉴权
 
-![Web 控制面板生物识别通行密钥登录](/DNS-Worker/screenshots/dns.obex-login.webp)
+<Image src={loginImg} alt="Web 控制面板生物识别通行密钥登录" format="webp" />
 
 Web 管理面板严格遵循 **WebApp Trust** 零信任安全架构标准：
 
@@ -42,7 +46,7 @@ Web 管理面板严格遵循 **WebApp Trust** 零信任安全架构标准：
 
 在 **Account & Security Settings**（账户与安全设置）卡片中管理主密钥、通行密钥及后量子 E2EE：
 
-![账户与安全设置面板](/DNS-Worker/screenshots/dns.obex-settings.webp)
+<Image src={settingsImg} alt="账户与安全设置面板" format="webp" />
 
 服务端存储的敏感数据（包括用户会话令牌与加密查询日志）由两层信封加密机制保护：
 

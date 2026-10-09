@@ -5,6 +5,12 @@ sidebar:
   order: 1
 ---
 
+import { Image } from 'astro:assets';
+import filterImg from '../../../../screenshots/dns.obex-filter.webp';
+import rulesImg from '../../../../screenshots/dns.obex-rules.webp';
+import logImg from '../../../../screenshots/dns.obex-log.webp';
+import logDetailImg from '../../../../screenshots/dns.obex-log_detail.webp';
+
 DNS Worker features an enterprise-grade protective domain filtering engine capable of evaluating hundreds of thousands of blocking rules with sub-millisecond latency. It shields your network and client devices against intrusive advertisements, telemetry trackers, malware, phishing sites, cryptojacking, and malicious command-and-control (C2) domains.
 
 ---
@@ -28,7 +34,7 @@ DNS Worker intercepts cyber threats at the foundational DNS layer—preventing c
 
 Navigate to **Filters** (规则订阅) in the Web Dashboard to inspect and manage your blocklist subscriptions.
 
-![Filter Subscriptions & Blocklists](/DNS-Worker/screenshots/dns.obex-filter.webp)
+<Image src={filterImg} alt="Filter Subscriptions & Blocklists" format="webp" />
 
 1. Under **External Blocklists**, click **Add Subscription**.
 2. Enter the subscription URL (supports standard Adblock Plus, Hosts, or domain list formats).
@@ -48,7 +54,7 @@ Navigate to **Filters** (规则订阅) in the Web Dashboard to inspect and manag
 
 Navigate to **Rules** (自定义规则) to configure instant manual overrides on a per-profile basis:
 
-![Custom Rules Management](/DNS-Worker/screenshots/dns.obex-rules.webp)
+<Image src={rulesImg} alt="Custom Rules Management" format="webp" />
 
 - **Allowlist (白名单)**: Domains that bypass all blocking rules (e.g., corporate subdomains or false positives).
 - **Blocklist (黑名单)**: Explicitly banned domains that take immediate precedence over external lists.
@@ -76,7 +82,7 @@ In your profile settings, select how blocked queries are handled:
 
 DNS Worker provides instant visibility into intercepted threats and permitted resolutions through the **Logs** view:
 
-![Real-Time Query Logs & Threat Interception](/DNS-Worker/screenshots/dns.obex-log.webp)
+<Image src={logImg} alt="Real-Time Query Logs & Threat Interception" format="webp" />
 
 - **Instant Visual Status**:
   - `BLOCK` (Red): Queries intercepted by external blocklists or custom blacklist rules. Displays the synthetic block answer (`0.0.0.0`).
@@ -84,7 +90,7 @@ DNS Worker provides instant visibility into intercepted threats and permitted re
   - `REWRITE` (Blue): Queries mapped to custom redirect targets.
 - **Threat Audit Drawer**: Clicking on any query entry slides out the inspection drawer, detailing the exact rule match, client IP, geographic origin, upstream latency, and post-quantum encryption status.
 
-![Query Log Inspection Drawer](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+<Image src={logDetailImg} alt="Query Log Inspection Drawer" format="webp" />
 
 ---
 

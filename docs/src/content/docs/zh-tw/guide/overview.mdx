@@ -3,6 +3,12 @@ title: 專案概述
 description: 瞭解 DNS Worker 的設計理念、雙引擎架構及核心功能特性。
 ---
 
+import { Image } from 'astro:assets';
+import statsImg from '../../../../../screenshots/dns.obex-stats.webp';
+import statsDestImg from '../../../../../screenshots/dns.obex-stats_dest.webp';
+import mobileStatsImg from '../../../../../screenshots/dns.obex-mobile_stats.webp';
+import mobileLogImg from '../../../../../screenshots/dns.obex-mobile_log.webp';
+
 ## 什麼是 DNS Worker？
 
 **DNS Worker** 是一款主打隱私優先的現代化保護性 DNS 解析系統，採用創新的**雙引擎架構**構建：
@@ -18,7 +24,7 @@ description: 瞭解 DNS Worker 的設計理念、雙引擎架構及核心功能�
 
 DNS Worker 自帶美觀流暢的現代化管理面板，即時呈現查詢流量、耗時分佈以及安全攔截指標：
 
-![DNS Worker 管理面板與統計分析](/DNS-Worker/screenshots/dns.obex-stats.webp)
+<Image src={statsImg} alt="DNS Worker 管理面板與統計分析" format="webp" />
 
 - **全方位安全度量**：即時統計總請求量、廣告與惡意域名攔截率、平均解析延遲及 24 小時流量走勢圖。
 - **高頻威脅直觀呈現**：一目瞭然地捕捉最活躍的追蹤器與流氓域名。
@@ -27,7 +33,7 @@ DNS Worker 自帶美觀流暢的現代化管理面板，即時呈現查詢流量
 
 ## 全球解析歸屬與流向地圖
 
-![全球解析目標與地理分佈地圖](/DNS-Worker/screenshots/dns.obex-stats_dest.webp)
+<Image src={statsDestImg} alt="全球解析目標與地理分佈地圖" format="webp" />
 
 DNS Worker 會自動記錄並將解析歸屬地上報繪製成全球流向地圖，讓您直觀獲知裝置查詢在全球網路中的分佈與走向。
 
@@ -56,4 +62,4 @@ DNS Worker 針對移動端裝置進行了深度 UI 響應式調優，無論在�
 
 | 移動端安全統計分析 | 移動端即時日誌審計流 |
 | :---: | :---: |
-| ![移動端統計分析](/DNS-Worker/screenshots/dns.obex-mobile_stats.webp) | ![移動端即時日誌](/DNS-Worker/screenshots/dns.obex-mobile_log.webp) |
+| <Image src={mobileStatsImg} alt="移動端統計分析" format="webp" /> | <Image src={mobileLogImg} alt="移動端即時日誌" format="webp" /> |
