@@ -212,11 +212,15 @@ async function runTests() {
   // ── TEST D: HTTPS Web UI / ClientInfo API ──
   console.log('\n>>> [TEST D] Testing HTTPS Server (/api/clientinfo)...');
   const httpsRes = await new Promise<{ status: number; body: string }>((resolve, reject) => {
-    const req = https.get(`https://127.0.0.1:${HTTPS_TEST_PORT}/api/clientinfo`, { rejectUnauthorized: false }, (res) => {
-      let data = '';
-      res.on('data', (c) => data += c);
-      res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
-    });
+    const req = https.get(
+      `https://127.0.0.1:${HTTPS_TEST_PORT}/api/clientinfo`,
+      { ca: fs.readFileSync(path.resolve('test', 'tmp', 'tls', 'ca.crt')) },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => data += c);
+        res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
+      }
+    );
     req.on('error', reject);
   });
   console.log('>>> [TEST D] HTTPS status:', httpsRes.status);
