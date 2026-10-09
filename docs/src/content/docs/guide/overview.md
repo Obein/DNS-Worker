@@ -14,6 +14,25 @@ description: Learn about the design philosophy, dual-engine architecture, and co
 
 ---
 
+## Interactive Web Dashboard & Threat Intelligence
+
+DNS Worker comes with a built-in modern Web Dashboard that provides real-time visualization of query traffic, latency distribution, and security metrics:
+
+![DNS Worker Web Dashboard Analytics](/DNS-Worker/screenshots/dns.obex-stats.webp)
+
+- **Comprehensive Security Metrics**: Track total requests, intercepted ads & malicious queries, average latency, and 24-hour traffic trends.
+- **Top Blocked & Permitted Domains**: Identify high-frequency tracker beacons and rogue domains at a glance.
+
+---
+
+## Global Routing & Destination Analytics
+
+![Geographic Resolution Destinations Map](/DNS-Worker/screenshots/dns.obex-stats_dest.webp)
+
+DNS Worker automatically maps DNS resolution destinations and upstream recursive servers geographically, enabling you to inspect where your traffic is routed across the globe in real time.
+
+---
+
 ## Protocols & Capabilities
 
 ### 1. Full-Stack Protocol Coverage
@@ -28,3 +47,13 @@ Using embedded in-browser SQLite (WebAssembly + Origin Private File System), que
 
 ### 3. Post-Quantum Zero-Knowledge E2EE
 Implements NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography, protected by hardware Passkeys (WebAuthn). Persistent storage holds only irreversible ciphertexts; decryption takes place strictly on authorized user devices.
+
+---
+
+## Mobile & Desktop Responsive Design
+
+DNS Worker is fully responsive, delivering a smooth mobile management experience alongside desktop views:
+
+| Mobile Security Analytics | Mobile Query Audit Stream |
+| :---: | :---: |
+| ![Mobile Analytics](/DNS-Worker/screenshots/dns.obex-mobile_stats.webp) | ![Mobile Query Logs](/DNS-Worker/screenshots/dns.obex-mobile_log.webp) |

@@ -57,7 +57,26 @@ SERVERFULL_DISABLE_HTTPS=false
 
 ---
 
+## Maintenance & Factory Reset
+
+If you need to restore the system to its initial state, use the `reset` command:
+
+```bash
+# Interactive reset (requires secondary confirmation)
+dns-worker reset
+
+# Automated / non-interactive reset
+dns-worker reset --force
+```
+
+This operation will:
+1. Restore the `.env` configuration file to the built-in default template.
+2. Completely clear the SQLite database and reapply all migrations from scratch.
+
+---
+
 ## Next Steps
 
 - [Configure systemd background daemon](/DNS-Worker/deployment/service/)
 - [Configure Let's Encrypt certificates for HTTPS & DoT](/DNS-Worker/advanced/tls-certs/)
+

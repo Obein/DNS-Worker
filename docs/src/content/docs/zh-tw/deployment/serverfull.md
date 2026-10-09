@@ -57,6 +57,24 @@ SERVERFULL_DISABLE_HTTPS=false
 
 ---
 
+## 系統維護與出廠重置
+
+若需要將系統完全重置為初始狀態，可使用 `reset` 命令：
+
+```bash
+# 交互式重置（需要终端二次输入 yes 确认）
+dns-worker reset
+
+# 自动化/脚本强制重置（跳过确认）
+dns-worker reset --force
+```
+
+該操作將會：
+1. 將 `.env` 配置檔案重置恢復為內建預設模板。
+2. 徹底清空 SQLite 資料庫，並從第 1 項遷移起重新初始化所有空資料表。
+
+---
+
 ## 後續步驟
 
 - [配置 Linux systemd 後臺常駐服務](/DNS-Worker/deployment/service/)

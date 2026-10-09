@@ -1,139 +1,211 @@
 ---
-title: 域名過濾與規則引擎
-description: 規則訂閱管理、自定義黑白名單、布隆過濾器加速架構以及過濾環境變數配置手冊。
+title: 域名過濾與威脅攔截
+description: 全面的保護性 DNS 過濾引擎、廣告與惡意域名攔截、訂閱管理、自定義規則、Bloom filter 加速引擎以及過濾環境變數參考。
 sidebar:
   order: 1
 ---
 
-DNS Worker 擁有企業級域名防護過濾引擎，可在極低記憶體開銷下快速評估數十萬條去廣告與防跟蹤規則，達到亞毫秒級攔截響應。本指南介紹規則訂閱操作、自定義規則語法、底層演算法設計及相關環境變數。
+DNS Worker 內建企業級保護性域名過濾引擎，能夠在亞毫秒級延遲下併發評估數十萬條攔截規則。它可以在網路層為您的家庭與企業裝置築起堅實防線，攔截侵入性廣告、行為追蹤器、釣魚欺詐、惡意軟體、挖礦程式以及殭屍網路命令與控制（C2）域名。
 
 ---
 
-## 1. Web 儀表盤規則管理操作
+## 1. 威脅防禦與保護能力
 
-### 新增外部規則訂閱
-1. 登入控制台後，在側邊欄進入 **規則訂閱**（Filters）。
-2. 在 **外部規則源** 模組中，點選 **新增訂閱**（Add Subscription）。
-3. 填入訂閱源 URL（支援標準 Adblock Plus、Hosts 或純域名列表格式）。
-4. 常用推薦規則源：
-   - **OISD Big**：`https://big.oisd.nl`
+DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建立 TCP 握手或發起 TLS 協商之前即掐斷隱患連線。
+
+### 核心攔截威脅類別
+- **惡意軟體與 C2 域名**：攔截勒索病毒回撥、特洛伊木馬分發點、殭屍網路控制端及可疑活動域名。
+- **釣魚與欺詐網站**：阻斷仿冒金融機構、憑證竊取頁面及釣魚詐騙域名。
+- **侵入式廣告與追蹤器**：在所有移動應用、智慧電視和網頁中靜默遮蔽橫幅廣告、影片插播廣告、彈窗及跨站行為分析追蹤。
+- **系統與裝置遙測**：阻斷 Windows、macOS、Android、智慧音箱及各類 IoT 裝置的激進診斷資料收集。
+- **挖礦程式**：阻止瀏覽器挖礦指令碼與後臺加密貨幣挖礦連線。
+
+---
+
+## 2. Web 管理面板規則配置
+
+### 訂閱外部規則黑名單
+
+在 Web 管理面板左側導航中進入 **Filters**（規則訂閱），檢視和管理當前接入點訂閱的外部黑名單。
+
+![規則訂閱與外部黑名單](/DNS-Worker/screenshots/dns.obex-filter.webp)
+
+1. 在 **External Blocklists**（外部規則列表）區域，點選 **Add Subscription**（新增訂閱）。
+2. 輸入訂閱 URL（相容標準 Adblock Plus 語法、Hosts 檔案及純域名列表格式）。
+3. 官方推薦的主流過濾源：
+   - **OISD Big**：`https://big.oisd.nl`（全面平衡的廣告與追蹤攔截源）
    - **AdGuard Base**：`https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
-   - **HaGeZi Multi PRO**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt`
-5. 點選 **儲存並同步**，系統將自動拉取並將規則編譯入記憶體。
+   - **HaGeZi Multi PRO++**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt`（高強度威脅攔截）
+   - **StevenBlack Hosts**：`https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
+4. 點選 **Save & Sync**（儲存並同步）。DNS Worker 會解析規則並生成緊湊布隆過濾器快取：
+   - **域名總數**：顯示解析出的有效去重規則數（通常達數十萬條）。
+   - **同步狀態**：顯示 `Normal`（正常同步）、`Outdated`（需更新）或 `Missing`（同步失敗）。
+   - **自動排程**：系統後臺 Cron 任務會定期自動抓取最新規則，無需人工維護。
 
-### 自定義黑白名單
-您可以在各接入點中單獨定義特定域名放行或攔截：
-- **白名單（Allowlist）**：即便命中第三方廣告規則也會無條件放行的域名。
-- **黑名單（Blocklist）**：強制攔截的惡意或隱私收集域名。
-- **支援語法**：
+---
+
+### 自定義白名單、黑名單與重寫規則
+
+進入 **Rules**（自定義規則）頁面，根據特定需求配置即時生效的個性化規則：
+
+![自定義規則管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
+
+- **Allowlist (白名單)**：直接放行的信任域名，優先於外部規則（用於解除誤殺或保障公司業務通道）。
+- **Blocklist (黑名單)**：明確禁止解析的惡意或廣告域名，攔截優先順序最高。
+- **DNS Rewrites (重寫 / 重定向)**：將特定域名解析至指定 IP 地址或內網主機（例如區域網自建服務，或強制開啟 SafeSearch 如 `forcesafesearch.google.com`）。
+- **支援匹配語法**：
   - 精確域名：`ad.example.com`
-  - 萬用字元匹配：`*.telemetry.domain.com`
+  - 子域名萬用字元：`*.tracking.company.com` 或 `||adservice.google.com^`
   - 正規表示式：`^analytics-[0-9]+\..*---
-title: 域名過濾與規則引擎
-description: 規則訂閱管理、自定義黑白名單、布隆過濾器加速架構以及過濾環境變數配置手冊。
+title: 域名過濾與威脅攔截
+description: 全面的保護性 DNS 過濾引擎、廣告與惡意域名攔截、訂閱管理、自定義規則、Bloom filter 加速引擎以及過濾環境變數參考。
 sidebar:
   order: 1
 ---
 
-DNS Worker 擁有企業級域名防護過濾引擎，可在極低記憶體開銷下快速評估數十萬條去廣告與防跟蹤規則，達到亞毫秒級攔截響應。本指南介紹規則訂閱操作、自定義規則語法、底層演算法設計及相關環境變數。
+DNS Worker 內建企業級保護性域名過濾引擎，能夠在亞毫秒級延遲下併發評估數十萬條攔截規則。它可以在網路層為您的家庭與企業裝置築起堅實防線，攔截侵入性廣告、行為追蹤器、釣魚欺詐、惡意軟體、挖礦程式以及殭屍網路命令與控制（C2）域名。
 
 ---
 
-## 1. Web 儀表盤規則管理操作
+## 1. 威脅防禦與保護能力
 
-### 新增外部規則訂閱
-1. 登入控制台後，在側邊欄進入 **規則訂閱**（Filters）。
-2. 在 **外部規則源** 模組中，點選 **新增訂閱**（Add Subscription）。
-3. 填入訂閱源 URL（支援標準 Adblock Plus、Hosts 或純域名列表格式）。
-4. 常用推薦規則源：
-   - **OISD Big**：`https://big.oisd.nl`
+DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建立 TCP 握手或發起 TLS 協商之前即掐斷隱患連線。
+
+### 核心攔截威脅類別
+- **惡意軟體與 C2 域名**：攔截勒索病毒回撥、特洛伊木馬分發點、殭屍網路控制端及可疑活動域名。
+- **釣魚與欺詐網站**：阻斷仿冒金融機構、憑證竊取頁面及釣魚詐騙域名。
+- **侵入式廣告與追蹤器**：在所有移動應用、智慧電視和網頁中靜默遮蔽橫幅廣告、影片插播廣告、彈窗及跨站行為分析追蹤。
+- **系統與裝置遙測**：阻斷 Windows、macOS、Android、智慧音箱及各類 IoT 裝置的激進診斷資料收集。
+- **挖礦程式**：阻止瀏覽器挖礦指令碼與後臺加密貨幣挖礦連線。
+
+---
+
+## 2. Web 管理面板規則配置
+
+### 訂閱外部規則黑名單
+
+在 Web 管理面板左側導航中進入 **Filters**（規則訂閱），檢視和管理當前接入點訂閱的外部黑名單。
+
+![規則訂閱與外部黑名單](/DNS-Worker/screenshots/dns.obex-filter.webp)
+
+1. 在 **External Blocklists**（外部規則列表）區域，點選 **Add Subscription**（新增訂閱）。
+2. 輸入訂閱 URL（相容標準 Adblock Plus 語法、Hosts 檔案及純域名列表格式）。
+3. 官方推薦的主流過濾源：
+   - **OISD Big**：`https://big.oisd.nl`（全面平衡的廣告與追蹤攔截源）
    - **AdGuard Base**：`https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
-   - **HaGeZi Multi PRO**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt`
-5. 點選 **儲存並同步**，系統將自動拉取並將規則編譯入記憶體。
+   - **HaGeZi Multi PRO++**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt`（高強度威脅攔截）
+   - **StevenBlack Hosts**：`https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
+4. 點選 **Save & Sync**（儲存並同步）。DNS Worker 會解析規則並生成緊湊布隆過濾器快取：
+   - **域名總數**：顯示解析出的有效去重規則數（通常達數十萬條）。
+   - **同步狀態**：顯示 `Normal`（正常同步）、`Outdated`（需更新）或 `Missing`（同步失敗）。
+   - **自動排程**：系統後臺 Cron 任務會定期自動抓取最新規則，無需人工維護。
 
-### 自定義黑白名單
-您可以在各接入點中單獨定義特定域名放行或攔截：
-- **白名單（Allowlist）**：即便命中第三方廣告規則也會無條件放行的域名。
-- **黑名單（Blocklist）**：強制攔截的惡意或隱私收集域名。
-- **支援語法**：
+---
+
+### 自定義白名單、黑名單與重寫規則
+
+進入 **Rules**（自定義規則）頁面，根據特定需求配置即時生效的個性化規則：
+
+![自定義規則管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
+
+- **Allowlist (白名單)**：直接放行的信任域名，優先於外部規則（用於解除誤殺或保障公司業務通道）。
+- **Blocklist (黑名單)**：明確禁止解析的惡意或廣告域名，攔截優先順序最高。
+- **DNS Rewrites (重寫 / 重定向)**：將特定域名解析至指定 IP 地址或內網主機（例如區域網自建服務，或強制開啟 SafeSearch 如 `forcesafesearch.google.com`）。
+- **支援匹配語法**：
   - 精確域名：`ad.example.com`
-  - 萬用字元匹配：`*.telemetry.domain.com`
+  - 子域名萬用字元：`*.tracking.company.com` 或 `||adservice.google.com^`
   - 正規表示式：
 
-### 攔截動作模式 (Block Modes)
-在接入點設定中，可自由選擇攔截返回方式：
+---
 
-| 攔截模式 | 返回報文行為 | 特點與適用場景 |
+### 攔截響應模式
+
+在接入點配置中，可以按需指定攔截髮生時的 DNS 響應行為：
+
+| 攔截模式 | 返回行為 | 優勢 |
 | :--- | :--- | :--- |
-| **零 IP 攔截 (0.0.0.0 / ::)** | IPv4 返回 `0.0.0.0`，IPv6 返回 `::` | **推薦預設**。終端立即握手失敗並終止重試，網頁載入最快。 |
-| **NXDOMAIN** | 返回 RCODE 3（域名不存在） | 符合標準語義，告知客戶端此域名無任何解析記錄。 |
-| **Refused** | 返回 RCODE 5（拒絕查詢） | 明確告知客戶端解析被策略拒絕。 |
+| **Zero IP (0.0.0.0 / ::)** | IPv4 返回 `0.0.0.0`，IPv6 返回 `::` | **推薦首選**。客戶端以最快速度終止連線，避免超時重試。 |
+| **NXDOMAIN** | 返回 RCODE 3 (域名不存在) | 符合標準，向客戶端明確指示該域名不存在。 |
+| **Refused** | 返回 RCODE 5 (拒絕解析) | 清晰區分常規查詢錯誤與安全策略阻斷。 |
 
 ---
 
-## 2. 核心架構：雙層布隆過濾器與字首樹 (Trie)
+## 3. 即時威脅審計與查詢日誌
 
-為了在低資源環境（如 512MB 記憶體 VPS 或 Cloudflare 128MB Workers）下支撐超大規模規則庫，DNS Worker 採用了 **雙層布隆過濾器 (Bloom Filter)** 加速架構：
+進入 **Logs**（查詢日誌）頁面，即時監控網路威脅攔截情況與正常請求流動：
+
+![即時查詢日誌與威脅阻斷](/DNS-Worker/screenshots/dns.obex-log.webp)
+
+- **即時狀態標識**：
+  - `BLOCK` (紅色)：命中黑名單或惡意規則的請求，展示合成的攔截 IP（`0.0.0.0`）及命中原因。
+  - `PASS` (綠色)：已成功轉發至上游安全遞歸併正常返回的合法請求。
+  - `REWRITE` (藍色)：命中重寫規則並返回預設重定向目標的請求。
+- **威脅審計抽屜**：點選任意日誌條目即可滑出詳細審計抽屜，精準檢視命中的規則來源、客戶端 IP、地理歸屬、上游解析耗時及端到端加密狀態。
+
+![查詢日誌詳情審計抽屜](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+
+---
+
+## 4. 匹配引擎架構：布隆過濾器與字首樹 (Trie)
+
+為在資源受限的環境（如 512MB 記憶體的 VPS 或 128MB 限制的 Cloudflare Workers 邊緣節點）中實現超低延遲的大規模規則匹配，DNS Worker 採用了**雙層布隆過濾器架構**：
 
 ```
-传入解析请求 (例如: adserver.tracker.com)
+收到查询请求 (例如 adserver.tracker.com)
                 │
                 ▼
 ┌─────────────────────────────────┐
-│ 布隆过滤器快速初筛              │
-│ (极低内存位图，内存占用 < 2MB)  │
+│ 布隆过滤器快速初筛 (Bloom Filter)│
+│ (内存 / KV 中的紧凑位图 Bitset)   │
 └─────────────────────────────────┘
         │                 │
-    (未命中)           (命中可能存在)
+     (未命中)          (疑似命中)
         │                 ▼
         │     ┌─────────────────────────────────┐
-        │     │ 前缀树 (Trie) 精确复核          │
-        │     │ (彻底杜绝布隆过滤器误杀)        │
+        │     │ 精确前缀树校验 (Trie Check)       │
+        │     │ (100% 消除误判，验证真实黑名单)    │
         │     └─────────────────────────────────┘
         │                 │                 │
         ▼                 ▼                 ▼
-   [ 直接放行 ]       [ 执行拦截 ]       [ 精确放行 ]
+    [ 放行通过 ]       [ 拦截阻断 ]       [ 放行通过 ]
 ```
 
-1. **布隆過濾器初篩**：超過 99% 的合法正常域名可在 $O(1)$ 時間內瞬間放行，無需查庫與深層遍歷。
-2. **字首樹精確校驗**：僅當布隆過濾器判定可能命中時才呼叫精確字首匹配，既消除計算開銷，又確保絕不誤殺。
+1. **第一層：布隆過濾器初篩**：將查詢域名在點陣圖中進行極速雜湊比對。超過 99% 的合法域名無需訪問資料庫，可在 $O(1)$ 時間內極速放行。
+2. **第二層：字首樹精確校驗**：當布隆過濾器報告可能匹配時，快速檢索記憶體字首樹（Trie）以徹底剔除雜湊碰撞，確保 0 誤殺率。
 
 ---
 
----
+## 5. 過濾環境變數速查
 
-## 3. 過濾環境變數參考手冊
-
-請在 `.env`（獨立伺服器）或 `wrangler.toml`（Cloudflare Workers）中配置：
+在 `.env`（Serverfull 模式）或 `wrangler.toml`（Serverless 模式）中配置以下過濾引數：
 
 ### `PRESET_EXTERNAL_FILTERS`
-- **支援模式**：Serverless 與 Serverfull
-- **`wrangler.toml` 格式**：包含 `{ label, url }` 物件的多行 TOML 陣列。
-- **`.env.serverfull` 格式**：JSON 格式字串。
-- **預設值**：內建 OISD Big (`https://big.oisd.nl`)、OISD NSFW、AdGuard Base 以及 StevenBlack 等精選規則源。
+- **支援模式**：Serverless & Serverfull
+- **`wrangler.toml` 格式**：多行 TOML 字串，內含 JSON 陣列物件 `[{ label, url }]`。
+- **`.env.serverfull` 格式**：JSON 字串。
+- **預設值**：內建精選過濾源，包括 OISD Big (`https://big.oisd.nl`)、OISD NSFW、AdGuard Base 及 StevenBlack hosts。
 
 ### `BLOOM_FALSE_POSITIVE_RATE`
-- **支援模式**：Serverless 與 Serverfull
-- **預設值 (`wrangler.toml`)**：`0.0001`（萬分之一）
-- **預設值 (`.env.serverfull`)**：`0.0001`
-- **說明**：布隆過濾器點陣圖大小的容錯閾值。極低誤碰率（0.0001）大幅降低了二次複核計算，消除高頻解析時的 CPU 峰值。
+- **支援模式**：Serverless & Serverfull
+- **預設值**：`0.0001`（萬分之一）
+- **說明**：布隆過濾器的誤報率設計閾值。極低的萬分之一閾值在最小化記憶體開銷的同時徹底壓低了二次驗證頻率。
 
-### `MAX_SYNC_DOMAINS` 與 `MAX_LIST_DOMAINS`
-- **支援模式**：Serverless 與 Serverfull
-- **預設值**：`MAX_SYNC_DOMAINS=1000000`（單配置 100 萬條域名），`MAX_LIST_DOMAINS=500000`（單列表 50 萬條）。
-- **說明**：防止拉取異常龐大的超限外部規則導致記憶體超額溢位。
+### `MAX_SYNC_DOMAINS` & `MAX_LIST_DOMAINS`
+- **支援模式**：Serverless & Serverfull
+- **預設值**：`MAX_SYNC_DOMAINS=1000000`（總計 100 萬條上限），`MAX_LIST_DOMAINS=500000`（單列表 50 萬條上限）。
+- **說明**：安全保護邊界，防止抓取過大規則源時發生記憶體溢位。
 
-### `BLOOM_MEM_TTL` 與 `SYNC_TIMEOUT_MS`
-- **預設值**：`BLOOM_MEM_TTL=600000`（記憶體布隆過濾器駐留 10 分鐘），`SYNC_TIMEOUT_MS=30000`（規則下載超時 30 秒）。
-- **說明**：編譯後的布隆過濾器點陣圖在記憶體中的保鮮期，以及同步外部列表時的最大網路等待時長。
+### `BLOOM_MEM_TTL` & `SYNC_TIMEOUT_MS`
+- **預設值**：`BLOOM_MEM_TTL=600000`（記憶體快取 10 分鐘），`SYNC_TIMEOUT_MS=30000`（規則下載超時 30 秒）。
+- **說明**：編譯後布隆過濾器的記憶體快取保鮮時間，以及外部列表抓取超時保護。
 
 ### `SUBSTITUTE_DOMAIN`
-- **支援模式**：Serverless 與 Serverfull
+- **支援模式**：Serverless & Serverfull
 - **預設值**：`www.okx.com`
-- **說明**：用於健康探測與上游可用性檢測的探針測試域名。
+- **說明**：用於網路連通性探測、測速及上游健康檢查的基準域名。
 
 ### `BLOCK_MODE`
-- **支援模式**：Serverless 與 Serverfull
-- **預設值**：`zero_ip`（`0.0.0.0` / `::`）
+- **支援模式**：Serverless & Serverfull
+- **預設值**：`zero_ip` (`0.0.0.0` / `::`)
 - **可選值**：`zero_ip`、`nxdomain`、`refused`
-- **說明**：全域性預設的域名攔截響應行為（當具體接入點未單獨覆蓋時生效）。
+- **說明**：未在接入點單獨指定攔截模式時的全域性後備策略。

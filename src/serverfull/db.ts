@@ -133,6 +133,12 @@ export class NodeD1Database implements D1Database {
     throw new Error('dump() is not supported in NodeD1Database');
   }
 
+  close(): void {
+    try {
+      this.rawDb.close();
+    } catch {}
+  }
+
   withSession(_constraintOrBookmark?: string): D1DatabaseSession {
     const session = Object.assign(this, {
       getBookmark: () => null

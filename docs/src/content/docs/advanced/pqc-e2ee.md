@@ -19,6 +19,8 @@ If you require mathematical zero-knowledge privacy for your DNS query logs:
 3. Once initialized, all newly incoming DNS query logs will be encrypted using NIST FIPS 203 **P256-MLKEM768** before being persisted.
 4. You can pause/toggle E2EE off or re-enable it at any time without deleting your historical keys.
 
+---
+
 ## Core Security Pillars
 
 1. **Zero-Knowledge Storage**:
@@ -28,5 +30,9 @@ If you require mathematical zero-knowledge privacy for your DNS query logs:
    - Combines classical elliptic curve cryptography with **P256-MLKEM768**, offering quantum resistance against Shor's algorithm.
 3. **Hourly Rotating KEM DEKs**:
    - Data Encryption Keys rotate every hour, minimizing exposure windows.
+   - Encapsulated key ciphertexts (`kem_ct`) and ephemeral key identifiers are stored safely in the database:
+
+![Cloudflare D1 Post-Quantum KEM Keys Encapsulation](/DNS-Worker/screenshots/d1-studio-kem.png)
+
 4. **Hardware Passkey Protection (WebAuthn)**:
    - Users decrypt the master recovery key using biometrics (Touch ID, Face ID, Windows Hello, or YubiKey). Private key decryption occurs strictly in-browser on authorized devices.

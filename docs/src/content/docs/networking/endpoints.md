@@ -13,6 +13,8 @@ By configuring distinct profiles, you can separate policies across different env
 
 ## 1. Creating and Managing Profiles in Web UI
 
+![Endpoints & Access Points Management](/DNS-Worker/screenshots/dns.obex-endpoints.webp)
+
 ### Step 1: Access the Dashboard
 1. Open your DNS Worker Web Dashboard (e.g., `https://dns.example.com` or `http://<server-ip>:10080`).
 2. Log in with your administrator credentials.
@@ -33,7 +35,13 @@ By configuring distinct profiles, you can separate policies across different env
 └────────────────────────────────────────────────────────┘
 ```
 
-### Step 3: Inspect the Generated Profile Key
+### Step 3: Fast Profile Switching
+
+You can switch between multiple profiles instantly from any view in the Web Dashboard using the profile dropdown:
+
+![Multi-Profile Switcher](/DNS-Worker/screenshots/dns.obex-profile_select.webp)
+
+### Step 4: Inspect the Generated Profile Key
 Each newly generated profile is assigned a unique cryptographic **Profile Key** (e.g., `a8f9c2d14e...`). This key acts as the routing identifier in DoH paths and DoT SNI handshakes.
 
 ---
@@ -54,7 +62,11 @@ DNS Worker supports all major modern encrypted DNS protocols alongside classic U
 
 ---
 
-## 3. Client Configuration Guide
+## 3. Interactive Client Configuration Guide
+
+The Web Dashboard includes an interactive client setup walkthrough tailored to each operating system:
+
+![Interactive Client Setup Guide](/DNS-Worker/screenshots/dns.obex-setup.webp)
 
 ### Android 9+ (Native Private DNS)
 Android features built-in support for DNS over TLS (DoT) via the Private DNS setting:

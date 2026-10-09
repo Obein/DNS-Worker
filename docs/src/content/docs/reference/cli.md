@@ -12,6 +12,8 @@ dns-worker [options]
 ```
 
 Runs DNS Worker in the foreground. Command line flags override `.env` settings:
+- `-s, --status`: Display service and database runtime status
+- `-f, --force, -y, --yes`: Bypass interactive confirmation prompt for reset command
 - `-p, --port, --http-port <number>`: HTTP port (default: 10080)
 - `--https-port <number>`: HTTPS port (default: 10443)
 - `--dns-port <number>`: Classic UDP port (default: 53)
@@ -46,6 +48,26 @@ dns-worker config init
 # Print raw default template
 dns-worker config template
 ```
+
+---
+
+## Factory Reset: `reset`
+
+```bash
+# Interactive factory reset (prompts for secondary confirmation)
+dns-worker reset
+
+# Force reset without interactive confirmation (CI/automation)
+dns-worker reset --force
+# or
+dns-worker reset -y
+```
+
+Restores the system to factory defaults:
+- **Restores Configuration**: Overwrites `.env` with the factory default configuration template.
+- **Wipes Database**: Permanently drops all tables and unlinks the SQLite database files (`*.sqlite`, `*-wal`, `*-shm`).
+- **Reapplies Migrations**: Automatically runs all D1/SQLite schema migrations from scratch, producing a pristine empty database ready for first-time onboarding.
+- **Two-Step Safety Confirmation**: In interactive mode, prompts the user with `Are you sure you want to proceed with factory reset? (yes/no): ` to prevent accidental data loss in production environments.
 
 ---
 

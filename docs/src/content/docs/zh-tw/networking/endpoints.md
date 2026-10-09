@@ -1,105 +1,117 @@
 ---
 title: 接入點配置與客戶端設定
-description: 詳細指導如何在 DNS Worker 中建立接入點（Profile）、各類解析協議地址規範以及多平臺客戶端連線設定。
+description: DNS Worker 接入點（Profile）建立管理、連線協議矩陣及多平臺客戶端配置完整指南。
 sidebar:
   order: 1
 ---
 
-在 DNS Worker 中，**接入點**（也稱 **Profile** 或 **配置方案**）是一個獨立的策略隔離單元。每個接入點擁有唯一的路由金鑰、獨立的過濾規則訂閱、自定義上游解析器以及專屬的查詢日誌保留策略。
+在 DNS Worker 中，**接入點**（也稱 **Profile** 或配置策略）是一個相互隔離的安全策略域。每個接入點擁有獨立的路由金鑰、自定義過濾規則、上游解析器以及查詢日誌留存時長。
 
-通過建立不同的接入點，您可以為不同裝置場景實施差異化防護——例如為隨身手機配置強力廣告過濾、為兒童平板啟用安全搜尋，同時為開發測試伺服器保留原生直通環境。
+通過配置不同的接入點，您可以輕鬆實現精細化分流管理——例如為手機配置強力去廣告策略，為兒童平板開啟安全搜尋保護，同時為開發伺服器保留無攔截直連通道。
 
 ---
 
-## 1. Web 儀表盤接入點建立與管理
+## 1. Web 面板中建立與管理接入點
 
-### 步驟 1：進入接入點列表
-1. 開啟 DNS Worker 管理面板（如 `https://dns.example.com` 或 `http://<服务器IP>:10080`）。
-2. 輸入管理員憑據登入。
-3. 在左側導航欄點選 **接入點管理**（Profiles）。
+![接入點管理面板](/DNS-Worker/screenshots/dns.obex-endpoints.webp)
+
+### 步驟 1：訪問管理面板
+1. 開啟 DNS Worker Web 控制面板（例如 `https://dns.example.com` 或 `http://<server-ip>:10080`）。
+2. 使用管理員憑據登入系統。
+3. 在左側導航欄中，點選 **Profiles**（接入點管理）。
 
 ### 步驟 2：新建接入點
-1. 點選右上角 **+ 新建接入點**（New Profile）按鈕。
-2. 輸入便於識別的接入點名稱（例如：`随身手机`、`客厅路由器`、`办公笔记本`）。
-3. 點選 **確認建立**。
+1. 點選右上角 **+ New Profile**（新建接入點）按鈕。
+2. 輸入接入點名稱（例如 `Phone-Mobile`、`Living-Room-Router`、`Kids-Tablet`）。
+3. 點選 **Create Profile**（建立接入點）。
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│ 接入点名称: 随身手机                                    │
-│ 路由密钥 (Profile Key): a8f9c2d14e...                  │
-│ 运行状态: 活跃 (Active)                                 │
-│ 拦截动作: 零 IP 拦截 (0.0.0.0 / ::)                     │
-│ 查询日志: 已启用 (保留周期: 30 天)                      │
+│ 接入点名称: Phone-Mobile                                 │
+│ 路由密钥: a8f9c2d14e...                                │
+│ 状态: 激活 (Active)                                     │
+│ 拦截响应: Zero IP (0.0.0.0 / ::)                        │
+│ 日志策略: 启用 (保留 30 天)                             │
 └────────────────────────────────────────────────────────┘
 ```
 
-### 步驟 3：獲取專屬路由金鑰 (Profile Key)
-每個新接入點建立後都會生成一個高強度的隨機 **Profile Key**（例如 `a8f9c2d14e...`）。該金鑰充當 DoH 路徑分發與 DoT SNI 握手的唯一路由憑據。
+### 步驟 3：多接入點快速切換
+
+在 Web 控制面板的任意頁面，都可以通過頂部或左側的下拉選單極速切換當前檢視與操作的接入點：
+
+![多接入點快速切換](/DNS-Worker/screenshots/dns.obex-profile_select.webp)
+
+### 步驟 4：檢視接入點金鑰
+系統會自動為每個新建接入點生成唯一的加密 **Profile Key**（如 `a8f9c2d14e...`）。該金鑰在 DoH 請求路徑與 DoT SNI 握手過程中作為精確路由標識。
 
 ---
 
-## 2. 協議矩陣與連線地址規範
+## 2. 協議支援與接入 URL 矩陣
 
-DNS Worker 全面支援主流現代加密 DNS 協議與經典 UDP DNS。
+DNS Worker 支援所有主流現代加密 DNS 協議以及傳統 UDP DNS。
 
-| 協議型別 | 連線地址格式 | 適用場景 |
+| 協議 | 接入點地址格式 | 適用場景 |
 | :--- | :--- | :--- |
-| **DoH (DNS over HTTPS)** | `https://<域名>/dns-query/<profileKey>` | 桌面瀏覽器、Windows 11、iOS/macOS 描述檔案、curl |
-| **DoT (DNS over TLS)** | `tls://<profileKey>.<dotDomain>:853` | Linux `systemd-resolved`、Stubby、安卓私密 DNS |
-| **安卓私密 DNS (Private DNS)** | `<profileKey>.<dotDomain>` | Android 9+ 原生系統設定 |
-| **經典 UDP (Do53)** | `udp://<服务器IP>:53` | 傳統路由器、IoT 物聯網裝置、本地測試 |
+| **DoH (DNS over HTTPS)** | `https://<domain>/dns-query/<profileKey>` | 瀏覽器、Windows 11、iOS/macOS 描述檔案、curl |
+| **DoT (DNS over TLS)** | `tls://<profileKey>.<dotDomain>:853` | Linux `systemd-resolved`、Stubby、Android 原生私有 DNS |
+| **Android 私有 DNS** | `<profileKey>.<dotDomain>` | Android 9+ 系統自帶私有 DNS |
+| **傳統 UDP (Do53)** | `udp://<server-ip>:53` | 傳統路由器、IoT 物聯網裝置、區域網測試 |
 
 > [!NOTE]
-> 在獨立伺服器（Serverfull）模式下，DoT 接入點路由依賴 **TLS 伺服器名稱指示（SNI）**。當客戶端發起 `<profileKey>.<dotDomain>` 握手時，服務端在解密 TLS 前即可識別目標接入點，直接應用對應規則。
+> 在 Serverfull 模式下，DoT 接入點路由依賴 **TLS 伺服器名稱指示 (SNI)**。客戶端填入 `<profileKey>.<dotDomain>` 連線時，服務端在解密資料前即可從 TLS ClientHello 中提取子域名，實現 0 額外開銷的精準接入點分流。
 
 ---
 
-## 3. 全平臺客戶端連線配置指南
+## 3. 客戶端互動式配置引導
 
-### Android 9+（原生私密 DNS）
-Android 系統內建對 DNS over TLS (DoT) 的原生支援：
+Web 控制面板內建了針對各個作業系統的互動式客戶端配置指南：
 
-1. 開啟手機 **設定**。
-2. 進入 **網路和網際網路** → **私密 DNS**（或直接在設定中搜索“私密 DNS”）。
-3. 選擇 **私密 DNS 提供商主機名**。
-4. 輸入您的專屬接入點域名：
+![客戶端互動式配置引導](/DNS-Worker/screenshots/dns.obex-setup.webp)
+
+### Android 9+（原生私有 DNS）
+Android 原生支援通過 853 埠發起 DNS over TLS：
+
+1. 開啟 Android 裝置 **設定 (Settings)**。
+2. 進入 **網路和網際網路 (Network & Internet)** → **私有 DNS (Private DNS)**。
+3. 選擇 **私有 DNS 提供商主機名 (Private DNS provider hostname)**。
+4. 填入您的接入點主機名：
    ```text
    <profileKey>.<dotDomain>
    ```
    *示例：* `a8f9c2d14e.dns.example.com`
-5. 點選 **儲存**。系統將自動發起 TLS 握手驗證，驗證通過後所有系統流量即刻生效。
+5. 點選 **儲存**。系統將自動完成 TLS 校驗並接管全域性 DNS。
 
 ---
 
 ### Apple iOS / iPadOS / macOS
 
-Apple 裝置原生支援通過簽名描述檔案（`.mobileconfig`）接入加密 DNS：
+Apple 生態系統通過簽名描述檔案（`.mobileconfig`）原生支援加密 DNS（DoH 與 DoT）。
 
-#### 方案 A：Web 儀表盤直接匯出描述檔案
-1. 在 DNS Worker 管理面板中，進入對應的接入點詳情頁。
-2. 點選 **匯出客戶端配置** → **Apple 配置檔案 (.mobileconfig)**。
-3. 在 Apple 裝置上開啟下載的 `.mobileconfig` 檔案。
-4. 前往系統 **設定** → **已下載描述檔案**，點選 **安裝** 並信任。
+#### 方式 A：直接下載移動配置檔案 (.mobileconfig)
+1. 在 Web 管理面板中，進入目標接入點頁面。
+2. 點選 **Export Client Config** → **Apple Configuration Profile (.mobileconfig)**。
+3. 在 Apple 裝置上開啟下載的檔案。
+4. 前往系統 **設定** → **已下載描述檔案**，點選 **安裝** 即可。
 
-#### 方案 B：使用第三方客戶端 App
-您也可以使用 **AdGuard**、**DNSCloak**、**Surge** 或 **Shadowrocket**：
+#### 方式 B：第三方工具整合
+亦可在 **AdGuard**、**DNSCloak** 或 **Shadowrocket** 中配置：
 - 上游型別選擇 **DNS-over-HTTPS**。
-- 輸入您的 DoH 地址：`https://<域名>/dns-query/<profileKey>`。
+- 填入對應 DoH 地址：`https://<domain>/dns-query/<profileKey>`。
 
 ---
 
 ### Windows 11（原生 DoH）
 
-Windows 11 系統設定已完整支援原生 DoH：
+Windows 11 系統網路設定原生支援 DNS over HTTPS：
 
-1. 按下 `Win + I` 開啟 **設定** → **網路和 Internet**。
-2. 點選當前連線的 **Wi-Fi** 或 **乙太網路**。
-3. 在 **DNS 伺服器分配** 處點選 **編輯**。
-4. 將模式切換為 **手動**，並啟用 **IPv4**。
-5. 在 **首選 DNS** 中輸入您的 DNS Worker 伺服器 IP。
-6. 在 **DNS over HTTPS** 下拉選單選擇 **開 (自動模板)**，或填入模板 URL：
+1. 開啟 **設定** (`Win + I`) → **網路和 Internet**。
+2. 點選正在連線的網路（**Wi-Fi** 或 **乙太網路**）。
+3. 在 **DNS 伺服器分配** 處，點選 **編輯**。
+4. 從 *自動 (DHCP)* 切換為 **手動**，並啟用 **IPv4**。
+5. 在 **首選 DNS** 中輸入伺服器 IP。
+6. 在 **DNS over HTTPS** 下拉選單中選擇 **開 (自動模板)**，或填入 DoH 模板：
    ```text
-   https://<域名>/dns-query/<profileKey>
+   https://<domain>/dns-query/<profileKey>
    ```
 7. 點選 **儲存**。
 
@@ -107,36 +119,36 @@ Windows 11 系統設定已完整支援原生 DoH：
 
 ### Linux (`systemd-resolved`)
 
-在現代 Linux 系統（Ubuntu、Debian、Fedora、Arch）中配置：
+在搭載 `systemd-resolved` 的系統（Ubuntu、Debian、Fedora、Arch）中：
 
 1. 編輯 `/etc/systemd/resolved.conf`：
    ```ini
    [Resolve]
-   DNS=<服务器IP>#<profileKey>.<dotDomain>
+   DNS=<server-ip>#<profileKey>.<dotDomain>
    DNSOverTLS=yes
    Domains=~.
    ```
-2. 重啟解析服務：
+2. 重啟服務生效：
    ```bash
    sudo systemctl restart systemd-resolved
    ```
-3. 使用 `resolvectl status` 檢驗連線與加密狀態。
+3. 執行 `resolvectl status` 驗證加密狀態。
 
 ---
 
-### 路由器與本地閘道器（SmartDNS / OpenWrt / AdGuard Home）
+### 路由器與閘道器裝置 (SmartDNS / OpenWrt / AdGuard Home)
 
-如果您在區域網內執行主路由或旁路由，可將所有內網 DNS 轉發至 DNS Worker：
+在區域網主路由或軟路由上將 DNS 轉發至 DNS Worker：
 
 #### SmartDNS 配置示例 (`/etc/smartdns/smartdns.conf`)：
 ```ini
 server-tls <dotDomain>:853 -tls-host-verify <profileKey>.<dotDomain> -group worker
-server-https https://<域名>/dns-query/<profileKey> -group worker
+server-https https://<domain>/dns-query/<profileKey> -group worker
 ```
 
-#### AdGuard Home 上游配置：
-在 AdGuard Home 的 **設定** → **DNS 設定** → **上游 DNS 伺服器** 中填入：
+#### AdGuard Home 上游伺服器設定：
+在 AdGuard Home **設定** → **DNS 設定** → **上游 DNS 伺服器** 中填入：
 ```text
 tls://<profileKey>.<dotDomain>
-https://<域名>/dns-query/<profileKey>
+https://<domain>/dns-query/<profileKey>
 ```

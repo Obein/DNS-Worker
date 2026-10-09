@@ -1,30 +1,59 @@
 ---
 title: 项目概述
-description: 了解 DNS Worker 的设计哲学、双引擎架构与核心能力。
+description: 了解 DNS Worker 的设计理念、双引擎架构及核心功能特性。
 ---
 
 ## 什么是 DNS Worker？
 
-**DNS Worker** 是一套专为现代隐私与防护而设计的 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**：
+**DNS Worker** 是一款主打隐私优先的现代化保护性 DNS 解析系统，采用创新的**双引擎架构**构建：
 
-1. **☁️ 边缘模式 (Cloudflare Workers Serverless / 首选推荐)**：
-   免运维运行在 Cloudflare 全球 300+ 城市的分布式边缘节点，搭配 D1 分布式数据库，享受零服务器维护成本、全球 Anycast 就近加速与亚毫秒级极速响应。
-2. **🖥️ 独立服务器模式 (Serverfull / 自建可选方案)**：
-   完全脱离 Cloudflare 基础设施，直接运行在您的自有 VPS、家用 Linux / Windows 主机上。采用 Node.js 原生内置 `node:sqlite` 存储，原生监听经典 UDP 53、DoT 853（基于 TLS SNI 路由）与 Web 面板 / DoH。
+1. **☁️ Serverless 边缘模式 (首选推荐)**：
+   运行于遍布全球 300+ 边缘节点的 Cloudflare Workers 与 Cloudflare D1 分布式 SQL 数据库之上，享有零维护成本、全网 Anycast 智能就近调度以及极速边缘响应。
+2. **🖥️ Serverfull 独立服务模式 (自由自建)**：
+   摆脱对任何公有云厂商的依赖，在自有 VPS、家庭主机或实体服务器上运行。依托 Node.js 原生 `node:sqlite`，原生提供经典 UDP 53、DoT 853（支持 TLS SNI 多接入点分流）以及一体化 Web 管理面板与 DoH。
 
 ---
 
-## 协议与核心能力
+## 现代化 Web 控制面板与威胁情报
 
-### 1. 全协议覆盖
-* **经典 UDP 53 (RFC 1035)**：为路由器和内网设备提供即插即用的原生 DNS 解析。
-* **DoT 853 (RFC 7858)**：基于 TLS 加密传输，原生适配 Android 9+“私有 DNS”，通过 TLS SNI 实现多配置自动路由（如 `<profileKey>.dns.example.com`）。
-* **DoH (RFC 8484)**：支持 HTTP/2 与 HTTP/3 (Alt-Svc) 加密解析，兼容主流现代浏览器。
-* **DoQ (RFC 9250)**：支持基于 QUIC 的 0-RTT 极速握手，无队头阻塞。
-* **ECH 与 DDR (RFC 9460)**：广播 Encrypted Client Hello 参数与外层伪装 SNI，配合 DDR 实现加密 DNS 自动发现。
+DNS Worker 自带美观流畅的现代化管理面板，实时呈现查询流量、耗时分布以及安全拦截指标：
 
-### 2. 本地优先 (Local-First) 架构
-基于浏览器端原生 OPFS (Origin Private File System) 与 WebAssembly SQLite，用户端查询日志和聚合统计全部在本地 0ms 瞬间渲染，支持离线分析，后台自动执行轻量双向同步，大幅节省数据库计费与带宽。
+![DNS Worker 管理面板与统计分析](/DNS-Worker/screenshots/dns.obex-stats.webp)
 
-### 3. 后量子零知识端到端加密 (E2EE)
-引入 NIST FIPS 203 **P256-MLKEM768** 混合格密码学，配合硬件通行密钥（WebAuthn / Passkey）及恢复密钥。服务器只保存高强度加密密文，解密与私钥计算严格限定在用户的受信任设备内。
+- **全方位安全度量**：实时统计总请求量、广告与恶意域名拦截率、平均解析延迟及 24 小时流量走势图。
+- **高频威胁直观呈现**：一目了然地捕捉最活跃的追踪器与流氓域名。
+
+---
+
+## 全球解析归属与流向地图
+
+![全球解析目标与地理分布地图](/DNS-Worker/screenshots/dns.obex-stats_dest.webp)
+
+DNS Worker 会自动记录并将解析归属地上报绘制成全球流向地图，让您直观获知设备查询在全球网络中的分布与走向。
+
+---
+
+## 协议与功能特性
+
+### 1. 全协议栈覆盖
+* **传统 UDP 53 (RFC 1035)**：兼容传统路由器、局域网设备以及系统底层网络设置。
+* **加密 DoT 853 (RFC 7858)**：基于 853 端口的高性能加密传输，支持 TLS SNI 多接入点分流（`<profileKey>.dns.example.com`），原生契合 Android 9+ 私有 DNS。
+* **加密 DoH (RFC 8484)**：支持 HTTP/2 及 HTTP/3 (Alt-Svc) 的安全传输协议，适用于主流现代浏览器。
+* **加密 DoQ (RFC 9250)**：基于 QUIC 协议的高性能 DNS，具备 0-RTT 极速握手并彻底消除队头阻塞。
+* **ECH 与 DDR (RFC 9460)**：广播加密客户端问候（ECH）与专用解析器自动发现（DDR）记录。
+
+### 2. 本地优先架构 (Local-First)
+依托浏览器内嵌的 WebAssembly SQLite 与 OPFS 技术，在前端实现 0ms 闪电级的日志筛选与多维图表分析，无需消耗服务端数据库读取额度。
+
+### 3. 后量子零知识端到端加密 (PQC E2EE)
+采用 NIST FIPS 203 **P256-MLKEM768** 混合格密码体系，结合硬件通行密钥（WebAuthn）授权。服务端仅存储不可逆密文，唯有用户授权设备方可完成解密。
+
+---
+
+## 移动端与桌面端自适应设计
+
+DNS Worker 针对移动端设备进行了深度 UI 响应式调优，无论在桌面端还是手机屏幕上都能获得丝滑的使用体验：
+
+| 移动端安全统计分析 | 移动端实时日志审计流 |
+| :---: | :---: |
+| ![移动端统计分析](/DNS-Worker/screenshots/dns.obex-mobile_stats.webp) | ![移动端实时日志](/DNS-Worker/screenshots/dns.obex-mobile_log.webp) |

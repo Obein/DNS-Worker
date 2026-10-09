@@ -1,36 +1,67 @@
 ---
-title: Domain Filtering & Blocklists
-description: Subscription management, custom domain rules, Bloom filter acceleration engine, and filtering environment variables reference.
+title: Domain Filtering & Threat Blocklists
+description: Comprehensive protective DNS filtering engine, ad & malware blocking, subscription management, custom rules, Bloom filter acceleration, and filtering environment variables.
 sidebar:
   order: 1
 ---
 
-DNS Worker features an enterprise-grade protective domain filtering engine capable of evaluating hundreds of thousands of blocking rules with sub-millisecond latency. This guide covers subscription management, custom rules, match engine architecture, and environment variables.
+DNS Worker features an enterprise-grade protective domain filtering engine capable of evaluating hundreds of thousands of blocking rules with sub-millisecond latency. It shields your network and client devices against intrusive advertisements, telemetry trackers, malware, phishing sites, cryptojacking, and malicious command-and-control (C2) domains.
 
 ---
 
-## 1. Web UI Filter Rule Management
+## 1. Threat Defense & Protection Capabilities
+
+DNS Worker intercepts cyber threats at the foundational DNS layer—preventing connections before TCP handshakes or TLS negotiations even occur.
+
+### Protected Threat Categories
+- **Malicious Domains & Malware**: Blocks command-and-control (C2) servers, trojan distribution endpoints, botnets, and ransomware callback domains.
+- **Phishing & Fraud**: Neutralizes fraudulent financial portals, credential harvesting pages, and impersonation domains.
+- **Intrusive Advertising & Trackers**: Silently terminates banner ads, popups, video ad servers, and cross-site telemetry beacons across all mobile apps and websites.
+- **Operating System & Device Telemetry**: Stops aggressive diagnostic data collection from Windows, macOS, Android, smart TVs, and IoT appliances.
+- **Cryptominers**: Blocks in-browser and background cryptocurrency mining scripts.
+
+---
+
+## 2. Web UI Filter Rule Management
 
 ### Subscribing to External Blocklists
-1. Navigate to **Filters** (规则订阅) in the Web Dashboard.
-2. Under **External Blocklists**, click **Add Subscription**.
-3. Enter the subscription URL (supports standard Adblock Plus, Hosts, or domain list formats).
-4. Popular pre-tested lists include:
-   - **OISD Big**: `https://big.oisd.nl`
-   - **AdGuard Base**: `https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
-   - **HaGeZi Multi PRO**: `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt`
-5. Click **Save & Sync**. DNS Worker parses the rules into optimized memory buffers.
 
-### Custom Allowlist & Blocklist
-You can define specific overrides on a per-profile or global basis:
+Navigate to **Filters** (规则订阅) in the Web Dashboard to inspect and manage your blocklist subscriptions.
+
+![Filter Subscriptions & Blocklists](/DNS-Worker/screenshots/dns.obex-filter.webp)
+
+1. Under **External Blocklists**, click **Add Subscription**.
+2. Enter the subscription URL (supports standard Adblock Plus, Hosts, or domain list formats).
+3. Popular pre-tested lists include:
+   - **OISD Big**: `https://big.oisd.nl` (comprehensive baseline ad & tracking protection)
+   - **AdGuard Base**: `https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
+   - **HaGeZi Multi PRO++**: `https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt` (aggressive threat defense)
+   - **StevenBlack Unified**: `https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
+4. Click **Save & Sync**. DNS Worker parses the rules into optimized memory buffers and updates subscription metadata:
+   - **Domain Count**: Displays total parsed unique domain rules (e.g. 100,000+).
+   - **Status Badges**: Shows `Normal` (synchronized), `Outdated` (sync pending), or `Missing` (download failed).
+   - **Automated Sync**: Background cron jobs automatically refresh subscriptions on a scheduled cadence.
+
+---
+
+### Custom Allowlist, Blocklist & Rewrites
+
+Navigate to **Rules** (自定义规则) to configure instant manual overrides on a per-profile basis:
+
+![Custom Rules Management](/DNS-Worker/screenshots/dns.obex-rules.webp)
+
 - **Allowlist (白名单)**: Domains that bypass all blocking rules (e.g., corporate subdomains or false positives).
-- **Blocklist (黑名单)**: Explicitly banned domains.
+- **Blocklist (黑名单)**: Explicitly banned domains that take immediate precedence over external lists.
+- **DNS Rewrites (重写 / 重定向)**: Maps custom domains to specific IP addresses or local services (e.g., intranet services or SafeSearch enforcement like `forcesafesearch.google.com`).
 - **Supported Syntax**:
   - Plain domains: `ad.example.com`
-  - Wildcards: `*.tracking.company.com`
+  - Subdomain wildcards: `*.tracking.company.com` or `||adservice.google.com^`
   - Regular expressions: `^analytics-[0-9]+\..*$`
 
+---
+
 ### Block Action Modes
+
 In your profile settings, select how blocked queries are handled:
 
 | Block Mode | Response Behavior | Advantages |
@@ -41,7 +72,23 @@ In your profile settings, select how blocked queries are handled:
 
 ---
 
-## 2. Match Engine Architecture: Bloom Filters & Trie
+## 3. Real-Time Threat Audit & Query Logs
+
+DNS Worker provides instant visibility into intercepted threats and permitted resolutions through the **Logs** view:
+
+![Real-Time Query Logs & Threat Interception](/DNS-Worker/screenshots/dns.obex-log.webp)
+
+- **Instant Visual Status**:
+  - `BLOCK` (Red): Queries intercepted by external blocklists or custom blacklist rules. Displays the synthetic block answer (`0.0.0.0`).
+  - `PASS` (Green): Legitimate queries forwarded to upstream resolvers and successfully answered.
+  - `REWRITE` (Blue): Queries mapped to custom redirect targets.
+- **Threat Audit Drawer**: Clicking on any query entry slides out the inspection drawer, detailing the exact rule match, client IP, geographic origin, upstream latency, and post-quantum encryption status.
+
+![Query Log Inspection Drawer](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+
+---
+
+## 4. Match Engine Architecture: Bloom Filters & Trie
 
 To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps), DNS Worker uses a **Dual-Layer Bloom Filter** architecture:
 
@@ -70,9 +117,7 @@ Incoming Query (e.g. adserver.tracker.com)
 
 ---
 
----
-
-## 3. Filtering Environment Variables Reference
+## 5. Filtering Environment Variables Reference
 
 Configure these variables in `.env` (Serverfull) or `wrangler.toml` (Cloudflare Workers).
 

@@ -1,109 +1,153 @@
 ---
-title: 域名过滤与规则引擎
-description: 规则订阅管理、自定义黑白名单、布隆过滤器加速架构以及过滤环境变量配置手册。
+title: 域名过滤与威胁拦截
+description: 全面的保护性 DNS 过滤引擎、广告与恶意域名拦截、订阅管理、自定义规则、Bloom filter 加速引擎以及过滤环境变量参考。
 sidebar:
   order: 1
 ---
 
-DNS Worker 拥有企业级域名防护过滤引擎，可在极低内存开销下快速评估数十万条去广告与防跟踪规则，达到亚毫秒级拦截响应。本指南介绍规则订阅操作、自定义规则语法、底层算法设计及相关环境变量。
+DNS Worker 内置企业级保护性域名过滤引擎，能够在亚毫秒级延迟下并发评估数十万条拦截规则。它可以在网络层为您的家庭与企业设备筑起坚实防线，拦截侵入性广告、行为追踪器、钓鱼欺诈、恶意软件、挖矿程序以及僵尸网络命令与控制（C2）域名。
 
 ---
 
-## 1. Web 仪表盘规则管理操作
+## 1. 威胁防御与保护能力
 
-### 添加外部规则订阅
-1. 登录控制台后，在侧边栏进入 **规则订阅**（Filters）。
-2. 在 **外部规则源** 模块中，点击 **添加订阅**（Add Subscription）。
-3. 填入订阅源 URL（支持标准 Adblock Plus、Hosts 或纯域名列表格式）。
-4. 常用推荐规则源：
-   - **OISD Big**：`https://big.oisd.nl`
+DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建立 TCP 握手或发起 TLS 协商之前即掐断隐患连接。
+
+### 核心拦截威胁类别
+- **恶意软件与 C2 域名**：拦截勒索病毒回调、特洛伊木马分发点、僵尸网络控制端及可疑活动域名。
+- **钓鱼与欺诈网站**：阻断仿冒金融机构、凭证窃取页面及钓鱼诈骗域名。
+- **侵入式广告与追踪器**：在所有移动应用、智能电视和网页中静默屏蔽横幅广告、视频插播广告、弹窗及跨站行为分析追踪。
+- **系统与设备遥测**：阻断 Windows、macOS、Android、智能音箱及各类 IoT 设备的激进诊断数据收集。
+- **挖矿程序**：阻止浏览器挖矿脚本与后台加密货币挖矿连接。
+
+---
+
+## 2. Web 管理面板规则配置
+
+### 订阅外部规则黑名单
+
+在 Web 管理面板左侧导航中进入 **Filters**（规则订阅），查看和管理当前接入点订阅的外部黑名单。
+
+![规则订阅与外部黑名单](/DNS-Worker/screenshots/dns.obex-filter.webp)
+
+1. 在 **External Blocklists**（外部规则列表）区域，点击 **Add Subscription**（添加订阅）。
+2. 输入订阅 URL（兼容标准 Adblock Plus 语法、Hosts 文件及纯域名列表格式）。
+3. 官方推荐的主流过滤源：
+   - **OISD Big**：`https://big.oisd.nl`（全面平衡的广告与追踪拦截源）
    - **AdGuard Base**：`https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt`
-   - **HaGeZi Multi PRO**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt`
-5. 点击 **保存并同步**，系统将自动拉取并将规则编译入内存。
+   - **HaGeZi Multi PRO++**：`https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.plus.txt`（高强度威胁拦截）
+   - **StevenBlack Hosts**：`https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts`
+4. 点击 **Save & Sync**（保存并同步）。DNS Worker 会解析规则并生成紧凑布隆过滤器缓存：
+   - **域名总数**：显示解析出的有效去重规则数（通常达数十万条）。
+   - **同步状态**：显示 `Normal`（正常同步）、`Outdated`（需更新）或 `Missing`（同步失败）。
+   - **自动调度**：系统后台 Cron 任务会定期自动抓取最新规则，无需人工维护。
 
-### 自定义黑白名单
-您可以在各接入点中单独定义特定域名放行或拦截：
-- **白名单（Allowlist）**：即便命中第三方广告规则也会无条件放行的域名。
-- **黑名单（Blocklist）**：强制拦截的恶意或隐私收集域名。
-- **支持语法**：
+---
+
+### 自定义白名单、黑名单与重写规则
+
+进入 **Rules**（自定义规则）页面，根据特定需求配置实时生效的个性化规则：
+
+![自定义规则管理](/DNS-Worker/screenshots/dns.obex-rules.webp)
+
+- **Allowlist (白名单)**：直接放行的信任域名，优先于外部规则（用于解除误杀或保障公司业务通道）。
+- **Blocklist (黑名单)**：明确禁止解析的恶意或广告域名，拦截优先级最高。
+- **DNS Rewrites (重写 / 重定向)**：将特定域名解析至指定 IP 地址或内网主机（例如局域网自建服务，或强制开启 SafeSearch 如 `forcesafesearch.google.com`）。
+- **支持匹配语法**：
   - 精确域名：`ad.example.com`
-  - 通配符匹配：`*.telemetry.domain.com`
+  - 子域名通配符：`*.tracking.company.com` 或 `||adservice.google.com^`
   - 正则表达式：`^analytics-[0-9]+\..*$`
 
-### 拦截动作模式 (Block Modes)
-在接入点设置中，可自由选择拦截返回方式：
+---
 
-| 拦截模式 | 返回报文行为 | 特点与适用场景 |
+### 拦截响应模式
+
+在接入点配置中，可以按需指定拦截发生时的 DNS 响应行为：
+
+| 拦截模式 | 返回行为 | 优势 |
 | :--- | :--- | :--- |
-| **零 IP 拦截 (0.0.0.0 / ::)** | IPv4 返回 `0.0.0.0`，IPv6 返回 `::` | **推荐默认**。终端立即握手失败并终止重试，网页加载最快。 |
-| **NXDOMAIN** | 返回 RCODE 3（域名不存在） | 符合标准语义，告知客户端此域名无任何解析记录。 |
-| **Refused** | 返回 RCODE 5（拒绝查询） | 明确告知客户端解析被策略拒绝。 |
+| **Zero IP (0.0.0.0 / ::)** | IPv4 返回 `0.0.0.0`，IPv6 返回 `::` | **推荐首选**。客户端以最快速度终止连接，避免超时重试。 |
+| **NXDOMAIN** | 返回 RCODE 3 (域名不存在) | 符合标准，向客户端明确指示该域名不存在。 |
+| **Refused** | 返回 RCODE 5 (拒绝解析) | 清晰区分常规查询错误与安全策略阻断。 |
 
 ---
 
-## 2. 核心架构：双层布隆过滤器与前缀树 (Trie)
+## 3. 实时威胁审计与查询日志
 
-为了在低资源环境（如 512MB 内存 VPS 或 Cloudflare 128MB Workers）下支撑超大规模规则库，DNS Worker 采用了 **双层布隆过滤器 (Bloom Filter)** 加速架构：
+进入 **Logs**（查询日志）页面，实时监控网络威胁拦截情况与正常请求流动：
+
+![实时查询日志与威胁阻断](/DNS-Worker/screenshots/dns.obex-log.webp)
+
+- **实时状态标识**：
+  - `BLOCK` (红色)：命中黑名单或恶意规则的请求，展示合成的拦截 IP（`0.0.0.0`）及命中原因。
+  - `PASS` (绿色)：已成功转发至上游安全递归并正常返回的合法请求。
+  - `REWRITE` (蓝色)：命中重写规则并返回预设重定向目标的请求。
+- **威胁审计抽屉**：点击任意日志条目即可滑出详细审计抽屉，精准查看命中的规则来源、客户端 IP、地理归属、上游解析耗时及端到端加密状态。
+
+![查询日志详情审计抽屉](/DNS-Worker/screenshots/dns.obex-log_detail.webp)
+
+---
+
+## 4. 匹配引擎架构：布隆过滤器与前缀树 (Trie)
+
+为在资源受限的环境（如 512MB 内存的 VPS 或 128MB 限制的 Cloudflare Workers 边缘节点）中实现超低延迟的大规模规则匹配，DNS Worker 采用了**双层布隆过滤器架构**：
 
 ```
-传入解析请求 (例如: adserver.tracker.com)
+收到查询请求 (例如 adserver.tracker.com)
                 │
                 ▼
 ┌─────────────────────────────────┐
-│ 布隆过滤器快速初筛              │
-│ (极低内存位图，内存占用 < 2MB)  │
+│ 布隆过滤器快速初筛 (Bloom Filter)│
+│ (内存 / KV 中的紧凑位图 Bitset)   │
 └─────────────────────────────────┘
         │                 │
-    (未命中)           (命中可能存在)
+     (未命中)          (疑似命中)
         │                 ▼
         │     ┌─────────────────────────────────┐
-        │     │ 前缀树 (Trie) 精确复核          │
-        │     │ (彻底杜绝布隆过滤器误杀)        │
+        │     │ 精确前缀树校验 (Trie Check)       │
+        │     │ (100% 消除误判，验证真实黑名单)    │
         │     └─────────────────────────────────┘
         │                 │                 │
         ▼                 ▼                 ▼
-   [ 直接放行 ]       [ 执行拦截 ]       [ 精确放行 ]
+    [ 放行通过 ]       [ 拦截阻断 ]       [ 放行通过 ]
 ```
 
-1. **布隆过滤器初筛**：超过 99% 的合法正常域名可在 $O(1)$ 时间内瞬间放行，无需查库与深层遍历。
-2. **前缀树精确校验**：仅当布隆过滤器判定可能命中时才调用精确前缀匹配，既消除计算开销，又确保绝不误杀。
+1. **第一层：布隆过滤器初筛**：将查询域名在位图中进行极速哈希比对。超过 99% 的合法域名无需访问数据库，可在 $O(1)$ 时间内极速放行。
+2. **第二层：前缀树精确校验**：当布隆过滤器报告可能匹配时，快速检索内存前缀树（Trie）以彻底剔除哈希碰撞，确保 0 误杀率。
 
 ---
 
----
+## 5. 过滤环境变量速查
 
-## 3. 过滤环境变量参考手册
-
-请在 `.env`（独立服务器）或 `wrangler.toml`（Cloudflare Workers）中配置：
+在 `.env`（Serverfull 模式）或 `wrangler.toml`（Serverless 模式）中配置以下过滤参数：
 
 ### `PRESET_EXTERNAL_FILTERS`
-- **支持模式**：Serverless 与 Serverfull
-- **`wrangler.toml` 格式**：包含 `{ label, url }` 对象的多行 TOML 数组。
-- **`.env.serverfull` 格式**：JSON 格式字符串。
-- **默认值**：内置 OISD Big (`https://big.oisd.nl`)、OISD NSFW、AdGuard Base 以及 StevenBlack 等精选规则源。
+- **支持模式**：Serverless & Serverfull
+- **`wrangler.toml` 格式**：多行 TOML 字符串，内含 JSON 数组对象 `[{ label, url }]`。
+- **`.env.serverfull` 格式**：JSON 字符串。
+- **默认值**：内置精选过滤源，包括 OISD Big (`https://big.oisd.nl`)、OISD NSFW、AdGuard Base 及 StevenBlack hosts。
 
 ### `BLOOM_FALSE_POSITIVE_RATE`
-- **支持模式**：Serverless 与 Serverfull
-- **默认值 (`wrangler.toml`)**：`0.0001`（万分之一）
-- **默认值 (`.env.serverfull`)**：`0.0001`
-- **说明**：布隆过滤器位图大小的容错阈值。极低误碰率（0.0001）大幅降低了二次复核计算，消除高频解析时的 CPU 峰值。
+- **支持模式**：Serverless & Serverfull
+- **默认值**：`0.0001`（万分之一）
+- **说明**：布隆过滤器的误报率设计阈值。极低的万分之一阈值在最小化内存开销的同时彻底压低了二次验证频率。
 
-### `MAX_SYNC_DOMAINS` 与 `MAX_LIST_DOMAINS`
-- **支持模式**：Serverless 与 Serverfull
-- **默认值**：`MAX_SYNC_DOMAINS=1000000`（单配置 100 万条域名），`MAX_LIST_DOMAINS=500000`（单列表 50 万条）。
-- **说明**：防止拉取异常庞大的超限外部规则导致内存超额溢出。
+### `MAX_SYNC_DOMAINS` & `MAX_LIST_DOMAINS`
+- **支持模式**：Serverless & Serverfull
+- **默认值**：`MAX_SYNC_DOMAINS=1000000`（总计 100 万条上限），`MAX_LIST_DOMAINS=500000`（单列表 50 万条上限）。
+- **说明**：安全保护边界，防止抓取过大规则源时发生内存溢出。
 
-### `BLOOM_MEM_TTL` 与 `SYNC_TIMEOUT_MS`
-- **默认值**：`BLOOM_MEM_TTL=600000`（内存布隆过滤器驻留 10 分钟），`SYNC_TIMEOUT_MS=30000`（规则下载超时 30 秒）。
-- **说明**：编译后的布隆过滤器位图在内存中的保鲜期，以及同步外部列表时的最大网络等待时长。
+### `BLOOM_MEM_TTL` & `SYNC_TIMEOUT_MS`
+- **默认值**：`BLOOM_MEM_TTL=600000`（内存缓存 10 分钟），`SYNC_TIMEOUT_MS=30000`（规则下载超时 30 秒）。
+- **说明**：编译后布隆过滤器的内存缓存保鲜时间，以及外部列表抓取超时保护。
 
 ### `SUBSTITUTE_DOMAIN`
-- **支持模式**：Serverless 与 Serverfull
+- **支持模式**：Serverless & Serverfull
 - **默认值**：`www.okx.com`
-- **说明**：用于健康探测与上游可用性检测的探针测试域名。
+- **说明**：用于网络连通性探测、测速及上游健康检查的基准域名。
 
 ### `BLOCK_MODE`
-- **支持模式**：Serverless 与 Serverfull
-- **默认值**：`zero_ip`（`0.0.0.0` / `::`）
+- **支持模式**：Serverless & Serverfull
+- **默认值**：`zero_ip` (`0.0.0.0` / `::`)
 - **可选值**：`zero_ip`、`nxdomain`、`refused`
-- **说明**：全局默认的域名拦截响应行为（当具体接入点未单独覆盖时生效）。
+- **说明**：未在接入点单独指定拦截模式时的全局后备策略。

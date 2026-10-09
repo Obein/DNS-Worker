@@ -11,6 +11,8 @@ DNS Worker implements defense-in-depth zero-trust security standards across both
 
 ## 1. Web Dashboard Zero-Trust Authentication
 
+![Web Dashboard Biometric Authentication](/DNS-Worker/screenshots/dns.obex-login.webp)
+
 The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 
 ```
@@ -28,6 +30,7 @@ The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 ```
 
 ### Key Security Defenses
+- **Hardware Passkeys (WebAuthn)**: Biometric authentication (Touch ID, Face ID, Windows Hello, YubiKey) ensures phishing-resistant credentials.
 - **Nonce Anti-Replay**: Every sensitive state modification includes a cryptographic nonce to prevent replay attacks.
 - **Non-Extractable Web Crypto Keys**: Client-side cryptographic operations (such as PQC ML-KEM and AES-GCM log decryption) use non-extractable Web Crypto API handles in isolated Web Workers.
 - **Refresh Token Rotation (RTR)**: Refresh tokens are single-use. When a refresh token is exchanged, a new token is issued and the previous token is invalidated.
@@ -36,6 +39,10 @@ The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 ---
 
 ## 2. Envelope Encryption (DEK / KEK) Architecture
+
+Configure your master security keys, Passkeys, and Post-Quantum E2EE directly in the **Account & Security Settings** card:
+
+![Security & Account Settings](/DNS-Worker/screenshots/dns.obex-settings.webp)
 
 Sensitive data at rest — including client session tokens and private query logs — is protected using two-tier envelope encryption:
 

@@ -1,95 +1,102 @@
 ---
 title: 身份認證、金鑰體系與信封加密
-description: 零信任 WebApp 安全標準、Refresh Token Rotation (RTR)、版本化 KEK 信封加密機制與安全環境變數手冊。
+description: 零信任 WebApp 安全架構、重新整理令牌輪換（RTR）、版本化 KEK 信封加密及安全環境變數參考。
 sidebar:
   order: 4
 ---
 
-DNS Worker 在網路解析層與 Web 控制面板中全方位貫徹零信任防禦理念。本文件深度剖析系統身份驗證流程、金鑰輪轉機制及安全相關環境變數。
+DNS Worker 在後臺解析管道與 Web 控制面板中全面踐行零信任深度防禦安全標準。本篇全面解析身份鑑權協議、信封金鑰輪換機制以及核心安全環境變數。
 
 ---
 
-## 1. Web 控制台零信任認證架構
+## 1. Web 控制面板零信任身份鑑權
 
-Web 控制台嚴格遵循 **WebApp Trust** 安全架構規範：
+![Web 控制面板生物識別通行金鑰登入](/DNS-Worker/screenshots/dns.obex-login.webp)
+
+Web 管理面板嚴格遵循 **WebApp Trust** 零信任安全架構標準：
 
 ```
 [ 浏览器客户端 ]                                         [ DNS Worker 服务端 ]
-        │                                                        │
-        │── 1. POST /api/auth/login (密码 + 一次性 Nonce) ──────▶│
-        │                                                        │ (Argon2 / PBKDF2 哈希比对)
-        │◀── 2. Access Token (内存) + Refresh Token (Cookie) ────│
-        │                                                        │
-        │── 3. 鉴权 RPC 调用 (Authorization: Bearer) ───────────▶│
-        │                                                        │
-        │── 4. POST /api/auth/refresh (RTR 并发容错窗口) ───────▶│
-        │                                                        │ (签发新 Token 并作废旧 Token)
-        │◀── 5. 轮换 Access Token + 轮换 Refresh Token ─────────│
+       │                                                          │
+       │── 1. POST /api/auth/login (密码 + 随机数 Nonce) ────────▶│
+       │                                                          │ (Argon2 / PBKDF2)
+       │◀── 2. Access Token (内存) + Refresh Token (Cookie) ──────│
+       │                                                          │
+       │── 3. 授权 RPC 调用 (Authorization: Bearer) ─────────────▶│
+       │                                                          │
+       │── 4. POST /api/auth/refresh (RTR 宽限窗口) ──────────────▶│
+       │                                                          │ (签发全新令牌对)
+       │◀── 5. 轮换后的 Access Token + 轮换后的 Refresh Token ────│
 ```
 
-### 核心安全特性
-- **隨機 Nonce 防重放**：對敏感管理操作引入密碼學隨機 Nonce，免疫重放攻擊。
-- **不可匯出 Web Crypto 金鑰**：瀏覽器端金鑰運算（如 PQC ML-KEM、AES-GCM 日誌加解密）在獨立 Web Worker 中執行，金鑰控制代碼標記為不可提取（non-extractable）。
-- **重新整理令牌單次輪換 (RTR)**：每個 Refresh Token 僅限兌換一次，兌換後立即廢止。
-- **併發寬限視窗 (Concurrency Grace Window)**：多標籤頁併發請求時，在 `RTR_GRACE_WINDOW_MS` 毫秒內允許完成平滑令牌過渡，防止意外登出。
+### 核心安全防線
+- **硬體通行金鑰 (WebAuthn Passkey)**：支援 Touch ID、Face ID、Windows Hello 及 YubiKey 生物認證，徹底阻斷撞庫與釣魚攻擊。
+- **隨機數防重放 (Nonce Anti-Replay)**：所有敏感操作均包含加密隨機數，杜絕重放攻擊。
+- **非可匯出 Web Crypto 金鑰**：前端私鑰運算（如後量子 ML-KEM、AES-GCM 日誌解密）在獨立 Web Worker 中使用不可匯出的 Web Crypto API 原生物件執行。
+- **單次重新整理令牌輪換 (RTR)**：Refresh Token 具備一次性屬性，每次換髮新 Token 時舊 Token 立即吊銷。
+- **併發寬限視窗 (Concurrency Grace Period)**：在多瀏覽器標籤頁併發請求時，通過原子寬限期（`RTR_GRACE_WINDOW_MS`）避免誤判登出。
 
 ---
 
-## 2. 信封加密 (DEK / KEK) 與平滑輪換
+## 2. 信封加密 (DEK / KEK) 架構
 
-對資料庫中的敏感資訊（如使用者會話憑證及隱私查詢日誌），採用兩層信封加密：
+在 **Account & Security Settings**（賬戶與安全設定）卡片中管理主金鑰、通行金鑰及後量子 E2EE：
+
+![賬戶與安全設定面板](/DNS-Worker/screenshots/dns.obex-settings.webp)
+
+服務端儲存的敏感資料（包括使用者會話令牌與加密查詢日誌）由兩層信封加密機制保護：
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│ 密钥加密密钥 (KEK_v1 / KEK_v2)                         │
-│ (保存在安全环境变量或 Cloudflare Secrets 中)           │
+│ 密钥加密密钥 (KEK_v1 / KEK_v2)                          │
+│ (保存在安全环境变量或 Cloudflare Secrets 中)             │
 └────────────────────────────────────────────────────────┘
-                           │ (加解密)
+                           │ (加密 / 解密)
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│ 数据加密密钥 (DEK)                                     │
-│ (按日志批次或单条会话随机派生)                          │
+│ 数据加密密钥 (DEK)                                      │
+│ (为每批日志或会话动态独立生成)                           │
 └────────────────────────────────────────────────────────┘
-                           │ (加解密)
+                           │ (加密 / 解密)
                            ▼
-               [ 敏感数据明文 / 日志 Payload ]
+                [ 核心敏感数据 / 密文载荷 ]
 ```
 
-### 零停機版本化平滑輪轉
-1. 系統自動使用編號最高的有效金鑰（例如 `KEK_v2`）作為當前加密金鑰。
-2. 歷史遺留資料即使使用 `KEK_v1` 或舊版 `JWT_SECRET`（v0）加密，依然可平滑解密。
-3. 伴隨資料寫回或後臺維護任務，舊版資料將在執行中被透明重加密為最新版本。
+### 無感平滑金鑰輪換
+1. 服務端自動載入最高版本的金鑰（如 `KEK_v2`）加密所有新寫入的資料。
+2. 歷史老資料仍可使用舊版 `KEK_v1` 或相容的 `JWT_SECRET`（v0）無縫解密。
+3. 伴隨資料更新或定期維護任務，系統會自動將舊資料無縫重新加密至最新啟用版本。
 
 ---
 
-## 3. 安全環境變數參考手冊
+## 3. 安全環境變數速查
 
-請在 `.env`（獨立伺服器模式）中配置，或使用 `wrangler secret put <名称>` 錄入 Cloudflare 憑據：
+在 `.env`（Serverfull 模式）中配置，或在 Cloudflare Workers 中通過 `wrangler secret put <NAME>` 設定。
 
 ### `JWT_SECRET`
 - **型別**：`string`（至少 32 字元）
-- **職責**：系統舊版 Token 簽名主金鑰及 KEK_v0 回退金鑰。
-- **安全要求**：必須為高熵隨機字串，禁止使用弱密碼。
-- **生成命令**：
+- **職責**：令牌簽名根金鑰與 KEK_v0 信封加密基礎後備。
+- **安全要求**：必須使用高強度密碼學偽隨機數生成，嚴禁使用弱口令。
+- **生成方式**：
   ```bash
   openssl rand -base64 32
   ```
 
 ### `KEK_v1`, `KEK_v2`, ...
 - **型別**：`string`（至少 32 字元）
-- **職責**：版本化的信封加密金鑰。
-- **示例**：
+- **職責**：多版本信封加密主金鑰。
+- **配置範例**：
   ```ini
   KEK_v1=c3VwZXJzZWNyZXRrZXl2MWV4YW1wbGUxMjM0NTY3ODk=
   KEK_v2=bmV3ZXJzZWNyZXRrZXl2MmV4YW1wbGUxMjM0NTY3ODk=
   ```
-  服務自動識別最大序號（`v2`）為主加密金鑰，舊序號用於向後解密相容。
+  系統會自動識別數字最大的版本（`v2`）作為當前加密金鑰，同時保留對舊版本的解密支援。
 
 ### `SERVERFULL_API_KEY`
 - **型別**：`string`
-- **職責**：外部自動化運維介面與 Cloudflare 遠端呼叫的 Bearer 認證令牌。
+- **職責**：獨立伺服器 API 管理令牌，以及 Cloudflare Worker 呼叫獨立伺服器時的鑑權憑據。
 - **請求頭**：`Authorization: Bearer <SERVERFULL_API_KEY>`。
 
 ### `ADMIN_PASSWORD`
 - **型別**：`string`
-- **職責**：初次部署並初始化 Web 儀表盤時的超級管理員密碼。
+- **職責**：初次部署時系統預設的管理員密碼。初始化建立後憑據將安全加密儲存於資料庫中。
