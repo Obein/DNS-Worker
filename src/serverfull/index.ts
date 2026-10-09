@@ -379,9 +379,9 @@ async function bootstrap(): Promise<void> {
       title: 'TLS Certificate Files Inaccessible',
       message: certInfo.error || 'Configured TLS certificate or private key files could not be read on disk.',
       details: [
-        `Cert path : ${config.tlsCertPath}`,
-        `Key path  : ${config.tlsKeyPath}`,
-        `Running as: ${process.env.USER || process.env.USERNAME || 'unknown'}`
+        `Cert path configured: ${config.tlsCertPath ? 'yes' : 'no'}`,
+        `Key path configured : ${config.tlsKeyPath ? 'yes' : 'no'}`,
+        'Running user details are omitted for security.'
       ],
       solutions: [
         'Check that the paths configured in .env exist and are accessible.',
