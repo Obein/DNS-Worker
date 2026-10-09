@@ -11,12 +11,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import dgram from 'node:dgram';
 import tls from 'node:tls';
+import https from 'node:https';
 import { execSync } from 'node:child_process';
 import { initNodeGlobals } from '../src/serverfull/cache';
 import { initServerfullDb } from '../src/serverfull/db';
 import { UdpDnsServer } from '../src/serverfull/udp';
 import { DotDnsServer } from '../src/serverfull/dot';
-import { HttpServer } from '../src/serverfull/http';
+import { HttpServer, HttpsServer } from '../src/serverfull/http';
 import { buildDNSQuery, parseDNSAnswer } from '../src/utils/dns';
 import { Env } from '../src/types';
 
@@ -73,8 +74,8 @@ async function runTests() {
     }
   }
 
-  // Use openssl to generate self-signed cert
-  execSync(`${opensslBin} req -x509 -newkey rsa:2048 -nodes -sha256 -keyout "${tlsKeyPath}" -out "${tlsCertPath}" -days 1 -subj "/CN=dns.local" -addext "subjectAltName=DNS:dns.local,DNS:testkey123.dns.local"`, {
+  // Use openssl to generate self-signed wildcard cert (*.dns.local)
+  execSync(`${opensslBin} req -x509 -newkey rsa:2048 -nodes -sha256 -keyout "${tlsKeyPath}" -out "${tlsCertPath}" -days 1 -subj "/CN=*.dns.local" -addext "subjectAltName=DNS:*.dns.local,DNS:dns.local"`, {
     stdio: 'ignore'
   });
 
@@ -83,13 +84,15 @@ async function runTests() {
     ASSETS: null as any,
     JWT_SECRET: 'test_jwt_secret_serverfull_suite_000000',
     FAIL_OPEN_UPSTREAM: 'https://security.cloudflare-dns.com/dns-query',
-    SERVERFULL_DEFAULT_PROFILE_KEY: 'testkey123'
+    SERVERFULL_DEFAULT_PROFILE_KEY: 'testkey123',
+    SERVERFULL_DOT_DOMAIN: 'dns.local'
   };
 
   // Ports for testing
   const UDP_TEST_PORT = 15353;
   const DOT_TEST_PORT = 18853;
   const HTTP_TEST_PORT = 23300;
+  const HTTPS_TEST_PORT = 24443;
 
   // 5. Start UDP Server
   const udpServer = new UdpDnsServer({
@@ -106,18 +109,29 @@ async function runTests() {
     host: '127.0.0.1',
     tlsKeyPath,
     tlsCertPath,
+    dotDomain: 'dns.local',
     defaultProfileKey: 'testkey123',
     env
   });
   await dotServer.start();
 
-  // 7. Start HTTP Server
+  // 7. Start HTTP Server (port 23300)
   const httpServer = new HttpServer({
     port: HTTP_TEST_PORT,
     host: '127.0.0.1',
     env
   });
   await httpServer.start();
+
+  // 8. Start HTTPS Server (port 24443)
+  const httpsServer = new HttpsServer({
+    port: HTTPS_TEST_PORT,
+    host: '127.0.0.1',
+    certPath: tlsCertPath,
+    keyPath: tlsKeyPath,
+    env
+  });
+  await httpsServer.start();
 
   // ── TEST A: UDP DNS Query (Internal verification domain 'obex TXT') ──
   console.log('\n>>> [TEST A] Testing UDP DNS Resolution (obex TXT)...');
@@ -185,18 +199,111 @@ async function runTests() {
   console.log('\n>>> [TEST C] Testing HTTP Server (/api/clientinfo)...');
   const httpRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`);
   console.log('>>> [TEST C] HTTP status:', httpRes.status);
-  const clientInfoJson = await httpRes.json();
+  const clientInfoJson = await httpRes.json() as Record<string, any>;
   console.log('>>> [TEST C] ClientInfo response:', clientInfoJson);
   if (httpRes.status !== 200) {
     throw new Error(`Expected HTTP 200 from /api/clientinfo, got ${httpRes.status}`);
   }
-  console.log('>>> [TEST C] SUCCESS: HTTP Server works!');
+  if (clientInfoJson.dotDomain !== 'dns.local') {
+    throw new Error(`Expected clientInfo.dotDomain to be 'dns.local', got ${clientInfoJson.dotDomain}`);
+  }
+  console.log('>>> [TEST C] SUCCESS: HTTP Server & ClientInfo with dotDomain works!');
+
+  // ── TEST D: HTTPS Web UI / ClientInfo API ──
+  console.log('\n>>> [TEST D] Testing HTTPS Server (/api/clientinfo)...');
+  const httpsRes = await new Promise<{ status: number; body: string }>((resolve, reject) => {
+    const req = https.get(
+      `https://127.0.0.1:${HTTPS_TEST_PORT}/api/clientinfo`,
+      { ca: fs.readFileSync(path.resolve('test', 'tmp', 'tls', 'ca.crt')) },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => data += c);
+        res.on('end', () => resolve({ status: res.statusCode || 0, body: data }));
+      }
+    );
+    req.on('error', reject);
+  });
+  console.log('>>> [TEST D] HTTPS status:', httpsRes.status);
+  const httpsClientInfo = JSON.parse(httpsRes.body) as Record<string, any>;
+  if (httpsRes.status !== 200) {
+    throw new Error(`Expected HTTPS 200 from /api/clientinfo, got ${httpsRes.status}`);
+  }
+  if (httpsClientInfo.dotDomain !== 'dns.local') {
+    throw new Error(`Expected HTTPS clientInfo.dotDomain to be 'dns.local', got ${httpsClientInfo.dotDomain}`);
+  }
+
+  // ── TEST D2: Public System Endpoints (/api/resolve & /api/geoip) ──
+  console.log('\n>>> [TEST D2] Testing Public /api/resolve and /api/geoip APIs...');
+  const resolveIpRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/resolve?name=1.1.1.1`);
+  if (resolveIpRes.status !== 200) {
+    throw new Error(`Expected HTTP 200 from /api/resolve, got ${resolveIpRes.status}`);
+  }
+  const resolveIpJson = await resolveIpRes.json() as { ipv4: string[]; ipv6: string[] };
+  if (!resolveIpJson.ipv4.includes('1.1.1.1')) {
+    throw new Error(`Expected /api/resolve to recognize 1.1.1.1, got: ${JSON.stringify(resolveIpJson)}`);
+  }
+
+  const geoipLocalRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/geoip?ip=127.0.0.1`);
+  if (geoipLocalRes.status !== 200) {
+    throw new Error(`Expected HTTP 200 from /api/geoip, got ${geoipLocalRes.status}`);
+  }
+  const geoipLocalJson = await geoipLocalRes.json() as { success: boolean; country: string };
+  if (!geoipLocalJson.success || geoipLocalJson.country !== 'Private Network') {
+    throw new Error(`Expected private network geoip for 127.0.0.1, got: ${JSON.stringify(geoipLocalJson)}`);
+  }
+  console.log('>>> [TEST D2] SUCCESS: /api/resolve and /api/geoip public endpoints verified!');
+  console.log('\n>>> [TEST E] Testing Auth Refresh & RTR Grace Window on HTTP...');
+  const { createSession } = await import('../src/lib/auth');
+  const { refreshToken } = await createSession(env, 'user1', '127.0.0.1', 'Serverfull-Test-Agent', 0.0, 0.0, false);
+
+  // 1. Initial refresh via HTTP
+  const refreshRes1 = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Cookie': `auth_refresh=${refreshToken}`
+    }
+  });
+
+  console.log('>>> [TEST E] HTTP refresh status:', refreshRes1.status);
+  if (refreshRes1.status !== 200) {
+    const errorBody = await refreshRes1.text();
+    throw new Error(`Expected HTTP 200 from /api/auth/refresh, got ${refreshRes1.status}: ${errorBody}`);
+  }
+
+  const refreshJson1 = await refreshRes1.json() as Record<string, any>;
+  if (!refreshJson1.accessToken) {
+    throw new Error(`Expected accessToken in refresh response, got: ${JSON.stringify(refreshJson1)}`);
+  }
+
+  // Verify Set-Cookie header is adapted for plain HTTP (no '; Secure')
+  const rawSetCookie = refreshRes1.headers.get('set-cookie') || '';
+  if (rawSetCookie.includes('Secure')) {
+    throw new Error(`Plain HTTP response should NOT contain 'Secure' in Set-Cookie: ${rawSetCookie}`);
+  }
+  console.log('>>> [TEST E] SUCCESS: HTTP Refresh returns 200 and adapts cookies without Secure flag!');
+
+  // 2. Test RTR Concurrency Grace Window: Replay the same token immediately (simulating concurrent tab/component refresh)
+  console.log('>>> [TEST E] Testing RTR Concurrency Grace Window (simulating in-flight parallel refresh)...');
+  const refreshRes2 = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Cookie': `auth_refresh=${refreshToken}`
+    }
+  });
+
+  console.log('>>> [TEST E] Parallel refresh status:', refreshRes2.status);
+  if (refreshRes2.status !== 200) {
+    const errorBody = await refreshRes2.text();
+    throw new Error(`Expected HTTP 200 within RTR grace period, got ${refreshRes2.status}: ${errorBody}`);
+  }
+  console.log('>>> [TEST E] SUCCESS: RTR Concurrency Grace Window prevented 401 session invalidation!');
 
   // ── Cleanup ──
   console.log('\n>>> [CLEANUP] Stopping servers...');
   await udpServer.stop();
   await dotServer.stop();
   await httpServer.stop();
+  await httpsServer.stop();
   const { flushLogBatch } = await import('../src/pipeline/logBatcher');
   try { await flushLogBatch(env); } catch {}
   db.rawDb.close();

@@ -8,7 +8,10 @@ import {
   formatBanner,
   formatKeyValueSection,
   formatDiagnostic,
-  formatPortError
+  formatPortError,
+  formatCommandList,
+  formatLogBox,
+  formatTip
 } from '../src/serverfull/format';
 import { inspectDatabase } from '../src/serverfull/status';
 
@@ -118,9 +121,10 @@ function runUnitTests(): void {
     port: 53,
     err: { code: 'EADDRINUSE' },
     alternateOption: '--dns-port 5353',
-    disableOption: '--disable-udp'
+    disableOption: '--disable-udp',
+    occupant: { processName: 'systemd-resolved', pid: 762 }
   });
-  if (!addrInUseUdp.includes('[Port Conflict] UDP DNS port 53 is already in use.') || !addrInUseUdp.includes('systemd-resolved')) {
+  if (!addrInUseUdp.includes('[Port Conflict] UDP DNS port 53 is already in use') || !addrInUseUdp.includes('systemd-resolved')) {
     throw new Error('formatPortError EADDRINUSE UDP failed');
   }
 
@@ -154,6 +158,65 @@ function runUnitTests(): void {
     throw new Error('inspectDatabase failed for non-existent database');
   }
   console.log('   ✓ inspectDatabase passed.');
+
+  // 7. Test formatCommandList
+  console.log('7. Testing formatCommandList dynamic command alignment...');
+  const cmdOutput = formatCommandList({
+    title: 'Useful Commands:',
+    items: [
+      { command: 'short', desc: 'Short description' },
+      { command: 'much-longer-command', desc: 'Longer description' }
+    ]
+  });
+  if (!cmdOutput.includes('Useful Commands:')) {
+    throw new Error('formatCommandList title missing');
+  }
+  const cmdLines = cmdOutput.split('\n');
+  const shortCmdLine = cmdLines.find(l => l.includes('short'))!;
+  const hashIndexShort = shortCmdLine.indexOf('#');
+  const longCmdLine = cmdLines.find(l => l.includes('much-longer-command'))!;
+  const hashIndexLong = longCmdLine.indexOf('#');
+  if (hashIndexShort !== hashIndexLong) {
+    throw new Error(`Column alignment mismatch in formatCommandList: short=${hashIndexShort}, long=${hashIndexLong}`);
+  }
+  console.log('   ✓ formatCommandList aligned properly.');
+
+  // 8. Test formatLogBox
+  console.log('8. Testing formatLogBox bordered preview and tip...');
+  const logBoxOutput = formatLogBox({
+    title: 'Recent Service Logs',
+    content: 'Line 1: Server started\nLine 2: Ready',
+    borderChar: '-',
+    tip: 'Run with -Tail 50 to stream'
+  });
+  if (!logBoxOutput.includes('[Recent Service Logs]') || !logBoxOutput.includes('Server started') || !logBoxOutput.includes('Tip: Run with -Tail 50 to stream')) {
+    throw new Error('formatLogBox missing components');
+  }
+  console.log('   ✓ formatLogBox passed.');
+
+  // 9. Test formatTip
+  console.log('9. Testing formatTip rendering...');
+  const tipSingle = formatTip('Single tip line');
+  if (!tipSingle.includes('Tip:\n  Single tip line')) {
+    throw new Error('formatTip single line failed');
+  }
+  const tipMulti = formatTip(['First tip', 'Second tip']);
+  if (!tipMulti.includes('Tip:\n  First tip\n  Second tip')) {
+    throw new Error('formatTip multiple lines failed');
+  }
+  console.log('   ✓ formatTip passed.');
+
+  // 10. Test formatDiagnostic with success level
+  console.log('10. Testing formatDiagnostic success level...');
+  const diagSuccess = formatDiagnostic({
+    level: 'success',
+    title: 'Service Started',
+    message: 'Windows background task started successfully.'
+  });
+  if (!diagSuccess.includes('[Service Started] Windows background task started successfully.')) {
+    throw new Error('formatDiagnostic success failed');
+  }
+  console.log('   ✓ formatDiagnostic success passed.');
 
   console.log('\n======================================================');
   console.log('   ALL FORMATTING UNIT TESTS PASSED SUCCESSFULLY!    ');

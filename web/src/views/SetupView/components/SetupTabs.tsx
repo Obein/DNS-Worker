@@ -3,9 +3,10 @@ import { Tabs, Tab, H5, Button, Icon, Intent, Tag, Callout } from "@blueprintjs/
 import { Globe, AppWindowMac, Monitor, Terminal, Smartphone, Router, ExternalLink } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
-import type {  RegionConfigItem  } from "../../../config/regions";
 import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
 import { StepStampWatermark } from "./StepStampWatermark";
+import { useDeploymentMode } from "../../../hooks/useDeploymentMode";
+import { isDummyOrPlaceholderDomain } from "../../../services";
 
 export interface SetupTabsProps {
   isMobile: boolean;
@@ -13,9 +14,8 @@ export interface SetupTabsProps {
   profileKey: string;
   profileName?: string;
   accessPointName?: string;
-  allRegions: Record<string, RegionConfigItem>;
-  selectedRegion: string;
   currentIps: { ip: string; area: string | null }[];
+  dotDomain?: string;
 }
 
 export const SetupTabs: React.FC<SetupTabsProps> = ({
@@ -24,11 +24,11 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   profileKey,
   profileName,
   accessPointName,
-  allRegions,
-  selectedRegion,
   currentIps,
+  dotDomain,
 }) => {
   const { t } = useTranslation();
+  const { isCloudflare } = useDeploymentMode();
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
@@ -127,9 +127,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
         panel={
           <div className="space-y-4 md:ml-4 mt-4 md:mt-0">
             <H5 className="font-bold">
-              {t("setup.windowsTitle", {
-                region: allRegions[selectedRegion]?.label || t("setup.otherRegion"),
-              })}
+              {t("setup.windowsTitle")}
             </H5>
             <ol className="list-decimal list-inside space-y-4 text-sm leading-relaxed">
               <li>
@@ -252,30 +250,60 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
             <H5 className="font-bold">{t("setup.androidTitle")}</H5>
             <p className="text-sm">{t("setup.androidDesc")}</p>
 
-            <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
-              <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {t("setup.androidDotTitle", "私有 DNS (DoT - Serverfull 模式)")}
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {t("setup.androidDotDesc", "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：")}
-              </p>
-              <div className="flex items-center gap-2">
-                <Tag
-                  minimal
-                  interactive
-                  onClick={() => copyToClipboard(`${profileKey}.${window.location.hostname}`)}
-                  icon="duplicate"
-                  className="font-mono text-sm py-1 px-3"
-                  intent={Intent.PRIMARY}
-                >
-                  {`${profileKey}.${window.location.hostname}`}
-                </Tag>
-              </div>
-            </div>
+            {isCloudflare ? (
+              <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
+                <div className="font-semibold mb-1">{t("setup.dotUnavailableCfTitle")}</div>
+                <div>{t("setup.dotUnavailableCfDesc")}</div>
+              </Callout>
+            ) : (
+              (() => {
+                const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(window.location.hostname) ||
+                                    window.location.hostname === "localhost" ||
+                                    window.location.hostname === "127.0.0.1" ||
+                                    window.location.hostname.includes(":");
+                const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
+                const isDummy = isDummyOrPlaceholderDomain(cleanBaseDomain);
+                const effectiveDotDomain = (!isDummy && cleanBaseDomain) || (!isIpAddress ? window.location.hostname : "");
 
-            <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
-              {t("setup.androidWarning")}
-            </Callout>
+                return (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
+                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                      {t("setup.androidDotTitle", "私有 DNS (DoT / DoQ)")}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {t("setup.androidDotDesc", "支持 Android 原生“私有 DNS (DoT)”及各类现代 DoQ 客户端。提供商主机名：")}
+                    </p>
+
+                    {effectiveDotDomain ? (
+                      <div className="space-y-3 pt-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                          <Tag
+                            minimal
+                            interactive
+                            onClick={() => copyToClipboard(`${profileKey}.${effectiveDotDomain}`)}
+                            icon="duplicate"
+                            className="font-mono text-xs sm:text-sm py-1 px-3 self-start"
+                            intent={Intent.PRIMARY}
+                          >
+                            {`${profileKey}.${effectiveDotDomain}`}
+                          </Tag>
+                        </div>
+                      </div>
+                    ) : (
+                      <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
+                        {t("setup.androidIpNotice", "检测到当前通过 IP 或本地地址访问面板。DoT / DoQ 仅接受域名，请在 .env 中配置 SERVERFULL_DOT_DOMAIN (例如 dns.example.com) 后刷新。")}
+                      </Callout>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+
+            {!isCloudflare && (
+              <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
+                {t("setup.androidWarning")}
+              </Callout>
+            )}
           </div>
         }
       />

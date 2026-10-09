@@ -71,7 +71,10 @@ export default {
           '/api/auth/logout',
           '/api/auth/unlock-session',
           '/api/clientinfo',
-          '/api/regions'
+          '/api/regions',
+          '/api/substitute',
+          '/api/resolve',
+          '/api/geoip'
         ].includes(url.pathname) || 
         url.pathname.startsWith('/api/icon/') || 
         url.pathname.startsWith('/api/presets/') ||
@@ -109,6 +112,8 @@ export default {
           url.pathname === '/api/clientinfo' ||
           url.pathname === '/api/regions' ||
           url.pathname === '/api/substitute' ||
+          url.pathname === '/api/resolve' ||
+          url.pathname === '/api/geoip' ||
           url.pathname.startsWith('/api/presets/') ||
           url.pathname.startsWith('/api/icon/')
         ) {
@@ -191,13 +196,22 @@ export default {
             isDbMissing = true;
           }
           const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
+          const isServerfull = Boolean(
+            env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+            env.SERVERFULL_HOST !== undefined ||
+            env.SERVERFULL_DOT_DOMAIN !== undefined ||
+            env.SERVERFULL_HTTP_PORT !== undefined ||
+            env.SERVERFULL_HTTPS_PORT !== undefined
+          );
 
           let configStr = "{}";
           try {
              configStr = JSON.stringify({
                nonce,
                isDbMissing,
-               isJwtSecretMissing
+               isJwtSecretMissing,
+               isServerfull,
+               mode: isServerfull ? 'serverfull' : 'cloudflare'
              });
           } catch (e) { }
           

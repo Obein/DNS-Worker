@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Intent } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import { getPresetRegions, type RegionConfigItem } from "../../config/regions";
 import { setSystemTimeZone } from "../../utils/date";
 
-import type {  SetupViewProps, ClientInfo  } from "./types";
+import type { SetupViewProps, ClientInfo } from "./types";
 import { useIsMobile } from "../../hooks/useIsMobile";
 import { SetupHeader } from "./components/SetupHeader";
 import { VerifyConnectionCard } from "./components/VerifyConnectionCard";
@@ -15,19 +14,18 @@ import { AccessPointDrawer } from "./components/AccessPointDrawer";
 import type { AccessPoint } from "../../types/auth";
 import {
   getClientInfo,
-  getRegions,
-  getSubstituteInfo,
   getTraceInfo,
-  queryDnsJson,
   getProfileAccessPoints,
   getProfileDetails,
+  getDomainGeoLocation,
+  resolveDomainDnsIps,
+  isDummyOrPlaceholderDomain,
 } from "../../services";
 
 export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, profileName, toasterRef }) => {
   const isMobile = useIsMobile();
-  const { t, i18n } = useTranslation();
-  const presetRegions = useMemo(() => getPresetRegions(t), [i18n.language, t]);
-  
+  const { t } = useTranslation();
+
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>([]);
   const [loadingAccessPoints, setLoadingAccessPoints] = useState(false);
   const [isAccessPointDrawerOpen, setIsAccessPointDrawerOpen] = useState(false);
@@ -73,24 +71,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
   const dohUrl = `${window.location.origin}/${activeToken}`;
   const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [substituteDomainIp, setSubstituteDomainIp] = useState<string | null>(null);
-  const [substituteDomainIpv6, setSubstituteDomainIpv6] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string>("CN");
   const [showIp, setShowIp] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
   const [traceInfo, setTraceInfo] = useState<{ colo: string; raw: string } | null>(null);
-  const [serverRegions, setServerRegions] = useState<Record<string, RegionConfigItem>>({});
+  const [edgeLocation, setEdgeLocation] = useState<string | null>(null);
+  const [domainIps, setDomainIps] = useState<{ ipv4: string[]; ipv6: string[] }>({ ipv4: [], ipv6: [] });
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; profileMatch: boolean } | null>(null);
-
-  const OTHER_REGION: RegionConfigItem = {
-    label: t("setup.otherRegion"),
-    ips: [],
-    countries: [],
-  };
-
-  const allRegions = useMemo<Record<string, RegionConfigItem>>(() => {
-    return { ...presetRegions, ...serverRegions, Other: OTHER_REGION };
-  }, [presetRegions, serverRegions, OTHER_REGION]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -100,46 +86,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
     });
   };
 
-  const resolveSubstituteDomain = async (domain: string) => {
-    const tryResolve = async (server: string, type: string, typeNum: number): Promise<string | null> => {
-      try {
-        const data = await queryDnsJson(server, domain, type);
-        if (data.Answer && data.Answer.length > 0) {
-          const record = data.Answer.find((a: any) => a.type === typeNum);
-          if (record?.data) return record.data;
-        }
-      } catch (e) {
-        console.warn(`Client-side DNS query failed for ${domain} (${type}) via ${server}:`, e);
-      }
-      return null;
-    };
-
-    const servers = ["cloudflare-dns.com", "1.1.1.1"];
-
-    // Try resolving A record
-    let ipA: string | null = null;
-    for (const server of servers) {
-      ipA = await tryResolve(server, "A", 1);
-      if (ipA) break;
-    }
-    if (ipA) setSubstituteDomainIp(ipA);
-
-    // Try resolving AAAA record
-    let ipAAAA: string | null = null;
-    for (const server of servers) {
-      ipAAAA = await tryResolve(server, "AAAA", 28);
-      if (ipAAAA) break;
-    }
-    if (ipAAAA) setSubstituteDomainIpv6(ipAAAA);
-  };
-
   const handleVerify = async () => {
     setIsVerifying(true);
     setVerifyResult(null);
     try {
-      const [clientData, regionsData, traceResult] = await Promise.all([
+      const [clientData, traceResult] = await Promise.all([
         getClientInfo(),
-        getRegions(),
         getTraceInfo(),
       ]);
 
@@ -150,50 +102,34 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         setSystemTimeZone(clientData.timezone);
       }
 
-      const domainToResolve = clientData.substituteDomain || "pages.dev";
-      
-      try {
-        const substituteData = await getSubstituteInfo();
-        if (substituteData.ip) {
-          setSubstituteDomainIp(substituteData.ip);
-        }
-        if (substituteData.ipv6) {
-          setSubstituteDomainIpv6(substituteData.ipv6);
-        }
-        
-        if (!substituteData.ip || !substituteData.ipv6) {
-          resolveSubstituteDomain(domainToResolve);
-        }
-      } catch (e) {
-        console.warn("Backend substitute lookup failed, falling back to client-side DNS lookup", e);
-        resolveSubstituteDomain(domainToResolve);
-      }
+      // Determine active target domain for DNS IP resolution & Geo location
+      // Avoid RFC 2606 dummy placeholders (e.g. dns.example.com)
+      const isLocalHost = (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname === "::1" ||
+        window.location.hostname.startsWith("192.168.") ||
+        window.location.hostname.startsWith("10.") ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(window.location.hostname)
+      );
 
-      if (regionsData) {
-        const enriched: Record<string, RegionConfigItem> = {};
-        for (const [key, ips] of Object.entries(regionsData)) {
-          enriched[key] = {
-            label: presetRegions[key]?.label || key,
-            countries: presetRegions[key]?.countries || [],
-            ips: ips as any,
-          };
-        }
-        setServerRegions(enriched);
-      }
+      const hasValidDotDomain = Boolean(
+        clientData.dotDomain && !isDummyOrPlaceholderDomain(clientData.dotDomain)
+      );
 
-      if (clientData.country) {
-        let matched = false;
-        for (const [key, config] of Object.entries(presetRegions)) {
-          if (config.countries.includes(clientData.country)) {
-            setSelectedRegion(key);
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          setSelectedRegion("Other");
-        }
-      }
+      const domainToResolve = (isLocalHost && hasValidDotDomain)
+        ? clientData.dotDomain!
+        : (hasValidDotDomain ? clientData.dotDomain! : (window.location.hostname || ""));
+
+      // Fetch geographic location of the current domain from the frontend
+      getDomainGeoLocation(domainToResolve)
+        .then((loc) => setEdgeLocation(loc))
+        .catch((e) => console.warn("Failed fetching domain geo location:", e));
+
+      // Resolve IPv4 and IPv6 addresses for the current domain
+      resolveDomainDnsIps(domainToResolve)
+        .then((ips) => setDomainIps(ips))
+        .catch((e) => console.warn("Failed resolving domain DNS IPs:", e));
 
       setVerifyResult({
         success: !!clientData.connectedProfileId,
@@ -210,28 +146,29 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
     handleVerify();
   }, [profileId]); // Ensure it only runs once unless profileId changes
 
+  // DNS IPs resolved directly from current domain (IPv4 and IPv6)
   const currentIps = useMemo(() => {
-    const region = allRegions[selectedRegion] || OTHER_REGION;
-    const baseIps: { ip: string; area: string | null }[] = [...region.ips];
-    const domain = clientInfo?.substituteDomain || "pages.dev";
-    if (substituteDomainIpv6) {
-      baseIps.unshift({
-        ip: substituteDomainIpv6,
-        area: t("setup.dynamicFromDomainV6", { domain }) as string,
+    const list: { ip: string; area: string | null }[] = [];
+
+    for (const ip of domainIps.ipv4) {
+      list.push({
+        ip,
+        area: "IPv4",
       });
     }
-    if (substituteDomainIp) {
-      baseIps.unshift({
-        ip: substituteDomainIp,
-        area: t("setup.dynamicFromDomain", { domain }) as string,
+    for (const ip of domainIps.ipv6) {
+      list.push({
+        ip,
+        area: "IPv6",
       });
     }
-    return baseIps;
-  }, [selectedRegion, allRegions, substituteDomainIp, substituteDomainIpv6, clientInfo, t, OTHER_REGION]);
+
+    return list;
+  }, [domainIps]);
 
   return (
     <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "px-8 max-w-5xl"}`}>
-      <SetupHeader isMobile={isMobile} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} allRegions={allRegions} />
+      <SetupHeader isMobile={isMobile} />
 
       <VerifyConnectionCard
         isVerifying={isVerifying}
@@ -244,6 +181,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         showLocation={showLocation}
         setShowLocation={setShowLocation}
         traceInfo={traceInfo}
+        edgeLocation={edgeLocation}
       />
 
       <AccessPointCard
@@ -267,9 +205,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         profileKey={activeToken}
         profileName={currentProfileName || undefined}
         accessPointName={activeName}
-        allRegions={allRegions}
-        selectedRegion={selectedRegion}
         currentIps={currentIps}
+        dotDomain={clientInfo?.dotDomain}
       />
 
       <AccessPointDrawer

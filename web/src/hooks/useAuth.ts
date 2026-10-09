@@ -10,7 +10,8 @@ import type { UserInfo } from "../services";
  * Helper to clear the CSRF cookie and session storage flags.
  */
 const clearCsrfToken = () => {
-  document.cookie = "csrf_token=; Max-Age=0; path=/; Secure; SameSite=Lax";
+  const secureFlag = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `csrf_token=; Max-Age=0; path=/; SameSite=Lax${secureFlag}`;
   try {
     sessionStorage.removeItem("obex_session_active");
     sessionStorage.removeItem("obex_session_locked");
@@ -31,15 +32,17 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
 
   const checkAuth = async () => {
     try {
-      // Check if we have a csrf_token cookie.
+      const token = getAccessToken();
       const hasCsrfToken = document.cookie.includes("csrf_token=");
-      if (!hasCsrfToken) {
+
+      // Only bail out if we neither have an in-memory token nor a csrf token cookie.
+      if (!token && !hasCsrfToken) {
         setIsLoggedIn(false);
         return;
       }
 
       // If we don't have an access token in memory, try to refresh first.
-      if (!getAccessToken()) {
+      if (!token) {
         try {
           const data = await refresh();
           setAccessToken(data.accessToken);

@@ -4,13 +4,27 @@
  * Starts Classic UDP DNS, DoT (DNS over TLS), HTTP Web Dashboard & DoH, and scheduled cron jobs.
  */
 
+import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { initNodeGlobals } from './cache';
-import { getPackageVersion, getServerfullConfig, ServerfullCliArgs } from './config';
+import {
+  getPackageVersion,
+  getServerfullConfig,
+  getDefaultDbPath,
+  getDefaultDataDir,
+  getDefaultConfigDir,
+  getDefaultConfigFilePath,
+  ensurePersistentDirs,
+  loadEnvFiles,
+  getLoadedEnvFiles,
+  ServerfullCliArgs
+} from './config';
+import { DEFAULT_ENV_SERVERFULL_TEMPLATE, writeDefaultConfigFile } from './defaults';
 import { initServerfullDb } from './db';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
-import { HttpServer } from './http';
+import { HttpServer, HttpsServer } from './http';
+import { inspectTlsCertificate, getCertbotDiagnosticOptions } from './cert';
 import { flushLogBatch } from '../pipeline/logBatcher';
 import worker from '../index';
 import { ExecutionContext } from '../types';
@@ -19,10 +33,12 @@ import {
   formatBanner,
   formatDiagnostic,
   formatHelpMenu,
-  formatKeyValueSection
+  formatKeyValueSection,
+  formatTip
 } from './format';
 import { showServerfullStatus } from './status';
 import { handleServiceAction } from './service';
+import { buildCloudflareEchConfig } from '../utils/ech';
 
 function checkNodeVersion(): void {
   const [major, minor] = process.versions.node.split('.').map(Number);
@@ -39,6 +55,121 @@ function checkNodeVersion(): void {
   }
 }
 
+function handleConfigCommand(subAction: string, targetArg?: string): void {
+  if (subAction === 'path') {
+    console.log(getDefaultConfigFilePath());
+    return;
+  }
+
+  if (subAction === 'template') {
+    process.stdout.write(DEFAULT_ENV_SERVERFULL_TEMPLATE);
+    return;
+  }
+
+  if (subAction === 'init') {
+    const isForce = process.argv.includes('--force') || targetArg === '--force';
+    const effectivePath = (targetArg && targetArg !== '--force') ? path.resolve(targetArg) : getDefaultConfigFilePath();
+    const result = writeDefaultConfigFile(effectivePath, isForce);
+    if (result.created) {
+      console.log(formatDiagnostic({
+        level: 'success',
+        title: isForce ? 'Configuration File Overwritten' : 'Configuration File Initialized',
+        message: `Successfully wrote default .env configuration template to: ${result.path}`,
+        solutions: [
+          'Edit this file to customize ports, TLS paths, and DNS settings.',
+          "Run 'dns-worker status' to verify loaded configuration."
+        ]
+      }));
+    } else {
+      console.log(formatDiagnostic({
+        level: 'warning',
+        title: 'Configuration File Already Exists (Untouched)',
+        message: `An existing configuration file was detected and preserved at: ${result.path}`,
+        solutions: [
+          'Your existing settings and secrets remain completely intact.',
+          'Edit the existing file directly to modify options.',
+          "To view the new version's full template, run: dns-worker config template",
+          "To force overwrite with the latest default template, run: dns-worker config init --force"
+        ]
+      }));
+    }
+    return;
+  }
+
+  // Default: 'show'
+  loadEnvFiles();
+  const loaded = getLoadedEnvFiles();
+  const loadedText = loaded.length > 0 ? loaded.join('\n    ') : 'None (Using built-in presets & defaults)';
+
+  const banner = formatBanner({
+    title: 'DNS Worker Configuration Summary',
+    borderChar: '=',
+    bullet: '• '
+  });
+
+  const section = formatKeyValueSection({
+    title: '\nActive Configuration Paths:',
+    items: [
+      { label: 'Persistent Data Dir', value: getDefaultDataDir() },
+      { label: 'Config Directory', value: getDefaultConfigDir() },
+      { label: 'Default Config Path', value: getDefaultConfigFilePath() },
+      { label: 'Default SQLite Path', value: getDefaultDbPath() },
+      { label: 'Loaded Config Files', value: loadedText }
+    ]
+  });
+
+  const tip = formatTip([
+    "To generate a clean .env template file: dns-worker config init",
+    "To print the configuration file path: dns-worker config path",
+    "To view the raw template: dns-worker config template"
+  ]);
+
+  console.log([banner, section, tip].join('\n'));
+}
+
+function handleEchCommand(cliArgs?: ServerfullCliArgs): void {
+  const { config } = getServerfullConfig(cliArgs);
+  const frontingDomain = config.echFrontingDomain || 'cloudflare-ech.com';
+  const echConfigBase64 = config.echConfig || buildCloudflareEchConfig(frontingDomain);
+  const domain = config.dotDomain || 'dns.example.com';
+
+  const banner = formatBanner({
+    title: 'Encrypted Client Hello (ECH) & DNS Service Records',
+    borderChar: '=',
+    bullet: '• '
+  });
+
+  const section = formatKeyValueSection({
+    title: '\nActive ECH Configuration & Outer SNI:',
+    items: [
+      { label: 'ECH Status', value: config.echEnabled ? 'Enabled (Active)' : 'Disabled' },
+      { label: 'Fronting Domain (Outer SNI)', value: frontingDomain },
+      { label: 'ECHConfigList (Base64)', value: echConfigBase64 },
+      { label: 'Target Base Domain', value: domain },
+      { label: 'HTTPS (H3) Port', value: String(config.httpsPort) },
+      { label: 'DoT / DoQ Port', value: String(config.dotPort) }
+    ]
+  });
+
+  const ddrRecord = `_dns.${domain}. 300 IN SVCB 1 . alpn="doq,dot" port=${config.dotPort} ech="${echConfigBase64}"`;
+  const httpsRecord = `${domain}. 300 IN HTTPS 1 . alpn="h3,h2" port=${config.httpsPort} ech="${echConfigBase64}"`;
+
+  const dnsSection = `\nStandard DNS Service Binding Records (RFC 9460 & RFC 9460 Section 8 DDR):
+  • DDR SVCB Record (DoQ/DoT auto-discovery):
+    ${ddrRecord}
+
+  • HTTPS Service Record (HTTP/3 & ECH):
+    ${httpsRecord}`;
+
+  const tip = formatTip([
+    'Publish the DDR SVCB record in your authoritative DNS zone to enable automatic DoQ & DoT discovery.',
+    'Publish the HTTPS record to enable browser HTTP/3 (h3) and ECH negotiation without SNI leakage.',
+    `Test client ECH support with: curl --ech true https://${domain}`
+  ]);
+
+  console.log([banner, section, dnsSection, tip].join('\n'));
+}
+
 function printHelp(): void {
   const version = getPackageVersion();
 
@@ -48,38 +179,59 @@ function printHelp(): void {
     usage: [
       'dns-worker [options]',
       'dns-worker status [options]',
+      'dns-worker ech [options]',
+      'dns-worker config [action]',
       'dns-worker service <action>',
       'npx dns-worker [options]'
     ],
     commands: [
       { label: 'status', desc: 'Inspect service runtime status and database health' },
-      { label: 'service <action>', desc: 'Manage Linux systemd service (install, start, stop, restart, status, logs, uninstall)' }
+      { label: 'ech', desc: 'Display active ECH configuration, outer SNI, and DNS RR records' },
+      { label: 'config [action]', desc: 'Manage configuration (show, path, init, template)' },
+      { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, enable, disable, status, logs, uninstall)' }
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },
-      { label: '-p, --port <number>', desc: 'Web Dashboard & DoH HTTP port (default: 3000)' },
+      { label: '-p, --port, --http-port <number>', desc: 'Plain HTTP Web Dashboard & DoH port (default: 10080)' },
+      { label: '--https-port <number>', desc: 'Secure HTTPS Web Dashboard & DoH port (default: 10443)' },
+      { label: '--disable-https', desc: 'Disable HTTPS Web Dashboard server' },
       { label: '--dns-port <number>', desc: 'Classic UDP DNS port (default: 53)' },
       { label: '--dot-port <number>', desc: 'DoT (DNS over TLS) port (default: 853)' },
+      { label: '--dot-domain <domain>', desc: 'Base domain name for DoT & HTTPS service (e.g. dns.example.com)' },
+      { label: '--ech-enabled <boolean>', desc: 'Enable or disable ECH broadcast (true/false, default: true)' },
+      { label: '--ech-config <base64>', desc: 'Custom Base64-encoded ECHConfigList' },
+      { label: '--ech-fronting-domain <domain>', desc: 'ECH outer SNI fronting domain (default: cloudflare-ech.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
-      { label: '--db <path>', desc: 'SQLite database file path (default: ./data/dns_worker.sqlite)' },
+      { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
       { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
       { label: '--disable-dot', desc: 'Disable DoT server' },
+      { label: '-u, --user <username>', desc: 'User account to run background service as (default: current invoking user)' },
       { label: '-v, --version', desc: 'Display version number' },
       { label: '--help', desc: 'Display this help message' }
     ],
     envVars: [
-      { label: 'PORT / SERVERFULL_HTTP_PORT', desc: 'Web Dashboard & DoH port' },
+      { label: 'PORT / HTTP_PORT / SERVERFULL_HTTP_PORT', desc: 'Plain HTTP Web Dashboard & DoH port' },
+      { label: 'HTTPS_PORT / SERVERFULL_HTTPS_PORT', desc: 'Secure HTTPS Web Dashboard & DoH port' },
+      { label: 'SERVERFULL_DISABLE_HTTPS', desc: 'Disable HTTPS Web Dashboard server' },
       { label: 'DNS_PORT / SERVERFULL_UDP_PORT', desc: 'Classic UDP DNS port' },
       { label: 'DOT_PORT / SERVERFULL_DOT_PORT', desc: 'DoT port' },
+      { label: 'SERVERFULL_DOT_DOMAIN / DOT_DOMAIN', desc: 'Base domain name for DoT & HTTPS service' },
+      { label: 'SERVERFULL_ECH_ENABLED', desc: 'Enable or disable ECH (true/false)' },
+      { label: 'SERVERFULL_ECH_CONFIG', desc: 'Custom Base64-encoded ECHConfigList' },
+      { label: 'SERVERFULL_ECH_FRONTING_DOMAIN', desc: 'Fronting domain for ECH outer SNI' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
-      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for DoT' },
-      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for DoT' }
+      { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for HTTPS & DoT' },
+      { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for HTTPS & DoT' }
     ],
     tip: [
       "Run 'dns-worker status' to inspect active runtime status, port availability, and database health.",
-      "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
+      "Run 'dns-worker ech' to view active ECH configuration, outer SNI, and RFC 9460 DNS records.",
+      "Run 'dns-worker config init' to create an editable .env configuration file.",
+      process.platform === 'win32'
+        ? "Run 'dns-worker service install' (in Administrator terminal) to run as a persistent Windows background service."
+        : "Run 'sudo dns-worker service install' to run as a persistent background Linux systemd service."
     ]
   });
 
@@ -91,13 +243,21 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     const { values, positionals } = parseArgs({
       options: {
         port: { type: 'string', short: 'p' },
+        'http-port': { type: 'string' },
+        'https-port': { type: 'string' },
+        'disable-https': { type: 'boolean' },
         'dns-port': { type: 'string' },
         'dot-port': { type: 'string' },
+        'dot-domain': { type: 'string' },
         host: { type: 'string', short: 'h' },
         db: { type: 'string' },
         'default-profile': { type: 'string' },
         'disable-udp': { type: 'boolean' },
         'disable-dot': { type: 'boolean' },
+        'ech-enabled': { type: 'boolean' },
+        'ech-config': { type: 'string' },
+        'ech-fronting-domain': { type: 'string' },
+        user: { type: 'string', short: 'u' },
         status: { type: 'boolean', short: 's' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
@@ -121,11 +281,37 @@ async function parseCli(): Promise<ServerfullCliArgs> {
       process.exit(0);
     }
 
-    if (positionals[0]?.toLowerCase() === 'service') {
-      const action = positionals[1]?.toLowerCase() || 'status';
-      await handleServiceAction(action);
+    if (positionals[0]?.toLowerCase() === 'ech') {
+      handleEchCommand(values as ServerfullCliArgs);
       process.exit(0);
     }
+
+    if (positionals[0]?.toLowerCase() === 'config') {
+      const subAction = positionals[1]?.toLowerCase() || 'show';
+      const targetArg = positionals[2];
+      handleConfigCommand(subAction, targetArg);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'service') {
+      const action = positionals[1]?.toLowerCase() || 'status';
+      const targetUser = values.user as string | undefined;
+      await handleServiceAction(action, targetUser);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'postinstall') {
+      try {
+        const { dataDir, configFile } = ensurePersistentDirs(true);
+        console.log(`[dns-worker] Initialized data directory: ${dataDir}`);
+        console.log(`[dns-worker] Initialized configuration file: ${configFile}`);
+      } catch {}
+      process.exit(0);
+    }
+
+    const serviceInstallHint = process.platform === 'win32'
+      ? "Run 'dns-worker service install' in Administrator terminal to install Windows service."
+      : "Run 'sudo dns-worker service install' to install as a Linux systemd service.";
 
     if (positionals.length > 0) {
       console.error(formatDiagnostic({
@@ -134,7 +320,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         message: `Unrecognized command or argument "${positionals.join(' ')}".`,
         solutions: [
           "Run 'dns-worker status' to view runtime status.",
-          "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+          serviceInstallHint,
           "Run 'dns-worker --help' to inspect supported options and usage."
         ]
       }));
@@ -145,13 +331,17 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     return values as ServerfullCliArgs;
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
+    const serviceInstallHint = process.platform === 'win32'
+      ? "Run 'dns-worker service install' in Administrator terminal to install Windows service."
+      : "Run 'sudo dns-worker service install' to install as a Linux systemd service.";
+
     console.error(formatDiagnostic({
       level: 'error',
       title: 'DNS Worker - CLI Argument Error',
       message: errorMsg,
       solutions: [
         "Run 'dns-worker status' to view runtime status.",
-        "Run 'sudo dns-worker service install' to install as a Linux systemd service.",
+        serviceInstallHint,
         "Run 'dns-worker --help' to inspect supported options and usage."
       ]
     }));
@@ -175,12 +365,58 @@ async function bootstrap(): Promise<void> {
   // 2. Load environment variables & configurations
   const { config, env } = getServerfullConfig(cliArgs);
 
+  // 3. Inspect TLS certificate and determine HTTPS / DoT availability
+  const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
+  const canStartHttps = certInfo.configured && certInfo.filesExist && !config.disableHttps;
+  const canStartDot = !config.disableDot && certInfo.configured && certInfo.filesExist && certInfo.isWildcard;
+
+  // Print Certbot diagnostic guidance if certificate is not configured or not wildcard
+  if (!certInfo.configured) {
+    console.log(formatDiagnostic(getCertbotDiagnosticOptions('missing', config.dotDomain)));
+  } else if (!certInfo.filesExist) {
+    console.log(formatDiagnostic({
+      level: 'warning',
+      title: 'TLS Certificate Files Inaccessible',
+      message: certInfo.error || 'Configured TLS certificate or private key files could not be read on disk.',
+      details: [
+        `Cert path configured: ${config.tlsCertPath ? 'yes' : 'no'}`,
+        `Key path configured : ${config.tlsKeyPath ? 'yes' : 'no'}`,
+        'Running user details are omitted for security.'
+      ],
+      solutions: [
+        'Check that the paths configured in .env exist and are accessible.',
+        'If using Let\'s Encrypt (/etc/letsencrypt/), grant read permissions to the service user (e.g. chmod 755 /etc/letsencrypt/{live,archive} and chmod 644 on keys).'
+      ]
+    }));
+  } else if (!certInfo.isWildcard) {
+    console.log(formatDiagnostic(getCertbotDiagnosticOptions('non_wildcard', config.dotDomain)));
+  }
+
+  const httpsDisplay = config.disableHttps
+    ? 'Disabled (--disable-https)'
+    : canStartHttps
+      ? `https://${config.host}:${config.httpsPort}`
+      : !certInfo.configured
+        ? 'Disabled (TLS Certificates Not Configured)'
+        : `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`;
+
+  const dotDisplay = config.disableDot
+    ? 'Disabled (--disable-dot)'
+    : !certInfo.configured
+      ? 'Disabled (TLS Certificates Not Configured)'
+      : !certInfo.filesExist
+        ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+        : !certInfo.isWildcard
+          ? 'Paused (Requires Wildcard Certificate *.domain)'
+          : `tls://${config.host}:${config.dotPort}`;
+
   console.log(formatKeyValueSection({
     title: '[Services] Configured Ports & Transports:',
     items: [
-      { label: 'Web Dashboard & DoH', value: `http://${config.host}:${config.httpPort}` },
+      { label: 'Web Dashboard & DoH (HTTP)', value: `http://${config.host}:${config.httpPort}` },
+      { label: 'Web Dashboard & DoH (HTTPS)', value: httpsDisplay },
       { label: 'Classic UDP DNS', value: config.disableUdp ? 'Disabled' : `udp://${config.host}:${config.udpPort}` },
-      { label: 'DNS over TLS (DoT)', value: config.disableDot ? 'Disabled' : `tls://${config.host}:${config.dotPort}` }
+      { label: 'DNS over TLS (DoT)', value: dotDisplay }
     ]
   }));
 
@@ -196,11 +432,11 @@ async function bootstrap(): Promise<void> {
     }));
   }
 
-  // 3. Initialize SQLite D1 adapter and execute schema migrations
+  // 4. Initialize SQLite D1 adapter and execute schema migrations
   const db = initServerfullDb(config.dbPath);
   env.DB = db;
 
-  // 4. Initialize servers
+  // 5. Initialize servers
   const udpServer = !config.disableUdp ? new UdpDnsServer({
     port: config.udpPort,
     host: config.host,
@@ -208,11 +444,12 @@ async function bootstrap(): Promise<void> {
     env
   }) : null;
 
-  const dotServer = !config.disableDot ? new DotDnsServer({
+  const dotServer = canStartDot ? new DotDnsServer({
     port: config.dotPort,
     host: config.host,
     tlsKeyPath: config.tlsKeyPath,
     tlsCertPath: config.tlsCertPath,
+    dotDomain: config.dotDomain,
     defaultProfileKey: config.defaultProfileKey,
     env
   }) : null;
@@ -223,12 +460,21 @@ async function bootstrap(): Promise<void> {
     env
   });
 
-  // 5. Start all server transports
+  const httpsServer = canStartHttps ? new HttpsServer({
+    port: config.httpsPort,
+    host: config.host,
+    certPath: config.tlsCertPath,
+    keyPath: config.tlsKeyPath,
+    env
+  }) : null;
+
+  // 6. Start all server transports
   if (udpServer) await udpServer.start();
   if (dotServer) await dotServer.start();
   await httpServer.start();
+  if (httpsServer) await httpsServer.start();
 
-  // 6. Start scheduled cron jobs (every 60 seconds)
+  // 7. Start scheduled cron jobs (every 60 seconds)
   const cronTimer = setInterval(async () => {
     try {
       const scheduledEvent = {
@@ -250,7 +496,7 @@ async function bootstrap(): Promise<void> {
     }
   }, 60000);
 
-  const hasTls = !!(dotServer && config.tlsKeyPath && config.tlsCertPath);
+  const hasTls = !!(certInfo.configured && certInfo.filesExist);
   console.log(formatBanner({
     title: 'DNS Worker (Serverfull Mode) Started Successfully',
     borderChar: '=',
@@ -262,11 +508,29 @@ async function bootstrap(): Promise<void> {
       },
       {
         label: 'DoT (TLS DNS)',
-        value: hasTls ? `tls://${config.host}:${config.dotPort}` : 'Disabled / Not Configured'
+        value: (dotServer && hasTls)
+          ? `tls://${config.dotDomain || config.host}:${config.dotPort}`
+          : (!certInfo.configured)
+            ? 'Disabled / Not Configured'
+            : (!certInfo.filesExist)
+              ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+              : (!certInfo.isWildcard)
+                ? 'Paused (Requires Wildcard Certificate *.domain)'
+                : 'Disabled'
       },
       {
-        label: 'Web UI & DoH',
+        label: 'Web UI & DoH (HTTP)',
         value: `http://${config.host}:${config.httpPort}`
+      },
+      {
+        label: 'Web UI & DoH (HTTPS)',
+        value: httpsServer
+          ? `https://${config.dotDomain || config.host}:${config.httpsPort}`
+          : (!certInfo.configured)
+            ? 'Disabled / Not Configured'
+            : (!certInfo.filesExist)
+              ? `Disabled (Files Inaccessible: ${certInfo.error || 'Check Permissions'})`
+              : 'Disabled'
       },
       {
         label: 'SQLite Database',
@@ -275,7 +539,7 @@ async function bootstrap(): Promise<void> {
     ]
   }));
 
-  // 7. Handle graceful shutdown
+  // 8. Handle graceful shutdown
   const shutdown = async (signal: string) => {
     console.log(`\n[Serverfull] Received ${signal}. Shutting down gracefully...`);
     clearInterval(cronTimer);
@@ -283,7 +547,8 @@ async function bootstrap(): Promise<void> {
     await Promise.all([
       udpServer?.stop(),
       dotServer?.stop(),
-      httpServer.stop()
+      httpServer.stop(),
+      httpsServer?.stop()
     ]);
 
     try {
@@ -307,11 +572,16 @@ async function bootstrap(): Promise<void> {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-bootstrap().catch((err) => {
-  console.error(formatDiagnostic({
-    level: 'error',
-    title: 'Serverfull - Fatal Startup Error',
-    message: err?.message || String(err)
-  }));
+bootstrap().catch((err: unknown) => {
+  const errCode = (err as { code?: string })?.code;
+  // If already displayed as a formatted port diagnostic error by udp/dot/http, avoid duplicate error box
+  if (errCode !== 'EACCES' && errCode !== 'EADDRINUSE') {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(formatDiagnostic({
+      level: 'error',
+      title: 'Serverfull - Fatal Startup Error',
+      message: errorMsg
+    }));
+  }
   process.exit(1);
 });

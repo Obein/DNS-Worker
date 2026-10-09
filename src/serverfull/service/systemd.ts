@@ -1,52 +1,27 @@
 /**
- * @file service.ts
- * @description Linux systemd service manager for DNS Worker Serverfull mode.
- * Enables running as a persistent daemon with CAP_NET_BIND_SERVICE for ports 53/853.
+ * @file systemd.ts
+ * @description Linux systemd background service management provider.
+ * Configures systemd unit files with CAP_NET_BIND_SERVICE capabilities for unprivileged low-port binding.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { formatBanner, formatDiagnostic } from './format';
+import { ServiceAction, ServiceExecDetails } from './types';
+import { getServiceExecDetails, isLinuxRoot } from './env';
+import {
+  formatBanner,
+  formatDiagnostic,
+  formatCommandList
+} from '../format';
+import { writeDefaultConfigFile } from '../defaults';
 
 export const SERVICE_NAME = 'dns-worker';
 export const SERVICE_FILE_NAME = `${SERVICE_NAME}.service`;
 export const SYSTEMD_SERVICE_PATH = `/etc/systemd/system/${SERVICE_FILE_NAME}`;
 
 /**
- * Execution details resolved for generating systemd service file.
- */
-export interface ServiceExecDetails {
-  execCmd: string;
-  workDir: string;
-  user: string;
-}
-
-/**
- * Resolves appropriate binary execution path, working directory, and user for systemd.
- *
- * @returns Service execution parameters.
- */
-export function getServiceExecDetails(): ServiceExecDetails {
-  const nodePath = process.execPath;
-  const scriptPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
-  const user = process.env.SUDO_USER || process.env.USER || 'root';
-  const homeDir = process.env.SUDO_USER
-    ? `/home/${process.env.SUDO_USER}`
-    : (process.env.HOME || '/root');
-
-  let execCmd = '';
-  if (scriptPath && fs.existsSync(scriptPath)) {
-    execCmd = `${nodePath} ${scriptPath}`;
-  } else {
-    execCmd = 'dns-worker';
-  }
-
-  return { execCmd, workDir: homeDir, user };
-}
-
-/**
- * Generates the systemd unit file content with CAP_NET_BIND_SERVICE capabilities.
+ * Generates the Linux systemd unit file content with CAP_NET_BIND_SERVICE capabilities.
  *
  * @param details - The execution parameters.
  * @returns Systemd unit file content string.
@@ -67,6 +42,15 @@ Restart=always
 RestartSec=5
 LimitNOFILE=65535
 
+# Automatically provision and preserve /var/lib/dns-worker persistent state directory
+StateDirectory=dns-worker
+
+# Automatically provision and preserve /etc/dns-worker configuration directory
+ConfigurationDirectory=dns-worker
+
+# Load environment configuration file from /etc/dns-worker/.env
+EnvironmentFile=-/etc/dns-worker/.env
+
 # Grant capability to bind ports 53 and 853 without running as full root
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE
@@ -82,32 +66,13 @@ WantedBy=multi-user.target
 }
 
 /**
- * Handles 'dns-worker service <action>' subcommands.
+ * Handles Linux systemd service actions (install, uninstall, start, stop, restart, status, logs).
  *
- * @param action - Action verb: 'install' | 'uninstall' | 'start' | 'stop' | 'restart' | 'status' | 'logs'
+ * @param action - Action verb.
+ * @param targetUser - Optional user to run service as.
  */
-export async function handleServiceAction(action: string): Promise<void> {
-  const isLinux = process.platform === 'linux';
-
-  if (!isLinux) {
-    const details = getServiceExecDetails();
-    const unitContent = generateSystemdUnit(details);
-
-    console.log(formatDiagnostic({
-      level: 'info',
-      title: 'Linux Service Manager',
-      message: 'systemd service management is only supported on Linux environments.',
-      details: [
-        'A systemd service unit template is provided below for reference:'
-      ]
-    }));
-    console.log('------------------------------------------------------');
-    console.log(unitContent);
-    console.log('------------------------------------------------------');
-    return;
-  }
-
-  const isRoot = typeof process.getuid === 'function' ? process.getuid() === 0 : false;
+export async function handleLinuxSystemd(action: ServiceAction | string, targetUser?: string): Promise<void> {
+  const isRoot = isLinuxRoot();
 
   switch (action) {
     case 'install': {
@@ -123,10 +88,34 @@ export async function handleServiceAction(action: string): Promise<void> {
         process.exit(1);
       }
 
-      const details = getServiceExecDetails();
+      const details = getServiceExecDetails(targetUser);
       const unitContent = generateSystemdUnit(details);
 
       try {
+        // Ensure persistent state directory /var/lib/dns-worker (Persistent Data Dir)
+        // and configuration directory /etc/dns-worker (Config Data Dir) exist with proper user ownership
+        const dataDir = '/var/lib/dns-worker';
+        const configDir = '/etc/dns-worker';
+        const configFile = path.join(configDir, '.env');
+
+        try {
+          if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
+          }
+          if (!fs.existsSync(configDir)) {
+            fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
+          }
+          writeDefaultConfigFile(configFile, false);
+          if (details.user && details.user !== 'root') {
+            try {
+              execSync(`chown -R ${details.user} ${dataDir}`);
+            } catch {}
+            try {
+              execSync(`chown -R ${details.user} ${configDir}`);
+            } catch {}
+          }
+        } catch {}
+
         fs.writeFileSync(SYSTEMD_SERVICE_PATH, unitContent, 'utf-8');
 
         execSync('systemctl daemon-reload', { stdio: 'inherit' });
@@ -140,23 +129,34 @@ export async function handleServiceAction(action: string): Promise<void> {
           items: [
             { label: 'Service File', value: SYSTEMD_SERVICE_PATH },
             { label: 'Running As User', value: `${details.user} (CAP_NET_BIND_SERVICE)` },
+            { label: 'Persistent Data Dir', value: dataDir },
+            { label: 'Config Directory', value: configDir },
+            { label: 'Config File', value: configFile },
             { label: 'Privileged Ports', value: 'Port 53 & 853 enabled without root' },
             { label: 'Auto-restart', value: 'Enabled on system boot (Restart=always)' }
           ]
         });
 
-        console.log('\n' + banner + '\n');
-        console.log('Useful service management commands:');
-        console.log('  dns-worker service status    # Check live status');
-        console.log('  dns-worker service logs      # Tail live syslog / journal logs');
-        console.log('  sudo dns-worker service restart # Restart service');
-        console.log('  sudo dns-worker service stop    # Stop service');
-        console.log('  sudo dns-worker service uninstall # Remove service\n');
-      } catch (err: any) {
+        const commandGuide = formatCommandList({
+          title: 'Useful service management commands:',
+          items: [
+            { command: 'dns-worker service status', desc: 'Check live status' },
+            { command: 'dns-worker service logs', desc: 'Tail live syslog / journal logs' },
+            { command: 'sudo dns-worker service restart', desc: 'Restart service' },
+            { command: 'sudo dns-worker service enable', desc: 'Enable autostart on boot' },
+            { command: 'sudo dns-worker service disable', desc: 'Disable autostart on boot' },
+            { command: 'sudo dns-worker service stop', desc: 'Stop service' },
+            { command: 'sudo dns-worker service uninstall', desc: 'Remove service' }
+          ]
+        });
+
+        console.log('\n' + banner + '\n\n' + commandGuide);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Service Installation Failed',
-          message: err.message || String(err),
+          message: errorMsg,
           solutions: [
             'Ensure systemd is running as PID 1 on your Linux distribution.',
             `Verify permissions to write to ${SYSTEMD_SERVICE_PATH}.`
@@ -189,12 +189,17 @@ export async function handleServiceAction(action: string): Promise<void> {
         }
 
         execSync('systemctl daemon-reload', { stdio: 'inherit' });
-        console.log(`\n[Success] DNS Worker systemd service removed from ${SYSTEMD_SERVICE_PATH}.\n`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Removed',
+          message: `DNS Worker systemd service removed from ${SYSTEMD_SERVICE_PATH}.`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: 'Service Uninstall Failed',
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -203,7 +208,9 @@ export async function handleServiceAction(action: string): Promise<void> {
 
     case 'start':
     case 'stop':
-    case 'restart': {
+    case 'restart':
+    case 'enable':
+    case 'disable': {
       if (!isRoot) {
         console.error(formatDiagnostic({
           level: 'error',
@@ -218,12 +225,17 @@ export async function handleServiceAction(action: string): Promise<void> {
 
       try {
         execSync(`systemctl ${action} ${SERVICE_NAME}`, { stdio: 'inherit' });
-        console.log(`[Success] Executed: systemctl ${action} ${SERVICE_NAME}`);
-      } catch (err: any) {
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Action Executed',
+          message: `systemctl ${action} ${SERVICE_NAME}`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
         console.error(formatDiagnostic({
           level: 'error',
           title: `Service ${action} Failed`,
-          message: err.message || String(err)
+          message: errorMsg
         }));
         process.exit(1);
       }
@@ -242,8 +254,13 @@ export async function handleServiceAction(action: string): Promise<void> {
     case 'logs': {
       try {
         execSync(`journalctl -u ${SERVICE_NAME} -f -n 50`, { stdio: 'inherit' });
-      } catch (err: any) {
-        console.error('[Service Logs] journalctl exited:', err.message || err);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Service Logs Error',
+          message: `journalctl exited: ${errorMsg}`
+        }));
       }
       break;
     }
@@ -254,7 +271,7 @@ export async function handleServiceAction(action: string): Promise<void> {
         title: 'Service Command Error',
         message: `Unknown service action "${action}".`,
         solutions: [
-          'Supported actions: install, start, stop, restart, status, logs, uninstall',
+          'Supported actions: install, start, stop, restart, enable, disable, status, logs, uninstall',
           'Example: sudo dns-worker service install'
         ]
       }));
