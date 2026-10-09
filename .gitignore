@@ -13,3 +13,4 @@ dev-dist
 .dev.vars
 temp_*
 .astro
+.vite-cache

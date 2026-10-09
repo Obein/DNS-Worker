@@ -1,5 +1,5 @@
 ---
-title: DNS Worker 官方技术文档
+title: DNS Worker 用户文档
 description: 隐私优先 Protective DNS 解析器 & DoH / DoT 服务端，双引擎自主架构。
 template: splash
 hero:
@@ -20,8 +20,8 @@ hero:
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
-  <Card title="双引擎自由架构" icon="rocket">
-    既支持完全脱离 Cloudflare 在自有 VPS / 家用主机上独立部署，独享经典 UDP 53 与 DoT 853；亦可无服务器部署于 Cloudflare 300+ 边缘节点。
+  <Card title="Serverless 边缘优先" icon="rocket">
+    专为 Cloudflare Workers & D1 打造，全球 300+ 边缘数据中心免运维运行；同时支持在自有 VPS / 路由器上独立部署 Serverfull 模式。
   </Card>
   <Card title="全栈协议覆盖" icon="setting">
     原生支持 Classic UDP 53、DoT 853（TLS SNI 路由）、DoH（RFC 8484 over HTTP/2 & HTTP/3）、DoQ（RFC 9250）与 ECH / DDR（RFC 9460）。

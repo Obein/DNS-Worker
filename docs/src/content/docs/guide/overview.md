@@ -7,10 +7,10 @@ description: Learn about the design philosophy, dual-engine architecture, and co
 
 **DNS Worker** is a modern, privacy-first Protective DNS resolution platform built with an innovative **Dual-Engine Architecture**:
 
-1. **🖥️ Standalone Server Mode (Serverfull)**:
-   Run completely independent of Cloudflare on your own VPS, home server, or bare-metal Linux/Windows host. Powered by Node.js built-in `node:sqlite`, it natively serves classic UDP 53, DoT 853, and Web Dashboard / DoH.
-2. **☁️ Edge Serverless Mode**:
-   Deploy across 300+ global edge locations on Cloudflare Workers and D1 database, enjoying zero infrastructure maintenance and sub-millisecond edge latency.
+1. **☁️ Edge Serverless Mode (Primary / Recommended)**:
+   Deploy across 300+ global edge locations on Cloudflare Workers and Cloudflare D1 distributed SQL database. Benefit from zero server maintenance, global Anycast acceleration, and sub-millisecond edge latency.
+2. **🖥️ Standalone Server Mode (Serverfull Self-Hosted)**:
+   Run completely independent of Cloudflare on your own VPS, home server, or bare-metal Linux/Windows host. Powered by Node.js built-in `node:sqlite`, it natively serves classic UDP 53, DoT 853 (with TLS SNI profile routing), and Web Dashboard / DoH.
 
 ---
 

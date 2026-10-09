@@ -1,13 +1,13 @@
 ---
-title: TLS 证书配置与权限安全最佳实践
-description: 配置 Let's Encrypt 证书、普通用户权限安全、ssl-cert 组授权与通配符要求。
+title: TLS 證書配置與許可權安全最佳實踐
+description: 配置 Let's Encrypt 證書、普通使用者許可權安全、ssl-cert 組授權與萬用字元要求。
 ---
 
-启用 HTTPS Web 控制台（端口 10443）与 DoT（端口 853）需要配置 TLS 证书。
+啟用 HTTPS Web 控制台（埠 10443）與 DoT（埠 853）需要配置 TLS 證書。
 
-## 环境变量配置
+## 環境變數配置
 
-在 `/etc/dns-worker/.env` 中配置证书与私钥路径：
+在 `/etc/dns-worker/.env` 中配置證書與私鑰路徑：
 
 ```ini
 SERVERFULL_TLS_CERT_PATH=/etc/letsencrypt/live/example.com/fullchain.pem
@@ -17,19 +17,19 @@ SERVERFULL_DOT_DOMAIN=example.com
 
 ---
 
-## 权限安全问题与最佳实践
+## 許可權安全問題與最佳實踐
 
-### 为什么会出现 Permission Denied (EACCES)？
-Certbot 默认生成的私钥文件权限为 `0600 (root:root)`，父目录为 `0700`。
-而 DNS Worker 的后台守护进程默认以普通用户（如 `hugo`）运行以降低安全风险，直接访问会导致操作系统拒绝访问。
+### 為什麼會出現 Permission Denied (EACCES)？
+Certbot 預設生成的私鑰檔案許可權為 `0600 (root:root)`，父目錄為 `0700`。
+而 DNS Worker 的後臺守護程序預設以普通使用者（如 `hugo`）執行以降低安全風險，直接訪問會導致作業系統拒絕訪問。
 
-:::caution[警惕安全隐患]
-**绝不推荐将私钥设置为全局可读（如 `chmod 644`）**！这样会让主机上的其他进程或脚本都能窃取 TLS 私钥。
+:::caution[警惕安全隱患]
+**絕不推薦將私鑰設定為全域性可讀（如 `chmod 644`）**！這樣會讓主機上的其他程序或指令碼都能竊取 TLS 私鑰。
 :::
 
-### 推荐方案 1：使用标准 `ssl-cert` 用户组授权（最优雅）
+### 推薦方案 1：使用標準 `ssl-cert` 使用者組授權（最優雅）
 
-Debian / Ubuntu 原生提供了专用的 `ssl-cert` 组，可在不提升至 root 的前提下安全授权私钥：
+Debian / Ubuntu 原生提供了專用的 `ssl-cert` 組，可在不提升至 root 的前提下安全授權私鑰：
 
 ```bash
 # 1. 确保系统存在 ssl-cert 用户组
@@ -50,9 +50,9 @@ sudo chmod 750 /etc/letsencrypt/live /etc/letsencrypt/archive
 sudo dns-worker service restart
 ```
 
-### 推荐方案 2：专有目录隔离 + Certbot Hook（强隔离性）
+### 推薦方案 2：專有目錄隔離 + Certbot Hook（強隔離性）
 
-将证书部署到专用目录 `/etc/dns-worker/certs/`，属主直接设为该运行用户并将权限严格锁定为 `0600`。并通过 Certbot 钩子自动化同步：
+將證書部署到專用目錄 `/etc/dns-worker/certs/`，屬主直接設為該執行使用者並將許可權嚴格鎖定為 `0600`。並通過 Certbot 鉤子自動化同步：
 
 ```bash
 sudo mkdir -p /etc/dns-worker/certs
@@ -65,9 +65,9 @@ sudo chown <username>:<username> /etc/dns-worker/certs/*
 sudo chmod 600 /etc/dns-worker/certs/privkey.pem
 ```
 
-### 备选方案 3：独立单机 VPS 直接以 root 运行
+### 備選方案 3：獨立單機 VPS 直接以 root 執行
 
-如果该服务器是专门运行 DNS Worker 的单机环境（无多用户共享风险），可在安装时直接以 root 运行：
+如果該伺服器是專門執行 DNS Worker 的單機環境（無多使用者共享風險），可在安裝時直接以 root 執行：
 
 ```bash
 sudo dns-worker service install --user root
@@ -75,13 +75,13 @@ sudo dns-worker service install --user root
 
 ---
 
-## DoT 通配符证书要求
+## DoT 萬用字元證書要求
 
-DoT 协议通过 TLS SNI 识别并路由不同的配置 Profile（格式为 `<profileKey>.dns.example.com`）。
-- **必须配置通配符证书**（同时覆盖 `*.your.domain` 和 `your.domain`）。
-- 若配置单域名证书，HTTPS Web 面板正常工作，但 DoT 将处于暂停保护状态（`Paused (Requires Wildcard Certificate *.domain)`）。
+DoT 協議通過 TLS SNI 識別並路由不同的配置 Profile（格式為 `<profileKey>.dns.example.com`）。
+- **必須配置萬用字元證書**（同時覆蓋 `*.your.domain` 和 `your.domain`）。
+- 若配置單域名證書，HTTPS Web 面板正常工作，但 DoT 將處於暫停保護狀態（`Paused (Requires Wildcard Certificate *.domain)`）。
 
-### Certbot DNS 挑战申请通配符证书示例
+### Certbot DNS 挑戰申請萬用字元證書示例
 
 ```bash
 certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns

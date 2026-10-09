@@ -1,30 +1,30 @@
 ---
-title: 独立服务器 / VPS 部署指南
-description: 详细讲解在 Linux / Windows 物理机或 VPS 上独立部署 DNS Worker。
+title: 獨立伺服器 / VPS 部署指南
+description: 詳細講解在 Linux / Windows 物理機或 VPS 上獨立部署 DNS Worker。
 ---
 
-DNS Worker 可以完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行。
+DNS Worker 可以完全脫離 Cloudflare Workers，直接在 Linux、Windows、macOS 伺服器或虛擬機器上以獨立服務模式執行。
 
-## 系统要求
-- **Node.js**：`>= 22.5.0`（推荐使用当前活跃的 LTS 版本，内建 `node:sqlite`）
-- **内存**：最低 256MB，推荐 512MB 以上
-- **端口要求**：
-  - UDP 53（传统 DNS，可选）
-  - TCP 853（DoT，可选，需通配符证书）
+## 系統要求
+- **Node.js**：`>= 22.5.0`（推薦使用當前活躍的 LTS 版本，內建 `node:sqlite`）
+- **記憶體**：最低 256MB，推薦 512MB 以上
+- **埠要求**：
+  - UDP 53（傳統 DNS，可選）
+  - TCP 853（DoT，可選，需萬用字元證書）
   - TCP 10080（HTTP Web 面板 & DoH）
-  - TCP 10443（HTTPS Web 面板 & DoH，可选，需证书）
+  - TCP 10443（HTTPS Web 面板 & DoH，可選，需證書）
 
 ---
 
-## 配置文件路径规范
+## 配置檔案路徑規範
 
-DNS Worker 在独立运行时自动维护标准持久化存储目录：
+DNS Worker 在獨立執行時自動維護標準持久化儲存目錄：
 
 - **Linux**：
-  - 配置目录：`/etc/dns-worker/`（配置文件：`/etc/dns-worker/.env`）
-  - 数据目录：`/var/lib/dns-worker/`（SQLite 文件：`/var/lib/dns-worker/dns_worker.sqlite`）
+  - 配置目錄：`/etc/dns-worker/`（配置檔案：`/etc/dns-worker/.env`）
+  - 資料目錄：`/var/lib/dns-worker/`（SQLite 檔案：`/var/lib/dns-worker/dns_worker.sqlite`）
 - **Windows**：
-  - 配置与数据目录：`%ProgramData%\DNS-Worker\`（如 `C:\ProgramData\DNS-Worker\.env`）
+  - 配置與資料目錄：`%ProgramData%\DNS-Worker\`（如 `C:\ProgramData\DNS-Worker\.env`）
 
 您可以使用 CLI 快速管理配置：
 ```bash
@@ -37,9 +37,9 @@ dns-worker config init
 
 ---
 
-## 端口与网络配置
+## 埠與網路配置
 
-在 `.env` 中可自由指定监听的端口和绑定地址：
+在 `.env` 中可自由指定監聽的埠和繫結地址：
 
 ```ini
 # 绑定主机地址（默认 0.0.0.0 监听所有接口）
@@ -57,7 +57,7 @@ SERVERFULL_DISABLE_HTTPS=false
 
 ---
 
-## 后续步骤
+## 後續步驟
 
-- [配置 Linux systemd 后台常驻服务](/DNS-Worker/deployment/service/)
-- [配置 Let's Encrypt TLS 证书以开启 HTTPS 与 DoT](/DNS-Worker/advanced/tls-certs/)
+- [配置 Linux systemd 後臺常駐服務](/DNS-Worker/deployment/service/)
+- [配置 Let's Encrypt TLS 證書以開啟 HTTPS 與 DoT](/DNS-Worker/advanced/tls-certs/)
