@@ -1,63 +1,63 @@
 ---
-title: 独立服务器 / VPS 部署指南
-description: 详细讲解在 Linux / Windows 物理机或 VPS 上独立部署 DNS Worker。
+title: Standalone Server / VPS Guide
+description: Deploy and operate DNS Worker independently on Linux, macOS, or Windows servers.
 ---
 
-DNS Worker 可以完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行。
+DNS Worker can run completely independent of Cloudflare Workers on your own VPS, home server, or virtual machine.
 
-## 系统要求
-- **Node.js**：`>= 22.5.0`（推荐使用当前活跃的 LTS 版本，内建 `node:sqlite`）
-- **内存**：最低 256MB，推荐 512MB 以上
-- **端口要求**：
-  - UDP 53（传统 DNS，可选）
-  - TCP 853（DoT，可选，需通配符证书）
-  - TCP 10080（HTTP Web 面板 & DoH）
-  - TCP 10443（HTTPS Web 面板 & DoH，可选，需证书）
+## System Requirements
+- **Node.js**: `>= 22.5.0` (Latest LTS recommended for built-in `node:sqlite`)
+- **Memory**: Minimum 256MB RAM (512MB+ recommended)
+- **Network Ports**:
+  - UDP 53 (Classic DNS, optional)
+  - TCP 853 (DoT, optional, requires wildcard certificate)
+  - TCP 10080 (HTTP Web Dashboard & DoH)
+  - TCP 10443 (HTTPS Web Dashboard & DoH, optional, requires certificate)
 
 ---
 
-## 配置文件路径规范
+## Directory Standards
 
-DNS Worker 在独立运行时自动维护标准持久化存储目录：
+DNS Worker automatically manages standard persistent directories:
 
-- **Linux**：
-  - 配置目录：`/etc/dns-worker/`（配置文件：`/etc/dns-worker/.env`）
-  - 数据目录：`/var/lib/dns-worker/`（SQLite 文件：`/var/lib/dns-worker/dns_worker.sqlite`）
-- **Windows**：
-  - 配置与数据目录：`%ProgramData%\DNS-Worker\`（如 `C:\ProgramData\DNS-Worker\.env`）
+- **Linux**:
+  - Configuration: `/etc/dns-worker/.env`
+  - Database: `/var/lib/dns-worker/dns_worker.sqlite`
+- **Windows**:
+  - Configuration & Data: `%ProgramData%\DNS-Worker\` (e.g. `C:\ProgramData\DNS-Worker\.env`)
 
-您可以使用 CLI 快速管理配置：
+Manage configuration effortlessly with the CLI:
 ```bash
-# 查看当前活跃的路径
+# View active configuration paths
 dns-worker config show
 
-# 生成标准默认 .env 模板
+# Initialize clean standard .env file
 dns-worker config init
 ```
 
 ---
 
-## 端口与网络配置
+## Ports & Network Configuration
 
-在 `.env` 中可自由指定监听的端口和绑定地址：
+Customize listening ports in `/etc/dns-worker/.env`:
 
-```env
-# 绑定主机地址（默认 0.0.0.0 监听所有接口）
+```ini
+# Network interface binding (0.0.0.0 binds all interfaces)
 SERVERFULL_HOST=0.0.0.0
 
-# 端口配置
+# Port configuration
 SERVERFULL_UDP_PORT=53
 SERVERFULL_DOT_PORT=853
 SERVERFULL_HTTP_PORT=10080
 SERVERFULL_HTTPS_PORT=10443
 
-# 是否禁用特定服务
+# Toggle specific listeners
 SERVERFULL_DISABLE_HTTPS=false
 ```
 
 ---
 
-## 后续步骤
+## Next Steps
 
-- [配置 Linux systemd 后台常驻服务](/DNS-Worker/deployment/service/)
-- [配置 Let's Encrypt TLS 证书以开启 HTTPS 与 DoT](/DNS-Worker/advanced/tls-certs/)
+- [Configure systemd background daemon](/DNS-Worker/deployment/service/)
+- [Configure Let's Encrypt certificates for HTTPS & DoT](/DNS-Worker/advanced/tls-certs/)

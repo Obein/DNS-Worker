@@ -21,16 +21,19 @@
 ## 📖 Introduction
 
 **DNS Worker** is a privacy-first protective DNS resolution system built with an innovative **Dual-Engine Architecture**:
-- **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (TLS SNI routing for Android Private DNS), and local SQLite.
-- **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance.
 
-> 📚 **Official Documentation Site**  
-> For full deployment tutorials, dual-engine comparison matrix, TLS certificate & permission best practices, environment variable dictionary, and troubleshooting:  
+- **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance.
+- **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (TLS SNI routing for Android Private DNS), and local SQLite.
+
+> 📚 **User Documentation**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
 
 ### Quick Start
 
-#### Option A: Standalone Server via npm
+#### Deploy to Cloudflare Workers
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+
+#### Standalone Server via npm
 ```bash
 # Install globally and run
 npm install -g dns-worker
@@ -38,9 +41,6 @@ dns-worker config init
 dns-worker
 # Web Dashboard: http://localhost:10080
 ```
-
-#### Option B: Deploy to Cloudflare Workers
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
 ### Key Highlights
 - ⚡ **Full-Stack Protocols**: UDP 53, DoT 853, DoH (HTTP/2 & HTTP/3), DoQ (RFC 9250), ECH & DDR (RFC 9460).
@@ -85,5 +85,5 @@ Licensed under the [AGPL-3.0](LICENSE) License.
 
 <div align="center">
   <br>
-  <b>If DNS Worker helps you protect your DNS privacy, consider giving it a ⭐</b>
+  <b>If DNS Worker helps you protect your DNS security, consider giving it a ⭐</b>
 </div>

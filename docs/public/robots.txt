@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://obein.github.io/DNS-Worker/sitemap-index.xml

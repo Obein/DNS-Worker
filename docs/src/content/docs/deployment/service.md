@@ -1,65 +1,65 @@
 ---
-title: 常驻后台服务管理 (systemd & Windows)
-description: 在 Linux systemd 与 Windows 计划任务中以守护进程运行 DNS Worker。
+title: Background Service Management
+description: Manage background services with Linux systemd and Windows Scheduled Tasks.
 ---
 
-DNS Worker 内置完善的服务生命周期管理器，可一键完成服务的注册、配置、启停与自启。
+DNS Worker includes built-in service lifecycle management to register, control, and autostart background daemons.
 
-## Linux systemd 服务
+## Linux systemd Service
 
-### 1. 服务安装与注册
+### 1. Installation & Registration
 
 ```bash
-# 默认以调用 sudo 的当前用户运行（推荐）
+# Installs service running unprivileged as the invoking user (recommended)
 sudo dns-worker service install
 
-# 或者指定以 root 或特定用户运行
+# Or explicitly designate a specific user (e.g. root)
 sudo dns-worker service install --user root
 ```
 
-:::tip[安全机制提示]
-为遵循最小权限原则，服务默认以非 root 用户运行，并通过 Linux 内核特权 `CAP_NET_BIND_SERVICE` 绑定 53 与 853 端口。
+:::tip[Security Architecture]
+To follow the Principle of Least Privilege, the service runs as an unprivileged user by default, while Linux kernel capabilities (`CAP_NET_BIND_SERVICE`) permit binding privileged ports 53 and 853 without full root execution.
 :::
 
-### 2. 常用管理命令
+### 2. Common Service Actions
 
 ```bash
-# 查看服务实时状态
+# Check service status
 sudo dns-worker service status
 
-# 追踪服务实时运行日志 (journalctl)
+# Tail real-time service logs (journalctl)
 sudo dns-worker service logs
 
-# 重启服务
+# Restart service
 sudo dns-worker service restart
 
-# 设置开机自启
+# Enable autostart on system boot
 sudo dns-worker service enable
 
-# 取消开机自启
+# Disable autostart on system boot
 sudo dns-worker service disable
 
-# 停止服务
+# Stop service
 sudo dns-worker service stop
 
-# 彻底卸载服务
+# Completely remove service
 sudo dns-worker service uninstall
 ```
 
 ---
 
-## Windows 计划任务
+## Windows Scheduled Tasks
 
-在 Windows 环境下以管理员身份运行 PowerShell 或 CMD：
+Run PowerShell or Command Prompt as Administrator:
 
 ```powershell
-# 安装计划任务并在系统启动时自启
+# Install scheduled task with autostart on boot
 dns-worker service install
 
-# 查看任务状态
+# Check task status
 dns-worker service status
 
-# 启停管理
+# Start / Stop / Restart
 dns-worker service start
 dns-worker service stop
 dns-worker service restart

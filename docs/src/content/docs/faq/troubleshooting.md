@@ -1,19 +1,19 @@
 ---
-title: 常见问题与排错指引
-description: 覆盖权限问题 (EACCES)、DoT 证书要求、401 会话过期等常见场景。
+title: Troubleshooting & FAQ
+description: Common issues including Permission Denied (EACCES), DoT Wildcard certificates, and service environments.
 ---
 
-## 1. TLS 证书显示 Permission denied (EACCES)
+## 1. TLS Certificate Inaccessible: Permission denied (EACCES)
 
-### 现象
-后台服务日志中显示：
+### Symptom
+Startup logs report:
 `• DoT (TLS DNS) : Disabled (Files Inaccessible: Permission denied (EACCES))`
 
-### 原因
-后台服务默认以普通用户（非 root）降权运行，无法直接读取 Certbot 生成在 `/etc/letsencrypt/` 下默认权限为 `0600 (root:root)` 的私钥。
+### Root Cause
+The background service runs under an unprivileged user by default (Principle of Least Privilege), and cannot read Certbot's `0600 (root:root)` private key files under `/etc/letsencrypt/`.
 
-### 解决方法
-推荐使用系统 `ssl-cert` 用户组授权（无需提升至 root，安全规范）：
+### Solution
+Use the standard `ssl-cert` group delegation without elevating the process to root:
 ```bash
 sudo groupadd -f ssl-cert
 sudo usermod -a -G ssl-cert <username>
@@ -26,26 +26,26 @@ sudo dns-worker service restart
 
 ---
 
-## 2. DoT 显示 Paused (Requires Wildcard Certificate *.domain)
+## 2. DoT Shows Paused (Requires Wildcard Certificate *.domain)
 
-### 现象
-HTTPS Web 仪表盘能正常启动，但 DoT 处于暂停状态。
+### Symptom
+Web Dashboard works over HTTPS, but DoT is paused.
 
-### 原因
-DoT 需要基于 TLS SNI 识别并路由不同的配置 Profile（`<profileKey>.dns.example.com`）。单域名证书无法覆盖子域名，因此必须使用通配符证书。
+### Root Cause
+DoT maps queries to user profiles via TLS Server Name Indication (`<profileToken>.dns.example.com`). A single-domain certificate cannot match subdomains, so a wildcard certificate is required.
 
-### 解决方法
-使用 Certbot 通过 DNS 挑战重新申请通配符证书：
+### Solution
+Register a wildcard certificate via Certbot with DNS challenge:
 ```bash
 certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns
 ```
 
 ---
 
-## 3. 为什么后台服务修改了当前目录的 .env 没有生效？
+## 3. Why Are Changes to .env in Current Directory Ignored by Service?
 
-### 现象
-在个人目录编辑了 `.env` 并重启了服务，但服务显示未配置。
+### Symptom
+Editing `.env` in your user directory has no effect after restarting the service.
 
-### 原因
-通过 `systemd` 托管的 Service 模式下，系统加载的环境变量文件固定为 **/etc/dns-worker/.env**。请确保配置已写入 `/etc/dns-worker/.env`。
+### Root Cause
+When managed by `systemd`, the daemon loads environment variables from `/etc/dns-worker/.env`. Ensure your changes are written to `/etc/dns-worker/.env`.

@@ -1,17 +1,17 @@
 ---
-title: DNS Worker 官方技术文档
-description: 隐私优先 Protective DNS 解析器 & DoH / DoT 服务端，双引擎自主架构。
+title: DNS Worker Documentation
+description: Privacy-First Protective DNS Resolver & DoH / DoT Server with Dual-Engine Architecture.
 template: splash
 hero:
-  tagline: 保护您的互联网第一跳 · 全栈协议覆盖 · 本地优先 0ms 分析 · NIST FIPS 203 后量子零知识 E2EE
+  tagline: Protect your first hop on the internet · Full-Stack Protocol Coverage · Local-First 0ms Analytics · NIST FIPS 203 Post-Quantum Zero-Knowledge E2EE
   image:
     file: ../../assets/logo.webp
   actions:
-    - text: 快速开始
+    - text: Getting Started
       link: /DNS-Worker/guide/quickstart/
       icon: right-arrow
       variant: primary
-    - text: GitHub 仓库
+    - text: GitHub Repository
       link: https://github.com/Obein/DNS-Worker
       icon: external
       variant: secondary
@@ -20,16 +20,16 @@ hero:
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <CardGrid stagger>
-  <Card title="双引擎自由架构" icon="rocket">
-    既支持完全脱离 Cloudflare 在自有 VPS / 家用主机上独立部署，独享经典 UDP 53 与 DoT 853；亦可无服务器部署于 Cloudflare 300+ 边缘节点。
+  <Card title="Dual-Engine Sovereignty" icon="rocket">
+    Deploy completely independent of Cloudflare on your own VPS or home server with native UDP 53 and DoT 853, or run serverless across 300+ Cloudflare edge PoPs.
   </Card>
-  <Card title="全栈协议覆盖" icon="setting">
-    原生支持 Classic UDP 53、DoT 853（TLS SNI 路由）、DoH（RFC 8484 over HTTP/2 & HTTP/3）、DoQ（RFC 9250）与 ECH / DDR（RFC 9460）。
+  <Card title="Full-Stack Protocols" icon="setting">
+    Native support for Classic UDP 53, DoT 853 (with TLS SNI profile routing), DoH (RFC 8484 over HTTP/2 & HTTP/3), DoQ (RFC 9250), and ECH / DDR (RFC 9460).
   </Card>
-  <Card title="后量子零知识 E2EE" icon="shield">
-    基于 NIST FIPS 203 **P256-MLKEM768** 后量子混合格密码学与硬件通行密钥（Passkey / WebAuthn），全面抵御前向量子计算窥探。
+  <Card title="Post-Quantum Zero-Knowledge E2EE" icon="shield">
+    Powered by NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography and hardware Passkeys (WebAuthn), rendering query logs safe from future quantum decryption.
   </Card>
-  <Card title="本地优先 (Local-First)" icon="laptop">
-    嵌入浏览器端 SQLite（WASM + OPFS）驱动，日志筛选与统计图表 0ms 瞬间渲染，离线可用且彻底节省数据库读配额。
+  <Card title="Local-First 0ms Analytics" icon="laptop">
+    Embedded in-browser SQLite (WASM + OPFS) delivers instant 0ms log filtering and interactive charts with zero cloud database queries.
   </Card>
 </CardGrid>

@@ -1,15 +1,15 @@
 ---
-title: 本地优先架构 (Local-First OPFS)
-description: 浏览器端 WebAssembly SQLite + OPFS 零延迟分析技术解析。
+title: Local-First Architecture (OPFS)
+description: In-browser WebAssembly SQLite + Origin Private File System for zero-latency log analytics.
 ---
 
-传统 DNS 管理控制面板通常需要向云端数据库频繁发送 SQL 查询以获取日志和图表统计，这不仅带来了明显的网络延迟，还会快速消耗云数据库读写配额。
+Traditional DNS dashboards continually send heavy analytical SQL queries to cloud databases, which increases latency and quickly consumes database billing quotas.
 
-## 架构特性
+## Architecture Highlights
 
-* **嵌入式 SQLite (WASM + OPFS)**：
-  控制台直接在浏览器后台 Web Worker 中运行纯 WebAssembly 编译的 SQLite 数据库，并持久化于原生的 Origin Private File System (OPFS)。
-* **0ms 瞬间查询与图表聚合**：
-  过滤数万条解析日志、切换图表维度（客户端 IP、响应码、拦截原因、目标国家）均在本地瞬间完成。
-* **双向增量同步**：
-  仅在初始化或检测到新日志时，通过增量光标向服务端拉取未同步密文并在本地解密插入，大幅节约网络流量与数据库计费。
+* **Embedded In-Browser SQLite (WASM + OPFS)**:
+  The dashboard runs a compiled WebAssembly SQLite database inside a dedicated Web Worker, persisting data to the Origin Private File System (OPFS).
+* **0ms Real-Time Queries & Chart Aggregations**:
+  Filter tens of thousands of query logs and aggregate dimensions (client IPs, status codes, block reasons, countries) locally in 0 milliseconds.
+* **Bidirectional Delta Synchronization**:
+  Only newly recorded encrypted logs are incrementally fetched from the server and decrypted locally, minimizing bandwidth and database queries.

@@ -1,72 +1,73 @@
 ---
-title: CLI 命令手册
-description: dns-worker 命令行工具的指令与参数全参考。
+title: CLI Reference
+description: Complete command and flag reference for the dns-worker CLI.
 ---
 
-全局安装 `npm install -g dns-worker` 后，可通过 `dns-worker` 执行以下命令：
+When installed globally via `npm install -g dns-worker`, access the following subcommands:
 
-## 主命令
+## Main Daemon
 
 ```bash
 dns-worker [options]
 ```
 
-直接以前台进程运行 DNS Worker。支持传入命令行选项覆盖 `.env` 配置，例如：
-- `-p, --port, --http-port <number>`：指定 HTTP 端口
-- `--https-port <number>`：指定 HTTPS 端口
-- `--dns-port <number>`：指定 UDP DNS 端口
-- `--dot-port <number>`：指定 DoT 端口
-- `--dot-domain <domain>`：指定对外基准域名
+Runs DNS Worker in the foreground. Command line flags override `.env` settings:
+- `-p, --port, --http-port <number>`: HTTP port (default: 10080)
+- `--https-port <number>`: HTTPS port (default: 10443)
+- `--dns-port <number>`: Classic UDP port (default: 53)
+- `--dot-port <number>`: DoT port (default: 853)
+- `--dot-domain <domain>`: Base domain name
+- `-u, --user <username>`: Service execution user
 
 ---
 
-## 状态与诊断：`status`
+## Status & Diagnostics: `status`
 
 ```bash
 dns-worker status
 ```
 
-快速诊断服务运行时状态、端口监听情况、TLS 证书有效性及 SQLite 数据库连通性。
+Inspects active listeners, port availability, TLS certificate validity, and SQLite database connectivity.
 
 ---
 
-## 配置管理：`config`
+## Configuration Management: `config`
 
 ```bash
-# 查看当前加载的配置文件与持久化路径
+# Print active configuration and persistent paths
 dns-worker config show
 
-# 输出当前配置文件的绝对路径
+# Print absolute path of active .env file
 dns-worker config path
 
-# 在标准路径生成 clean .env 模板
+# Scaffold clean .env template in standard directory
 dns-worker config init
 
-# 打印配置模板内容
+# Print raw default template
 dns-worker config template
 ```
 
 ---
 
-## 后台服务管理：`service`
+## Service Lifecycle: `service`
 
 ```bash
-# 安装系统服务（可选 --user <username>）
+# Install system service (optional --user <username>)
 sudo dns-worker service install [--user <username>]
 
-# 启动 / 停止 / 重启服务
+# Control service execution
 sudo dns-worker service start
 sudo dns-worker service stop
 sudo dns-worker service restart
 
-# 启用 / 禁用开机自启
+# Enable / Disable autostart on system boot
 sudo dns-worker service enable
 sudo dns-worker service disable
 
-# 查看实时服务状态与日志
+# Live diagnostics & logs
 sudo dns-worker service status
 sudo dns-worker service logs
 
-# 卸载系统服务
+# Completely remove service
 sudo dns-worker service uninstall
 ```

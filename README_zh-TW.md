@@ -18,19 +18,22 @@
 
 ---
 
-## 📖 序言
+## 📖 序
 
 **DNS Worker** 是一套專為隱私與效能而生的 Protective DNS 解析系統，採用獨創的**雙引擎架構**：
-- **🖥️ 獨立伺服器模式 (Serverfull)**：脫離 Cloudflare，運作在自有 VPS 或家用伺服器（Linux/Windows/macOS），原生支援經典 **UDP 53**、**DoT 853**（TLS SNI 路由，原生適配 Android 私有 DNS）與本地 SQLite；
-- **☁️ 邊緣模式 (Serverless)**：運作在 Cloudflare 全球 300+ 城市邊緣節點，配合 D1 資料庫享受零維護的高可用 DoH 服務。
 
-> 📚 **官方技術文件網站**  
-> 詳盡的部署指引、雙引擎架構對比、TLS 憑證與權限最佳實踐、環境變數辭典及常見排錯，請參閱：  
+- **☁️ 邊緣模式 (Serverless)**：運作在 Cloudflare 全球 300+ 城市邊緣節點，配合 D1 資料庫享受零維護的高可用 DoH 服務。
+- **🖥️ 獨立伺服器模式 (Serverfull)**：脫離 Cloudflare，運作在自有 VPS 或家用伺服器（Linux/Windows/macOS），原生支援經典 **UDP 53**、**DoT 853**（TLS SNI 路由，原生適配 Android 私有 DNS）與本地 SQLite；
+
+> 📚 **使用者文件**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
 
-### 極速上手
+### 快速上手
 
-#### 方式 A：獨立主機極速運行 (npm)
+#### Cloudflare Workers 一鍵部署
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+
+#### 獨立主機極速運行 (npm)
 ```bash
 # 全域安裝並啟動
 npm install -g dns-worker
@@ -39,10 +42,7 @@ dns-worker
 # 存取主控台: http://localhost:10080
 ```
 
-#### 方式 B：Cloudflare Workers 一鍵部署
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
-
-### 核心亮點
+### 核心功能
 - ⚡ **全棧協定**：UDP 53、DoT 853、DoH (HTTP/2 & HTTP/3)、DoQ (RFC 9250)、ECH 與 DDR (RFC 9460)。
 - 🛡️ **後量子零知識 E2EE**：NIST FIPS 203 **P256-MLKEM768** 混合格密碼學 + 硬體通行金鑰（Passkey / WebAuthn）。
 - 🚀 **本地優先 (Local-First)**：瀏覽器端 WebAssembly SQLite + OPFS，0ms 瞬間日誌查詢與統計分析。

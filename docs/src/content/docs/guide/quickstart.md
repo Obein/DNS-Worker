@@ -1,36 +1,36 @@
 ---
-title: 快速上手
-description: 在 1 分钟内启动并体验 DNS Worker。
+title: Quick Start
+description: Launch and experience DNS Worker in less than 60 seconds.
 ---
 
-DNS Worker 提供极速上手的 CLI 工具，您无需繁琐的数据库配置即可在任何支持 Node.js 的环境快速启动。
+DNS Worker provides a developer-friendly CLI that lets you get started immediately without setting up external database servers.
 
-## 环境要求
-- **Node.js**：`>= 22.5.0`（推荐使用最新 LTS 版本，以使用原生内置 `node:sqlite`）
-- **操作系统**：Linux、macOS 或 Windows
+## Prerequisites
+- **Node.js**: `>= 22.5.0` (Latest LTS recommended for native `node:sqlite`)
+- **Operating System**: Linux, macOS, or Windows
 
 ---
 
-## 方式 1：全局安装快速运行（推荐）
+## Method 1: Global Installation via npm (Recommended)
 
 ```bash
-# 1. 全局安装 CLI
+# 1. Install CLI globally
 npm install -g dns-worker
 
-# 2. 初始化持久化目录与配置文件
+# 2. Initialize persistent directory and default configuration
 dns-worker config init
 
-# 3. 直接启动服务
+# 3. Start DNS Worker
 dns-worker
 ```
 
-启动后，访问控制台即可完成管理员账号初始化：
-- **Web 控制台地址**：`http://localhost:10080`
-- **默认 UDP DNS**：`127.0.0.1:53`
+Once started, access your management dashboard:
+- **Web Dashboard**: `http://localhost:10080`
+- **Classic UDP DNS**: `127.0.0.1:53`
 
 ---
 
-## 方式 2：使用 npx 免安装试用
+## Method 2: Instant Run with npx
 
 ```bash
 npx dns-worker
@@ -38,25 +38,25 @@ npx dns-worker
 
 ---
 
-## 方式 3：从源码仓库运行
+## Method 3: Run from Cloned Source Repository
 
 ```bash
-# 1. 克隆代码仓库
+# 1. Clone repository
 git clone https://github.com/Obein/DNS-Worker.git
 cd DNS-Worker
 
-# 2. 安装项目依赖
+# 2. Install dependencies
 npm install
 
-# 3. 复制配置模板并启动
+# 3. Copy configuration template and launch
 cp .env.serverfull .env
 npm run start:serverfull
 ```
 
 ---
 
-## 下一步
+## Next Steps
 
-- [了解双引擎架构选型](/DNS-Worker/deployment/matrix/)
-- [在 Linux / Windows 上配置开机自启常驻服务](/DNS-Worker/deployment/service/)
-- [配置 TLS 证书开启 HTTPS 与 DoT](/DNS-Worker/advanced/tls-certs/)
+- [Explore Architecture & Deployment Options](/DNS-Worker/deployment/matrix/)
+- [Set up background daemon on Linux or Windows](/DNS-Worker/deployment/service/)
+- [Configure Let's Encrypt TLS certificates for HTTPS & DoT](/DNS-Worker/advanced/tls-certs/)

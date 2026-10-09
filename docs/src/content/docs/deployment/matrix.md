@@ -1,34 +1,34 @@
 ---
-title: 架构与部署选型
-description: 独立服务器模式与 Cloudflare Workers 边缘模式特性全面对比。
+title: Architecture & Comparison Matrix
+description: Comprehensive feature matrix comparing Standalone Serverfull mode and Cloudflare Workers Edge mode.
 ---
 
-无论您是追求全球 300+ 城市的极速边缘调度与零运维，还是追求 100% 数据自主可控、家庭路由器直连经典 UDP 53 以及 Android 原生私有 DNS（DoT 853），DNS Worker 均能提供企业级过滤、本地优先瞬间分析以及基于后量子密码学的零知识端到端加密日志。
+Whether you prioritize global edge acceleration with zero maintenance across 300+ PoPs, or complete data sovereignty with native UDP 53 on your router and Android DoT 853, DNS Worker delivers high-performance filtering, instant local analytics, and post-quantum zero-knowledge encrypted logging.
 
-## 双引擎架构特性对比表
+## Dual-Engine Comparison Matrix
 
-| 特性 / 维度 | 🖥️ 独立服务器 / VPS (脱离 Cloudflare) | ☁️ Cloudflare Workers 边缘模式 |
+| Feature / Dimension | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge Mode |
 |---|---|---|
-| **核心定位** | 100% 数据主权、家庭局域网/路由器直连、Android DoT | 全球极速边缘解析、免运维 Serverless |
-| **运行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`，推荐 LTS) | Cloudflare 全球 300+ 城市边缘节点 |
-| **存储介质** | 原生 Node.js SQLite (`node:sqlite`)，存储于本地 NVMe/SSD | Cloudflare D1（全球分布式云端数据库） |
-| **支持协议** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
-| **数据主权** | **100% 自主可控**，完全无云厂商锁定 | 边缘加密；托管于 Cloudflare 基础设施 |
-| **路由器 / 局域网接入** | **直接监听 UDP 53**（路由器 WAN/LAN DNS 直填服务器 IP） | 需搭配 DoH 客户端、代理或分流工具 |
-| **Android 私有 DNS** | **原生 DoT 853**，支持 SNI 路由 (`<profile_key>.dns.example.com`) | 需通过 DoH URL 或第三方客户端支持 |
-| **后量子零知识 E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + 通行密钥 WebAuthn |
-| **本地优先 Web UI** | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 | ✅ 浏览器端 SQLite WASM + OPFS 0ms 瞬间查询 |
-| **运维与维护** | 标准 systemd 常驻服务 (`dns-worker service install`) | 零服务器维护，边缘自适应伸缩 |
-| **费用与门槛** | 运行于既有 VPS 或家用服务器硬件 | Cloudflare 免费套餐额度内免费运行 |
+| **Core Value** | 100% Data Sovereignty, Home LAN/Router, Android DoT | Global Ultra-Low Latency, Zero Maintenance |
+| **Runtime Platform** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare Global 300+ Edge Locations |
+| **Storage Engine** | Native Node.js SQLite (`node:sqlite`) on NVMe/SSD | Cloudflare D1 (Global Distributed SQL) |
+| **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
+| **Data Ownership** | **100% Self-Hosted**, zero vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
+| **Router / LAN Integration** | **Direct UDP 53** (Point router DNS directly to server IP) | Requires DoH client, proxy, or split-tunnel tool |
+| **Android Private DNS** | **Native DoT 853** with SNI routing (`<token>.dns.example.com`) | Requires DoH URL or third-party client |
+| **Post-Quantum Zero-Knowledge E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
+| **Local-First Web Dashboard** | ✅ In-browser SQLite WASM + OPFS 0ms queries | ✅ In-browser SQLite WASM + OPFS 0ms queries |
+| **Process Daemon** | Native systemd / schtasks (`dns-worker service install`) | Zero server maintenance, auto-scaling |
+| **Cost & Requirements** | Runs on existing VPS or home server hardware | Free tier eligible on Cloudflare |
 
 ---
 
-## 如何选择？
+## Which One Should You Choose?
 
-- **选择独立服务器模式 (Serverfull)**：
-  - 您希望给家庭/办公室局域网路由器下发 DNS 地址（UDP 53）；
-  - 您希望在 Android 手机“专用 DNS”中直接填入域名，享受原生的 DoT 853 加密；
-  - 您追求 100% 数据私密性，不想将任何解析记录托付于第三方云厂商。
-- **选择 Cloudflare Workers 模式**：
-  - 您在全球多地频繁出差，追求无处不在的极低延迟；
-  - 您不想维护任何 VPS 操作系统、安全补丁与磁盘空间。
+- **Choose Standalone Server (Serverfull)**:
+  - You want to configure network-wide ad blocking for routers and smart TVs via classic UDP 53;
+  - You want to use Android's built-in "Private DNS" setting without third-party VPN apps;
+  - You prefer keeping 100% of resolution history on your own storage.
+- **Choose Cloudflare Workers Edge**:
+  - You travel frequently and need minimal latency from 300+ locations worldwide;
+  - You want a completely maintenance-free setup with automatic scaling and zero OS patching.

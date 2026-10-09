@@ -1,49 +1,49 @@
 ---
-title: Cloudflare Workers 边缘模式部署
-description: 依托 Cloudflare 全球 300+ 边缘网络与 D1 数据库的 Serverless 部署指南。
+title: Cloudflare Workers Edge Deployment
+description: Deploy serverless across 300+ edge locations with Cloudflare Workers and D1 database.
 ---
 
-Cloudflare Workers 模式让您无需维护任何底层服务器，零成本借助全球边缘节点运行高可用 DoH 解析器。
+The Cloudflare Workers deployment allows you to run a globally distributed, high-availability DoH resolver with zero infrastructure management.
 
-## 方案 1：通过 GitHub Fork 自动部署（推荐）
+## Method 1: Git-Connected Automated Deployment (Recommended)
 
-1. **Fork 仓库**：点击页面右上角 `Fork` 将项目克隆至您的 GitHub 账号。
-2. **创建 D1 数据库**：
-   - 登录 Cloudflare 控制台，进入 `Workers & Pages` > `D1`；
-   - 点击 `Create database`，命名为 `dns_worker_db`，复制生成的 Database ID。
-3. **配置 wrangler.toml**：
-   - 在您的 Fork 仓库中打开 `wrangler.toml`；
-   - 将 `database_id` 替换为刚才创建的实际 ID。
-4. **导入并连接 Worker**：
-   - 在 Cloudflare 控制台进入 `Workers & Pages` > `Create application` > 选择 `Continue with GitHub`；
-   - 绑定仓库，配置构建设置：
-     - 构建命令：`npm run build`
-     - 部署命令：`npm run deploy`
-     - 输出目录：`/`
-5. **设置运行时 Secret**：
-   - 首次部署完成后，进入 Worker 设置页 `Settings` > `Variables and secrets`；
-   - 添加 `JWT_SECRET`（类型选择 `Secret`，输入高强度随机字符串）；
-   - （可选）若需开启服务端凭据信封加密，添加 `KEK_v1`（类型选择 `Secret`）。
+1. **Fork the Repository**: Click `Fork` at the top right of the GitHub repository to clone it to your account.
+2. **Create D1 Database**:
+   - In Cloudflare Dashboard, go to `Workers & Pages` > `D1`;
+   - Create a database named `dns_worker_db` and copy the generated Database ID.
+3. **Configure wrangler.toml**:
+   - In your forked repository, edit `wrangler.toml`;
+   - Replace `database_id` with your database ID.
+4. **Deploy Application**:
+   - Go to `Workers & Pages` > `Create application` > `Continue with GitHub`;
+   - Connect your repository and configure build settings:
+     - Build command: `npm run build`
+     - Deploy command: `npm run deploy`
+     - Output directory: `/`
+5. **Set Secrets**:
+   - After initial deployment, go to `Settings` > `Variables and secrets`;
+   - Add `JWT_SECRET` (type: `Secret`, strong random string);
+   - *(Optional)* Add `KEK_v1` (type: `Secret`) for server-side credential envelope encryption.
 
 ---
 
-## 方案 2：CLI 本地开发与命令行部署
+## Method 2: Local CLI Development & Deployment
 
 ```bash
-# 1. 克隆并安装依赖
+# 1. Clone repository and install dependencies
 npm install
 
-# 2. 初始化本地 D1 数据库与执行迁移
+# 2. Initialize and migrate local D1 database
 npm run db:setup
 npm run db:migrate:dev
 
-# 3. 配置本地开发密钥 (.dev.vars)
+# 3. Configure local development secrets (.dev.vars)
 echo "JWT_SECRET=your_secure_random_jwt_secret" > .dev.vars
 echo "KEK_v1=your_secure_kek_v1_secret" >> .dev.vars
 
-# 4. 启动本地 Wrangler 开发服务
+# 4. Start local development server
 npm run dev
 
-# 5. 部署到 Cloudflare 生产环境
+# 5. Deploy to Cloudflare Workers
 npm run deploy
 ```

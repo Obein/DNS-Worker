@@ -1,30 +1,30 @@
 ---
-title: 项目概述
-description: 了解 DNS Worker 的设计哲学、双引擎架构与核心能力。
+title: Project Overview
+description: Learn about the design philosophy, dual-engine architecture, and core capabilities of DNS Worker.
 ---
 
-## 什么是 DNS Worker？
+## What is DNS Worker?
 
-**DNS Worker** 是一套专为现代隐私与防护而设计的 Protective DNS 解析系统，采用**双引擎架构（Dual-Engine Architecture）**：
+**DNS Worker** is a modern, privacy-first Protective DNS resolution platform built with an innovative **Dual-Engine Architecture**:
 
-1. **🖥️ 独立服务器模式 (Serverfull / Standalone)**：
-   完全脱离 Cloudflare 基础设施，直接运行在您的自有 VPS、家用 Linux / Windows 服务器上。采用 Node.js 原生内置 `node:sqlite` 存储，原生监听经典 UDP 53、DoT 853 与 Web 面板 / DoH。
-2. **☁️ 边缘模式 (Cloudflare Workers Serverless)**：
-   免运维运行在 Cloudflare 全球 300+ 城市的分布式边缘节点，搭配分布式 D1 数据库，实现零服务器硬件成本与全球极速响应。
+1. **🖥️ Standalone Server Mode (Serverfull)**:
+   Run completely independent of Cloudflare on your own VPS, home server, or bare-metal Linux/Windows host. Powered by Node.js built-in `node:sqlite`, it natively serves classic UDP 53, DoT 853, and Web Dashboard / DoH.
+2. **☁️ Edge Serverless Mode**:
+   Deploy across 300+ global edge locations on Cloudflare Workers and D1 database, enjoying zero infrastructure maintenance and sub-millisecond edge latency.
 
 ---
 
-## 协议与核心能力
+## Protocols & Capabilities
 
-### 1. 全协议覆盖
-* **经典 UDP 53 (RFC 1035)**：为路由器和内网设备提供即插即用的原生 DNS 解析。
-* **DoT 853 (RFC 7858)**：基于 TLS 加密传输，原生适配 Android 9+“私有 DNS”，通过 TLS SNI 实现多配置自动路由（如 `<profileKey>.dns.example.com`）。
-* **DoH (RFC 8484)**：支持 HTTP/2 与 HTTP/3 (Alt-Svc) 加密解析，兼容主流现代浏览器。
-* **DoQ (RFC 9250)**：支持基于 QUIC 的 0-RTT 极速握手，无队头阻塞。
-* **ECH 与 DDR (RFC 9460)**：广播 Encrypted Client Hello 参数与外层伪装 SNI，配合 DDR 实现加密 DNS 自动发现。
+### 1. Full-Stack Protocol Coverage
+* **Classic UDP 53 (RFC 1035)**: Standard DNS resolution for routers, LAN devices, and system-wide configurations.
+* **DoT 853 (RFC 7858)**: Encrypted DNS over dedicated port 853 with TLS SNI profile routing (`<profileKey>.dns.example.com`), natively compatible with Android 9+ Private DNS.
+* **DoH (RFC 8484)**: Fast encrypted DNS over HTTP/2 and HTTP/3 (Alt-Svc) for all modern web browsers.
+* **DoQ (RFC 9250)**: Encrypted DNS over QUIC with 0-RTT handshakes and zero head-of-line blocking.
+* **ECH & DDR (RFC 9460)**: Broadcast Encrypted Client Hello parameters and outer SNI, paired with Discovery of Designated Resolvers (DDR).
 
-### 2. 本地优先 (Local-First) 架构
-基于浏览器端原生 OPFS (Origin Private File System) 与 WebAssembly SQLite，用户端查询日志和聚合统计全部在本地 0ms 瞬间渲染，支持离线分析，后台自动执行轻量双向同步，大幅节省数据库计费与带宽。
+### 2. Local-First Architecture
+Using embedded in-browser SQLite (WebAssembly + Origin Private File System), query log filtering and multi-dimensional analytics render instantly in 0ms without exhausting server database read quotas.
 
-### 3. 后量子零知识端到端加密 (E2EE)
-引入 NIST FIPS 203 **P256-MLKEM768** 混合格密码学，配合硬件通行密钥（WebAuthn / Passkey）及恢复密钥。服务器只保存高强度加密密文，解密与私钥计算严格限定在用户的受信任设备内。
+### 3. Post-Quantum Zero-Knowledge E2EE
+Implements NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography, protected by hardware Passkeys (WebAuthn). Persistent storage holds only irreversible ciphertexts; decryption takes place strictly on authorized user devices.
