@@ -17,7 +17,7 @@ export * from './schtasks';
 /**
  * Handles 'dns-worker service <action>' subcommands across Linux and Windows.
  *
- * @param action - Action verb: 'install' | 'uninstall' | 'start' | 'stop' | 'restart' | 'status' | 'logs'
+ * @param action - Action verb: 'install' | 'uninstall' | 'start' | 'stop' | 'restart' | 'enable' | 'disable' | 'status' | 'logs'
  */
 export async function handleServiceAction(action: ServiceAction | string): Promise<void> {
   if (process.platform === 'win32') {

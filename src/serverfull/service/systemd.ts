@@ -142,6 +142,8 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
             { command: 'dns-worker service status', desc: 'Check live status' },
             { command: 'dns-worker service logs', desc: 'Tail live syslog / journal logs' },
             { command: 'sudo dns-worker service restart', desc: 'Restart service' },
+            { command: 'sudo dns-worker service enable', desc: 'Enable autostart on boot' },
+            { command: 'sudo dns-worker service disable', desc: 'Disable autostart on boot' },
             { command: 'sudo dns-worker service stop', desc: 'Stop service' },
             { command: 'sudo dns-worker service uninstall', desc: 'Remove service' }
           ]
@@ -205,7 +207,9 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
 
     case 'start':
     case 'stop':
-    case 'restart': {
+    case 'restart':
+    case 'enable':
+    case 'disable': {
       if (!isRoot) {
         console.error(formatDiagnostic({
           level: 'error',
@@ -266,7 +270,7 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
         title: 'Service Command Error',
         message: `Unknown service action "${action}".`,
         solutions: [
-          'Supported actions: install, start, stop, restart, status, logs, uninstall',
+          'Supported actions: install, start, stop, restart, enable, disable, status, logs, uninstall',
           'Example: sudo dns-worker service install'
         ]
       }));

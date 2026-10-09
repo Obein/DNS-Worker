@@ -99,6 +99,8 @@ export async function handleWindowsTask(action: ServiceAction | string): Promise
             { command: 'dns-worker service status', desc: 'View task status' },
             { command: 'dns-worker service logs', desc: 'View recent service logs' },
             { command: 'dns-worker service restart', desc: 'Restart background task' },
+            { command: 'dns-worker service enable', desc: 'Enable background task' },
+            { command: 'dns-worker service disable', desc: 'Disable background task' },
             { command: 'dns-worker service stop', desc: 'Stop background task' },
             { command: 'dns-worker service uninstall', desc: 'Remove background task' }
           ]
@@ -224,6 +226,74 @@ export async function handleWindowsTask(action: ServiceAction | string): Promise
       break;
     }
 
+    case 'enable': {
+      if (!isAdmin) {
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Permission Denied',
+          message: 'Enabling a Windows background service requires Administrator privileges.',
+          solutions: [
+            'Run in an Administrator terminal: dns-worker service enable'
+          ]
+        }));
+        process.exit(1);
+      }
+
+      try {
+        execSync(`schtasks /change /tn "${WINDOWS_TASK_NAME}" /enable`, { stdio: 'inherit' });
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Enabled',
+          message: `Windows background task "${WINDOWS_TASK_NAME}" enabled.`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Task Enable Failed',
+          message: errorMsg,
+          solutions: [
+            `Verify the task exists with 'dns-worker service status'.`,
+            `Or reinstall with 'dns-worker service install' in Administrator terminal.`
+          ]
+        }));
+        process.exit(1);
+      }
+      break;
+    }
+
+    case 'disable': {
+      if (!isAdmin) {
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Permission Denied',
+          message: 'Disabling a Windows background service requires Administrator privileges.',
+          solutions: [
+            'Run in an Administrator terminal: dns-worker service disable'
+          ]
+        }));
+        process.exit(1);
+      }
+
+      try {
+        execSync(`schtasks /change /tn "${WINDOWS_TASK_NAME}" /disable`, { stdio: 'inherit' });
+        console.log(formatDiagnostic({
+          level: 'success',
+          title: 'Service Disabled',
+          message: `Windows background task "${WINDOWS_TASK_NAME}" disabled.`
+        }));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Task Disable Failed',
+          message: errorMsg
+        }));
+        process.exit(1);
+      }
+      break;
+    }
+
     case 'status': {
       try {
         execSync(`schtasks /query /tn "${WINDOWS_TASK_NAME}" /fo LIST /v`, { stdio: 'inherit' });
@@ -281,7 +351,7 @@ export async function handleWindowsTask(action: ServiceAction | string): Promise
         title: 'Service Command Error',
         message: `Unknown service action "${action}".`,
         solutions: [
-          'Supported actions: install, start, stop, restart, status, logs, uninstall',
+          'Supported actions: install, start, stop, restart, enable, disable, status, logs, uninstall',
           'Example: dns-worker service install'
         ]
       }));

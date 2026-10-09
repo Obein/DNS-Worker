@@ -188,7 +188,7 @@ function printHelp(): void {
       { label: 'status', desc: 'Inspect service runtime status and database health' },
       { label: 'ech', desc: 'Display active ECH configuration, outer SNI, and DNS RR records' },
       { label: 'config [action]', desc: 'Manage configuration (show, path, init, template)' },
-      { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, status, logs, uninstall)' }
+      { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, enable, disable, status, logs, uninstall)' }
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },

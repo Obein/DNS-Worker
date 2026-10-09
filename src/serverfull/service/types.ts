@@ -12,6 +12,8 @@ export type ServiceAction =
   | 'start'
   | 'stop'
   | 'restart'
+  | 'enable'
+  | 'disable'
   | 'status'
   | 'logs';
 

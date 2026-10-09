@@ -316,6 +316,16 @@ function runServiceUnitTests(): void {
   }
   console.log('   ✓ ECH, HTTP/3, and DoQ configuration & transport verified.');
 
+  // 13. Testing ServiceAction enable/disable support
+  console.log('13. Testing ServiceAction enable/disable support...');
+  const supportedActions: import('../src/serverfull/service/types').ServiceAction[] = [
+    'install', 'uninstall', 'start', 'stop', 'restart', 'enable', 'disable', 'status', 'logs'
+  ];
+  if (!supportedActions.includes('enable') || !supportedActions.includes('disable')) {
+    throw new Error('ServiceAction missing enable or disable');
+  }
+  console.log('   ✓ ServiceAction enable/disable support verified.');
+
   console.log('\n======================================================');
   console.log('   ALL SERVICE PROVIDER UNIT TESTS PASSED!            ');
   console.log('======================================================');
