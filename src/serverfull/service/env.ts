@@ -34,15 +34,18 @@ export function isLinuxRoot(): boolean {
 /**
  * Resolves appropriate binary execution path, working directory, and user account.
  *
+ * @param targetUser - Optional designated user to run the service as (e.g. 'root').
  * @returns Service execution parameters.
  */
-export function getServiceExecDetails(): ServiceExecDetails {
+export function getServiceExecDetails(targetUser?: string): ServiceExecDetails {
   const nodePath = process.execPath;
   const scriptPath = process.argv[1] ? path.resolve(process.argv[1]) : '';
-  const user = process.env.SUDO_USER || process.env.USER || 'root';
-  const homeDir = process.env.SUDO_USER
-    ? `/home/${process.env.SUDO_USER}`
-    : (process.env.HOME || process.cwd());
+  const user = targetUser || process.env.SERVERFULL_SERVICE_USER || process.env.SUDO_USER || process.env.USER || 'root';
+  const homeDir = user === 'root'
+    ? '/root'
+    : (process.env.SUDO_USER && user === process.env.SUDO_USER)
+      ? `/home/${process.env.SUDO_USER}`
+      : (process.env.HOME || process.cwd());
 
   let execCmd = '';
   if (scriptPath && fs.existsSync(scriptPath)) {

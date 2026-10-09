@@ -78,6 +78,10 @@ function runServiceUnitTests(): void {
   if (!details.execCmd.includes('node') && !details.execCmd.includes('dns-worker')) {
     throw new Error(`Unexpected execCmd format: ${details.execCmd}`);
   }
+  const rootDetails = getServiceExecDetails('root');
+  if (rootDetails.user !== 'root' || (process.platform === 'linux' && rootDetails.workDir !== '/root')) {
+    throw new Error(`Unexpected rootDetails: ${JSON.stringify(rootDetails)}`);
+  }
   console.log('   ✓ getServiceExecDetails passed.');
 
   // 3. Test Linux systemd Unit Generator

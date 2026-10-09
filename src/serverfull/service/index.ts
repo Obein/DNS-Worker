@@ -18,12 +18,13 @@ export * from './schtasks';
  * Handles 'dns-worker service <action>' subcommands across Linux and Windows.
  *
  * @param action - Action verb: 'install' | 'uninstall' | 'start' | 'stop' | 'restart' | 'enable' | 'disable' | 'status' | 'logs'
+ * @param targetUser - Optional user account to run the service as (Linux systemd).
  */
-export async function handleServiceAction(action: ServiceAction | string): Promise<void> {
+export async function handleServiceAction(action: ServiceAction | string, targetUser?: string): Promise<void> {
   if (process.platform === 'win32') {
     await handleWindowsTask(action);
   } else if (process.platform === 'linux') {
-    await handleLinuxSystemd(action);
+    await handleLinuxSystemd(action, targetUser);
   } else {
     // macOS or other platform
     const details = getServiceExecDetails();

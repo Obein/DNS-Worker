@@ -69,8 +69,9 @@ WantedBy=multi-user.target
  * Handles Linux systemd service actions (install, uninstall, start, stop, restart, status, logs).
  *
  * @param action - Action verb.
+ * @param targetUser - Optional user to run service as.
  */
-export async function handleLinuxSystemd(action: ServiceAction | string): Promise<void> {
+export async function handleLinuxSystemd(action: ServiceAction | string, targetUser?: string): Promise<void> {
   const isRoot = isLinuxRoot();
 
   switch (action) {
@@ -87,7 +88,7 @@ export async function handleLinuxSystemd(action: ServiceAction | string): Promis
         process.exit(1);
       }
 
-      const details = getServiceExecDetails();
+      const details = getServiceExecDetails(targetUser);
       const unitContent = generateSystemdUnit(details);
 
       try {

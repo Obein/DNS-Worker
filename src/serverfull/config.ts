@@ -34,6 +34,7 @@ export interface ServerfullCliArgs {
   'ech-enabled'?: boolean;
   'ech-config'?: string;
   'ech-fronting-domain'?: string;
+  user?: string;
   status?: boolean;
   version?: boolean;
   help?: boolean;

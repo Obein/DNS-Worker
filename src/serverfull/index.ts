@@ -206,6 +206,7 @@ function printHelp(): void {
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
       { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
       { label: '--disable-dot', desc: 'Disable DoT server' },
+      { label: '-u, --user <username>', desc: 'User account to run background service as (default: current invoking user)' },
       { label: '-v, --version', desc: 'Display version number' },
       { label: '--help', desc: 'Display this help message' }
     ],
@@ -256,6 +257,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         'ech-enabled': { type: 'boolean' },
         'ech-config': { type: 'string' },
         'ech-fronting-domain': { type: 'string' },
+        user: { type: 'string', short: 'u' },
         status: { type: 'boolean', short: 's' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
@@ -293,7 +295,8 @@ async function parseCli(): Promise<ServerfullCliArgs> {
 
     if (positionals[0]?.toLowerCase() === 'service') {
       const action = positionals[1]?.toLowerCase() || 'status';
-      await handleServiceAction(action);
+      const targetUser = values.user as string | undefined;
+      await handleServiceAction(action, targetUser);
       process.exit(0);
     }
 
