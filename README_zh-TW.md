@@ -9,7 +9,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
-[![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5-green.svg)](https://nodejs.org/)
+[![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5%20(推薦%20LTS)-green.svg)](https://nodejs.org/)
 [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
 [![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](#-雙引擎架構與部署特性對比)
 
@@ -150,7 +150,7 @@ DNS Worker 提供兩種部署型態，滿足不同情境的使用需求：
 
 ### 方案 A：🖥️ 獨立伺服器 / VPS 部署 (脫離 Cloudflare, 100% 資料自主)
 
-DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macOS 伺服器或虛擬機上以獨立服務模式運行，依賴 Node.js `>= 22.5.0` 內建的 `node:sqlite` 引擎。無需任何 Cloudflare 帳號、API Token 或外部資料庫。
+DNS Worker 可完全脫離 Cloudflare Workers，直接在 Linux、Windows、macOS 伺服器或虛擬機上以獨立服務模式運行，依賴 Node.js `>= 22.5.0` (推薦使用最新 LTS 以獲得最佳效能) 內建的 `node:sqlite` 引擎。無需任何 Cloudflare 帳號、API Token 或外部資料庫。
 
 #### 獨立模式核心特性
 * **經典 UDP DNS (連接埠 53)**：標準的 RFC 1035 UDP DNS 解析服務，可直接填入路由器 WAN/LAN 或系統 DNS 設定中。
@@ -283,7 +283,7 @@ npm run deploy
 | 特性 / 維度 | 🖥️ 獨立伺服器 / VPS (脫離 Cloudflare) | ☁️ Cloudflare Workers 邊緣模式 |
 |---|---|---|
 | **核心定位** | 100% 資料主權、家庭區域網路/路由器直連、Android DoT | 全球極速邊緣解析、免維運 Serverless |
-| **運行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare 全球 300+ 城市邊緣節點 |
+| **運行平台** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`，推薦 LTS) | Cloudflare 全球 300+ 城市邊緣節點 |
 | **儲存媒介** | 原生 Node.js SQLite (`node:sqlite`)，儲存於本機 NVMe/SSD | Cloudflare D1（全球分散式雲端資料庫） |
 | **支援協定** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
 | **資料主權** | **100% 自主可控**，完全無雲廠商鎖定 | 邊緣加密；託管於 Cloudflare 基礎設施 |

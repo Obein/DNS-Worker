@@ -9,7 +9,7 @@
 
   [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
   [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
-  [![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5-green.svg)](https://nodejs.org/)
+  [![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5%20(LTS%20Recommended)-green.svg)](https://nodejs.org/)
   [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
   [![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](#-dual-engine-architecture--deployment-matrix)
 </div>
@@ -146,7 +146,7 @@ DNS Worker offers two deployment methods tailored to different operational needs
 
 ### Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)
 
-Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
+Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (Latest LTS recommended, using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
 
 #### Features in Standalone Mode
 * **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
@@ -279,7 +279,7 @@ Whether you need global edge resolution across 300+ cities or 100% self-hosted d
 | Feature / Capability | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge |
 |---|---|---|
 | **Primary Use Case** | Complete data sovereignty, home lab, direct router DNS, Android DoT | Zero-maintenance, global low-latency edge resolution |
-| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
+| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`, LTS recommended) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
 | **Storage Backend** | Native Node.js SQLite (`node:sqlite`) on local NVMe/SSD | Cloudflare D1 (Global distributed serverless database) |
 | **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
 | **Data Sovereignty** | **100% Self-Sovereign** — zero cloud vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
