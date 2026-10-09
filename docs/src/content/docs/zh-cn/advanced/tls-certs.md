@@ -5,6 +5,9 @@ description: 配置 Let's Encrypt 证书、普通用户权限安全、ssl-cert �
 
 启用 HTTPS Web 控制台（端口 10443）与 DoT（端口 853）需要配置 TLS 证书。
 
+> [!TIP]
+> 若您仅需要为 Web 管理面板与 DoH 提供 HTTPS 支持，可免去在 DNS Worker 内部配置证书的步骤，直接使用 **Caddy** 或 **Nginx** 反向代理 `10080`（HTTP）端口。详见 [使用 Caddy 或 Nginx 反向代理 HTTP](/DNS-Worker/zh-cn/deployment/serverfull/#使用-caddy-或-nginx-反向代理-http10080-端口)。
+
 ## 环境变量配置
 
 在 `/etc/dns-worker/.env` 中配置证书与私钥路径：

@@ -42,7 +42,7 @@ dns-worker config init
 在 `.env` 中可自由指定監聽的埠和繫結地址：
 
 ```ini
-# 绑定主机地址（默认 0.0.0.0 监听所有接口）
+# 绑定主机地址（默认 0.0.0.0 监听所有接口，或设为 127.0.0.1 仅限本地访问）
 SERVERFULL_HOST=0.0.0.0
 
 # 端口配置
@@ -54,6 +54,79 @@ SERVERFULL_HTTPS_PORT=10443
 # 是否禁用特定服务
 SERVERFULL_DISABLE_HTTPS=false
 ```
+
+---
+
+## 使用 Caddy 或 Nginx 反向代理 HTTP（10080 埠）
+
+在實際生產部署中，除了直接暴露 `10080` 埠或在 DNS Worker 內部配置證書監聽 `10443`（HTTPS）外，**強烈推薦使用 Caddy 或 Nginx 等成熟的反向代理服務**置於 DNS Worker 前端。由反向代理統一監聽標準 `443` 埠並處理自動化 SSL 證書申請與續期，隨後將流量轉發至內網 `http://127.0.0.1:10080`。
+
+> [!TIP]
+> 啟用反向代理後，可在 `.env` 中設定 `SERVERFULL_DISABLE_HTTPS=true` 停用內建的 10443 HTTPS 監聽器以節省資源，亦可設定 `SERVERFULL_HOST=127.0.0.1` 僅允許本地內網訪問 10080 埠以提升安全性。
+
+### 方案 1：Caddy 反向代理配置 (推薦首選)
+
+Caddy 原生支援全自動申請和續期 Let's Encrypt / ZeroSSL 證書，配置極其簡潔。編輯 `/etc/caddy/Caddyfile`：
+
+```nginx
+dns.example.com {
+    reverse_proxy 127.0.0.1:10080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+```
+
+過載 Caddy 即可生效：
+```bash
+sudo systemctl reload caddy
+```
+
+### 方案 2：Nginx 反向代理配置
+
+若您使用 Nginx，可在站點配置檔案（如 `/etc/nginx/sites-available/dns-worker`）中新增以下配置：
+
+```nginx
+server {
+    listen 80;
+    server_name dns.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name dns.example.com;
+
+    ssl_certificate /etc/letsencrypt/live/dns.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dns.example.com/privkey.pem;
+
+    # DoH 与 Web 控制面板反向代理
+    location / {
+        proxy_pass http://127.0.0.1:10080;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # WebSocket 支持（管理面板实时通信）
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+測試並重載 Nginx：
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+> [!NOTE]
+> **透傳客戶端真實 IP**：務必在反向代理中正確傳遞 `X-Real-IP` 和 `X-Forwarded-For` 請求頭，確保 DNS Worker 在查詢日誌審計、地理位置解析及速率限制（Rate Limiting）中能夠精準識別客戶端真實 IP，而非反向代理的 `127.0.0.1`。
 
 ---
 

@@ -68,7 +68,7 @@ dns-worker
 
 ---
 
-## 💪 Motivation & Ecosystem
+## 💪 Powered and Dependencies
 
 DNS Worker stands on the shoulders of modern open-source infrastructure and cryptography:
 
