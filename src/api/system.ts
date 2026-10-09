@@ -304,7 +304,8 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
         headers: { 'Content-Type': 'application/json' }
       });
     } catch (e) {
-      return new Response(JSON.stringify({ ipv4: [], ipv6: [], error: String(e) }), {
+      console.error('DNS resolve failed:', e);
+      return new Response(JSON.stringify({ ipv4: [], ipv6: [], error: 'Internal server error' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
