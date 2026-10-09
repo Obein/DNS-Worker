@@ -774,7 +774,14 @@
       "copied": "Đã sao chép!",
       "done": "Xong, tôi đã lưu khóa",
       "activeDesc": "Ứng dụng xác thực (TOTP) đang hoạt động và tạo mã xác nhận 6 chữ số.",
-      "invalidCode": "Vui lòng nhập mã gồm 6 chữ số"
+      "invalidCode": "Vui lòng nhập mã gồm 6 chữ số",
+      "testBtn": "Kiểm tra mã",
+      "testTitle": "Kiểm tra ứng dụng xác thực (TOTP)",
+      "testDesc": "Nhập mã xác thực 6 chữ số từ ứng dụng xác thực của bạn để xác nhận ứng dụng đã đồng bộ chính xác và tạo mã hợp lệ.",
+      "testSuccess": "Xác minh thành công! Ứng dụng xác thực của bạn đã được cấu hình đúng.",
+      "testFailed": "Mã xác thực không hợp lệ hoặc thời gian chưa được đồng bộ",
+      "verificationCode": "Mã xác thực 6 chữ số",
+      "verifyBtn": "Xác minh ngay"
     },
     "activity": {
       "title": "Nhật ký hoạt động tài khoản",
@@ -857,7 +864,12 @@
       "formatTip": "Gợi ý tên Passkey: 1-30 ký tự, chỉ cho phép chữ cái, số, dấu gạch dưới và dấu gạch ngang",
       "verifyPrompt": "Xác thực bằng sinh trắc học thiết bị hoặc khóa bảo mật.",
       "changePwNotice": "Bạn sẽ được nhắc xác thực bằng Passkey khi gửi biểu mẫu.",
-      "submitNotice": "Bạn sẽ được nhắc xác thực bằng Passkey khi gửi biểu mẫu."
+      "submitNotice": "Bạn sẽ được nhắc xác thực bằng Passkey khi gửi biểu mẫu.",
+      "testBtn": "Kiểm tra mã khóa",
+      "testThis": "Kiểm tra mã khóa này",
+      "testSuccess": "Xác minh mã khóa thành công: {{name}}",
+      "testCancelled": "Đã hủy xác minh mã khóa",
+      "testFailed": "Xác minh mã khóa thất bại"
     },
     "mfaNone": "Không",
     "resetUserPassword": "Đặt lại mật khẩu",

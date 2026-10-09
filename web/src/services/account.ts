@@ -1,5 +1,6 @@
 import type { UserInfo, SessionInfo, ActivityEntry, Passkey } from "./types";
 import { ApiError } from "./auth";
+import { startPasskeyAuthentication } from "../utils/webauthn";
 
 export interface UpdatePasswordPayload {
   oldPassword?: string;
@@ -212,9 +213,49 @@ export async function deletePasskey(id: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
-export async function getPasskeyAuthOptions(): Promise<any> {
+export interface TestPasskeyResponse {
+  success: boolean;
+  passkey: {
+    id: string;
+    name: string;
+  };
+}
+
+export async function testPasskey(passkeyId?: string): Promise<TestPasskeyResponse> {
+  const options = await getPasskeyAuthOptions(passkeyId);
+  const assertion = await startPasskeyAuthentication(options);
+  const res = await fetch("/api/account/passkeys/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential: assertion })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function testTotp(code: string): Promise<{ success: boolean }> {
+  const rawToken = code.trim().replace(/\s/g, "");
+  const salt = crypto.randomUUID();
+  const msgBuffer = new TextEncoder().encode(rawToken + salt);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  const res = await fetch("/api/account/totp/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ totpTokenHash: hashHex, salt })
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export async function getPasskeyAuthOptions(passkeyId?: string): Promise<any> {
   const res = await fetch("/api/account/passkeys/auth-options", {
-    method: "POST"
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(passkeyId ? { passkeyId } : {})
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
   return res.json();

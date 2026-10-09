@@ -774,7 +774,14 @@
       "copied": "Copié !",
       "done": "Terminé, j'ai enregistré les clés",
       "activeDesc": "L'application d'authentification (TOTP) est active et génère des codes à 6 chiffres.",
-      "invalidCode": "Veuillez saisir un code à 6 chiffres"
+      "invalidCode": "Veuillez saisir un code à 6 chiffres",
+      "testBtn": "Tester le code",
+      "testTitle": "Tester l'application d'authentification (TOTP)",
+      "testDesc": "Saisissez le code de vérification à 6 chiffres de votre application d'authentification pour vérifier qu'elle est bien synchronisée et génère des codes valides.",
+      "testSuccess": "Vérification réussie ! Votre application d'authentification est correctement configurée.",
+      "testFailed": "Code de vérification invalide ou horloge désynchronisée",
+      "verificationCode": "Code de vérification à 6 chiffres",
+      "verifyBtn": "Vérifier maintenant"
     },
     "activity": {
       "title": "Historique d'activité du compte",
@@ -857,7 +864,12 @@
       "formatTip": "Note sur le nom de clé d'accès : 1 à 30 caractères, seuls les lettres, chiffres, tirets et traits de soulignement sont autorisés",
       "verifyPrompt": "Authentifiez-vous à l'aide des capteurs biométriques ou d'une clé de sécurité.",
       "changePwNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi.",
-      "submitNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi."
+      "submitNotice": "Une invite d'authentification Passkey apparaîtra lors de l'envoi.",
+      "testBtn": "Tester la clé d'accès",
+      "testThis": "Tester cette clé d'accès",
+      "testSuccess": "Clé d'accès vérifiée avec succès : {{name}}",
+      "testCancelled": "Vérification de la clé d'accès annulée",
+      "testFailed": "Échec de la vérification de la clé d'accès"
     },
     "mfaNone": "Aucun",
     "resetUserPassword": "Réinitialiser le mot de passe",

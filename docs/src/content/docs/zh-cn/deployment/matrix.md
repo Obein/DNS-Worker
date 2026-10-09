@@ -14,7 +14,7 @@ description: Cloudflare Workers 边缘模式 (首选推荐) 与独立服务器 S
 | **存储后端** | **Cloudflare D1 (全球分布式 SQL 数据库)** | 原生内置 SQLite (`node:sqlite`) |
 | **支持协议** | **DoH** (RFC 8484，支持 HTTP/2 与 HTTP/3) | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** |
 | **运维成本** | **完全零服务器运维**，全球弹性自适应伸缩 | 需自行维护服务器操作系统、防火墙规则与常驻服务 |
-| **路由器 / 内网接入** | 需前置 DoH 转发客户端（如 SmartDNS、OpenWrt、AdGuard Home） | **原生支持 UDP 53**（路由器 DNS 直接填写服务器 IP） |
+| **路由器 / 内网接入** | 需前置 DoH 转发客户端（如 OpenWrt、AdGuard Home） | **原生支持 UDP 53**（路由器 DNS 直接填写服务器 IP） |
 | **安卓原生私密 DNS** | 需配合 DoH 模板或第三方 App | **原生支持 DoT 853**（支持 SNI 路由 `<token>.dns.example.com`） |
 | **后量子零知识 E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
 | **本地优先 Web 仪表盘** | ✅ 浏览器端 SQLite WASM + OPFS 0ms 闪电查询 | ✅ 浏览器端 SQLite WASM + OPFS 0ms 闪电查询 |

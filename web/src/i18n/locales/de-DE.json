@@ -774,7 +774,14 @@
       "copied": "Kopiert!",
       "done": "Fertig, ich habe die Schlüssel gespeichert",
       "activeDesc": "Die Authentifikator-App (TOTP) ist aktiv und generiert 6-stellige Bestätigungscodes.",
-      "invalidCode": "Bitte geben Sie einen 6-stelligen Code ein"
+      "invalidCode": "Bitte geben Sie einen 6-stelligen Code ein",
+      "testBtn": "Code testen",
+      "testTitle": "Authentifikator-App testen (TOTP)",
+      "testDesc": "Geben Sie den 6-stelligen Bestätigungscode aus Ihrer Authentifikator-App ein, um zu prüfen, ob sie ordnungsgemäß synchronisiert ist und gültige Codes generiert.",
+      "testSuccess": "Verifizierung erfolgreich! Ihre Authentifikator-App ist ordnungsgemäß konfiguriert.",
+      "testFailed": "Ungültiger Bestätigungscode oder nicht synchronisierte Uhrzeit",
+      "verificationCode": "6-stelliger Bestätigungscode",
+      "verifyBtn": "Jetzt bestätigen"
     },
     "activity": {
       "title": "Aktivitätsprotokoll des Kontos",
@@ -857,7 +864,12 @@
       "formatTip": "Hinweis zum Passkey-Namen: 1-30 Zeichen, nur Buchstaben, Zahlen, Unterstriche und Bindestriche erlaubt",
       "verifyPrompt": "Bestätigen Sie mit Biometrie (Touch ID, Face ID, Windows Hello) oder Sicherheitsschlüssel.",
       "changePwNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert.",
-      "submitNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert."
+      "submitNotice": "Beim Absenden werden Sie zur Bestätigung über Passkey aufgefordert.",
+      "testBtn": "Passkey testen",
+      "testThis": "Diesen Passkey testen",
+      "testSuccess": "Passkey erfolgreich verifiziert: {{name}}",
+      "testCancelled": "Passkey-Verifizierung abgebrochen",
+      "testFailed": "Passkey-Verifizierung fehlgeschlagen"
     },
     "mfaNone": "Keine",
     "resetUserPassword": "Passwort zurücksetzen",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { Intent, OverlayToaster } from "@blueprintjs/core";
 import { validatePasskeyName } from "../../../../utils/auth";
 import {
   getPasskeys,
@@ -7,6 +8,7 @@ import {
   verifyPasskeyRegistration,
   renamePasskey,
   deletePasskey,
+  testPasskey,
   e2ee
 } from "../../../../services";
 import type { Passkey } from "../../../../services";
@@ -18,6 +20,8 @@ import { isPasskeySupported, startPasskeyRegistration } from "../../../../utils/
 export interface UsePasskeysProps {
   /** Optional callback invoked to notify parent components of changes. */
   onRefresh?: () => void;
+  /** Optional ref to Blueprint OverlayToaster for notifications. */
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
 /**
@@ -74,6 +78,10 @@ export interface UsePasskeysReturn {
   handleOpenDelete: (pk: Passkey) => void;
   handleDeleteSubmit: () => Promise<void>;
 
+  // Test Passkey State & Handlers
+  testingId: string | null;
+  handleTestPasskey: (pk?: Passkey) => Promise<void>;
+
   /** Function to reload the passkey list. */
   fetchPasskeys: () => Promise<void>;
 }
@@ -85,7 +93,7 @@ export interface UsePasskeysReturn {
  * @param props - Hook configuration.
  * @returns State and event handlers for managing passkeys.
  */
-export const usePasskeys = ({ onRefresh }: UsePasskeysProps): UsePasskeysReturn => {
+export const usePasskeys = ({ onRefresh, toasterRef }: UsePasskeysProps): UsePasskeysReturn => {
   const { t } = useTranslation();
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -94,6 +102,9 @@ export const usePasskeys = ({ onRefresh }: UsePasskeysProps): UsePasskeysReturn 
   // Recovery keys state (if generated upon first MFA factor creation)
   const [recoveryKeys, setRecoveryKeys] = useState<string[] | null>(null);
   const [copiedKeys, setCopiedKeys] = useState<boolean>(false);
+
+  // Test state
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   // Add Passkey state
   const [isAddOpen, setIsAddOpen] = useState<boolean>(false);
@@ -257,6 +268,47 @@ export const usePasskeys = ({ onRefresh }: UsePasskeysProps): UsePasskeysReturn 
     }
   };
 
+  const handleTestPasskey = async (pk?: Passkey): Promise<void> => {
+    const idToSet = pk ? pk.id : "all";
+    setTestingId(idToSet);
+    try {
+      const result = await testPasskey(pk?.id);
+      if (result.success) {
+        toasterRef?.current?.show({
+          message: t("account.passkey.testSuccess", {
+            name: result.passkey?.name || pk?.name || "",
+            defaultValue: `Passkey verified successfully: ${result.passkey?.name || pk?.name || ""}`
+          }),
+          intent: Intent.SUCCESS,
+          icon: "tick-circle"
+        });
+        await fetchPasskeys();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("cancelled") ||
+        msg.includes("NotAllowedError") ||
+        msg.includes("timed out") ||
+        msg.includes("abort")
+      ) {
+        toasterRef?.current?.show({
+          message: t("account.passkey.testCancelled", "Passkey verification cancelled"),
+          intent: Intent.WARNING,
+          icon: "warning-sign"
+        });
+      } else {
+        toasterRef?.current?.show({
+          message: msg || t("account.passkey.testFailed", "Passkey verification failed"),
+          intent: Intent.DANGER,
+          icon: "error"
+        });
+      }
+    } finally {
+      setTestingId(null);
+    }
+  };
+
   return {
     passkeys,
     loading,
@@ -293,6 +345,8 @@ export const usePasskeys = ({ onRefresh }: UsePasskeysProps): UsePasskeysReturn 
     targetToDelete,
     handleOpenDelete,
     handleDeleteSubmit,
+    testingId,
+    handleTestPasskey,
     fetchPasskeys
   };
 };

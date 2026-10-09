@@ -774,7 +774,14 @@
       "copied": "已复制！",
       "done": "完成，我已保存密钥",
       "activeDesc": "数字验证器已启用，正在为您的账号提供 6 位动态验证码保护。",
-      "invalidCode": "请输入 6 位验证码"
+      "invalidCode": "请输入 6 位验证码",
+      "testBtn": "测试动态口令",
+      "testTitle": "测试数字验证器 (TOTP)",
+      "testDesc": "请输入身份验证器 App 当前显示的 6 位验证码，以验证其配置是否正确并已准确同步。",
+      "testSuccess": "验证成功！您的身份验证器配置正确并能正常生成验证码。",
+      "testFailed": "验证码错误或设备时钟未同步",
+      "verificationCode": "6 位验证码",
+      "verifyBtn": "立即验证"
     },
     "sessions": {
       "session": "会话",
@@ -857,7 +864,12 @@
       "formatTip": "通行密钥名称提示：1-30 位字符，只允许字母、数字、下划线和中划线",
       "verifyPrompt": "请使用设备的生物识别（人脸、指纹、Windows Hello）或安全密钥进行身份验证。",
       "changePwNotice": "提交修改时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。",
-      "submitNotice": "提交时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。"
+      "submitNotice": "提交时将调用通行密钥 (Passkey) 生物识别或硬件密钥核验身份。",
+      "testBtn": "测试通行密钥",
+      "testThis": "测试此通行密钥",
+      "testSuccess": "通行密钥验证成功：{{name}}",
+      "testCancelled": "通行密钥验证已取消",
+      "testFailed": "通行密钥验证失败"
     },
     "mfaNone": "无",
     "resetUserPassword": "重置密码",

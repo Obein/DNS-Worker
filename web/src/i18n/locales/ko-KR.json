@@ -774,7 +774,14 @@
       "copied": "복사 완료!",
       "done": "완료 (키를 저장했습니다)",
       "activeDesc": "인증 앱(TOTP)이 활성화되어 6자리 확인 코드를 생성하고 있습니다.",
-      "invalidCode": "6자리 코드를 입력하세요"
+      "invalidCode": "6자리 코드를 입력하세요",
+      "testBtn": "코드 테스트",
+      "testTitle": "인증 앱 테스트 (TOTP)",
+      "testDesc": "인증 앱에 표시된 6자리 인증 코드를 입력하여 올바르게 동기화되고 유효한 코드가 생성되는지 확인하세요.",
+      "testSuccess": "인증에 성공했습니다! 인증 앱이 올바르게 구성되었습니다.",
+      "testFailed": "잘못된 인증 코드이거나 기기 시간이 동기화되지 않았습니다",
+      "verificationCode": "6자리 인증 코드",
+      "verifyBtn": "지금 확인"
     },
     "activity": {
       "title": "계정 활동 기록",
@@ -857,7 +864,12 @@
       "formatTip": "패스키 이름 팁: 1-30자, 영문자, 숫자, 언더바, 하이픈만 허용",
       "verifyPrompt": "기기의 생체 인식(지문, 얼굴, Windows Hello) 또는 보안 키를 사용하여 인증하세요.",
       "changePwNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다.",
-      "submitNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다."
+      "submitNotice": "제출 시 패스키 생체 인증 또는 보안 키 확인이 요청됩니다.",
+      "testBtn": "패스키 테스트",
+      "testThis": "이 패스키 테스트",
+      "testSuccess": "패스키 인증 성공: {{name}}",
+      "testCancelled": "패스키 인증이 취소되었습니다",
+      "testFailed": "패스키 인증에 실패했습니다"
     },
     "mfaNone": "없음",
     "resetUserPassword": "비밀번호 재설정",

@@ -774,7 +774,14 @@
       "copied": "¡Copiado!",
       "done": "Hecho, he guardado las claves",
       "activeDesc": "La aplicación de autenticación (TOTP) está activa y genera códigos de 6 dígitos.",
-      "invalidCode": "Por favor introduzca un código de 6 dígitos"
+      "invalidCode": "Por favor introduzca un código de 6 dígitos",
+      "testBtn": "Probar código",
+      "testTitle": "Probar aplicación de autenticación (TOTP)",
+      "testDesc": "Introduzca el código de verificación de 6 dígitos de su aplicación de autenticación para comprobar que está sincronizada y genera códigos válidos.",
+      "testSuccess": "¡Verificación exitosa! Su aplicación de autenticación está configurada correctamente.",
+      "testFailed": "Código de verificación no válido o reloj no sincronizado",
+      "verificationCode": "Código de verificación de 6 dígitos",
+      "verifyBtn": "Verificar ahora"
     },
     "activity": {
       "title": "Registro de actividad de la cuenta",
@@ -857,7 +864,12 @@
       "formatTip": "Indicación sobre el nombre de Passkey: 1-30 caracteres, solo se permiten letras, números, guiones bajos y guiones medios",
       "verifyPrompt": "Autentique usando biometría o llave de seguridad de su dispositivo.",
       "changePwNotice": "Se le solicitará autenticación con Passkey al enviar.",
-      "submitNotice": "Se le solicitará autenticación con Passkey al enviar."
+      "submitNotice": "Se le solicitará autenticación con Passkey al enviar.",
+      "testBtn": "Probar llave de paso",
+      "testThis": "Probar esta llave de paso",
+      "testSuccess": "Llave de paso verificada con éxito: {{name}}",
+      "testCancelled": "Verificación de llave de paso cancelada",
+      "testFailed": "Error al verificar la llave de paso"
     },
     "mfaNone": "Ninguno",
     "resetUserPassword": "Restablecer contraseña",

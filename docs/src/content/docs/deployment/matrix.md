@@ -14,7 +14,7 @@ Whether you prioritize global edge acceleration with zero maintenance across 300
 | **Storage Engine** | **Cloudflare D1 (Global Distributed SQL)** | Native SQLite (`node:sqlite`) on NVMe/SSD |
 | **Supported Protocols** | **DoH** (RFC 8484 over HTTP/2 & HTTP/3) | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** |
 | **Infrastructure Overhead** | **Zero Server Maintenance**, auto-scaling worldwide | Requires host maintenance, OS patching, systemd daemon |
-| **Router / LAN Integration** | Forward via DoH proxy (SmartDNS, AdGuard Home, OpenWrt) | **Direct UDP 53** (Point router DNS directly to server IP) |
+| **Router / LAN Integration** | Forward via DoH proxy (AdGuard Home, OpenWrt) | **Direct UDP 53** (Point router DNS directly to server IP) |
 | **Android Private DNS** | Native DoH URL or third-party client | **Native DoT 853** with SNI routing (`<token>.dns.example.com`) |
 | **Post-Quantum Zero-Knowledge E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
 | **Local-First Web Dashboard** | ✅ In-browser SQLite WASM + OPFS 0ms queries | ✅ In-browser SQLite WASM + OPFS 0ms queries |

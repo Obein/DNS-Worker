@@ -774,7 +774,14 @@
       "copied": "已複製！",
       "done": "完成，我已保存密鑰",
       "activeDesc": "數位驗證器已啟用，正在為您的帳號提供 6 位動態驗證碼保護。",
-      "invalidCode": "請輸入 6 位驗證碼"
+      "invalidCode": "請輸入 6 位驗證碼",
+      "testBtn": "測試動態口令",
+      "testTitle": "測試數位驗證器 (TOTP)",
+      "testDesc": "請輸入身分驗證器 App 目前顯示的 6 位驗證碼，以驗證其設定是否正確並已準確同步。",
+      "testSuccess": "驗證成功！您的身分驗證器設定正確並能正常產生驗證碼。",
+      "testFailed": "驗證碼錯誤或裝置時鐘未同步",
+      "verificationCode": "6 位驗證碼",
+      "verifyBtn": "立即驗證"
     },
     "sessions": {
       "session": "會話",
@@ -857,7 +864,12 @@
       "formatTip": "通行密鑰名稱提示：1-30 位字元，只允許字母、數字、下劃線和中劃線",
       "verifyPrompt": "請使用裝置的生物辨識（人臉、指紋、Windows Hello）或安全金鑰進行身分驗證。",
       "changePwNotice": "提交修改時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。",
-      "submitNotice": "提交時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。"
+      "submitNotice": "提交時將調用通行金鑰 (Passkey) 生物辨識或硬體金鑰核驗身分。",
+      "testBtn": "測試通行金鑰",
+      "testThis": "測試此通行金鑰",
+      "testSuccess": "通行金鑰驗證成功：{{name}}",
+      "testCancelled": "通行金鑰驗證已取消",
+      "testFailed": "通行金鑰驗證失敗"
     },
     "mfaNone": "無",
     "resetUserPassword": "重設密碼",

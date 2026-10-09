@@ -774,7 +774,14 @@
       "copied": "Copied!",
       "done": "Done — I've saved my keys",
       "activeDesc": "Authenticator app (TOTP) is active and generating 6-digit verification codes for your account.",
-      "invalidCode": "Please enter a 6-digit code"
+      "invalidCode": "Please enter a 6-digit code",
+      "testBtn": "Test Code",
+      "testTitle": "Test Authenticator App (TOTP)",
+      "testDesc": "Enter the 6-digit verification code from your authenticator app to verify that it is properly synchronized and generating valid codes.",
+      "testSuccess": "Verification successful! Your authenticator app is configured properly.",
+      "testFailed": "Invalid verification code or clock desynchronized",
+      "verificationCode": "6-Digit Verification Code",
+      "verifyBtn": "Verify Now"
     },
     "sessions": {
       "session": "Session",
@@ -857,7 +864,12 @@
       "formatTip": "Passkey name tip: 1-30 characters, letters, numbers, hyphens and underscores only",
       "verifyPrompt": "Authenticate using your device's biometric sensor (Face ID, Touch ID, Windows Hello) or security key.",
       "changePwNotice": "You will be prompted to verify via biometric authentication or your security key when submitting.",
-      "submitNotice": "You will be prompted to verify via biometric authentication or your security key when submitting."
+      "submitNotice": "You will be prompted to verify via biometric authentication or your security key when submitting.",
+      "testBtn": "Test Passkey",
+      "testThis": "Test this passkey",
+      "testSuccess": "Passkey verified successfully: {{name}}",
+      "testCancelled": "Passkey verification cancelled",
+      "testFailed": "Passkey verification failed"
     },
     "mfaNone": "None",
     "resetUserPassword": "Reset Password",

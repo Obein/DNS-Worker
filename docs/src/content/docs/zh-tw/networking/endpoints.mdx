@@ -141,15 +141,9 @@ Windows 11 系統網路設定原生支援 DNS over HTTPS：
 
 ---
 
-### 路由器與閘道器裝置 (SmartDNS / OpenWrt / AdGuard Home)
+### 路由器與閘道器裝置 (OpenWrt / AdGuard Home)
 
 在區域網主路由或軟路由上將 DNS 轉發至 DNS Worker：
-
-#### SmartDNS 配置示例 (`/etc/smartdns/smartdns.conf`)：
-```ini
-server-tls <dotDomain>:853 -tls-host-verify <profileKey>.<dotDomain> -group worker
-server-https https://<domain>/dns-query/<profileKey> -group worker
-```
 
 #### AdGuard Home 上游伺服器設定：
 在 AdGuard Home **設定** → **DNS 設定** → **上游 DNS 伺服器** 中填入：

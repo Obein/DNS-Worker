@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Intent, Spinner } from "@blueprintjs/core";
-import { KeyRound, Edit2, Trash2 } from "lucide-react";
+import { KeyRound, Edit2, Trash2, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../../utils/date";
 import type { Passkey } from "../../../../services";
@@ -15,6 +15,10 @@ export interface PasskeyListProps {
   loading: boolean;
   /** Passkey ID currently being deleted (if any). */
   deletingId: string | null;
+  /** Passkey ID currently being tested (if any). */
+  testingId?: string | null;
+  /** Callback to test a specific passkey. */
+  onTestPasskey?: (pk: Passkey) => void;
   /** Callback to trigger rename modal. */
   onOpenRename: (pk: Passkey) => void;
   /** Callback to trigger delete modal. */
@@ -32,6 +36,8 @@ export const PasskeyList: React.FC<PasskeyListProps> = ({
   passkeys,
   loading,
   deletingId,
+  testingId,
+  onTestPasskey,
   onOpenRename,
   onOpenDelete
 }) => {
@@ -87,6 +93,15 @@ export const PasskeyList: React.FC<PasskeyListProps> = ({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            <Button
+              minimal
+              small
+              intent={Intent.PRIMARY}
+              icon={<ShieldCheck size={14} />}
+              title={t("account.passkey.testThis", "Test this passkey")}
+              loading={testingId === pk.id}
+              onClick={() => onTestPasskey?.(pk)}
+            />
             <Button
               minimal
               small

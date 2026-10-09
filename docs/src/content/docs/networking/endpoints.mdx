@@ -141,15 +141,9 @@ For Linux systems using `systemd-resolved` (Ubuntu, Debian, Fedora, Arch):
 
 ---
 
-### Routers & Gateways (SmartDNS / OpenWrt / AdGuard Home)
+### Routers & Gateways (OpenWrt / AdGuard Home)
 
 If you run a local gateway or router, you can forward all LAN DNS requests to your DNS Worker profile:
-
-#### SmartDNS Configuration (`/etc/smartdns/smartdns.conf`):
-```ini
-server-tls <dotDomain>:853 -tls-host-verify <profileKey>.<dotDomain> -group worker
-server-https https://<domain>/dns-query/<profileKey> -group worker
-```
 
 #### AdGuard Home Upstream:
 In AdGuard Home **Settings** → **DNS Settings** → **Upstream DNS servers**, add:
