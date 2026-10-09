@@ -10,8 +10,8 @@ description: Cloudflare Workers 边缘模式 (首选推荐) 与独立服务器 S
 | 特性维度 | ☁️ Cloudflare Workers 边缘模式 (首选推荐) | 🖥️ 独立服务器 / VPS (Serverfull 自建可选) |
 |---|---|---|
 | **核心价值** | **全球极速 Anycast 边缘加速、免服务器运维** | 100% 数据自主、家庭局域网与路由器 UDP 53、安卓 DoT |
-| **运行平台** | **Cloudflare 全球 300+ 边缘数据中心** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) |
-| **存储后端** | **Cloudflare D1 (全球分布式 SQL 数据库)** | Node.js 原生内置 SQLite (`node:sqlite`) |
+| **运行平台** | **Cloudflare 全球 300+ 边缘数据中心** | Linux / VPS / macOS / Windows (`Node.js >= 22.5` / `Bun >= 1.4`) |
+| **存储后端** | **Cloudflare D1 (全球分布式 SQL 数据库)** | 原生内置 SQLite (`node:sqlite`) |
 | **支持协议** | **DoH** (RFC 8484，支持 HTTP/2 与 HTTP/3) | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** |
 | **运维成本** | **完全零服务器运维**，全球弹性自适应伸缩 | 需自行维护服务器操作系统、防火墙规则与常驻服务 |
 | **路由器 / 内网接入** | 需前置 DoH 转发客户端（如 SmartDNS、OpenWrt、AdGuard Home） | **原生支持 UDP 53**（路由器 DNS 直接填写服务器 IP） |

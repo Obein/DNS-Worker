@@ -6,7 +6,9 @@ description: Deploy and operate DNS Worker independently on Linux, macOS, or Win
 DNS Worker can run completely independent of Cloudflare Workers on your own VPS, home server, or virtual machine.
 
 ## System Requirements
-- **Node.js**: `>= 22.5.0` (Latest LTS recommended for built-in `node:sqlite`)
+- **Runtime (Node.js / Bun)**:
+  - **Node.js**: `>= 22.5.0` (Recommended, LTS with built-in `node:sqlite`)
+  - **Bun**: `>= 1.4.0` (Supported with built-in `node:sqlite` compatibility layer)
 - **Memory**: Minimum 256MB RAM (512MB+ recommended)
 - **Network Ports**:
   - UDP 53 (Classic DNS, optional)

@@ -38,7 +38,7 @@ DNS Worker 定期執行週期性資料庫整理：
 ```
 
 - **Cloudflare Workers 模式**：通過 Cloudflare Cron Triggers（`scheduled(event, env, ctx)` 入口）定時觸發。
-- **獨立伺服器模式 (Serverfull)**：由程序內建的高精度定時排程器常駐排程。
+- **獨立伺服器模式 (Serverfull Node.js / Bun)**：由程序內建的高精度定時排程器常駐排程。
 
 ---
 

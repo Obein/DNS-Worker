@@ -6,7 +6,9 @@ description: 详细讲解在 Linux / Windows 物理机或 VPS 上独立部署 DN
 DNS Worker 可以完全脱离 Cloudflare Workers，直接在 Linux、Windows、macOS 服务器或虚拟机上以独立服务模式运行。
 
 ## 系统要求
-- **Node.js**：`>= 22.5.0`（推荐使用当前活跃的 LTS 版本，内建 `node:sqlite`）
+- **运行时 (Node.js / Bun)**：
+  - **Node.js**：`>= 22.5.0`（推荐首选，活跃 LTS 版本原生内建 `node:sqlite`）
+  - **Bun**：`>= 1.4.0`（实验性支持，需具备 `node:sqlite` 兼容层）
 - **内存**：最低 256MB，推荐 512MB 以上
 - **端口要求**：
   - UDP 53（传统 DNS，可选）

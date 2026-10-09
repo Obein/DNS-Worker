@@ -1,6 +1,7 @@
 node_modules
 static
 dist
+dist-*
 build
 .wrangler
 package-lock.json

@@ -10,8 +10,8 @@ description: Cloudflare Workers 邊緣模式 (首選推薦) 與獨立伺服器 S
 | 特性維度 | ☁️ Cloudflare Workers 邊緣模式 (首選推薦) | 🖥️ 獨立伺服器 / VPS (Serverfull 自建可選) |
 |---|---|---|
 | **核心價值** | **全球極速 Anycast 邊緣加速、免伺服器運維** | 100% 資料自主、家庭區域網與路由器 UDP 53、安卓 DoT |
-| **執行平臺** | **Cloudflare 全球 300+ 邊緣資料中心** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`) |
-| **儲存後端** | **Cloudflare D1 (全球分散式 SQL 資料庫)** | Node.js 原生內建 SQLite (`node:sqlite`) |
+| **執行平臺** | **Cloudflare 全球 300+ 邊緣資料中心** | Linux / VPS / macOS / Windows (`Node.js >= 22.5` / `Bun >= 1.4`) |
+| **儲存後端** | **Cloudflare D1 (全球分散式 SQL 資料庫)** | 原生內建 SQLite (`node:sqlite`) |
 | **支援協議** | **DoH** (RFC 8484，支援 HTTP/2 與 HTTP/3) | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** |
 | **運維成本** | **完全零伺服器運維**，全球彈性自適應伸縮 | 需自行維護伺服器作業系統、防火牆規則與常駐服務 |
 | **路由器 / 內網接入** | 需前置 DoH 轉發客戶端（如 SmartDNS、OpenWrt、AdGuard Home） | **原生支援 UDP 53**（路由器 DNS 直接填寫伺服器 IP） |

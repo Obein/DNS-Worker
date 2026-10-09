@@ -38,7 +38,7 @@ DNS Worker maintains database health through scheduled background tasks:
 ```
 
 - **Cloudflare Workers Mode**: Executed via Cloudflare Cron Triggers (`scheduled(event, env, ctx)` handler).
-- **Serverfull Node.js Mode**: Executed via background interval timers managed directly within the process.
+- **Serverfull Node.js / Bun Mode**: Executed via background interval timers managed directly within the process.
 
 ---
 
