@@ -42,6 +42,24 @@ import { handleResetCommand } from './reset';
 import { buildCloudflareEchConfig } from '../utils/ech';
 
 function checkNodeVersion(): void {
+  const bunVersion = (process.versions as Record<string, string | undefined>).bun;
+  if (bunVersion) {
+    const [bMajor, bMinor] = bunVersion.split('.').map(Number);
+    if (bMajor < 1 || (bMajor === 1 && bMinor < 4)) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'DNS Worker - Environment Error',
+        message: `Bun >= 1.4.0 is required for built-in node:sqlite support (found Bun v${bunVersion}).`,
+        solutions: [
+          'Please upgrade Bun to version 1.4.0 or higher.',
+          'Alternatively, run with Node.js >= 22.5.0 (Recommended).'
+        ]
+      }));
+      process.exit(1);
+    }
+    return;
+  }
+
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (major < 22 || (major === 22 && minor < 5)) {
     console.error(formatDiagnostic({
