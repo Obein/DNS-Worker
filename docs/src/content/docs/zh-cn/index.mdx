@@ -3,7 +3,7 @@ title: DNS Worker 用户文档
 description: 隐私优先 Protective DNS 解析器 & DoH / DoT 服务端，双引擎自主架构。
 template: splash
 hero:
-  tagline: 保护您的互联网第一跳 · 全栈协议覆盖 · 本地优先 0ms 分析 · NIST FIPS 203 后量子零知识 E2EE
+  tagline: 守护您的互联网第一跳 · 智能广告与恶意威胁拦截 · 全栈协议覆盖 · 本地优先 0ms 分析 · NIST FIPS 203 后量子零知识 E2EE
   image:
     file: ../../../assets/logo.webp
   actions:
@@ -23,6 +23,12 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
   <Card title="Serverless 边缘优先" icon="rocket">
     专为 Cloudflare Workers & D1 打造，全球 300+ 边缘数据中心免运维运行；同时支持在自有 VPS / 路由器上独立部署 Serverfull 模式。
   </Card>
+  <Card title="智能广告与恶意威胁拦截" icon="magnifier">
+    内置企业级保护性 DNS 引擎，在网络底层即时拦截侵入式广告、全网遥测追踪、钓鱼欺诈与恶意软件。基于双层布隆过滤器与前缀树双重加速，实现亚毫秒级低延迟与 0 误报。
+  </Card>
+  <Card title="自定义规则与多接入点隔离" icon="list-format">
+    无缝订阅主流规则源（OISD、AdGuard、HaGeZi、StevenBlack 等），灵活配置自定义白名单/黑名单与 DNS 重写，并通过独立的接入点密钥实现设备级分流管控。
+  </Card>
   <Card title="全栈协议覆盖" icon="setting">
     原生支持 Classic UDP 53、DoT 853（TLS SNI 路由）、DoH（RFC 8484 over HTTP/2 & HTTP/3）、DoQ（RFC 9250）与 ECH / DDR（RFC 9460）。
   </Card>
@@ -33,3 +39,17 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
     嵌入浏览器端 SQLite（WASM + OPFS）驱动，日志筛选与统计图表 0ms 瞬间渲染，离线可用且彻底节省数据库读配额。
   </Card>
 </CardGrid>
+
+---
+
+## 🛡️ 企业级广告与恶意域名拦截
+
+DNS Worker 从底层架构起即作为**保护性 DNS（Protective DNS）**设计，在网络最基础的解析层为所有设备提供全天候威胁防御与隐私屏障：
+
+- **广告与全网遥测静默屏蔽**：无需在终端安装繁重的过滤插件，即可在路由器、手机、平板与电视盒子全局屏蔽横幅广告、视频贴片、诱导弹窗以及 Windows / Android 系统级诊断遥测。
+- **主动威胁防御与反钓鱼**：实时拦截木马分发点、勒索病毒回调、钓鱼诈骗页面、挖矿脚本以及僵尸网络命令与控制（C2）恶意域名。
+- **双层极速匹配引擎**：融合紧凑布隆过滤器（Bloom Filter 初筛）与前缀树（Trie 精确验证），毫秒级并发评估数十万条规则，兼顾极限性能与 0 误报。
+- **灵活完备的规则体系**：开箱即用支持主流精选规则源（OISD Big、AdGuard Base、HaGeZi Multi PRO++、StevenBlack Hosts），并支持自定义精确/通配符/正则白名单与黑名单，以及局域网 DNS 重写映射。
+- **实时审计与威胁日志**：直观展示放行（PASS）、阻断（BLOCK）与重写（REWRITE）状态，一键展开抽屉深入排查拦截规则归属、客户端来源及解析耗时。
+
+👉 [查看完整配置指南：域名过滤与威胁拦截](/DNS-Worker/zh-cn/filtering/rules/)
