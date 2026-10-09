@@ -27,6 +27,8 @@
     "build:serverfull": "npm run ui:build && npx esbuild src/serverfull/index.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/serverfull.mjs --banner:js=\"#!/usr/bin/env node\" --external:node:sqlite --minify --sourcemap --tree-shaking=true --legal-comments=none",
     "prepublishOnly": "npm run build:serverfull",
     "service-create:linux": "tsx scripts/create-linux-service.ts",
+    "docs:dev": "npm --prefix docs run dev",
+    "docs:build": "npm --prefix docs run build",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",
     "build": "npm run ui:build",

@@ -7,387 +7,83 @@
     English | <a href="README_zh-CN.md">中文 (简体)</a> | <a href="README_zh-TW.md">中文 (正體)</a>
   </p>
 
-  [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
-  [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
-  [![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5%20(LTS%20Recommended)-green.svg)](https://nodejs.org/)
-  [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
-  [![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](#-dual-engine-architecture--deployment-matrix)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
+[![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5%20(LTS%20Recommended)-green.svg)](https://nodejs.org/)
+[![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
+[![Docs: Astro Starlight](https://img.shields.io/badge/Docs-Astro%20Starlight-blueviolet.svg)](https://obein.github.io/DNS-Worker/)
+[![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](https://obein.github.io/DNS-Worker/deployment/matrix/)
+
 </div>
 
 ---
 
 ## 📖 Introduction
 
-**DNS Worker**, a privacy-first protective DNS resolution system built with a **Dual-Engine Architecture**. It can be deployed either as a zero-maintenance serverless application on Cloudflare Workers edge network, or run completely independent of Cloudflare as a standalone server on your own VPS, home server, or bare-metal machine (Linux, macOS, Windows) with native SQLite storage.
+**DNS Worker** is a privacy-first protective DNS resolution system built with an innovative **Dual-Engine Architecture**:
+- **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (TLS SNI routing for Android Private DNS), and local SQLite.
+- **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance.
 
+> 📚 **Official Documentation Site**  
+> For full deployment tutorials, dual-engine comparison matrix, TLS certificate & permission best practices, environment variable dictionary, and troubleshooting:  
+> 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
+
+### Quick Start
+
+#### Option A: Standalone Server via npm
+```bash
+# Install globally and run
+npm install -g dns-worker
+dns-worker config init
+dns-worker
+# Web Dashboard: http://localhost:10080
+```
+
+#### Option B: Deploy to Cloudflare Workers
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
 
-### What is DNS over HTTPS (DoH) & DNS over TLS (DoT)?
-
-* **DNS over HTTPS (DoH / RFC 8484)**: Performs DNS queries over encrypted HTTPS connections. DNS Worker exposes DoH endpoints compatible with all modern browsers, operating systems, and stub resolvers.
-* **DNS over TLS (DoT / RFC 7858)**: Encrypts DNS queries directly over TLS on dedicated port 853. DNS Worker Standalone mode natively routes incoming DoT requests to isolated user profiles using TLS Server Name Indication (SNI), making it ideal for Android 9+ native Private DNS.
-
----
-
-## ✨ Core Features
-
--   🌐 **Dual-Engine Deployment**: Run serverless on Cloudflare Workers edge, or run standalone on any VPS / home server with zero Cloudflare dependency.
--   ⚡ **Full-Stack Protocol Support**:
-    -   **Classic UDP 53**: Standard RFC 1035 DNS for routers and LAN devices.
-    -   **DoT 853 (DNS over TLS)**: RFC 7858 encrypted DNS with TLS SNI profile routing (`<profile_key>.dns.example.com`), natively compatible with Android Private DNS.
-    -   **DoH (DNS over HTTPS)**: RFC 8484 encrypted DNS over HTTP/2 and HTTP/3 (Alt-Svc).
-    -   **DoQ (DNS over QUIC)**: Compatible with RFC 9250 encrypted DNS with 0-RTT handshake; upstream & client support for `quic://` / `doq://` endpoints and DNS Stamp 0x04.
-    -   **ECH (Encrypted Client Hello)**: RFC 9460 HTTPS/SVCB and RFC 9460 Section 8 DDR (Discovery of Designated Resolvers) support, broadcasting outer SNI and ECHConfigList.
--   🚀 **Ultra-fast Resolution**: Edge-accelerated caching and multi-tier memory pipelines for sub-millisecond query responses.
--   🗒️ **Multi-Profile Management**: Create independent configurations with isolated endpoints, rules, and upstream settings.
--   🛡️ **Granular Filtering**:
-    -   **Allow/Block Lists**: Exact domain and wildcard subdomain matching.
-    -   **Third-Party Rule Sets**: Subscribe to external blocklists (AdGuard, EasyList, hosts syntax) with fast Bloom filter matching.
-    -   **Custom Redirections**: Override A, AAAA, TXT, and CNAME records with custom answers.
--   📊 **Real-time Stats & Logs**: Visual dashboard recording query type, hit reason, client geo-location, and upstream latency.
--   🔐 **Privacy Controls**: Flexible ECS (EDNS Client Subnet) management (Forward, Custom, or Hidden).
--   🔒 **Rewrite ECH & ECH Fronting**: Automatically injects/rewrites Encrypted Client Hello (ECH) parameters and outer SNI for HTTPS (Type 65) / SVCB (Type 64) queries to eliminate plaintext SNI leakage *(Note: ECH rewriting is supported for domains proxied by Cloudflare)*.
--   ⚡ **Local-First Architecture**: Embedded in-browser SQLite (WASM + OPFS) and Web Workers deliver instant 0ms log filtering and aggregation without cloud queries. Background bidirectional sync keeps data aligned while saving database read quotas.
--   🛡️ **Post-Quantum Zero-Knowledge E2EE**: Hardware Passkey (WebAuthn) and Recovery Key protected End-to-End Encryption for query logs. Implements NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography with hourly rotating KEM DEKs. Persistent storage holds only irreversible ciphertexts; decryption occurs strictly on your authorized client devices.
--   🌗 **Modern UI**: High-density management panel with dark mode, built with React + BlueprintJS.
+### Key Highlights
+- ⚡ **Full-Stack Protocols**: UDP 53, DoT 853, DoH (HTTP/2 & HTTP/3), DoQ (RFC 9250), ECH & DDR (RFC 9460).
+- 🛡️ **Post-Quantum Zero-Knowledge E2EE**: NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography + Hardware Passkeys (WebAuthn).
+- 🚀 **Local-First Architecture**: Embedded in-browser WebAssembly SQLite + OPFS for instant 0ms log analytics and charting.
+- 🛡️ **Granular Protection**: Wildcard filtering, Bloom filter accelerated blocklist subscriptions, custom overrides, and ECH fronting.
 
 ---
 
-## 🖼️ Quick Look
+## 🖼️ Preview
 
-| User Login |
-|:---:|
-| ![Login](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-login.webp) |
-
-| Setup Guide | Endpoints |
+| Analytics & Insights | Destinations Map |
 |:---:|:---:|
-| ![Setup](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-setup.webp) | ![Endpoints](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) |
+| ![Analytics](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
-| Real-time Analytics | Request Destinations |
-|:---:|:---:|
-| ![Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
-
-| Rule Management | External Filters |
+| Rules Configuration | Filter Subscriptions |
 |:---:|:---:|
 | ![Rules](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) | ![Filters](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) |
 
-| Resolution Logs | Log Detail |
+| Query Logs | Mobile Responsive |
 |:---:|:---:|
-| ![Resolution Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![Log Detail](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log_detail.webp) |
+| ![Query Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
 
-| Profile Settings | Profile Select |
-|:---:|:---:|
-| ![Settings](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-settings.webp) | ![Profile Select](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-profile_select.webp) |
-
-| Mobile Logs | Mobile Stats |
-|:---:|:---:|
-| ![Mobile Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) | ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
+> 💡 For live demonstrations and endpoints setup, visit your Web Dashboard after launch or refer to the [Official Documentation](https://obein.github.io/DNS-Worker/).
 
 ---
 
-## 🛠️ Technical Architecture
+## 💪 Motivation & Ecosystem
 
-### Code Structure
-```text
-├── src/
-│   ├── index.ts          # Cloudflare Worker entry point, handles HTTP routing & DoH
-│   ├── serverfull/       # Standalone Server entry point (UDP 53, DoT 853, HTTP 3000)
-│   │   ├── index.ts      # Serverfull CLI & Master bootstrap
-│   │   ├── udp.ts        # Classic RFC 1035 UDP 53 DNS Server
-│   │   ├── dot.ts        # RFC 7858 DoT 853 Server with SNI Profile routing
-│   │   ├── http.ts       # Web Dashboard & DoH HTTP server
-│   │   └── db.ts         # Native Node.js SQLite (node:sqlite) adapter & migrator
-│   ├── types.ts          # Type definitions
-│   ├── api/              # API Controllers (Auth, Account, Profiles)
-│   ├── lib/              # Core logic (RBAC, Rule filtering, PQC Crypto, DEK manager)
-│   ├── models/           # Database models (Unified D1 & SQLite)
-│   ├── pipeline/         # DNS Resolution Pipeline (Unified core business logic)
-│   └── utils/            # Utilities (Cache, GeoIP, DNS Codec, Bloom Filter)
-├── web/                  # React/BlueprintJS UI frontend (Local-First WASM + OPFS)
-│   ├── public/           # Public static files
-│   ├── src/              # Frontend source code
-│   │   ├── assets/       # Static assets (images, icons, etc.)
-│   │   ├── components/   # Reusable UI components
-│   │   ├── i18n/         # Internationalization (i18n) configuration
-│   │   ├── layouts/      # Layout components (dashboard layout, etc.)
-│   │   ├── routes/       # Frontend routing configuration
-│   │   ├── services/     # Centralized API service wrappers (Auth, Account, Profiles, etc.)
-│   │   ├── views/        # Main pages / views (dashboard, logs, settings, setup, etc.)
-│   │   └── utils/        # Utility helpers and functions
-│   └── package.json      # Frontend dependencies configuration
-├── static/               # Compiled static resources
-├── scripts/              # Automation scripts (e.g., Linux systemd service generator)
-├── migrations/           # Unified SQL Database migration scripts
-└── wrangler.toml         # Cloudflare deployment configuration
-```
+DNS Worker stands on the shoulders of modern open-source infrastructure and cryptography:
 
-### Resolution Pipeline
-When a DNS request arrives, it goes through the following processing stages:
-1.  **Memory Cache Check**: Checks if a valid response for the query exists in the edge node's memory.
-2.  **Config Loading**: Layers profile settings loading from Memory -> Cache API -> Database (D1 or SQLite).
-3.  **Local Rule Matching**:
-    -   **Whitelist**: If hit, forwards directly to upstream and returns.
-    -   **Redirection**: If hit, returns custom records.
-    -   **Blacklist**: If hit, returns NXDOMAIN, 0.0.0.0, or a custom result.
-4.  **External List Filtering**:
-    -   Use a **Bloom filter** for fast filtering.
-5.  **Upstream Resolution**: If none of the above hit, requests the upstream DoH server based on configuration, with optional ECS support.
-6.  **Async Logging & Caching**: Asynchronously records resolution logs (with optional PQC E2EE encryption), fetches target GeoIP, and writes results to various cache levels.
-
----
-
-## 🚀 Deployment Guide
-
-DNS Worker offers two deployment methods tailored to different operational needs:
-* **Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)** — Best if you want complete control, classic UDP 53 for routers, and native Android DoT 853 on your own machine.
-* **Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)** — Best if you want a globally distributed, zero-cost, zero-maintenance DoH resolver on 300+ edge PoPs.
-
----
-
-### Option A: 🖥️ Standalone Server / VPS (Cloudflare-Free, Full Sovereignty)
-
-Run DNS Worker directly on any Linux, Windows, or macOS host with Node.js `>= 22.5.0` (Latest LTS recommended, using built-in `node:sqlite`). No Cloudflare account, tokens, or external databases required.
-
-#### Features in Standalone Mode
-* **Classic UDP DNS (Port 53)**: Standard RFC 1035 UDP DNS resolution service for routers or system DNS settings.
-* **DNS over TLS / DoT (Port 853)**: RFC 7858 encrypted DNS, natively supported by Android 9+ "Private DNS", with SNI-based Profile routing (e.g. `<profile_key>.dns.example.com`).
-* **Web Dashboard & DoH**: Plain HTTP (Default Port 10080) and Secure HTTPS (Default Port 10443, activated when TLS certificates are configured). Full-featured React management dashboard and REST API.
-* **Local SQLite Database**: Automatically executes schema migrations out-of-the-box without cloud dependencies.
-
-#### Environment Variables (Configure in `.env.serverfull`, `.env`, or system environment)
-
-| Environment Variable | Description | Default / Example |
-|---|---|---|
-| `SERVERFULL_TLS_KEY_PATH` | Absolute path to TLS private key file (PEM format, alias: `SERFULL_TLS_KEY_PATH`) | `/etc/letsencrypt/live/example.com/privkey.pem` |
-| `SERVERFULL_TLS_CERT_PATH` | Absolute path to TLS certificate chain file (PEM format, alias: `SERVERFULL_TLS_PUB_PATH`) | `/etc/letsencrypt/live/example.com/fullchain.pem` |
-| `SERVERFULL_DOT_DOMAIN` | Base domain name for DoT & HTTPS service (wildcard & single-domain compatible, alias: `DOT_DOMAIN`) | `dns.example.com` |
-| `SERVERFULL_ECH_ENABLED` | Broadcast and enable ECH (Encrypted Client Hello) | `true` |
-| `SERVERFULL_ECH_CONFIG` | Custom Base64-encoded ECHConfigList (optional) | Auto-generated |
-| `SERVERFULL_ECH_FRONTING_DOMAIN` | ECH outer SNI fronting domain (public_name) | `cloudflare-ech.com` |
-| `SERVERFULL_UDP_PORT` | Classic UDP DNS listening port | `53` |
-| `SERVERFULL_DOT_PORT` | DoT (TLS) listening port | `853` |
-| `SERVERFULL_HTTP_PORT` | HTTP Web Dashboard & DoH listening port | `10080` |
-| `SERVERFULL_HTTPS_PORT` | HTTPS Web Dashboard & DoH listening port (requires valid TLS cert) | `10443` |
-| `SERVERFULL_DISABLE_HTTPS` | Disable HTTPS Web Dashboard server | `false` |
-| `SERVERFULL_HOST` | Listening host IP | `0.0.0.0` |
-| `SERVERFULL_DB_PATH` | Local SQLite database file path | Linux: `/var/lib/dns-worker/dns_worker.sqlite`, Windows: `%ProgramData%\DNS-Worker\dns_worker.sqlite` |
-| `SERVERFULL_DEFAULT_PROFILE_KEY` | Default Profile key when no SNI or profile identifier is provided | First created profile |
-| `JWT_SECRET` | Session authentication token secret key | Auto-generated secure random string |
-
-#### Quick Start
-
-##### Method 1: Global npm Installation or npx (Recommended)
-```bash
-# Install globally
-npm install -g dns-worker
-
-# Initialize configuration and persistent directories (/etc/dns-worker/.env)
-dns-worker config init
-
-# Start server for testing
-dns-worker
-```
-
-##### Method 2: Run from Cloned Source
-```bash
-git clone https://github.com/Obein/DNS-Worker.git DNS-Worker
-cd DNS-Worker
-npm install
-cp .env.serverfull .env
-npm run start:serverfull
-```
-
-#### Background Service Management (Linux systemd & Windows)
-
-DNS Worker provides built-in lifecycle management for background services. On Linux, it provisions a systemd unit with `CAP_NET_BIND_SERVICE` privileges; on Windows, it creates a Scheduled Task:
-
-```bash
-# Install and register system service (runs unprivileged as invoking user by default, optional --user)
-sudo dns-worker service install [--user <username>]
-
-# Common service management commands
-sudo dns-worker service status     # Inspect live status
-sudo dns-worker service logs       # Tail real-time service logs
-sudo dns-worker service restart    # Restart service
-sudo dns-worker service enable     # Enable autostart on system boot
-sudo dns-worker service disable    # Disable autostart on system boot
-sudo dns-worker service stop       # Stop service
-sudo dns-worker service uninstall  # Completely remove service
-```
-
-> **From Source Repository**: You can also run `sudo npm run service-create:linux` in the project root directory.
-
-#### TLS Certificate Configuration & Security Best Practices
-
-##### 1. Service Privileges & Principle of Least Privilege
-To follow the Linux **Principle of Least Privilege**, the background service installs and runs as an unprivileged user (the invoking user when calling `sudo`) by default. Linux kernel capabilities (`AmbientCapabilities=CAP_NET_BIND_SERVICE`) are granted to bind privileged ports 53 (UDP DNS) and 853 (DoT) without running the Node.js runtime as root.
-
-##### 2. Let's Encrypt / Certbot Permissions
-Certbot generates certificates with `0700 (root:root)` on parent directories and `0600 (root:root)` on private keys (`privkey.pem`). An unprivileged user cannot read them by default, leading to `Permission denied (EACCES)`. **Never make private keys world-readable (`chmod 644`)**. Choose one of the recommended approaches below:
-
-* **Best Practice: Standard `ssl-cert` Group Delegation (Cleanest, No Root)**
-  ```bash
-  # 1. Ensure the ssl-cert group exists and add the service user to it
-  sudo groupadd -f ssl-cert
-  sudo usermod -a -G ssl-cert <username>
-
-  # 2. Grant group read permission on the private key (0640)
-  sudo chgrp ssl-cert /etc/letsencrypt/live/<your-domain>/privkey.pem
-  sudo chmod 640 /etc/letsencrypt/live/<your-domain>/privkey.pem
-
-  # 3. Allow ssl-cert group traversal through live and archive directories
-  sudo chgrp ssl-cert /etc/letsencrypt/live /etc/letsencrypt/archive
-  sudo chmod 750 /etc/letsencrypt/live /etc/letsencrypt/archive
-
-  # 4. Restart service to apply
-  sudo dns-worker service restart
-  ```
-
-* **Option 2: Isolated Certificate Directory + Certbot Hook (Strict 0600 Isolation)**
-  Copy certificates to `/etc/dns-worker/certs/`, set ownership to the service user, lock private keys to `chmod 600`, and place an automated copy script in `/etc/letsencrypt/renewal-hooks/deploy/`.
-
-* **Option 3: Dedicated Standalone VPS Running as `root`**
-  For dedicated, single-purpose DNS servers with no multi-user sharing, you can install the service as root directly:
-  ```bash
-  sudo dns-worker service install --user root
-  # Or change User=root in /etc/systemd/system/dns-worker.service and run sudo systemctl daemon-reload
-  ```
-
-##### 3. Wildcard Certificate Requirement for DoT
-DoT (DNS over TLS) routes encrypted queries to specific user profiles via TLS Server Name Indication (`<profileKey>.dns.example.com`).
-- Enabling DoT **requires a wildcard certificate** covering both `*.your.domain` and `your.domain`.
-- If a single-domain certificate is configured, the HTTPS Web Dashboard and DoH will run normally, while DoT will remain safely paused (`Paused (Requires Wildcard Certificate *.domain)`).
-- Obtain a free wildcard certificate using Certbot with DNS challenge:
-  ```bash
-  certbot certonly -d *.your.domain -d your.domain --manual --preferred-challenges dns
-  ```
-
----
-
-### Option B: ☁️ Cloudflare Workers Edge (Serverless, Zero Maintenance)
-
-Run DNS Worker across 300+ edge locations worldwide on Cloudflare Workers and D1 database.
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
-
-#### 1. Online Deployment (Cloudflare Dashboard)
-
-1.  **Fork this repo**: Click the `Fork` button at the top right to clone the repository to your own GitHub account.
-2.  **Create D1 Database**: Log in to the Cloudflare dashboard, go to `Workers & Pages` > `D1`, and create a new database (e.g., named `dns_worker_db`), and copy the created database ID.
-3.  **Configure Database ID**: In your forked repository, edit the `wrangler.toml` file and replace `database_id` with the ID of the database you just created.
-4.  **Create Worker**: Go to Cloudflare dashboard `Workers & Pages` > `Create application`.
-5.  **Import from GitHub & Complete Initial Deployment**: On the deployment page, select `Continue with GitHub`, connect your forked project, and complete the authorized deployment. Under the Build & Deploy settings, configure as follows:
-    *   **Build command**: `npm run build`
-    *   **Deploy command**: `npm run deploy`
-    *   **Root directory (Path)**: `/`
-    > ⚠️ **Note**: Environment variables entered in the initial project setup wizard are only injected into the build container and will not take effect as runtime secrets. Proceed with the "Deploy" button directly, and configure runtime secrets in your Worker's settings after the initial deployment finishes.
-6.  **Configure JWT Secret**: After the initial deployment completes, go to Cloudflare Dashboard -> `Workers & Pages` -> click on your Worker -> `Settings` -> `Runtime variables and secrets` (or `Variables and secrets`) -> click `Add`. Set the Name to `JWT_SECRET`, choose type `Secret`, input a secure random string as Value, and click `Deploy` (or `Save and Deploy`).
-7.  **Configure KEK for Envelope Encryption (Optional)**: In the same `Settings` > `Runtime variables and secrets` section after deployment, to enable server-side envelope encryption for sensitive credentials (such as TOTP keys and recovery keys) in D1, add a variable named `KEK_v1`, type `Secret`, and input a secure key value. When you need to rotate the KEK key, add a new secret `KEK_v(N+1)` (e.g. `KEK_v2` -> `KEK_v3`, etc.) sequentially.
-
-#### 2. Local Development & CLI Deployment
-
-##### Prerequisites
--   **Node.js**: v18.x or later (v22.5.0+ recommended)
--   **Package Manager**: npm
--   **Cloudflare Account**: Workers and D1 permissions required
-
-##### Setup & Deployment Steps
-```bash
-# 1. Clone repository and install dependencies
-npm install
-
-# 2. Initialize and migrate local D1 database
-npm run db:setup
-npm run db:migrate:dev
-
-# 3. Configure local environment variables (.dev.vars)
-echo "JWT_SECRET=your_secure_random_string_here" > .dev.vars
-echo "KEK_v1=your_secure_kek_v1_key_string" >> .dev.vars
-
-# 4. Start local development server
-npm run dev
-
-# 5. Deploy to Cloudflare Workers
-npm run deploy
-```
-
----
-
-### Online Deployment to Cloudflare Pages (⚠️ Not Recommended)
-
-If you wish to deploy the project using Cloudflare Pages (Advanced Mode):
-
-> [!WARNING]
-> **Not Recommended**: This project is primarily a DNS resolution service, which is highly sensitive to response latency. Workers, as lightweight edge functions, are much better suited for low-latency DoH resolution tasks compared to Pages Functions. Standard Worker deployment also offers simpler routing and binding management. We strongly suggest deploying via Workers instead.
-
-1.  **Create a D1 Database**, copy its ID, and paste it into the `database_id` field in `wrangler.toml`.
-2.  In the Cloudflare Dashboard, go to `Workers & Pages` > `Create application` > `Pages` > `Connect to Git`.
-3.  Select your forked repository, and configure the build settings:
-    *   **Framework preset**: `None`
-    *   **Build command**: `npm run build:pages`
-    *   **Build output directory**: `static`
-4.  After the initial deployment, go to the Pages project's **Settings** > **Functions** > **D1 database bindings**, and add a binding:
-    *   **Variable name**: `DB`
-    *   **D1 database**: Select your `dns_worker_db` database.
-5.  Redeploy the Pages project for the bindings to take effect.
-
-### ⚖️ Dual-Engine Architecture & Deployment Matrix
-
-Whether you need global edge resolution across 300+ cities or 100% self-hosted data sovereignty with classic UDP 53 and native Android Private DNS (DoT 853), DNS Worker provides an enterprise-grade resolver with granular filtering, instant local-first analytics, and post-quantum end-to-end encrypted query logs.
-
-| Feature / Capability | 🖥️ Standalone Server / VPS (Cloudflare-Free) | ☁️ Cloudflare Workers Edge |
-|---|---|---|
-| **Primary Use Case** | Complete data sovereignty, home lab, direct router DNS, Android DoT | Zero-maintenance, global low-latency edge resolution |
-| **Hosting & Runtime** | Linux / VPS / macOS / Windows (`Node.js >= 22.5.0`, LTS recommended) | Cloudflare Workers Edge Network (300+ PoPs worldwide) |
-| **Storage Backend** | Native Node.js SQLite (`node:sqlite`) on local NVMe/SSD | Cloudflare D1 (Global distributed serverless database) |
-| **Supported Protocols** | **UDP 53** (RFC 1035) + **DoT 853** (RFC 7858) + **DoH** (RFC 8484) | **DoH** (RFC 8484 over HTTPS) |
-| **Data Sovereignty** | **100% Self-Sovereign** — zero cloud vendor lock-in | Edge-encrypted; hosted on Cloudflare infrastructure |
-| **Router & LAN DNS** | **Direct UDP 53 listener** (point router/LAN DNS directly to server) | Requires a DoH client, proxy, or stub resolver upstream |
-| **Android Private DNS** | **Native DoT 853** with SNI Profile routing (`<profile_key>.dns.example.com`) | Supported via DoH URL or third-party DNS app |
-| **Zero-Knowledge PQC E2EE** | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn | ✅ NIST FIPS 203 **P256-MLKEM768** + Passkey WebAuthn |
-| **Local-First Web UI** | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis | ✅ In-browser SQLite WASM + OPFS 0ms instant analysis |
-| **Maintenance & Scaling** | Simple systemd service (`npm run service-create:linux`) | Zero server maintenance; scales automatically |
-| **Cost** | Runs on existing VPS or home server hardware | Free tier for personal usage |
-
----
-
-## 💪 Powered by
-
-* [Cloudflare Workers](https://workers.cloudflare.com/) & [D1 Database](https://developers.cloudflare.com/d1/)
-* [Node.js](https://nodejs.org/) (Native `node:sqlite` Engine)
-
-## 🚚 Dependencies
-
-* [React](https://github.com/facebook/react) & [Blueprint](https://github.com/palantir/blueprint) (Modern high-density UI)
-* [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
-* [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768 Post-Quantum Cryptography)
-* [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WebAssembly SQLite & OPFS Local-First Storage)
+- **Compute & Runtime**: [Node.js](https://nodejs.org/) (native `node:sqlite`) & [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/)
+- **User Interface**: [React](https://github.com/facebook/react), [Blueprint](https://github.com/palantir/blueprint) & [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
+- **Documentation**: [Astro](https://astro.build/) & [Starlight](https://starlight.astro.build/) (lightning-fast, zero-JS static documentation)
+- **Cryptography & Storage**: [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768) & [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WASM + OPFS Local-First driver)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [AGPLv3](LICENSE) License.
-
----
-
-## 📝 Summary
-
-DNS Worker gives you full control over your DNS resolution — with zero compromises on privacy, performance, or flexibility. By supporting both a high-efficiency standalone Node.js server and Cloudflare Workers global edge, it delivers an enterprise-grade Protective DNS system that is:
-
--   **Dual-Engine Versatility**: Run completely Cloudflare-free on your own VPS with classic UDP 53 & DoT 853, or deploy globally on Cloudflare Workers edge for zero-maintenance DoH.
--   **Full-Stack Protocol Support**: Classic UDP 53 for routers, Android Private DNS (DoT 853 with SNI profile routing), and DoH (RFC 8484).
--   **Post-Quantum E2EE**: Protects sensitive DNS query logs using NIST FIPS 203 **P256-MLKEM768** lattice cryptography and hardware Passkeys (WebAuthn).
--   **Local-First Speed**: Instant 0ms log filtering and analytics in your browser via SQLite WASM + OPFS, eliminating unnecessary database read quotas.
--   **Granular Governance**: Multi-profile isolation, custom record redirection, ECH parameter rewriting, and Bloom-filter-accelerated adblocking subscriptions.
-
-Whether protecting a single device, an entire home network, or a distributed organization, DNS Worker provides an elegant, self-sovereign alternative to commercial DNS filtering services.
+Licensed under the [AGPL-3.0](LICENSE) License.
 
 <div align="center">
   <br>
-  <a href="https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker">
-    <img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare">
-  </a>
-  <br><br>
-  <b>If DNS Worker is useful to you, please consider giving it a ⭐</b>
+  <b>If DNS Worker helps you protect your DNS privacy, consider giving it a ⭐</b>
 </div>

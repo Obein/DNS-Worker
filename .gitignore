@@ -12,3 +12,4 @@ data/
 dev-dist
 .dev.vars
 temp_*
+.astro
