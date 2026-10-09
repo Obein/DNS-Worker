@@ -258,10 +258,10 @@
     "windowsStep3": "Bật DoH (Mẫu thủ công) và dán URL.",
     "windowsStep4": "Tắt \"Dự phòng sang bản rõ\" (Fallback to plaintext).",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / DNS riêng tư (DoT & DoQ)",
     "androidDesc": "Hỗ trợ 'DNS riêng tư' gốc của hệ thống (DoT) hoặc ứng dụng bên thứ ba cho DoH.",
-    "androidDotTitle": "DNS riêng tư (DoT - Chế độ Serverfull)",
-    "androidDotDesc": "Cài đặt > Mạng và internet > DNS riêng tư > Tên máy chủ của nhà cung cấp DNS riêng tư:",
+    "androidDotTitle": "DNS riêng tư (DoT / DoQ)",
+    "androidDotDesc": "Cài đặt > Mạng và internet > DNS riêng tư > Tên máy chủ của nhà cung cấp DNS riêng tư (cũng hỗ trợ máy khách DoQ):",
     "androidWildcardHint": "(Chứng chỉ Wildcard, chuyển tiếp đến cấu hình này)",
     "androidSingleDomainHint": "(Chứng chỉ một tên miền, chuyển tiếp đến cấu hình mặc định)",
     "androidIpNotice": "Truy cập qua IP hoặc địa chỉ cục bộ. DNS riêng tư của Android chỉ chấp nhận tên miền; vui lòng cấu hình SERVERFULL_DOT_DOMAIN trong .env (ví dụ dns.example.com).",
@@ -294,7 +294,9 @@
     "h3Desc": "Các trình duyệt hiện đại (Chrome/Firefox/Safari) tự động thương lượng mã hóa HTTP/3 và ECH thông qua bản ghi Alt-Svc và RFC 9460 HTTPS:",
     "ddrHint": "Tích hợp RFC 9460 Phần 8 DDR (Discovery of Designated Resolvers), cho phép máy khách tự động thương lượng và nâng cấp lên DoQ/DoT và ECH qua truy vấn _dns.",
     "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey.",
-    "detecting": "Đang phát hiện..."
+    "detecting": "Đang phát hiện...",
+    "dotUnavailableCfTitle": "DoT / DoQ không khả dụng trong chế độ Cloudflare Worker",
+    "dotUnavailableCfDesc": "Hiện đang chạy ở chế độ Cloudflare Worker (Serverless). Do các giới hạn mạng edge, việc lắng nghe trên cổng TCP/UDP 853 không được hỗ trợ. Để sử dụng DoT hoặc DoQ, hãy triển khai ở chế độ Serverfull; hiện tại vui lòng sử dụng DoH."
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",

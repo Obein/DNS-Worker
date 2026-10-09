@@ -258,10 +258,10 @@
     "windowsStep3": "Activa DoH (plantilla manual) y pega la URL.",
     "windowsStep4": "Desactiva el fallback a texto plano.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / DNS privado (DoT y DoQ)",
     "androidDesc": "Admite 'DNS privado' nativo del sistema (DoT) o aplicaciones de terceros para DoH.",
-    "androidDotTitle": "DNS privado (DoT - Modo Serverfull)",
-    "androidDotDesc": "Ajustes > Redes e Internet > DNS privado > Nombre de host del proveedor de DNS privado:",
+    "androidDotTitle": "DNS privado (DoT / DoQ)",
+    "androidDotDesc": "Ajustes > Redes e Internet > DNS privado > Nombre de host del proveedor de DNS privado (también compatible con clientes DoQ):",
     "androidWildcardHint": "(Certificado comodín, redirige a este perfil)",
     "androidSingleDomainHint": "(Certificado de dominio único, redirige al perfil predeterminado)",
     "androidIpNotice": "Accediendo mediante IP o dirección local. DNS privado de Android solo admite nombres de dominio; configure SERVERFULL_DOT_DOMAIN en .env (ej. dns.example.com).",
@@ -294,7 +294,9 @@
     "h3Desc": "Los navegadores modernos (Chrome/Firefox/Safari) negocian automáticamente HTTP/3 y cifrado ECH a través de registros Alt-Svc y HTTPS RFC 9460:",
     "ddrHint": "Integrado con RFC 9460 Sección 8 DDR (Discovery of Designated Resolvers), lo que permite a los clientes negociar y actualizar automáticamente a DoQ/DoT y ECH mediante consultas _dns.",
     "e2eeDesc": "Cifra los registros DNS en el edge con su clave híbrida poscuántica (P256-MLKEM768). La nube no puede inspeccionarlos; la desencriptación es local mediante su Passkey.",
-    "detecting": "Detectando..."
+    "detecting": "Detectando...",
+    "dotUnavailableCfTitle": "DoT / DoQ no disponible en modo Cloudflare Worker",
+    "dotUnavailableCfDesc": "Actualmente en modo Cloudflare Worker (Serverless). Debido a las restricciones de red, no se admite la escucha en el puerto TCP/UDP 853. Para usar DoT o DoQ, despliegue en modo Serverfull; en este modo, use DoH."
   },
   "rules": {
     "title": "Reglas personalizadas",

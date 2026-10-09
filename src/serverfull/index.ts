@@ -365,6 +365,7 @@ async function bootstrap(): Promise<void> {
   // 3. Inspect TLS certificate and determine HTTPS / DoT availability
   const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
   const canStartHttps = certInfo.configured && certInfo.filesExist && !config.disableHttps;
+  const canStartDot = !config.disableDot && certInfo.configured && certInfo.filesExist && certInfo.isWildcard;
 
   // Print Certbot diagnostic guidance if certificate is not configured or not wildcard
   if (!certInfo.configured || !certInfo.filesExist) {
@@ -379,13 +380,21 @@ async function bootstrap(): Promise<void> {
       ? `https://${config.host}:${config.httpsPort}`
       : 'Disabled (TLS Certificates Not Configured)';
 
+  const dotDisplay = config.disableDot
+    ? 'Disabled (--disable-dot)'
+    : !certInfo.configured || !certInfo.filesExist
+      ? 'Disabled (TLS Certificates Not Configured)'
+      : !certInfo.isWildcard
+        ? 'Paused (Requires Wildcard Certificate *.domain)'
+        : `tls://${config.host}:${config.dotPort}`;
+
   console.log(formatKeyValueSection({
     title: '[Services] Configured Ports & Transports:',
     items: [
       { label: 'Web Dashboard & DoH (HTTP)', value: `http://${config.host}:${config.httpPort}` },
       { label: 'Web Dashboard & DoH (HTTPS)', value: httpsDisplay },
       { label: 'Classic UDP DNS', value: config.disableUdp ? 'Disabled' : `udp://${config.host}:${config.udpPort}` },
-      { label: 'DNS over TLS (DoT)', value: config.disableDot ? 'Disabled' : (certInfo.configured && certInfo.filesExist ? `tls://${config.host}:${config.dotPort}` : 'Disabled (TLS Certificates Not Configured)') }
+      { label: 'DNS over TLS (DoT)', value: dotDisplay }
     ]
   }));
 
@@ -413,7 +422,7 @@ async function bootstrap(): Promise<void> {
     env
   }) : null;
 
-  const dotServer = !config.disableDot ? new DotDnsServer({
+  const dotServer = canStartDot ? new DotDnsServer({
     port: config.dotPort,
     host: config.host,
     tlsKeyPath: config.tlsKeyPath,

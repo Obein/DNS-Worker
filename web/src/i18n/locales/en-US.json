@@ -258,10 +258,10 @@
     "windowsStep3": "Enable DoH (manual template) and paste URL.",
     "windowsStep4": "Disable Fallback to plaintext.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / Private DNS (DoT & DoQ)",
     "androidDesc": "Supports native system Private DNS (DoT) or third-party apps for DoH.",
-    "androidDotTitle": "Private DNS (DoT - Serverfull Mode)",
-    "androidDotDesc": "Settings > Network & internet > Private DNS > Private DNS provider hostname:",
+    "androidDotTitle": "Private DNS (DoT / DoQ)",
+    "androidDotDesc": "Settings > Network & internet > Private DNS > Private DNS provider hostname (also supports modern DoQ clients):",
     "androidWildcardHint": "(Wildcard certificate, routes to this profile)",
     "androidSingleDomainHint": "(Single-domain certificate, routes to default profile)",
     "androidIpNotice": "Accessed via IP or local address. Android Private DNS only accepts domain names; please configure SERVERFULL_DOT_DOMAIN in .env (e.g. dns.example.com) to view hostname guide.",
@@ -294,7 +294,9 @@
     "h3Desc": "Modern browsers (Chrome/Firefox/Safari) automatically negotiate HTTP/3 and ECH encryption via Alt-Svc and RFC 9460 HTTPS records:",
     "ddrHint": "Integrated with RFC 9460 Section 8 DDR (Discovery of Designated Resolvers), enabling clients to automatically negotiate and upgrade to DoQ/DoT and ECH via _dns queries.",
     "e2eeDesc": "Encrypts DNS logs at the edge with your unique post-quantum hybrid key (P256-MLKEM768). The cloud cannot inspect logs; data is decrypted and analyzed only on devices authorized by your hardware Passkey.",
-    "detecting": "Detecting..."
+    "detecting": "Detecting...",
+    "dotUnavailableCfTitle": "DoT / DoQ Unavailable in Cloudflare Worker Mode",
+    "dotUnavailableCfDesc": "Currently running in Cloudflare Worker (Serverless) mode. Due to edge serverless runtime network limitations, listening on raw TCP/UDP port 853 is unsupported. To use DoT or DoQ, deploy in Standalone (Serverfull) mode; in the current mode, please use DoH (DNS over HTTPS)."
   },
   "rules": {
     "title": "Custom Rules",

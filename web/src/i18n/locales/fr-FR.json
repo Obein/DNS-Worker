@@ -258,10 +258,10 @@
     "windowsStep3": "Activez DoH (modèle manuel) et collez l'URL.",
     "windowsStep4": "Désactivez le repli vers les connexions non chiffrées.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / DNS privé (DoT & DoQ)",
     "androidDesc": "Prend en charge le 'DNS privé' natif du système (DoT) ou des applications tierces pour DoH.",
-    "androidDotTitle": "DNS privé (DoT - Mode Serverfull)",
-    "androidDotDesc": "Paramètres > Réseau et Internet > DNS privé > Nom d'hôte du fournisseur DNS privé :",
+    "androidDotTitle": "DNS privé (DoT / DoQ)",
+    "androidDotDesc": "Paramètres > Réseau et Internet > DNS privé > Nom d'hôte du fournisseur DNS privé (prend également en charge les clients DoQ) :",
     "androidWildcardHint": "(Certificat générique, redirige vers ce profil)",
     "androidSingleDomainHint": "(Certificat domaine unique, redirige vers le profil par défaut)",
     "androidIpNotice": "Accès via IP ou adresse locale. Le DNS privé d'Android n'accepte que les noms de domaine ; veuillez configurer SERVERFULL_DOT_DOMAIN dans .env (ex. dns.example.com).",
@@ -294,7 +294,9 @@
     "h3Desc": "Les navigateurs modernes (Chrome/Firefox/Safari) négocient automatiquement HTTP/3 et le chiffrement ECH via les enregistrements Alt-Svc et HTTPS RFC 9460 :",
     "ddrHint": "Intégré avec la section 8 de la RFC 9460 DDR (Discovery of Designated Resolvers), permettant aux clients de négocier et de passer automatiquement à DoQ/DoT et ECH via des requêtes _dns.",
     "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey.",
-    "detecting": "Détection en cours..."
+    "detecting": "Détection en cours...",
+    "dotUnavailableCfTitle": "DoT / DoQ indisponible en mode Cloudflare Worker",
+    "dotUnavailableCfDesc": "Actuellement exécuté en mode Cloudflare Worker (Serverless). En raison des limites du runtime edge, l'écoute sur les ports TCP/UDP 853 n'est pas prise en charge. Pour utiliser DoT ou DoQ, déployez en mode Serverfull ; utilisez DoH pour le moment."
   },
   "rules": {
     "title": "Règles personnalisées",

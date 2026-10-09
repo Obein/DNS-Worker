@@ -130,10 +130,12 @@ export function createHttpRequestHandler(
       }
 
       // Populate fallback geolocation coordinates for serverfull environments without Cloudflare edge proxy
-      if (!headers.has('CF-IPLatitude')) {
+      const currentLatHeader = headers.get('CF-IPLatitude');
+      if (!currentLatHeader || currentLatHeader.trim() === '') {
         headers.set('CF-IPLatitude', '0.0');
       }
-      if (!headers.has('CF-IPLongitude')) {
+      const currentLonHeader = headers.get('CF-IPLongitude');
+      if (!currentLonHeader || currentLonHeader.trim() === '') {
         headers.set('CF-IPLongitude', '0.0');
       }
 
@@ -166,13 +168,32 @@ export function createHttpRequestHandler(
       res.statusCode = response.status;
       res.statusMessage = response.statusText;
 
+      // Extract all Set-Cookie headers properly without Node.js res.setHeader overwriting
+      const rawCookies: string[] = typeof (response.headers as any).getSetCookie === 'function'
+        ? (response.headers as any).getSetCookie()
+        : [];
+
       response.headers.forEach((val, key) => {
-        if (defaultProto === 'https' && key.toLowerCase() === 'alt-svc') {
+        const lowerKey = key.toLowerCase();
+        if (lowerKey === 'set-cookie') {
+          // Handled separately below to support multiple Set-Cookie headers
+          return;
+        }
+        if (defaultProto === 'https' && lowerKey === 'alt-svc') {
           res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400, h3-29=":${port}"; ma=86400`);
         } else {
           res.setHeader(key, val);
         }
       });
+
+      if (rawCookies.length > 0) {
+        // Over plain HTTP (non-TLS), browsers reject cookies marked with 'Secure' (RFC 6265bis).
+        // Adapt outgoing cookies by stripping '; Secure' when accessed over plain http.
+        const adaptedCookies = proto === 'http'
+          ? rawCookies.map((c) => c.replace(/;\s*Secure/gi, ''))
+          : rawCookies;
+        res.setHeader('Set-Cookie', adaptedCookies);
+      }
 
       if (defaultProto === 'https' && !res.hasHeader('Alt-Svc')) {
         res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400, h3-29=":${port}"; ma=86400`);

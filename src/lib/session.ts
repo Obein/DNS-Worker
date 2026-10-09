@@ -147,40 +147,66 @@ export async function rotateSession(
     session_lock_timeout: result.session_lock_timeout
   };
 
-  // Anti-reuse mechanism
-  if (session.rotation_counter !== parsed.v) {
-    // Token reuse detected. Terminate the session immediately.
-    await invalidateSession(env, session.id);
-    return { session: null, user, newRefreshToken: null, reason: "token_reuse" };
-  }
+  const now = Math.floor(Date.now() / 1000);
 
   // Expiration check
-  if (Math.floor(Date.now() / 1000) >= session.expires_at) {
+  if (now >= session.expires_at) {
     await invalidateSession(env, session.id);
     return { session: null, user, newRefreshToken: null, reason: "expired" };
   }
 
-  const now = Math.floor(Date.now() / 1000);
+  // Anti-reuse mechanism with Concurrency Grace Window (RFC 6819 Section 5.2.2.3)
+  const isDirectMatch = session.rotation_counter === parsed.v;
+  const isGraceMatch = session.rotation_counter !== undefined && parsed.v === session.rotation_counter - 1;
+  const lastActive = session.last_active_at || session.created_at;
+  const ROTATION_GRACE_PERIOD_SECONDS = 15;
 
-  // Strict Geolocation Check
-  if (
-    session.latitude === null || session.latitude === undefined ||
-    session.longitude === null || session.longitude === undefined ||
-    currentLat === null || currentLon === null
-  ) {
+  if (!isDirectMatch) {
+    if (isGraceMatch && (now - lastActive <= ROTATION_GRACE_PERIOD_SECONDS)) {
+      // Parallel / in-flight refresh request from the same client session within grace period.
+      // Re-issue access token and current refresh token without advancing the rotation counter again.
+      const currentRefreshToken = createRefreshTokenString(session.id, session.rotation_counter || 1);
+      return { session, user, newRefreshToken: currentRefreshToken };
+    }
+
+    // Token reuse detected outside of grace period. Terminate the session immediately.
     await invalidateSession(env, session.id);
-    return { session: null, user, newRefreshToken: null, reason: "geolocation_missing" };
+    return { session: null, user, newRefreshToken: null, reason: "token_reuse" };
   }
 
-  const distance = calculateDistanceInKm(session.latitude, session.longitude, currentLat, currentLon);
-  const maxDistance = Number(env.SESSION_GEO_DISTANCE_KM) || 50;
-  if (distance > maxDistance) {
-    await invalidateSession(env, session.id);
-    return { session: null, user, newRefreshToken: null, reason: "geolocation_mismatch" };
+  // Geolocation Check
+  const isServerfull = Boolean(
+    env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+    env.SERVERFULL_HOST !== undefined ||
+    env.SERVERFULL_DOT_DOMAIN !== undefined ||
+    env.SERVERFULL_HTTP_PORT !== undefined ||
+    env.SERVERFULL_HTTPS_PORT !== undefined
+  );
+
+  const hasFallbackCoords = (session.latitude === 0 && session.longitude === 0) ||
+                            (currentLat === 0 && currentLon === 0);
+
+  // In Serverfull self-hosted mode or when fallback mock coordinates are present, skip distance check.
+  // In edge mode, enforce distance check if coordinates are present and valid.
+  if (!isServerfull && !hasFallbackCoords) {
+    if (
+      session.latitude === null || session.latitude === undefined ||
+      session.longitude === null || session.longitude === undefined ||
+      currentLat === null || currentLon === null
+    ) {
+      await invalidateSession(env, session.id);
+      return { session: null, user, newRefreshToken: null, reason: "geolocation_missing" };
+    }
+
+    const distance = calculateDistanceInKm(session.latitude, session.longitude, currentLat, currentLon);
+    const maxDistance = Number(env.SESSION_GEO_DISTANCE_KM) || 50;
+    if (distance > maxDistance) {
+      await invalidateSession(env, session.id);
+      return { session: null, user, newRefreshToken: null, reason: "geolocation_mismatch" };
+    }
   }
 
   // Inactivity timeout check during refresh rotation
-  const lastActive = session.last_active_at || session.created_at;
   if (user.pin_hash && !session.is_paused) {
     const timeoutSeconds = (user.session_lock_timeout || 15) * 60;
     if (now - lastActive > timeoutSeconds) {

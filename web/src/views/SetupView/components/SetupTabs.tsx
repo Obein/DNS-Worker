@@ -1,10 +1,11 @@
 import React from "react";
 import { Tabs, Tab, H5, Button, Icon, Intent, Tag, Callout } from "@blueprintjs/core";
-import { Globe, AppWindowMac, Monitor, Terminal, Smartphone, Router, ExternalLink, Zap } from "lucide-react";
+import { Globe, AppWindowMac, Monitor, Terminal, Smartphone, Router, ExternalLink } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
 import { generateMobileConfig, formatProfileLabel, extractDomain } from "../../../utils/mobileconfig";
 import { StepStampWatermark } from "./StepStampWatermark";
+import { useDeploymentMode } from "../../../hooks/useDeploymentMode";
 
 export interface SetupTabsProps {
   isMobile: boolean;
@@ -26,6 +27,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
   dotDomain,
 }) => {
   const { t } = useTranslation();
+  const { isCloudflare } = useDeploymentMode();
 
   return (
     <div className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
@@ -247,171 +249,70 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
             <H5 className="font-bold">{t("setup.androidTitle")}</H5>
             <p className="text-sm">{t("setup.androidDesc")}</p>
 
-            {(() => {
-              const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(window.location.hostname) ||
-                                  window.location.hostname === "localhost" ||
-                                  window.location.hostname === "127.0.0.1" ||
-                                  window.location.hostname.includes(":");
-              const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
-              const effectiveDotDomain = cleanBaseDomain || (!isIpAddress ? window.location.hostname : "");
+            {isCloudflare ? (
+              <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
+                <div className="font-semibold mb-1">{t("setup.dotUnavailableCfTitle")}</div>
+                <div>{t("setup.dotUnavailableCfDesc")}</div>
+              </Callout>
+            ) : (
+              (() => {
+                const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(window.location.hostname) ||
+                                    window.location.hostname === "localhost" ||
+                                    window.location.hostname === "127.0.0.1" ||
+                                    window.location.hostname.includes(":");
+                const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
+                const effectiveDotDomain = cleanBaseDomain || (!isIpAddress ? window.location.hostname : "");
 
-              return (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                  <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    {t("setup.androidDotTitle", "私有 DNS (DoT - Serverfull 模式)")}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {t("setup.androidDotDesc", "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：")}
-                  </p>
-
-                  {effectiveDotDomain ? (
-                    <div className="space-y-3 pt-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                        <Tag
-                          minimal
-                          interactive
-                          onClick={() => copyToClipboard(`${profileKey}.${effectiveDotDomain}`)}
-                          icon="duplicate"
-                          className="font-mono text-xs sm:text-sm py-1 px-3 self-start"
-                          intent={Intent.PRIMARY}
-                        >
-                          {`${profileKey}.${effectiveDotDomain}`}
-                        </Tag>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                          {t("setup.androidWildcardHint", "(通配符证书，路由至此配置)")}
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                        <Tag
-                          minimal
-                          interactive
-                          onClick={() => copyToClipboard(effectiveDotDomain)}
-                          icon="duplicate"
-                          className="font-mono text-xs py-0.5 px-2.5 opacity-80 self-start"
-                        >
-                          {effectiveDotDomain}
-                        </Tag>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                          {t("setup.androidSingleDomainHint", "(单域名证书，路由至默认配置)")}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
-                      {t("setup.androidIpNotice", "检测到当前通过 IP 或本地地址访问面板。Android 原生私有 DNS 仅接受域名，请在 .env 中配置 SERVERFULL_DOT_DOMAIN (例如 dns.example.com) 后刷新。")}
-                    </Callout>
-                  )}
-                </div>
-              );
-            })()}
-
-            <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
-              {t("setup.androidWarning")}
-            </Callout>
-          </div>
-        }
-      />
-
-      <Tab
-        id="quic"
-        title={
-          <span>
-            <Zap size={16} className="inline mr-2" />
-            {t("setup.quic", "QUIC & HTTP/3")}
-          </span>
-        }
-        panel={
-          <div className="space-y-4 md:ml-4 mt-4 md:mt-0">
-            <H5 className="font-bold">{t("setup.quicTitle", "DNS over QUIC (DoQ) & HTTP/3 (DoH3)")}</H5>
-            <p className="text-sm">{t("setup.quicDesc", "原生支持 RFC 9250 (DNS over QUIC) 与 RFC 9460 (HTTP/3 & Encrypted Client Hello)，具备 0-RTT 极速握手与防 SNI 窥探能力。")}</p>
-
-            {(() => {
-              const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(window.location.hostname) ||
-                                  window.location.hostname === "localhost" ||
-                                  window.location.hostname === "127.0.0.1" ||
-                                  window.location.hostname.includes(":");
-              const cleanBaseDomain = (dotDomain || "").trim().replace(/^\*\./, "");
-              const effectiveHost = cleanBaseDomain || (!isIpAddress ? window.location.hostname : "");
-              const doh3Url = `${window.location.origin}/${profileKey}`;
-              const doqWildcardUrl = effectiveHost ? `quic://${profileKey}.${effectiveHost}:853` : "";
-              const doqSingleUrl = effectiveHost ? `quic://${effectiveHost}:853` : "";
-
-              return (
-                <div className="space-y-4">
+                return (
                   <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
                     <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      {t("setup.doqTitle", "DNS over QUIC (DoQ - RFC 9250)")}
+                      {t("setup.androidDotTitle", "私有 DNS (DoT / DoQ)")}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {t("setup.doqAppHint", "适用于 AdGuard、Clash Meta (Mihomo)、Sing-box 等现代客户端：")}
+                      {t("setup.androidDotDesc", "支持 Android 原生“私有 DNS (DoT)”及各类现代 DoQ 客户端。提供商主机名：")}
                     </p>
 
-                    {effectiveHost ? (
+                    {effectiveDotDomain ? (
                       <div className="space-y-3 pt-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                           <Tag
                             minimal
                             interactive
-                            onClick={() => copyToClipboard(doqWildcardUrl)}
+                            onClick={() => copyToClipboard(`${profileKey}.${effectiveDotDomain}`)}
                             icon="duplicate"
                             className="font-mono text-xs sm:text-sm py-1 px-3 self-start"
                             intent={Intent.PRIMARY}
                           >
-                            {doqWildcardUrl}
+                            {`${profileKey}.${effectiveDotDomain}`}
                           </Tag>
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                            {t("setup.doqWildcardHint", "(通配符证书，路由至此配置)")}
-                          </span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                           <Tag
                             minimal
                             interactive
-                            onClick={() => copyToClipboard(doqSingleUrl)}
+                            onClick={() => copyToClipboard(`quic://${profileKey}.${effectiveDotDomain}:853`)}
                             icon="duplicate"
                             className="font-mono text-xs py-0.5 px-2.5 opacity-80 self-start"
                           >
-                            {doqSingleUrl}
+                            {`quic://${profileKey}.${effectiveDotDomain}:853`}
                           </Tag>
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                            {t("setup.doqSingleDomainHint", "(单域名证书，路由至默认配置)")}
-                          </span>
                         </div>
                       </div>
                     ) : (
                       <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">
-                        {t("setup.doqIpNotice", "DoQ 需要 TLS 证书与有效域名，请在配置中填入 SERVERFULL_DOT_DOMAIN 后刷新。")}
+                        {t("setup.androidIpNotice", "检测到当前通过 IP 或本地地址访问面板。DoT / DoQ 仅接受域名，请在 .env 中配置 SERVERFULL_DOT_DOMAIN (例如 dns.example.com) 后刷新。")}
                       </Callout>
                     )}
                   </div>
+                );
+              })()
+            )}
 
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-3">
-                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                      {t("setup.h3Title", "HTTP/3 (DoH3) & ECH (Encrypted Client Hello)")}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {t("setup.h3Desc", "支持现代浏览器 (Chrome/Firefox/Safari) 通过 Alt-Svc 及 RFC 9460 HTTPS 记录自动协商 HTTP/3 和 ECH 加密：")}
-                    </p>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 pt-1">
-                      <Tag
-                        minimal
-                        interactive
-                        onClick={() => copyToClipboard(doh3Url)}
-                        icon="duplicate"
-                        className="font-mono text-xs sm:text-sm py-1 px-3 self-start"
-                        intent={Intent.SUCCESS}
-                      >
-                        {doh3Url}
-                      </Tag>
-                    </div>
-                  </div>
-
-                  <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
-                    {t("setup.ddrHint", "服务已集成 RFC 9460 Section 8 DDR (Discovery of Designated Resolvers)，支持客户端通过 _dns 域名查询自动协商并升级至 DoQ / DoT 与 ECH。")}
-                  </Callout>
-                </div>
-              );
-            })()}
+            {!isCloudflare && (
+              <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
+                {t("setup.androidWarning")}
+              </Callout>
+            )}
           </div>
         }
       />

@@ -246,6 +246,8 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Disabled - TLS Certificates Not Configured]`;
   } else if (!certInfo.filesExist) {
     dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Warning - TLS Certificate Files Missing]`;
+  } else if (!certInfo.isWildcard) {
+    dotStatusText = `tls://${config.host}:${config.dotPort}${domainPart} [Paused - Requires Wildcard Certificate (*.domain)]`;
   } else if (dotState === 'active') {
     const dotOccupant = getPortOccupant(config.dotPort, 'TCP');
     const dotOccupantText = dotOccupant ? `: ${formatOccupantSummary(dotOccupant)}` : '';

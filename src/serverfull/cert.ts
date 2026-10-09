@@ -156,17 +156,17 @@ export function getCertbotDiagnosticOptions(
   }
 
   return {
-    level: 'info',
-    title: 'Non-Wildcard TLS Certificate Detected',
-    message: 'The current certificate is valid for single domains, but does not cover wildcard subdomains (*.domain).',
+    level: 'warning',
+    title: 'Non-Wildcard TLS Certificate Detected (DoT Paused)',
+    message: 'The current certificate does not cover wildcard subdomains (*.domain). DoT (DNS over TLS / DoQ) is paused until a valid wildcard certificate is installed.',
     details: [
-      'Single-domain certificates will route all incoming DoT queries to your default profile.',
-      'To enable per-profile Android Private DNS routing (<profileKey>.your.domain), a wildcard certificate is recommended.'
+      'DoT requires a wildcard certificate (*.domain) to securely route queries to specific profiles via TLS SNI (<profileKey>.your.domain).',
+      'The policy allowing access to Default Profile without a wildcard certificate has been disabled.'
     ],
     solutions: [
       'You can register a wildcard certificate using Certbot via DNS challenge:',
       `  ${cmd}`,
-      'Then update SERVERFULL_TLS_CERT_PATH and SERVERFULL_TLS_KEY_PATH.'
+      'Then update SERVERFULL_TLS_CERT_PATH and SERVERFULL_TLS_KEY_PATH to resume DoT service.'
     ]
   };
 }

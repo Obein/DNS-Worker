@@ -258,10 +258,10 @@
     "windowsStep3": "Включите DoH (пользовательский шаблон) и вставьте URL.",
     "windowsStep4": "Отключите откат к незашифрованному DNS.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / Частный DNS (DoT и DoQ)",
     "androidDesc": "Поддерживает системный «Частный DNS» (DoT) или сторонние приложения для DoH.",
-    "androidDotTitle": "Частный DNS (DoT - режим Serverfull)",
-    "androidDotDesc": "Настройки > Сеть и интернет > Частный DNS > Имя хоста поставщика частного DNS:",
+    "androidDotTitle": "Частный DNS (DoT / DoQ)",
+    "androidDotDesc": "Настройки > Сеть и интернет > Персональный DNS > Имя хоста провайдера персонального DNS (также поддерживает клиенты DoQ):",
     "androidWildcardHint": "(Wildcard-сертификат, маршрутизирует в этот профиль)",
     "androidSingleDomainHint": "(Однодоменный сертификат, маршрутизирует в профиль по умолчанию)",
     "androidIpNotice": "Доступ через IP или локальный адрес. Android Частный DNS принимает только доменные имена; настройте SERVERFULL_DOT_DOMAIN в .env (напр. dns.example.com).",
@@ -294,7 +294,9 @@
     "h3Desc": "Современные браузеры (Chrome/Firefox/Safari) автоматически согласовывают HTTP/3 и шифрование ECH через записи Alt-Svc и RFC 9460 HTTPS:",
     "ddrHint": "Интегрирован RFC 9460 Section 8 DDR (Discovery of Designated Resolvers): клиенты могут автоматически согласовывать и переходить на DoQ/DoT и ECH через запросы к _dns.",
     "e2eeDesc": "Шифрует журналы DNS на границе с помощью постквантового гибридного ключа (P256-MLKEM768). Облако не имеет доступа к данным; расшифровка происходит только локально с Passkey.",
-    "detecting": "Определение..."
+    "detecting": "Определение...",
+    "dotUnavailableCfTitle": "DoT / DoQ недоступен в режиме Cloudflare Worker",
+    "dotUnavailableCfDesc": "В настоящее время работает в режиме Cloudflare Worker. Из-за сетевых ограничений прослушивание портов TCP/UDP 853 не поддерживается. Для использования DoT или DoQ выполните развертывание в режиме Serverfull; в текущем режиме используйте DoH."
   },
   "rules": {
     "title": "Пользовательские правила",

@@ -13,6 +13,7 @@ import { resolveDefaultProfile, resolveProfileByKey } from '../api/doh';
 import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 import { ACCESS_KEY_REGEX } from '../utils/validator';
 import { formatDiagnostic, formatPortError } from './format';
+import { inspectTlsCertificate, getCertbotCommand } from './cert';
 
 export interface DotServerOptions {
   port: number;
@@ -58,6 +59,26 @@ export class DotDnsServer {
           ],
           solutions: [
             'Verify the file paths or generate TLS certificates before enabling DoT.'
+          ]
+        }));
+        resolve();
+        return;
+      }
+
+      const certInfo = inspectTlsCertificate(tlsCertPath, tlsKeyPath);
+      if (!certInfo.isWildcard) {
+        console.warn(formatDiagnostic({
+          level: 'warning',
+          title: 'DoT - Paused (No Wildcard Certificate)',
+          message: 'DNS over TLS (DoT) is paused because no valid wildcard certificate (*.domain) was detected.',
+          details: [
+            'DoT requires a wildcard certificate (*.domain) to securely route queries to specific profiles via TLS SNI (<profileKey>.your.domain).',
+            'Accessing default profile without a wildcard certificate has been disabled.'
+          ],
+          solutions: [
+            'Register a wildcard certificate using Certbot via DNS challenge:',
+            `  ${getCertbotCommand(this.options.dotDomain)}`,
+            'Install the wildcard certificate and restart dns-worker to resume DoT service.'
           ]
         }));
         resolve();
@@ -199,20 +220,19 @@ export class DotDnsServer {
       } as any;
 
       // Profile selection:
-      // 1. Matched SNI Profile Key (Android Private DNS standard)
-      // 2. Default Profile Key from config
-      // 3. Fallback default profile from database
-      let profile = null;
-      if (sniKey) {
-        profile = await resolveProfileByKey(sniKey, env, ctx);
+      // In strict wildcard SNI routing mode, query must provide an SNI profile key (<profileKey>.<domain>).
+      // Accessing default profile without a wildcard profile key is completely disabled.
+      if (!sniKey) {
+        socket.destroy();
+        return;
       }
-      if (!profile && this.options.defaultProfileKey) {
-        profile = await resolveProfileByKey(this.options.defaultProfileKey, env, ctx);
-      }
+
+      const profile = await resolveProfileByKey(sniKey, env, ctx);
       if (!profile) {
-        profile = await resolveDefaultProfile(env, ctx);
+        // Unknown or invalid profile key, drop connection
+        socket.destroy();
+        return;
       }
-      if (!profile) return;
 
       const context: Context = {
         profileId: profile.id,

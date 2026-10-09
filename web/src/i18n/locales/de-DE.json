@@ -258,10 +258,10 @@
     "windowsStep3": "Aktivieren Sie DoH (Manuelle Vorlage) und fügen Sie die URL ein.",
     "windowsStep4": "Deaktivieren Sie das Fallback auf unverschlüsselte Verbindungen.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / Privates DNS (DoT & DoQ)",
     "androidDesc": "Unterstützt natives 'Privates DNS' (DoT) des Systems oder Drittanbieter-Apps für DoH.",
-    "androidDotTitle": "Privates DNS (DoT - Serverfull-Modus)",
-    "androidDotDesc": "Einstellungen > Netzwerk & Internet > Privates DNS > Hostname des privaten DNS-Anbieters:",
+    "androidDotTitle": "Privates DNS (DoT / DoQ)",
+    "androidDotDesc": "Einstellungen > Netzwerk & Internet > Privates DNS > Hostname des privaten DNS-Anbieters (unterstützt auch DoQ-Clients):",
     "androidWildcardHint": "(Wildcard-Zertifikat, leitet zu diesem Profil weiter)",
     "androidSingleDomainHint": "(Einzel-Domain-Zertifikat, leitet zum Standardprofil weiter)",
     "androidIpNotice": "Zugriff über IP oder lokale Adresse erkannt. Android Privates DNS akzeptiert nur Domainnamen. Bitte konfigurieren Sie SERVERFULL_DOT_DOMAIN in .env (z. B. dns.example.com).",
@@ -294,7 +294,9 @@
     "h3Desc": "Moderne Browser (Chrome/Firefox/Safari) verhandeln HTTP/3 und ECH-Verschlüsselung automatisch über Alt-Svc und RFC 9460 HTTPS-Einträge:",
     "ddrHint": "RFC 9460 Abschnitt 8 DDR (Discovery of Designated Resolvers) integriert: Clients können über _dns-Abfragen automatisch DoQ/DoT und ECH aushandeln und upgraden.",
     "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem Post-Quanten-Hybridschlüssel (P256-MLKEM768). Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey.",
-    "detecting": "Wird ermittelt..."
+    "detecting": "Wird ermittelt...",
+    "dotUnavailableCfTitle": "DoT / DoQ im Cloudflare Worker-Modus nicht verfügbar",
+    "dotUnavailableCfDesc": "Wird derzeit im Cloudflare Worker-Modus ausgeführt. Aufgrund von Laufzeitbeschränkungen wird das Abhören von TCP/UDP-Port 853 nicht unterstützt. Verwenden Sie für DoT oder DoQ den Serverfull-Modus; nutzen Sie ansonsten DoH."
   },
   "rules": {
     "title": "Benutzerdefinierte Regeln",

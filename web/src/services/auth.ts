@@ -108,10 +108,24 @@ export async function logout(): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
+let activeRefreshPromise: Promise<LoginResponse> | null = null;
+
 export async function refresh(): Promise<LoginResponse> {
-  const res = await fetch("/api/auth/refresh", { method: "POST" });
-  if (!res.ok) throw new ApiError(res.status, await res.text());
-  return res.json();
+  if (activeRefreshPromise) {
+    return activeRefreshPromise;
+  }
+
+  activeRefreshPromise = (async () => {
+    try {
+      const res = await fetch("/api/auth/refresh", { method: "POST" });
+      if (!res.ok) throw new ApiError(res.status, await res.text());
+      return (await res.json()) as LoginResponse;
+    } finally {
+      activeRefreshPromise = null;
+    }
+  })();
+
+  return activeRefreshPromise;
 }
 
 export async function getUnlockNonce(): Promise<{ nonce: string; legacy?: boolean }> {

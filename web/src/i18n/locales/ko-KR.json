@@ -258,10 +258,10 @@
     "windowsStep3": "DoH(수동 템플릿)를 켜고 URL을 붙여넣습니다.",
     "windowsStep4": "「암호화되지 않은 연결로의 대체」를 끕니다.",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / 개인 DNS (DoT & DoQ)",
     "androidDesc": "시스템 기본 '프라이빗 DNS (DoT)' 또는 서드파티 앱을 통한 DoH 구성을 지원합니다.",
-    "androidDotTitle": "프라이빗 DNS (DoT - Serverfull 모드)",
-    "androidDotDesc": "설정 > 네트워크 및 인터넷 > 프라이빗 DNS > 프라이빗 DNS 공급자 호스트 이름:",
+    "androidDotTitle": "개인 DNS (DoT / DoQ)",
+    "androidDotDesc": "설정 > 네트워크 및 인터넷 > 개인 DNS > 개인 DNS 공급자 호스트 이름(최신 DoQ 클라이언트 지원):",
     "androidWildcardHint": "(와일드카드 인증서, 이 프로필로 라우팅)",
     "androidSingleDomainHint": "(단일 도메인 인증서, 기본 프로필로 라우팅)",
     "androidIpNotice": "현재 IP 또는 로컬 주소로 접속 중입니다. Android 프라이빗 DNS는 도메인 이름만 지원합니다. .env에 SERVERFULL_DOT_DOMAIN (예: dns.example.com)을 구성해 주세요.",
@@ -294,7 +294,9 @@
     "h3Desc": "최신 브라우저(Chrome/Firefox/Safari)는 Alt-Svc 및 RFC 9460 HTTPS 레코드를 통해 HTTP/3 및 ECH 암호화를 자동 협상합니다:",
     "ddrHint": "RFC 9460 섹션 8 DDR (Discovery of Designated Resolvers)이 통합되어 있어 클라이언트가 _dns 쿼리를 통해 DoQ/DoT 및 ECH로 자동 협상 및 업그레이드할 수 있습니다.",
     "e2eeDesc": "전용 양자내성 하이브리드 키(P256-MLKEM768)를 사용하여 엣지에서 즉시 DNS 로그를 암호화합니다. 클라우드에서는 볼 수 없으며 하드웨어 Passkey로 인증된 브라우저에서만 복호화됩니다.",
-    "detecting": "감지 중..."
+    "detecting": "감지 중...",
+    "dotUnavailableCfTitle": "Cloudflare Worker 모드에서는 DoT / DoQ를 사용할 수 없음",
+    "dotUnavailableCfDesc": "현재 Cloudflare Worker (Serverless) 모드로 실행 중입니다. 엣지 런타임 제약으로 인해 TCP/UDP 853 포트 수신 대기가 지원되지 않습니다. DoT 또는 DoQ를 사용하려면 Serverfull 모드로 배포하세요. 현재 모드에서는 DoH를 사용하세요."
   },
   "rules": {
     "title": "사용자 지정 규칙",

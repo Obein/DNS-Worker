@@ -8,6 +8,7 @@ import { Icons } from "@blueprintjs/icons";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { getAccessToken, setAccessToken } from "./utils/token";
+import { refresh, ApiError } from "./services/auth";
 
 // Use Blueprint's dynamic split-by-size loader so that icon SVG path data
 // is fetched on demand per icon rather than bundled statically upfront.
@@ -94,41 +95,32 @@ window.fetch = async function (input, init) {
   if (shouldRefresh) {
     if (!isRefreshing) {
       isRefreshing = true;
-      originalFetch("/api/auth/refresh", { method: "POST" }).then(async (refreshRes) => {
-        if (refreshRes.ok) {
-          try {
-            const data = await refreshRes.json();
-            setAccessToken(data.accessToken);
-            onRefreshed(data.accessToken);
-          } catch {
-            setAccessToken(null);
-            lastRefreshReason = "invalid_payload";
-            onRefreshed("");
-          }
-        } else {
+      refresh()
+        .then((data) => {
+          setAccessToken(data.accessToken);
+          onRefreshed(data.accessToken);
+        })
+        .catch((err: unknown) => {
           setAccessToken(null);
           let reason = "unknown";
-          try {
-            const text = await refreshRes.text();
-            if (text === "Refresh token missing") {
+          if (err instanceof ApiError) {
+            if (err.bodyText === "Refresh token missing") {
               reason = "missing";
             } else {
-              const data = JSON.parse(text);
-              if (data && data.reason) reason = data.reason;
+              try {
+                const data = JSON.parse(err.bodyText);
+                if (data && data.reason) reason = data.reason;
+              } catch {}
             }
-          } catch {
-            // Ignore JSON parsing/network errors
+          } else {
+            reason = "network_error";
           }
           lastRefreshReason = reason;
           onRefreshed("");
-        }
-      }).catch(() => {
-        setAccessToken(null);
-        lastRefreshReason = "network_error";
-        onRefreshed("");
-      }).finally(() => {
-        isRefreshing = false;
-      });
+        })
+        .finally(() => {
+          isRefreshing = false;
+        });
     }
 
     const retryToken = await new Promise<string>((resolve) => {

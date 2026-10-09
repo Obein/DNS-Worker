@@ -74,8 +74,8 @@ async function runTests() {
     }
   }
 
-  // Use openssl to generate self-signed cert
-  execSync(`${opensslBin} req -x509 -newkey rsa:2048 -nodes -sha256 -keyout "${tlsKeyPath}" -out "${tlsCertPath}" -days 1 -subj "/CN=dns.local" -addext "subjectAltName=DNS:dns.local,DNS:testkey123.dns.local"`, {
+  // Use openssl to generate self-signed wildcard cert (*.dns.local)
+  execSync(`${opensslBin} req -x509 -newkey rsa:2048 -nodes -sha256 -keyout "${tlsKeyPath}" -out "${tlsCertPath}" -days 1 -subj "/CN=*.dns.local" -addext "subjectAltName=DNS:*.dns.local,DNS:dns.local"`, {
     stdio: 'ignore'
   });
 
@@ -227,7 +227,52 @@ async function runTests() {
   if (httpsClientInfo.dotDomain !== 'dns.local') {
     throw new Error(`Expected HTTPS clientInfo.dotDomain to be 'dns.local', got ${httpsClientInfo.dotDomain}`);
   }
-  console.log('>>> [TEST D] SUCCESS: HTTPS Server & ClientInfo works with TLS!');
+  // ── TEST E: HTTP Auth Refresh & Multi-Cookie Handling ──
+  console.log('\n>>> [TEST E] Testing Auth Refresh & RTR Grace Window on HTTP...');
+  const { createSession } = await import('../src/lib/auth');
+  const { session, refreshToken } = await createSession(env, 'user1', '127.0.0.1', 'Serverfull-Test-Agent', 0.0, 0.0, false);
+
+  // 1. Initial refresh via HTTP
+  const refreshRes1 = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Cookie': `auth_refresh=${refreshToken}`
+    }
+  });
+
+  console.log('>>> [TEST E] HTTP refresh status:', refreshRes1.status);
+  if (refreshRes1.status !== 200) {
+    const errorBody = await refreshRes1.text();
+    throw new Error(`Expected HTTP 200 from /api/auth/refresh, got ${refreshRes1.status}: ${errorBody}`);
+  }
+
+  const refreshJson1 = await refreshRes1.json() as Record<string, any>;
+  if (!refreshJson1.accessToken) {
+    throw new Error(`Expected accessToken in refresh response, got: ${JSON.stringify(refreshJson1)}`);
+  }
+
+  // Verify Set-Cookie header is adapted for plain HTTP (no '; Secure')
+  const rawSetCookie = refreshRes1.headers.get('set-cookie') || '';
+  if (rawSetCookie.includes('Secure')) {
+    throw new Error(`Plain HTTP response should NOT contain 'Secure' in Set-Cookie: ${rawSetCookie}`);
+  }
+  console.log('>>> [TEST E] SUCCESS: HTTP Refresh returns 200 and adapts cookies without Secure flag!');
+
+  // 2. Test RTR Concurrency Grace Window: Replay the same token immediately (simulating concurrent tab/component refresh)
+  console.log('>>> [TEST E] Testing RTR Concurrency Grace Window (simulating in-flight parallel refresh)...');
+  const refreshRes2 = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Cookie': `auth_refresh=${refreshToken}`
+    }
+  });
+
+  console.log('>>> [TEST E] Parallel refresh status:', refreshRes2.status);
+  if (refreshRes2.status !== 200) {
+    const errorBody = await refreshRes2.text();
+    throw new Error(`Expected HTTP 200 within RTR grace period, got ${refreshRes2.status}: ${errorBody}`);
+  }
+  console.log('>>> [TEST E] SUCCESS: RTR Concurrency Grace Window prevented 401 session invalidation!');
 
   // ── Cleanup ──
   console.log('\n>>> [CLEANUP] Stopping servers...');

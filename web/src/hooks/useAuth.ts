@@ -10,7 +10,8 @@ import type { UserInfo } from "../services";
  * Helper to clear the CSRF cookie and session storage flags.
  */
 const clearCsrfToken = () => {
-  document.cookie = "csrf_token=; Max-Age=0; path=/; Secure; SameSite=Lax";
+  const secureFlag = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `csrf_token=; Max-Age=0; path=/; SameSite=Lax${secureFlag}`;
   try {
     sessionStorage.removeItem("obex_session_active");
     sessionStorage.removeItem("obex_session_locked");

@@ -258,10 +258,10 @@
     "windowsStep3": "启用 DoH (手动模板) 并粘贴 URL。",
     "windowsStep4": "关闭 回退到明文。",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / 私有 DNS (DoT & DoQ)",
     "androidDesc": "支持系统原生“私有 DNS (DoT)”或使用第三方 App 配置 DoH。",
-    "androidDotTitle": "私有 DNS (DoT - Serverfull 模式)",
-    "androidDotDesc": "设置 > 网络和互联网 > 私有 DNS > 提供商主机名：",
+    "androidDotTitle": "私有 DNS (DoT / DoQ)",
+    "androidDotDesc": "设置 > 网络和互联网 > 私有 DNS > 提供商主机名 (亦支持各类现代 DoQ 客户端)：",
     "androidWildcardHint": "(通配符证书，路由至此配置)",
     "androidSingleDomainHint": "(单域名证书，路由至默认配置)",
     "androidIpNotice": "检测到当前通过 IP 或本地地址访问面板。Android 原生私有 DNS 仅接受域名，请在 .env 中配置 SERVERFULL_DOT_DOMAIN (例如 dns.example.com) 后刷新。",
@@ -294,7 +294,9 @@
     "h3Desc": "支持现代浏览器 (Chrome/Firefox/Safari) 通过 Alt-Svc 及 RFC 9460 HTTPS 记录自动协商 HTTP/3 和 ECH 加密：",
     "ddrHint": "服务已集成 RFC 9460 Section 8 DDR (Discovery of Designated Resolvers)，支持客户端通过 _dns 域名查询自动协商并升级至 DoQ / DoT 与 ECH。",
     "e2eeDesc": "使用专属后量子混合密钥 (P256-MLKEM768) 在边缘即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。",
-    "detecting": "正在检测..."
+    "detecting": "正在检测...",
+    "dotUnavailableCfTitle": "DoT / DoQ 在 Cloudflare Worker 模式下不可用",
+    "dotUnavailableCfDesc": "当前运行于 Cloudflare Worker (Serverless) 模式。受边缘无服务器运行环境网络限制，不支持监听原生 TCP/UDP 853 端口。若需使用 DoT 或 DoQ，请部署在独立服务器 (Serverfull 模式) 下；在当前模式下请使用 DoH (DNS over HTTPS)。"
   },
   "rules": {
     "title": "自定义规则",

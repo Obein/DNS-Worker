@@ -258,10 +258,10 @@
     "windowsStep3": "DoH（テンプレート手動入力）をオンにして、URLを貼り付けます。",
     "windowsStep4": "「暗号化されていない接続へのフォールバック」をオフにします。",
     "android": "Android",
-    "androidTitle": "Android 9+",
+    "androidTitle": "Android / プライベート DNS (DoT & DoQ)",
     "androidDesc": "システムの標準機能「プライベート DNS (DoT)」またはサードパーティ製アプリによる DoH 設定に対応しています。",
-    "androidDotTitle": "プライベート DNS (DoT - Serverfull モード)",
-    "androidDotDesc": "設定 > ネットワークとインターネット > プライベート DNS > プライベート DNS プロバイダのホスト名：",
+    "androidDotTitle": "プライベート DNS (DoT / DoQ)",
+    "androidDotDesc": "設定 > ネットワークとインターネット > プライベート DNS > プライベート DNS プロバイダのホスト名（各DoQクライアントにも対応）：",
     "androidWildcardHint": "(ワイルドカード証明書、この設定にルーティング)",
     "androidSingleDomainHint": "(単一ドメイン証明書、デフォルト設定にルーティング)",
     "androidIpNotice": "現在 IP またはローカルアドレスでダッシュボードにアクセスしています。Android プライベート DNS はドメイン名のみ受け付けます。.env に SERVERFULL_DOT_DOMAIN (例: dns.example.com) を設定してください。",
@@ -294,7 +294,9 @@
     "h3Desc": "最新のブラウザ (Chrome/Firefox/Safari) は、Alt-Svc および RFC 9460 HTTPS レコードを介して HTTP/3 と ECH 暗号化を自動ネゴシエーションします：",
     "ddrHint": "RFC 9460 Section 8 DDR (Discovery of Designated Resolvers) を統合済み。クライアントは _dns クエリを通じて自動的に DoQ / DoT および ECH にアップグレード可能です。",
     "e2eeDesc": "独自のエッジ耐量子ハイブリッド鍵 (P256-MLKEM768) で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。",
-    "detecting": "検出中..."
+    "detecting": "検出中...",
+    "dotUnavailableCfTitle": "Cloudflare Worker モードでは DoT / DoQ を利用できません",
+    "dotUnavailableCfDesc": "現在 Cloudflare Worker (Serverless) モードで実行されています。エッジ環境の制約により、ネイティブの TCP/UDP 853 ポートのリッスンはサポートされていません。DoT / DoQ を使用するには Serverfull モードでデプロイしてください。現在は DoH をご利用ください。"
   },
   "rules": {
     "title": "カスタムルール",
