@@ -213,6 +213,7 @@
     "egressIp": "送信元 IP アドレス",
     "currentLocation": "現在地",
     "edgeServer": "エッジサーバー",
+    "serverLocation": "サーバーの場所",
     "dohUrlTitle": "現在の設定の DoH URL",
     "accessPointTitle": "アクセス用 DoH URL",
     "defaultAccessPointName": "デバイス-1",

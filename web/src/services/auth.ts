@@ -77,6 +77,7 @@ export async function prelogin(payload: PreloginPayload): Promise<PreloginRespon
   const res = await fetch("/api/auth/prelogin", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
@@ -87,6 +88,7 @@ export async function login(payload: LoginPayload): Promise<LoginResponse> {
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
@@ -97,6 +99,7 @@ export async function signup(payload: SignupPayload): Promise<SignupResponse> {
   const res = await fetch("/api/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
@@ -104,7 +107,10 @@ export async function signup(payload: SignupPayload): Promise<SignupResponse> {
 }
 
 export async function logout(): Promise<void> {
-  const res = await fetch("/api/auth/logout", { method: "POST" });
+  const res = await fetch("/api/auth/logout", {
+    method: "POST",
+    credentials: "same-origin"
+  });
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
@@ -117,7 +123,10 @@ export async function refresh(): Promise<LoginResponse> {
 
   activeRefreshPromise = (async () => {
     try {
-      const res = await fetch("/api/auth/refresh", { method: "POST" });
+      const res = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "same-origin"
+      });
       if (!res.ok) throw new ApiError(res.status, await res.text());
       return (await res.json()) as LoginResponse;
     } finally {

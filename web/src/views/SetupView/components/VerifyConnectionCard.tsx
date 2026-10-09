@@ -4,6 +4,7 @@ import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucid
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import type { ClientInfo } from "../types";
+import { useDeploymentMode } from "../../../hooks/useDeploymentMode";
 
 export interface VerifyConnectionCardProps {
   isVerifying: boolean;
@@ -33,6 +34,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
   edgeLocation,
 }) => {
   const { t } = useTranslation();
+  const { isServerfull } = useDeploymentMode();
 
   return (
     <Section title={t("setup.verifyConnection")} icon={<Activity size={16} />}>
@@ -108,9 +110,13 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none">
                 <Server size={18} className="text-purple-500 mt-1" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold opacity-40">{t("setup.edgeServer")}</div>
-                  <div className="font-bold truncate" title={edgeLocation || traceInfo?.colo || ""}>
-                    {edgeLocation || traceInfo?.colo || t("setup.detecting")}
+                  <div className="text-[10px] uppercase font-bold opacity-40">
+                    {isServerfull ? t("setup.serverLocation", "服务器位置") : t("setup.edgeServer")}
+                  </div>
+                  <div className="font-bold truncate" title={isServerfull ? (edgeLocation || "") : (edgeLocation || traceInfo?.colo || "")}>
+                    {isServerfull
+                      ? (edgeLocation || t("setup.detecting"))
+                      : (edgeLocation || traceInfo?.colo || t("setup.detecting"))}
                   </div>
                 </div>
               </div>

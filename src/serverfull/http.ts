@@ -169,9 +169,16 @@ export function createHttpRequestHandler(
       res.statusMessage = response.statusText;
 
       // Extract all Set-Cookie headers properly without Node.js res.setHeader overwriting
-      const rawCookies: string[] = typeof (response.headers as any).getSetCookie === 'function'
+      let rawCookies: string[] = typeof (response.headers as any).getSetCookie === 'function'
         ? (response.headers as any).getSetCookie()
         : [];
+
+      if (rawCookies.length === 0 && response.headers.has('set-cookie')) {
+        const singleCookie = response.headers.get('set-cookie');
+        if (singleCookie) {
+          rawCookies = [singleCookie];
+        }
+      }
 
       response.headers.forEach((val, key) => {
         const lowerKey = key.toLowerCase();
@@ -189,8 +196,9 @@ export function createHttpRequestHandler(
       if (rawCookies.length > 0) {
         // Over plain HTTP (non-TLS), browsers reject cookies marked with 'Secure' (RFC 6265bis).
         // Adapt outgoing cookies by stripping '; Secure' when accessed over plain http.
-        const adaptedCookies = proto === 'http'
-          ? rawCookies.map((c) => c.replace(/;\s*Secure/gi, ''))
+        const isPlainHttp = proto === 'http';
+        const adaptedCookies = isPlainHttp
+          ? rawCookies.map((c) => c.replace(/;\s*Secure\b/gi, ''))
           : rawCookies;
         res.setHeader('Set-Cookie', adaptedCookies);
       }

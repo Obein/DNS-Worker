@@ -32,15 +32,17 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
 
   const checkAuth = async () => {
     try {
-      // Check if we have a csrf_token cookie.
+      const token = getAccessToken();
       const hasCsrfToken = document.cookie.includes("csrf_token=");
-      if (!hasCsrfToken) {
+
+      // Only bail out if we neither have an in-memory token nor a csrf token cookie.
+      if (!token && !hasCsrfToken) {
         setIsLoggedIn(false);
         return;
       }
 
       // If we don't have an access token in memory, try to refresh first.
-      if (!getAccessToken()) {
+      if (!token) {
         try {
           const data = await refresh();
           setAccessToken(data.accessToken);

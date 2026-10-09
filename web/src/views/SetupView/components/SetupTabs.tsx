@@ -286,17 +286,6 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                             {`${profileKey}.${effectiveDotDomain}`}
                           </Tag>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
-                          <Tag
-                            minimal
-                            interactive
-                            onClick={() => copyToClipboard(`quic://${profileKey}.${effectiveDotDomain}:853`)}
-                            icon="duplicate"
-                            className="font-mono text-xs py-0.5 px-2.5 opacity-80 self-start"
-                          >
-                            {`quic://${profileKey}.${effectiveDotDomain}:853`}
-                          </Tag>
-                        </div>
                       </div>
                     ) : (
                       <Callout intent={Intent.WARNING} icon="warning-sign" className="text-xs">

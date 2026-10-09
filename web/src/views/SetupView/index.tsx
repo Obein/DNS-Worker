@@ -132,23 +132,22 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
   // DNS IPs resolved directly from current domain (IPv4 and IPv6)
   const currentIps = useMemo(() => {
     const list: { ip: string; area: string | null }[] = [];
-    const domain = clientInfo?.dotDomain || window.location.hostname;
 
     for (const ip of domainIps.ipv4) {
       list.push({
         ip,
-        area: `IPv4 (${domain})`,
+        area: "IPv4",
       });
     }
     for (const ip of domainIps.ipv6) {
       list.push({
         ip,
-        area: `IPv6 (${domain})`,
+        area: "IPv6",
       });
     }
 
     return list;
-  }, [domainIps, clientInfo]);
+  }, [domainIps]);
 
   return (
     <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "px-8 max-w-5xl"}`}>

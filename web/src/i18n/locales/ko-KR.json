@@ -213,6 +213,7 @@
     "egressIp": "송신 IP 주소",
     "currentLocation": "현재 위치",
     "edgeServer": "엣지 서버",
+    "serverLocation": "서버 위치",
     "dohUrlTitle": "현재 설정의 DoH URL",
     "accessPointTitle": "접속용 DoH URL",
     "defaultAccessPointName": "장치-1",

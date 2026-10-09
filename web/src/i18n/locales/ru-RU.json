@@ -213,6 +213,7 @@
     "egressIp": "Исходящий IP",
     "currentLocation": "Текущее местоположение",
     "edgeServer": "Edge-сервер",
+    "serverLocation": "Расположение сервера",
     "dohUrlTitle": "Текущий URL DoH",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Устройство-1",

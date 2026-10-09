@@ -213,6 +213,7 @@
     "egressIp": "出口 IP 地址",
     "currentLocation": "当前位置",
     "edgeServer": "边缘服务器",
+    "serverLocation": "服务器位置",
     "dohUrlTitle": "当前配置 DoH URL",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "设备-1",

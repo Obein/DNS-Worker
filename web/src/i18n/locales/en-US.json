@@ -213,6 +213,7 @@
     "egressIp": "Egress IP Address",
     "currentLocation": "Current Location",
     "edgeServer": "Edge Server",
+    "serverLocation": "Server Location",
     "dohUrlTitle": "Current Config DoH URL",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Device-1",

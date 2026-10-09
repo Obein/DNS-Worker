@@ -213,6 +213,7 @@
     "egressIp": "Dirección IP de salida",
     "currentLocation": "Ubicación actual",
     "edgeServer": "Servidor Edge",
+    "serverLocation": "Ubicación del servidor",
     "dohUrlTitle": "URL de DoH del perfil actual",
     "accessPointTitle": "URL de acceso DoH",
     "defaultAccessPointName": "dispositivo-1",

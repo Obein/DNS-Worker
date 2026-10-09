@@ -39,13 +39,15 @@ export function readRefreshTokenCookie(cookieHeader: string | null): string | nu
  * This cookie is not HttpOnly so that client-side JavaScript can read it to append the header.
  */
 export function createCsrfCookie(token: string, env?: Env, keepLoggedIn?: boolean): string {
-  let maxAgeStr = "";
+  let maxAge: number;
   if (keepLoggedIn && env) {
     const expirationDays = Number(env.OPTIONAL_SESSION_EXPIRATION_DAYS) || 7;
-    const maxAge = expirationDays * 24 * 60 * 60;
-    maxAgeStr = `; Max-Age=${maxAge}`;
+    maxAge = expirationDays * 24 * 60 * 60;
+  } else {
+    const expirationMinutes = Number(env?.DEFAULT_SESSION_EXPIRATION_MINUTES) || 1440;
+    maxAge = expirationMinutes * 60;
   }
-  return `csrf_token=${token}; SameSite=Lax; Path=/; Secure${maxAgeStr}`;
+  return `csrf_token=${token}; SameSite=Lax; Path=/; Max-Age=${maxAge}; Secure`;
 }
 
 /**

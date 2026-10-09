@@ -213,6 +213,7 @@
     "egressIp": "Địa chỉ IP thoát (Egress IP)",
     "currentLocation": "Vị trí hiện tại",
     "edgeServer": "Máy chủ Edge",
+    "serverLocation": "Vị trí máy chủ",
     "dohUrlTitle": "DoH URL của cấu hình hiện tại",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Thiết bị-1",
