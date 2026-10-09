@@ -254,7 +254,7 @@ async function runTests() {
   console.log('>>> [TEST D2] SUCCESS: /api/resolve and /api/geoip public endpoints verified!');
   console.log('\n>>> [TEST E] Testing Auth Refresh & RTR Grace Window on HTTP...');
   const { createSession } = await import('../src/lib/auth');
-  const { session, refreshToken } = await createSession(env, 'user1', '127.0.0.1', 'Serverfull-Test-Agent', 0.0, 0.0, false);
+  const { refreshToken } = await createSession(env, 'user1', '127.0.0.1', 'Serverfull-Test-Agent', 0.0, 0.0, false);
 
   // 1. Initial refresh via HTTP
   const refreshRes1 = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/auth/refresh`, {

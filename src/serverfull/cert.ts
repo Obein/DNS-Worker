@@ -5,7 +5,7 @@
 
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { formatDiagnostic, DiagnosticConfig } from './format';
+import { DiagnosticConfig } from './format';
 
 export interface TlsCertificateInfo {
   configured: boolean;

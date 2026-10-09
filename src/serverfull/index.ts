@@ -302,7 +302,7 @@ async function parseCli(): Promise<ServerfullCliArgs> {
 
     if (positionals[0]?.toLowerCase() === 'postinstall') {
       try {
-        const { dataDir, configDir, configFile } = ensurePersistentDirs(true);
+        const { dataDir, configFile } = ensurePersistentDirs(true);
         console.log(`[dns-worker] Initialized data directory: ${dataDir}`);
         console.log(`[dns-worker] Initialized configuration file: ${configFile}`);
       } catch {}

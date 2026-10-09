@@ -10,15 +10,12 @@ import {
 } from '../src/serverfull/service/env';
 import {
   SERVICE_NAME,
-  SERVICE_FILE_NAME,
   SYSTEMD_SERVICE_PATH,
   generateSystemdUnit
 } from '../src/serverfull/service/systemd';
 import {
   WINDOWS_TASK_NAME,
-  WINDOWS_DATA_DIR,
   WINDOWS_LOG_FILE,
-  WINDOWS_BAT_FILE,
   generateWindowsBat
 } from '../src/serverfull/service/schtasks';
 import fs from 'node:fs';
@@ -31,8 +28,7 @@ import {
   getDefaultConfigFilePath,
   ensurePersistentDirs,
   getOrInitPersistentJwtSecret,
-  getServerfullConfig,
-  getLoadedEnvFiles
+  getServerfullConfig
 } from '../src/serverfull/config';
 import {
   DEFAULT_PRESET_UPSTREAMS,
