@@ -72,6 +72,7 @@ async function runDbSizeTests(): Promise<void> {
       action: 'PASS',
       reason: 'ALLOW_LIST',
       client_ip: '192.168.1.100',
+      geo_country: 'US',
       record_type: 'A',
       latency: 12
     });
@@ -91,10 +92,10 @@ async function runDbSizeTests(): Promise<void> {
     username: 'test_owner',
     role: 'user'
   };
-  const dummyCtx: ExecutionContext = {
+  const dummyCtx = {
     waitUntil() {},
     passThroughOnException() {}
-  };
+  } as unknown as ExecutionContext;
 
   const getReq = new Request('http://localhost/api/account/db-size', { method: 'GET' });
   const getRes = await handlePersonalAccountRequest(

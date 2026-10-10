@@ -207,7 +207,25 @@ async function runTests() {
   if (clientInfoJson.dotDomain !== 'dns.local') {
     throw new Error(`Expected clientInfo.dotDomain to be 'dns.local', got ${clientInfoJson.dotDomain}`);
   }
-  console.log('>>> [TEST C] SUCCESS: HTTP Server & ClientInfo with dotDomain works!');
+
+  // Verify reverse proxy IP pass-through (Caddy / Nginx)
+  const proxyXffRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`, {
+    headers: { 'X-Forwarded-For': '203.0.113.195, 127.0.0.1' }
+  });
+  const proxyXffJson = await proxyXffRes.json() as Record<string, any>;
+  if (proxyXffJson.ip !== '203.0.113.195') {
+    throw new Error(`Expected client IP 203.0.113.195 from X-Forwarded-For, got ${proxyXffJson.ip}`);
+  }
+
+  const proxyRealIpRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`, {
+    headers: { 'X-Real-IP': '198.51.100.22' }
+  });
+  const proxyRealIpJson = await proxyRealIpRes.json() as Record<string, any>;
+  if (proxyRealIpJson.ip !== '198.51.100.22') {
+    throw new Error(`Expected client IP 198.51.100.22 from X-Real-IP, got ${proxyRealIpJson.ip}`);
+  }
+
+  console.log('>>> [TEST C] SUCCESS: HTTP Server & Reverse Proxy Client IP resolution works!');
 
   // ── TEST D: HTTPS Web UI / ClientInfo API ──
   console.log('\n>>> [TEST D] Testing HTTPS Server (/api/clientinfo)...');

@@ -70,16 +70,20 @@ SERVERFULL_DISABLE_HTTPS=false
 
 Caddy 原生支持全自动申请和续期 Let's Encrypt / ZeroSSL 证书，配置极其简洁。编辑 `/etc/caddy/Caddyfile`：
 
-```nginx
+```caddy
 dns.example.com {
     reverse_proxy 127.0.0.1:10080 {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
+        header_up CF-Connecting-IP {remote_host}
     }
 }
 ```
+
+> [!NOTE]
+> DNS Worker 会自动识别并解析反代请求中的 `CF-Connecting-IP`、`X-Real-IP` 以及 `X-Forwarded-For`（最左侧源 IP）。无论使用 Caddy 还是 Nginx，DNS 查询日志、活跃登录会话与安全审计记录均会准确记录客户端真实外网 IP，而非 `127.0.0.1`。
 
 重载 Caddy 即可生效：
 ```bash

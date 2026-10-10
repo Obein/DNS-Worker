@@ -72,16 +72,20 @@ The reverse proxy terminates TLS on standard port `443` (with automated Let's En
 
 Caddy provides zero-configuration automated HTTPS with automatic renewal. Add this to `/etc/caddy/Caddyfile`:
 
-```nginx
+```caddy
 dns.example.com {
     reverse_proxy 127.0.0.1:10080 {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
         header_up X-Forwarded-For {remote_host}
         header_up X-Forwarded-Proto {scheme}
+        header_up CF-Connecting-IP {remote_host}
     }
 }
 ```
+
+> [!NOTE]
+> DNS Worker automatically inspects `CF-Connecting-IP`, `X-Real-IP`, and `X-Forwarded-For` (leftmost IP) on proxied HTTP requests. DNS query logs, user session lists, and security audits will accurately record the client's external IP address instead of `127.0.0.1`.
 
 Reload Caddy:
 ```bash
