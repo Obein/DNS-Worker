@@ -28,6 +28,7 @@ export interface UseLogsFetcherReturn {
   setLogs: React.Dispatch<React.SetStateAction<LogEntry[]>>;
   loading: boolean;
   loadingMore: boolean;
+  syncing: boolean;
   hasMore: boolean;
   setHasMore: React.Dispatch<React.SetStateAction<boolean>>;
   stats: { total: number; pass: number; block: number; redirect: number } | null;
@@ -60,6 +61,7 @@ export function useLogsFetcher({
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [syncing, setSyncing] = useState<boolean>(false);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [stats, setStats] = useState<{
     total: number;
@@ -154,6 +156,7 @@ export function useLogsFetcher({
               }
 
               // Perform delta sync from server in background
+              if (!isAutoRefresh) setSyncing(true);
               try {
                 const inserted = await localDb.syncProfileLogs(
                   profileId,
@@ -201,6 +204,10 @@ export function useLogsFetcher({
               } catch (syncErr: unknown) {
                 if ((syncErr as Error).name !== "AbortError") {
                   console.warn("[useLogsFetcher] Incremental sync error:", syncErr);
+                }
+              } finally {
+                if (abortControllerRef.current === controller) {
+                  setSyncing(false);
                 }
               }
             } else {
@@ -308,6 +315,7 @@ export function useLogsFetcher({
           if (abortControllerRef.current === controller) {
             setLoading(false);
             setLoadingMore(false);
+            setSyncing(false);
             isFetchingRef.current = false;
           }
           return;
@@ -396,6 +404,7 @@ export function useLogsFetcher({
         if (abortControllerRef.current === controller) {
           setLoading(false);
           setLoadingMore(false);
+          setSyncing(false);
           isFetchingRef.current = false;
         }
       }
@@ -417,6 +426,7 @@ export function useLogsFetcher({
     setLogs,
     loading,
     loadingMore,
+    syncing,
     hasMore,
     setHasMore,
     stats,
