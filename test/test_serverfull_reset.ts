@@ -10,7 +10,6 @@ import assert from 'node:assert';
 import { handleResetCommand } from '../src/serverfull/reset';
 import { initServerfullDb } from '../src/serverfull/db';
 import { getDefaultConfigFilePath, getDefaultDbPath } from '../src/serverfull/config';
-import { DEFAULT_ENV_SERVERFULL_TEMPLATE } from '../src/serverfull/defaults';
 
 async function runResetTest(): Promise<void> {
   console.log('>>> [TEST] Starting Serverfull Reset Command Tests...');

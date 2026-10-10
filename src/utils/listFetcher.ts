@@ -1,4 +1,4 @@
-import { isSafeUrl, isSafeUrlWithDnsCheck } from "./validator";
+import { isSafeUrlWithDnsCheck } from "./validator";
 import { parseLine } from "./parser";
 
 /** 单个列表的拉取结果 */
