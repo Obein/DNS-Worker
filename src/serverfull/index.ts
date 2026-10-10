@@ -38,9 +38,28 @@ import {
 } from './format';
 import { showServerfullStatus } from './status';
 import { handleServiceAction } from './service';
+import { handleResetCommand } from './reset';
 import { buildCloudflareEchConfig } from '../utils/ech';
 
 function checkNodeVersion(): void {
+  const bunVersion = (process.versions as Record<string, string | undefined>).bun;
+  if (bunVersion) {
+    const [bMajor, bMinor] = bunVersion.split('.').map(Number);
+    if (bMajor < 1 || (bMajor === 1 && bMinor < 4)) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'DNS Worker - Environment Error',
+        message: `Bun >= 1.4.0 is required for built-in node:sqlite support (found Bun v${bunVersion}).`,
+        solutions: [
+          'Please upgrade Bun to version 1.4.0 or higher.',
+          'Alternatively, run with Node.js >= 22.5.0 (Recommended).'
+        ]
+      }));
+      process.exit(1);
+    }
+    return;
+  }
+
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (major < 22 || (major === 22 && minor < 5)) {
     console.error(formatDiagnostic({
@@ -181,6 +200,7 @@ function printHelp(): void {
       'dns-worker status [options]',
       'dns-worker ech [options]',
       'dns-worker config [action]',
+      'dns-worker reset [options]',
       'dns-worker service <action>',
       'npx dns-worker [options]'
     ],
@@ -188,10 +208,12 @@ function printHelp(): void {
       { label: 'status', desc: 'Inspect service runtime status and database health' },
       { label: 'ech', desc: 'Display active ECH configuration, outer SNI, and DNS RR records' },
       { label: 'config [action]', desc: 'Manage configuration (show, path, init, template)' },
+      { label: 'reset', desc: 'Restore default .env configuration and wipe database (requires confirmation)' },
       { label: 'service <action>', desc: 'Manage background service (install, start, stop, restart, enable, disable, status, logs, uninstall)' }
     ],
     options: [
       { label: '-s, --status', desc: 'Display service and database runtime status' },
+      { label: '-f, --force, -y, --yes', desc: 'Bypass interactive confirmation prompt for reset command' },
       { label: '-p, --port, --http-port <number>', desc: 'Plain HTTP Web Dashboard & DoH port (default: 10080)' },
       { label: '--https-port <number>', desc: 'Secure HTTPS Web Dashboard & DoH port (default: 10443)' },
       { label: '--disable-https', desc: 'Disable HTTPS Web Dashboard server' },
@@ -259,6 +281,8 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         'ech-fronting-domain': { type: 'string' },
         user: { type: 'string', short: 'u' },
         status: { type: 'boolean', short: 's' },
+        force: { type: 'boolean', short: 'f' },
+        yes: { type: 'boolean', short: 'y' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
       },
@@ -278,6 +302,19 @@ async function parseCli(): Promise<ServerfullCliArgs> {
     if (values.status || positionals[0]?.toLowerCase() === 'status') {
       const { config, env } = getServerfullConfig(values as ServerfullCliArgs);
       await showServerfullStatus(config, env.JWT_SECRET);
+      process.exit(0);
+    }
+
+    if (positionals[0]?.toLowerCase() === 'reset') {
+      const isForce = Boolean(
+        values.force ||
+        values.yes ||
+        process.argv.includes('--force') ||
+        process.argv.includes('-f') ||
+        process.argv.includes('-y') ||
+        process.argv.includes('--yes')
+      );
+      await handleResetCommand({ force: isForce });
       process.exit(0);
     }
 

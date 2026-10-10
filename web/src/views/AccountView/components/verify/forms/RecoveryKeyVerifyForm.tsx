@@ -21,11 +21,20 @@ export const RecoveryKeyVerifyForm: React.FC<RecoveryKeyVerifyFormProps> = ({
   const { t } = useTranslation();
 
   return (
-    <form onSubmit={onSubmit} className="py-2 space-y-4">
+    <form onSubmit={onSubmit} autoComplete="off" className="py-2 space-y-4">
       <FormGroup label={t("account.recoveryKey.verifyPromptLabel", "原恢复密钥 (Original Recovery Key)")}>
         <InputGroup
           leftIcon="key"
           type="text"
+          id="verify-recovery-key-input"
+          name="verify_recovery_key_input"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-1p-ignore="true"
+          data-lpignore="true"
+          data-bwignore="true"
           placeholder="123456-789012-345678-901234-567890"
           value={recoveryKey}
           onChange={(e) => setRecoveryKey(e.target.value)}

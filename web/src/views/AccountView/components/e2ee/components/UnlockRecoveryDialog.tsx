@@ -39,7 +39,7 @@ export const UnlockRecoveryDialog: React.FC<UnlockRecoveryDialogProps> = ({
       icon="key"
       className="dark:bg-gray-900"
     >
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} autoComplete="off">
         <div className={Classes.DIALOG_BODY}>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             {t("account.e2ee.unlockWithRecoveryDesc")}
@@ -55,6 +55,14 @@ export const UnlockRecoveryDialog: React.FC<UnlockRecoveryDialogProps> = ({
           >
             <InputGroup
               id="recovery-key-input"
+              name="recovery_key_input"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              data-1p-ignore="true"
+              data-lpignore="true"
+              data-bwignore="true"
               placeholder="123456-789012-345678-901234-567890"
               value={recoveryKeyInput}
               onChange={(e) => setRecoveryKeyInput(e.target.value)}

@@ -9,7 +9,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
-[![Runtime: Node.js >= 22.5](https://img.shields.io/badge/Runtime-Node.js%20%3E%3D%2022.5%20(推薦%20LTS)-green.svg)](https://nodejs.org/)
+[![Runtime: Node.js / Bun](https://img.shields.io/badge/Runtime-Node.js%20%7C%20Bun-green.svg)](https://nodejs.org/)
 [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
 [![Docs: Astro Starlight](https://img.shields.io/badge/Docs-Astro%20Starlight-blueviolet.svg)](https://obein.github.io/DNS-Worker/)
 [![Protocols: UDP 53 · DoT 853 · DoH](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20853%20%7C%20DoH-brightgreen.svg)](https://obein.github.io/DNS-Worker/deployment/matrix/)
@@ -72,7 +72,7 @@ dns-worker
 
 DNS Worker 的誕生與演進得益於現代開源生態的卓越基礎設施與密碼學成果：
 
-- **運算與執行環境**：[Node.js](https://nodejs.org/)（原生內建 `node:sqlite`）與 [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/)
+- **運算與執行環境**：[Node.js](https://nodejs.org/)（原生內建 `node:sqlite`）/ [Bun](https://bun.sh/) (>= 1.4.0) 與 [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/)
 - **使用者介面**：[React](https://github.com/facebook/react)、[Blueprint](https://github.com/palantir/blueprint) 與 [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
 - **文件體系**：[Astro](https://astro.build/) & [Starlight](https://starlight.astro.build/)（極速靜態文件驅動）
 - **密碼學與資料儲存**：[NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768) 與 [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WASM + OPFS 本地優先驅動)

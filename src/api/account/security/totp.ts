@@ -16,6 +16,7 @@ import { PasskeyModel } from "../../../models/passkey";
  * Handles TOTP multi-factor authentication and unified MFA settings:
  * - GET /api/account/totp/setup (generate new secret and QR URI)
  * - POST /api/account/totp/confirm (verify token and activate TOTP + generate recovery keys)
+ * - POST /api/account/totp/test (verify token without modifying account state)
  * - PATCH /api/account/totp/settings (skip_password toggle)
  * - DELETE /api/account/totp (disable TOTP)
  * - PATCH /api/account/mfa/settings (unified skip_password toggle)
@@ -85,6 +86,46 @@ export async function handleTotpAndMfaRequest(
       await activityLog.record(user.id, "totp_setup", clientIp, userAgent, undefined, sessionHash);
 
       return new Response(JSON.stringify({ success: true, recovery_keys: plaintextKeys }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // POST /api/account/totp/test — verify TOTP code without modifying account state
+    if (subAction === "test" && request.method === "POST") {
+      const dbUser = await userModel.getById(user.id);
+      if (!dbUser?.totp_enabled || !dbUser?.totp_secret) {
+        return new Response(JSON.stringify({ success: false, message: "TOTP is not enabled" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      const { token, totpTokenHash, salt } = (await request.json()) as {
+        token?: string;
+        totpTokenHash?: string;
+        salt?: string;
+      };
+
+      const codeToVerify = totpTokenHash || token;
+      if (!codeToVerify) {
+        return new Response(JSON.stringify({ success: false, message: "Missing token" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      const isValid = await verifyTOTP(dbUser.totp_secret, codeToVerify, salt);
+      if (!isValid) {
+        await activityLog.record(user.id, "totp_verify_fail", clientIp, userAgent, { flow: "mfa_test" }, sessionHash);
+        return new Response(JSON.stringify({ success: false, message: "Invalid TOTP code" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      await activityLog.record(user.id, "totp_verify_success", clientIp, userAgent, { flow: "mfa_test" }, sessionHash);
+
+      return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" }
       });
     }

@@ -5,6 +5,11 @@ sidebar:
   order: 1
 ---
 
+import { Image } from 'astro:assets';
+import endpointsImg from '../../../../screenshots/dns.obex-endpoints.webp';
+import profileSelectImg from '../../../../screenshots/dns.obex-profile_select.webp';
+import setupImg from '../../../../screenshots/dns.obex-setup.webp';
+
 In DNS Worker, an **Endpoint** (also referred to as a **Profile** or **接入点**) is an isolated policy domain. Each endpoint possesses its own unique routing key, custom filtering rules, upstream resolvers, and query logging retention settings.
 
 By configuring distinct profiles, you can separate policies across different environments — for example, applying strict ad-blocking to mobile phones, enabling SafeSearch on children's devices, and maintaining an unfiltered profile for development servers.
@@ -12,6 +17,8 @@ By configuring distinct profiles, you can separate policies across different env
 ---
 
 ## 1. Creating and Managing Profiles in Web UI
+
+<Image src={endpointsImg} alt="Endpoints & Access Points Management" format="webp" />
 
 ### Step 1: Access the Dashboard
 1. Open your DNS Worker Web Dashboard (e.g., `https://dns.example.com` or `http://<server-ip>:10080`).
@@ -33,7 +40,13 @@ By configuring distinct profiles, you can separate policies across different env
 └────────────────────────────────────────────────────────┘
 ```
 
-### Step 3: Inspect the Generated Profile Key
+### Step 3: Fast Profile Switching
+
+You can switch between multiple profiles instantly from any view in the Web Dashboard using the profile dropdown:
+
+<Image src={profileSelectImg} alt="Multi-Profile Switcher" format="webp" />
+
+### Step 4: Inspect the Generated Profile Key
 Each newly generated profile is assigned a unique cryptographic **Profile Key** (e.g., `a8f9c2d14e...`). This key acts as the routing identifier in DoH paths and DoT SNI handshakes.
 
 ---
@@ -54,7 +67,11 @@ DNS Worker supports all major modern encrypted DNS protocols alongside classic U
 
 ---
 
-## 3. Client Configuration Guide
+## 3. Interactive Client Configuration Guide
+
+The Web Dashboard includes an interactive client setup walkthrough tailored to each operating system:
+
+<Image src={setupImg} alt="Interactive Client Setup Guide" format="webp" />
 
 ### Android 9+ (Native Private DNS)
 Android features built-in support for DNS over TLS (DoT) via the Private DNS setting:
@@ -124,15 +141,9 @@ For Linux systems using `systemd-resolved` (Ubuntu, Debian, Fedora, Arch):
 
 ---
 
-### Routers & Gateways (SmartDNS / OpenWrt / AdGuard Home)
+### Routers & Gateways (OpenWrt / AdGuard Home)
 
 If you run a local gateway or router, you can forward all LAN DNS requests to your DNS Worker profile:
-
-#### SmartDNS Configuration (`/etc/smartdns/smartdns.conf`):
-```ini
-server-tls <dotDomain>:853 -tls-host-verify <profileKey>.<dotDomain> -group worker
-server-https https://<domain>/dns-query/<profileKey> -group worker
-```
 
 #### AdGuard Home Upstream:
 In AdGuard Home **Settings** → **DNS Settings** → **Upstream DNS servers**, add:

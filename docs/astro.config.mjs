@@ -16,7 +16,6 @@ export default defineConfig({
       logo: {
         src: './src/assets/logo.webp',
       },
-      favicon: '/favicon.ico',
       social: [
         {
           icon: 'github',

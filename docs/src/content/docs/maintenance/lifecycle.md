@@ -11,10 +11,10 @@ To balance auditability with user privacy and storage performance, DNS Worker in
 
 ## 1. Query Log Retention & Privacy Policies
 
-### 90-Day Maximum Retention Cap
-Regardless of user settings, query logs are capped at a strict maximum of **90 days**.
-- **Privacy Principle**: DNS resolution logs contain sensitive personal browsing trails. Long-term log storage poses privacy risks.
-- **Storage Efficiency**: Limiting log tables ensures database indices fit comfortably in RAM, preventing query degradation on embedded or low-resource hardware.
+### Maximum Retention Cap (`MAX_LOG_RETENTION_DAYS`)
+Query log retention is capped by the administrator's `MAX_LOG_RETENTION_DAYS` setting (defaults to **30 days** in Serverless D1, and **360 days** in Serverfull mode).
+- **Privacy Principle**: DNS resolution logs contain personal browsing trails. Configurable log retention allows operators to balance audit compliance requirements with privacy preservation.
+- **Storage Efficiency**: Limiting log tables ensures database indices fit comfortably in RAM, preventing query degradation and storage exhaustion.
 
 ### 30-Day Inactivity Auto-Purge
 To protect privacy and conserve disk space:
@@ -38,7 +38,7 @@ DNS Worker maintains database health through scheduled background tasks:
 ```
 
 - **Cloudflare Workers Mode**: Executed via Cloudflare Cron Triggers (`scheduled(event, env, ctx)` handler).
-- **Serverfull Node.js Mode**: Executed via background interval timers managed directly within the process.
+- **Serverfull Node.js / Bun Mode**: Executed via background interval timers managed directly within the process.
 
 ---
 
@@ -60,7 +60,7 @@ Because Cloudflare D1 imposes database storage and daily write quota limits (500
 
 | Maintenance Parameter | Serverless (`wrangler.toml`) | Serverfull (`.env.serverfull`) | Rationale & Constraint |
 | :--- | :--- | :--- | :--- |
-| **Admin Max Retention** (`MAX_LOG_RETENTION_DAYS`) | **30 Days** | **360 Days** (Policy Capped at 90) | Protects D1 from storage exhaustion on Edge. |
+| **Admin Max Retention** (`MAX_LOG_RETENTION_DAYS`) | **30 Days** | **360 Days** | Protects D1 from storage exhaustion on Edge; permits long-term auditing on Serverfull. |
 | **Admin Default Retention** (`DEFAULT_LOG_RETENTION_DAYS`) | **7 Days** | **180 Days** | High default storage allowance on local disks. |
 | **Normal User Max Retention** (`NORMAL_USER_MAX_LOG_RETENTION_DAYS`) | **7 Days** | **30 Days** | Restricts non-admin user storage footprint. |
 | **Normal User Default** (`NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS`) | **1 Day** | **7 Days** | Minimal retention default for multi-tenant accounts. |

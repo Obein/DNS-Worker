@@ -15,6 +15,7 @@ import { DisableE2eeAlert } from "./e2ee/components/DisableE2eeAlert";
 import { UnlockRecoveryDialog } from "./e2ee/components/UnlockRecoveryDialog";
 import { InitRecoveryDialog } from "./e2ee/components/InitRecoveryDialog";
 import { RotatedKeyAlert } from "./e2ee/components/RotatedKeyAlert";
+import { ResetKeypairAlert } from "./e2ee/components/ResetKeypairAlert";
 
 export interface E2eeCardProps {
   /** The current user profile and security state. */
@@ -64,7 +65,11 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
     handleUpgradeToPqc,
     handleInitWithRecoveryKey,
     handleLockDevice,
-    handleCopyRotatedKey
+    handleCopyRotatedKey,
+    isResetAlertOpen,
+    setIsResetAlertOpen,
+    handleResetAndReinit,
+    handleEnrollPasskey
   } = useE2eeCardState({ user, onRefresh, toasterRef });
 
   return (
@@ -113,6 +118,8 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
               setRecoveryKeyInput("");
               setIsRecoveryDialogOpen(true);
             }}
+            onEnrollPasskey={handleEnrollPasskey}
+            onOpenResetAlert={() => setIsResetAlertOpen(true)}
           />
         )}
       </div>
@@ -123,6 +130,15 @@ export const E2eeCard: React.FC<E2eeCardProps> = ({ user, onRefresh }) => {
         processing={processing}
         onConfirm={handleConfirmDisable}
         onCancel={() => setIsDisableAlertOpen(false)}
+      />
+
+      {/* Confirmation Alert for Resetting E2EE Keypair */}
+      <ResetKeypairAlert
+        isOpen={isResetAlertOpen}
+        processing={processing}
+        hasPasskey={hasPasskey}
+        onConfirm={handleResetAndReinit}
+        onCancel={() => setIsResetAlertOpen(false)}
       />
 
       {/* Recovery Key Unlock Dialog */}

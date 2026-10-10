@@ -47,18 +47,19 @@ Once deployed, your secure DNS resolution endpoint and Web Dashboard are live im
 
 ---
 
-## Method 2: Standalone Server / VPS (Serverfull - Self-Hosted Alternative)
+## Method 2: Standalone Server / VPS (Serverfull - Node.js / Bun)
 
 If you require raw UDP port 53 for local home routers or dedicated Android Private DNS on port 853:
 
 ```bash
-# 1. Install CLI globally
+# 1. Install CLI globally (via npm or bun)
 npm install -g dns-worker
+# or: bun install -g dns-worker
 
 # 2. Initialize persistent directory and default configuration
 dns-worker config init
 
-# 3. Start DNS Worker daemon
+# 3. Start DNS Worker daemon (runs on Node.js >= 22.5 or Bun >= 1.4)
 dns-worker
 ```
 

@@ -95,6 +95,25 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         getTraceInfo(),
       ]);
 
+      // Fallback GeoIP lookup if country is still unknown
+      if (clientData.ip && (clientData.country === "UNKNOWN" || !clientData.country)) {
+        try {
+          const fallbackRes = await fetch(`/api/geoip?ip=${encodeURIComponent(clientData.ip)}`);
+          if (fallbackRes.ok) {
+            const fallbackGeo = await fallbackRes.json();
+            if (fallbackGeo.success) {
+              if (fallbackGeo.country) clientData.country = fallbackGeo.country;
+              if (fallbackGeo.region) clientData.region = fallbackGeo.region;
+              if (fallbackGeo.city) clientData.city = fallbackGeo.city;
+              if (fallbackGeo.timezone?.id) clientData.timezone = fallbackGeo.timezone.id;
+              if (fallbackGeo.connection?.org) clientData.asOrganization = fallbackGeo.connection.org;
+            }
+          }
+        } catch {
+          // Ignore fallback errors
+        }
+      }
+
       setClientInfo(clientData);
       setTraceInfo(traceResult);
 

@@ -55,10 +55,12 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
     setNewKey(res.recovery_key);
     setIsMasked(false);
 
+    let rewrapSuccess = false;
     // Re-wrap SK_user with newly rotated recovery key to maintain decryptability
     if (e2ee.isUnlocked()) {
       try {
         await e2ee.wrapCurrentKeyForRecovery(res.recovery_key);
+        rewrapSuccess = true;
       } catch (wrapErr) {
         console.warn("[RecoveryKey] Failed to wrap E2EE key with new recovery key:", wrapErr);
       }
@@ -67,6 +69,7 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
         try {
           await e2ee.unlockWithRecoveryKey(payload.recoveryKey);
           await e2ee.wrapCurrentKeyForRecovery(res.recovery_key);
+          rewrapSuccess = true;
         } catch (err) {
           console.warn("[RecoveryKey] Failed to unlock and re-wrap with new recovery key:", err);
         }
@@ -74,10 +77,28 @@ export const RecoveryKeyCard: React.FC<RecoveryKeyCardProps> = ({ user, onRefres
         try {
           await e2ee.unlockUser();
           await e2ee.wrapCurrentKeyForRecovery(res.recovery_key);
+          rewrapSuccess = true;
         } catch (err) {
           console.warn("[RecoveryKey] Failed to unlock via Passkey and re-wrap:", err);
         }
       }
+    }
+
+    try {
+      const e2eeStatus = await e2ee.getUserStatus();
+      if (e2eeStatus.hasKeys && !rewrapSuccess) {
+        setCardMessage({
+          text: t(
+            "account.recoveryKey.rotateSuccessE2eeWarning",
+            "恢复密钥已成功轮换！注意：由于端到端加密此前处于锁定状态且未能解密，旧 E2EE 密文仍需使用轮换前的旧恢复密钥解锁，或可在下方端到端加密卡片中点击「重置密钥对」。"
+          ),
+          intent: Intent.WARNING
+        });
+        onRefresh();
+        return;
+      }
+    } catch {
+      // ignore
     }
 
     setCardMessage({

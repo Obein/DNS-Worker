@@ -1,0 +1,65 @@
+---
+title: 專案概述
+description: 瞭解 DNS Worker 的設計理念、雙引擎架構及核心功能特性。
+---
+
+import { Image } from 'astro:assets';
+import statsImg from '../../../../../screenshots/dns.obex-stats.webp';
+import statsDestImg from '../../../../../screenshots/dns.obex-stats_dest.webp';
+import mobileStatsImg from '../../../../../screenshots/dns.obex-mobile_stats.webp';
+import mobileLogImg from '../../../../../screenshots/dns.obex-mobile_log.webp';
+
+## 什麼是 DNS Worker？
+
+**DNS Worker** 是一款主打隱私優先的現代化保護性 DNS 解析系統，採用創新的**雙引擎架構**構建：
+
+1. **☁️ Serverless 邊緣模式 (首選推薦)**：
+   運行於遍佈全球 300+ 邊緣節點的 Cloudflare Workers 與 Cloudflare D1 分散式 SQL 資料庫之上，享有零維護成本、全網 Anycast 智慧就近排程以及極速邊緣響應。
+2. **🖥️ Serverfull 獨立服務模式 (自由自建)**：
+   擺脫對任何公有云廠商的依賴，在自有 VPS、家庭主機或實體伺服器上執行。依託 Node.js / Bun 原生 `node:sqlite`，原生提供經典 UDP 53、DoT 853（支援 TLS SNI 多接入點分流）以及一體化 Web 管理面板與 DoH。
+
+---
+
+## 現代化 Web 控制面板與威脅情報
+
+DNS Worker 自帶美觀流暢的現代化管理面板，即時呈現查詢流量、耗時分佈以及安全攔截指標：
+
+<Image src={statsImg} alt="DNS Worker 管理面板與統計分析" format="webp" />
+
+- **全方位安全度量**：即時統計總請求量、廣告與惡意域名攔截率、平均解析延遲及 24 小時流量走勢圖。
+- **高頻威脅直觀呈現**：一目瞭然地捕捉最活躍的追蹤器與流氓域名。
+
+---
+
+## 全球解析歸屬與流向地圖
+
+<Image src={statsDestImg} alt="全球解析目標與地理分佈地圖" format="webp" />
+
+DNS Worker 會自動記錄並將解析歸屬地上報繪製成全球流向地圖，讓您直觀獲知裝置查詢在全球網路中的分佈與走向。
+
+---
+
+## 協議與功能特性
+
+### 1. 全協議棧覆蓋
+* **傳統 UDP 53 (RFC 1035)**：相容傳統路由器、區域網裝置以及系統底層網路設定。
+* **加密 DoT 853 (RFC 7858)**：基於 853 埠的高效能加密傳輸，支援 TLS SNI 多接入點分流（`<profileKey>.dns.example.com`），原生契合 Android 9+ 私有 DNS。
+* **加密 DoH (RFC 8484)**：支援 HTTP/2 及 HTTP/3 (Alt-Svc) 的安全傳輸協議，適用於主流現代瀏覽器。
+* **加密 DoQ (RFC 9250)**：基於 QUIC 協議的高效能 DNS，具備 0-RTT 極速握手並徹底消除隊頭阻塞。
+* **ECH 與 DDR (RFC 9460)**：廣播加密客戶端問候（ECH）與專用解析器自動發現（DDR）記錄。
+
+### 2. 本地優先架構 (Local-First)
+依託瀏覽器內嵌的 WebAssembly SQLite 與 OPFS 技術，在前端實現 0ms 閃電級的日誌篩選與多維圖表分析，無需消耗服務端資料庫讀取額度。
+
+### 3. 後量子零知識端到端加密 (PQC E2EE)
+採用 NIST FIPS 203 **P256-MLKEM768** 混合格密碼體系，結合硬體通行金鑰（WebAuthn）授權。服務端僅儲存不可逆密文，唯有使用者授權裝置方可完成解密。
+
+---
+
+## 移動端與桌面端自適應設計
+
+DNS Worker 針對移動端裝置進行了深度 UI 響應式調優，無論在桌面端還是手機螢幕上都能獲得絲滑的使用體驗：
+
+| 移動端安全統計分析 | 移動端即時日誌審計流 |
+| :---: | :---: |
+| <Image src={mobileStatsImg} alt="移動端統計分析" format="webp" /> | <Image src={mobileLogImg} alt="移動端即時日誌" format="webp" /> |

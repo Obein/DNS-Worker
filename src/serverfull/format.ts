@@ -216,7 +216,7 @@ export interface BannerItem {
 export interface BannerConfig {
   title: string;
   subtitle?: string;
-  borderChar?: '-' | '=' | '#' | '*';
+  borderChar?: '-' | '=' | '#' | '*' | '!';
   bullet?: string;
   minWidth?: number;
   items?: BannerItem[];

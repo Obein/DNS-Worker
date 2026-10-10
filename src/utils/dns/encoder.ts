@@ -25,7 +25,7 @@ export interface DNSRecord {
  */
 export function buildDNSQuery(name: string, type: string): Uint8Array {
   const header = new Uint8Array(12);
-  const id = Math.floor(Math.random() * 65535);
+  const id = crypto.getRandomValues(new Uint16Array(1))[0];
   header[0] = id >> 8;
   header[1] = id & 0xff;
   header[2] = 0x01; // QR=0, Opcode=0, AA=0, TC=0, RD=1

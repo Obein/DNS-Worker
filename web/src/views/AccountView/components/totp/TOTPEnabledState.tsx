@@ -9,9 +9,10 @@ import {
   FormGroup,
   InputGroup
 } from "@blueprintjs/core";
-import { Smartphone, ShieldOff } from "lucide-react";
+import { Smartphone, ShieldOff, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UserInfo } from "../../types";
+import { TestTotpDialog } from "./TestTotpDialog";
 
 /**
  * Properties for the TOTPEnabledState component.
@@ -60,6 +61,7 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
 }) => {
   const { t } = useTranslation();
   const [showDisablePassword, setShowDisablePassword] = React.useState(false);
+  const [testDialogOpen, setTestDialogOpen] = React.useState(false);
 
   return (
     <div className="space-y-4">
@@ -74,13 +76,21 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
           </Tag>
         </div>
 
-        <Button
-          intent={Intent.DANGER}
-          outlined
-          icon={<ShieldOff size={14} />}
-          text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
-          onClick={() => setDisableDialogOpen(true)}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            outlined
+            icon={<KeyRound size={14} />}
+            text={t("account.totp.testBtn", "Test Code")}
+            onClick={() => setTestDialogOpen(true)}
+          />
+          <Button
+            intent={Intent.DANGER}
+            outlined
+            icon={<ShieldOff size={14} />}
+            text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
+            onClick={() => setDisableDialogOpen(true)}
+          />
+        </div>
       </div>
       <div className="space-y-4">
         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -163,6 +173,11 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
           )}
         </div>
       </Dialog>
+
+      <TestTotpDialog
+        isOpen={testDialogOpen}
+        onClose={() => setTestDialogOpen(false)}
+      />
     </div>
   );
 };

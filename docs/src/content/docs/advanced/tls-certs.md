@@ -5,6 +5,9 @@ description: Guidance on Let's Encrypt certificates, non-root permissions, ssl-c
 
 Enabling the HTTPS Web Dashboard (port 10443) and DoT (port 853) requires valid TLS certificates.
 
+> [!TIP]
+> If you only need HTTPS for the Web Dashboard and DoH, you can skip configuring certificates inside DNS Worker and instead reverse-proxy port `10080` (HTTP) with **Caddy** or **Nginx**. See [Reverse Proxying HTTP & DoH](/DNS-Worker/deployment/serverfull/#reverse-proxying-http--doh-caddy--nginx).
+
 ## Environment Configuration
 
 Specify certificate paths in `/etc/dns-worker/.env`:

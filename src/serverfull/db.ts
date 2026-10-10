@@ -102,7 +102,49 @@ export class NodeD1PreparedStatement implements D1PreparedStatement {
 }
 
 export class NodeD1Database implements D1Database {
-  constructor(public readonly rawDb: DatabaseSync) {}
+  constructor(
+    public readonly rawDb: DatabaseSync,
+    public readonly dbPath?: string
+  ) {}
+
+  /**
+   * Calculates the physical disk size in bytes for the SQLite database.
+   * Includes main database file, WAL file, and SHM file.
+   * Falls back to logical allocated pages * page size.
+   */
+  getDatabaseSize(): number {
+    let total = 0;
+    if (this.dbPath && this.dbPath !== ':memory:') {
+      try {
+        if (fs.existsSync(this.dbPath)) total += fs.statSync(this.dbPath).size;
+        const walPath = `${this.dbPath}-wal`;
+        if (fs.existsSync(walPath)) total += fs.statSync(walPath).size;
+        const shmPath = `${this.dbPath}-shm`;
+        if (fs.existsSync(shmPath)) total += fs.statSync(shmPath).size;
+      } catch {}
+    }
+    if (total === 0) {
+      try {
+        const pageCount = (this.rawDb.prepare('PRAGMA page_count').get() as Record<string, unknown> | undefined)?.page_count ?? 0;
+        const freelistCount = (this.rawDb.prepare('PRAGMA freelist_count').get() as Record<string, unknown> | undefined)?.freelist_count ?? 0;
+        const pageSize = (this.rawDb.prepare('PRAGMA page_size').get() as Record<string, unknown> | undefined)?.page_size ?? 4096;
+        total = Math.max(0, (Number(pageCount) - Number(freelistCount)) * Number(pageSize));
+      } catch {}
+    }
+    return total;
+  }
+
+  /**
+   * Performs an immediate SQLite VACUUM and truncates the WAL write-ahead log to reclaim disk space.
+   */
+  vacuum(): void {
+    try {
+      this.rawDb.exec('VACUUM;');
+      this.rawDb.exec('PRAGMA wal_checkpoint(TRUNCATE);');
+    } catch (err: unknown) {
+      console.warn('[SQLite D1] VACUUM / checkpoint warning:', err);
+    }
+  }
 
   prepare(query: string): D1PreparedStatement {
     return new NodeD1PreparedStatement(this.rawDb, query) as unknown as D1PreparedStatement;
@@ -131,6 +173,12 @@ export class NodeD1Database implements D1Database {
 
   async dump(): Promise<ArrayBuffer> {
     throw new Error('dump() is not supported in NodeD1Database');
+  }
+
+  close(): void {
+    try {
+      this.rawDb.close();
+    } catch {}
   }
 
   withSession(_constraintOrBookmark?: string): D1DatabaseSession {
@@ -232,5 +280,5 @@ export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoo
   const migrationsDir = path.join(rootDir, 'migrations');
   runMigrations(rawDb, migrationsDir);
 
-  return new NodeD1Database(rawDb);
+  return new NodeD1Database(rawDb, dbPath);
 }

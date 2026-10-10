@@ -282,6 +282,10 @@ export class E2eeApi {
       return true;
     }
 
+    if (!status.wrappedPasskeys || status.wrappedPasskeys.length === 0) {
+      throw new Error("No passkeys have been enrolled in E2EE yet. Please unlock with Recovery Key or reset the keypair.");
+    }
+
     const { kek, altKek, passkeyId } = await derivePasskeyKek("account");
 
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];

@@ -47,3 +47,9 @@ npm run dev
 # 5. Deploy to Cloudflare Workers
 npm run deploy
 ```
+
+---
+
+## Cloudflare D1 Database Studio & Inspection
+
+Once deployed, all users, profiles, rules, and query logs are persisted in your Cloudflare D1 database. You can inspect live tables, schema, and query records directly in the Cloudflare Dashboard under **Workers & Pages** > **D1** > your database > **Console / Explore Data**.

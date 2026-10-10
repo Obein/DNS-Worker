@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   H4,
   Tag,
   Button,
   Intent,
-  Callout
+  Callout,
+  OverlayToaster
 } from "@blueprintjs/core";
-import { Key, Plus, ShieldAlert } from "lucide-react";
+import { Key, Plus, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TOTPRecoveryKeys } from "./totp/TOTPRecoveryKeys";
 import {
@@ -31,6 +32,7 @@ export interface PasskeyCardProps {
  */
 export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
   const { t } = useTranslation();
+  const toasterRef = useRef<OverlayToaster | null>(null);
 
   const {
     passkeys,
@@ -67,8 +69,10 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
     setDeleteConfirmOpen,
     targetToDelete,
     handleOpenDelete,
-    handleDeleteSubmit
-  } = usePasskeys({ onRefresh });
+    handleDeleteSubmit,
+    testingId,
+    handleTestPasskey
+  } = usePasskeys({ onRefresh, toasterRef });
 
   // Phase 1: show recovery keys after setup if generated
   if (recoveryKeys) {
@@ -84,6 +88,8 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
 
   return (
     <div className="space-y-4">
+      <OverlayToaster ref={toasterRef} />
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Key size={20} className="text-purple-500" />
@@ -104,14 +110,26 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
           </Tag>
         </div>
 
-        {supported && (
-          <Button
-            intent={Intent.PRIMARY}
-            icon={<Plus size={16} />}
-            text={t("account.passkey.addBtn", "Add Passkey")}
-            onClick={handleOpenAdd}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          {supported && passkeys.length > 0 && (
+            <Button
+              intent={Intent.NONE}
+              outlined
+              icon={<ShieldCheck size={16} />}
+              text={t("account.passkey.testBtn", "Test Passkey")}
+              onClick={() => handleTestPasskey()}
+              loading={testingId === "all"}
+            />
+          )}
+          {supported && (
+            <Button
+              intent={Intent.PRIMARY}
+              icon={<Plus size={16} />}
+              text={t("account.passkey.addBtn", "Add Passkey")}
+              onClick={handleOpenAdd}
+            />
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -138,6 +156,8 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
         passkeys={passkeys}
         loading={loading}
         deletingId={deletingId}
+        testingId={testingId}
+        onTestPasskey={handleTestPasskey}
         onOpenRename={handleOpenRename}
         onOpenDelete={handleOpenDelete}
       />

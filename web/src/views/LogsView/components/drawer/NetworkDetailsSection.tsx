@@ -4,6 +4,7 @@ import { User, MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { LogEntry } from "../../types";
 import { getFlagEmoji } from "../../../../utils/getFlagEmoji";
+import { formatCountryName } from "../../../../utils/formatCountryName";
 
 export interface NetworkDetailsSectionProps {
   selectedLog: LogEntry;
@@ -16,10 +17,22 @@ export const NetworkDetailsSection: React.FC<NetworkDetailsSectionProps> = ({
   detailedLog,
   loading,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const clientIp = detailedLog?.client_ip || selectedLog.client_ip;
   const clientCountry = detailedLog?.geo_country || selectedLog.geo_country;
+
+  let clientCountryTitle = "Unknown";
+  if (clientCountry) {
+    const upper = clientCountry.toUpperCase().trim();
+    if (upper === "LAN" || upper === "LOCAL" || upper === "PRIVATE" || upper === "PRIVATE NETWORK") {
+      clientCountryTitle = t("setup.privateNetwork", "Private Network");
+    } else if (upper === "UN" || upper === "UNKNOWN" || upper === "XX") {
+      clientCountryTitle = t("common.unknown", "Unknown");
+    } else {
+      clientCountryTitle = formatCountryName(clientCountry, i18n.language) || clientCountry;
+    }
+  }
 
   let destCountryCode = detailedLog?.dest_country_code || selectedLog.dest_country_code;
   const destCountry = detailedLog?.dest_country || selectedLog.dest_country;
@@ -71,7 +84,7 @@ export const NetworkDetailsSection: React.FC<NetworkDetailsSectionProps> = ({
                 {clientIp || (loading ? <Spinner size={12} /> : "-")}
               </span>
               {(clientCountry || loading) && (
-                <Tag minimal title={clientCountry || "Unknown"}>
+                <Tag minimal title={clientCountryTitle}>
                   {clientCountry ? getFlagEmoji(clientCountry) : "-"}
                 </Tag>
               )}

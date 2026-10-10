@@ -209,7 +209,7 @@ export const useSignupWizard = ({
       const res = await verifyPasskeyRegistration({ name: "primary_passkey", credential });
 
       const passkeyId = (res as any)?.passkey?.id || (res as any)?.id;
-      if (passkeyId) {
+      if (passkeyId && e2ee.isUnlocked()) {
         try {
           await e2ee.wrapCurrentKeyForPasskey(passkeyId);
         } catch (wrapErr) {
@@ -294,11 +294,6 @@ export const useSignupWizard = ({
 
       if (data.recoveryKey) {
         setTotpRecoveryKeys([data.recoveryKey]);
-        try {
-          await e2ee.initUserE2eeWithRecoveryKey(data.recoveryKey);
-        } catch (e2eeErr) {
-          console.error("Failed to initialize user E2EE with recovery key:", e2eeErr);
-        }
       }
 
       setMfaChoice("choose");

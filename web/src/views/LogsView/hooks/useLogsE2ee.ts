@@ -64,7 +64,7 @@ export function useLogsE2ee({
   const checkE2ee = useCallback(async () => {
     try {
       const status = await e2ee.getStatus(profileId);
-      const enabled = status.enabled || Boolean(status.hasKeys);
+      const enabled = Boolean(status.enabled);
       setIsE2eeEnabled(enabled);
 
       const unlocked = e2ee.isProfileUnlocked(profileId);

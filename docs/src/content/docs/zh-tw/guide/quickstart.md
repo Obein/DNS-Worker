@@ -47,18 +47,19 @@ npm run deploy
 
 ---
 
-## 方案 2：獨立伺服器 / VPS 部署（Serverfull 自建可選方案）
+## 方案 2：獨立伺服器 / VPS 部署（Serverfull Node.js / Bun 模式）
 
 若您需要內網路由器直接通過 UDP 53 解析，或直接使用 Android 原生私密 DNS（DoT 853 埠）：
 
 ```bash
-# 1. 全局安装 CLI
+# 1. 全局安装 CLI（支持 npm 或 bun）
 npm install -g dns-worker
+# 或使用 bun: bun install -g dns-worker
 
 # 2. 初始化持久化数据目录与默认环境变量
 dns-worker config init
 
-# 3. 启动 DNS Worker 守护服务
+# 3. 启动 DNS Worker 守护服务（运行于 Node.js >= 22.5 或 Bun >= 1.4）
 dns-worker
 ```
 
