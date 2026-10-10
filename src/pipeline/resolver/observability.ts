@@ -1,5 +1,5 @@
 import { Context, DNSQuery, ProfileSettings, ResolutionResult } from "../../types";
-import { fetchGeoIP } from "../../utils/geoip";
+import { fetchGeoIP, resolveClientGeoCountry } from "../../utils/geoip";
 import { dnsCache } from "../cache";
 import { enqueueLog } from "../logBatcher";
 import { UpstreamHttpError, ParsedDNSAnswerRecord } from "./types";
@@ -34,14 +34,11 @@ export function recordSuccessAndCache(
   ecs?: string
 ): void {
   const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
-  const cfCountry =
-    (request as unknown as { cf?: { country?: string } }).cf?.country ||
-    request.headers.get("CF-IPCountry") ||
-    "UN";
 
   context.ctx.waitUntil(
     (async () => {
       try {
+        const clientCountryPromise = resolveClientGeoCountry(request, clientIp);
         const firstIp = parsedAnswers.find(
           (a) => a.type === "A" || a.type === "AAAA"
         )?.data;
@@ -60,6 +57,7 @@ export function recordSuccessAndCache(
           }
         }
 
+        const clientCountry = await clientCountryPromise;
         const latency = Date.now() - context.startTime;
         enqueueLog(
           {
@@ -67,7 +65,7 @@ export function recordSuccessAndCache(
             access_point_id: context.accessPointId,
             timestamp: Math.floor(Date.now() / 1000),
             client_ip: clientIp,
-            geo_country: cfCountry,
+            geo_country: clientCountry,
             domain: query.name,
             record_type: query.type,
             action,
@@ -160,22 +158,19 @@ export function recordFailure(
       : `Upstream Error: ${errorDetail}`;
 
   const clientIp = request.headers.get("CF-Connecting-IP") || "127.0.0.1";
-  const cfCountry =
-    (request as unknown as { cf?: { country?: string } }).cf?.country ||
-    request.headers.get("CF-IPCountry") ||
-    "UN";
 
   // Asynchronously persist failure log for upstream troubleshooting
   context.ctx.waitUntil(
     (async () => {
       try {
+        const clientCountry = await resolveClientGeoCountry(request, clientIp);
         enqueueLog(
           {
             profile_id: context.profileId,
             access_point_id: context.accessPointId,
             timestamp: Math.floor(Date.now() / 1000),
             client_ip: clientIp,
-            geo_country: cfCountry,
+            geo_country: clientCountry,
             domain: query.name,
             record_type: query.type,
             action: "FAIL",

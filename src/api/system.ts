@@ -1,6 +1,8 @@
 import { Env } from '../types';
 import { cacheUtils } from '../utils/cache';
 import { getPresetEchFrontingDomains } from '../utils/ech/constants';
+import { fetchGeoIP } from '../utils/geoip';
+import { isPublicInternetIP } from '../utils/validator';
 import {
   DEFAULT_PRESET_UPSTREAMS,
   DEFAULT_PRESET_EXTERNAL_FILTERS,
@@ -20,12 +22,43 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
     const connectedProfileId = await cacheUtils.get<string>(cache, `active_dns:${clientIp}`);
     const cf = (request as any).cf;
 
-    const country = cf?.country || request.headers.get("CF-IPCountry") || "UNKNOWN";
-    const region = cf?.region || request.headers.get("CF-Region") || "UNKNOWN";
-    const city = cf?.city || request.headers.get("CF-IPCity") || "UNKNOWN";
-    const timezone = cf?.timezone || request.headers.get("CF-Timezone") || "UNKNOWN";
-    const asn = cf?.asn ? Number(cf.asn) : (request.headers.get("CF-ASN") ? Number(request.headers.get("CF-ASN")) : 0);
-    const asOrganization = cf?.asOrganization || request.headers.get("CF-AS-Org") || "UNKNOWN";
+    let country = cf?.country || request.headers.get("CF-IPCountry") || "";
+    let countryCode = country;
+    let region = cf?.region || request.headers.get("CF-Region") || "";
+    let city = cf?.city || request.headers.get("CF-IPCity") || "";
+    let timezone = cf?.timezone || request.headers.get("CF-Timezone") || "";
+    let asn = cf?.asn ? Number(cf.asn) : (request.headers.get("CF-ASN") ? Number(request.headers.get("CF-ASN")) : 0);
+    let asOrganization = cf?.asOrganization || request.headers.get("CF-AS-Org") || "";
+
+    // If geolocation is missing (e.g. Serverfull mode or direct reverse proxy), resolve via GeoIP
+    if (!country || country === "UNKNOWN" || country === "UN" || country === "XX") {
+      if (!isPublicInternetIP(clientIp)) {
+        country = "Private Network";
+        countryCode = "LAN";
+        region = "LAN";
+        city = "Local";
+        timezone = "UNKNOWN";
+        asOrganization = "Private Network";
+      } else {
+        try {
+          const geo = await fetchGeoIP(clientIp);
+          if (geo) {
+            country = geo.country || geo.country_code || "UNKNOWN";
+            countryCode = geo.country_code || "UNKNOWN";
+            region = geo.region || "UNKNOWN";
+            city = geo.city || "UNKNOWN";
+            timezone = geo.timezone || "UNKNOWN";
+            asOrganization = geo.org || geo.isp || "UNKNOWN";
+            if (!asn && geo.as) {
+              const asnMatch = geo.as.match(/^AS(\d+)/i);
+              if (asnMatch) asn = Number(asnMatch[1]);
+            }
+          }
+        } catch (e) {
+          console.warn(`[ClientInfo] Failed resolving geoip for ${clientIp}:`, e);
+        }
+      }
+    }
 
     const isServerfull = Boolean(
       env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
@@ -37,12 +70,13 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
 
     return new Response(JSON.stringify({
       ip: clientIp,
-      country,
-      region,
-      city,
-      timezone,
-      asn,
-      asOrganization,
+      country: country || "UNKNOWN",
+      countryCode: countryCode || undefined,
+      region: region || "UNKNOWN",
+      city: city || "UNKNOWN",
+      timezone: timezone || "UNKNOWN",
+      asn: asn || 0,
+      asOrganization: asOrganization || "UNKNOWN",
       connectedProfileId: connectedProfileId || null,
       substituteDomain: env.SUBSTITUTE_DOMAIN || DEFAULT_SUBSTITUTE_DOMAIN,
       dotDomain: env.SERVERFULL_DOT_DOMAIN || env.DOT_DOMAIN || null,

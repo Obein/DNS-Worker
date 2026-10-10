@@ -102,7 +102,12 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                   </div>
                   <div className="font-bold truncate">
                     <span className={clsx("transition-[filter] duration-200 inline-block", !showLocation && "filter blur-[6px] select-none")}>
-                      {clientInfo.city}, {clientInfo.region ? `${clientInfo.region}, ` : ""}{clientInfo.country}
+                      {(() => {
+                        const parts = [clientInfo.city, clientInfo.region, clientInfo.country].filter(
+                          (p): p is string => Boolean(p && p !== "UNKNOWN")
+                        );
+                        return parts.length > 0 ? parts.join(", ") : t("setup.detecting");
+                      })()}
                     </span>
                   </div>
                 </div>

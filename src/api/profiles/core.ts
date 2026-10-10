@@ -4,6 +4,7 @@ import { LogModel } from "../../models/log";
 import { generateId } from "../../lib/auth";
 import { isSafeUrl } from "../../utils/validator";
 import { buildDNSQuery, parseDNSAnswer } from "../../utils/dns";
+import { resolveClientGeoCountry } from "../../utils/geoip";
 import { pipeline } from "../../pipeline";
 import { PROFILE_NAME_REGEX } from "../../utils/validator";
 
@@ -248,7 +249,7 @@ export async function handleProfilesCoreRequest(
       latency: result.latency,
       timings: result.timings,
       client_ip: request.headers.get("CF-Connecting-IP") || "127.0.0.1",
-      geo_country: (request as any).cf?.country || request.headers.get("CF-IPCountry") || "UNKNOWN",
+      geo_country: await resolveClientGeoCountry(request, request.headers.get("CF-Connecting-IP") || "127.0.0.1"),
       success: true 
     }), { headers: { 'Content-Type': 'application/json' } });
   }

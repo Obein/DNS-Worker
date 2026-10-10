@@ -207,6 +207,9 @@ async function runTests() {
   if (clientInfoJson.dotDomain !== 'dns.local') {
     throw new Error(`Expected clientInfo.dotDomain to be 'dns.local', got ${clientInfoJson.dotDomain}`);
   }
+  if (clientInfoJson.country !== 'Private Network' || clientInfoJson.countryCode !== 'LAN') {
+    throw new Error(`Expected Private Network location for 127.0.0.1, got: ${JSON.stringify(clientInfoJson)}`);
+  }
 
   // Verify reverse proxy IP pass-through (Caddy / Nginx)
   const proxyXffRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`, {
@@ -225,7 +228,16 @@ async function runTests() {
     throw new Error(`Expected client IP 198.51.100.22 from X-Real-IP, got ${proxyRealIpJson.ip}`);
   }
 
-  console.log('>>> [TEST C] SUCCESS: HTTP Server & Reverse Proxy Client IP resolution works!');
+  // Verify public IP GeoIP resolution through reverse proxy
+  const proxyPublicRes = await fetch(`http://127.0.0.1:${HTTP_TEST_PORT}/api/clientinfo`, {
+    headers: { 'X-Real-IP': '1.1.1.1' }
+  });
+  const proxyPublicJson = await proxyPublicRes.json() as Record<string, any>;
+  if (proxyPublicJson.ip !== '1.1.1.1' || !proxyPublicJson.country || proxyPublicJson.country === 'UNKNOWN') {
+    throw new Error(`Expected resolved GeoIP location for 1.1.1.1, got: ${JSON.stringify(proxyPublicJson)}`);
+  }
+
+  console.log('>>> [TEST C] SUCCESS: HTTP Server, Reverse Proxy Client IP & GeoIP resolution works!');
 
   // ── TEST D: HTTPS Web UI / ClientInfo API ──
   console.log('\n>>> [TEST D] Testing HTTPS Server (/api/clientinfo)...');

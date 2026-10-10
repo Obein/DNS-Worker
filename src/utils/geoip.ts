@@ -9,6 +9,7 @@ export interface GeoIP {
   org?: string;
   region?: string;
   as?: string;
+  timezone?: string;
 }
 
 // In-memory cache fallback (expires after 14 days)
@@ -73,7 +74,7 @@ export async function fetchGeoIP(ip: string): Promise<GeoIP | null> {
   // 1. Primary provider: ip-api.com
   try {
     const response = await fetch(
-      `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,org,as`,
+      `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,org,as,timezone`,
       {
         cf: {
           cacheTtlByStatus: {
@@ -96,6 +97,7 @@ export async function fetchGeoIP(ip: string): Promise<GeoIP | null> {
           isp: data.isp,
           org: data.org,
           as: data.as,
+          timezone: data.timezone,
         };
         await storeInCache(geo);
         return geo;
@@ -121,6 +123,7 @@ export async function fetchGeoIP(ip: string): Promise<GeoIP | null> {
           as: data2.connection?.asn
             ? `AS${data2.connection.asn} ${data2.connection?.org || ""}`.trim()
             : undefined,
+          timezone: data2.timezone?.id,
         };
         await storeInCache(geo);
         return geo;
@@ -131,4 +134,46 @@ export async function fetchGeoIP(ip: string): Promise<GeoIP | null> {
   }
 
   return null;
+}
+
+/**
+ * Resolves the 2-letter country code (or 'LAN' for local/private network clients)
+ * for a DNS client IP. Prefers Cloudflare edge headers if valid; falls back to
+ * cached GeoIP resolution for public IPs, or 'LAN' for private/reserved IPs.
+ *
+ * @param request - Inbound HTTP Request.
+ * @param clientIp - Client IP address.
+ * @returns 2-letter uppercase ISO country code, 'LAN', or 'UNKNOWN'.
+ */
+export async function resolveClientGeoCountry(
+  request: Request,
+  clientIp: string
+): Promise<string> {
+  const edgeCountry =
+    (request as unknown as { cf?: { country?: string } }).cf?.country ||
+    request.headers.get("CF-IPCountry");
+
+  if (
+    edgeCountry &&
+    edgeCountry !== "UN" &&
+    edgeCountry !== "UNKNOWN" &&
+    edgeCountry !== "XX"
+  ) {
+    return edgeCountry.toUpperCase();
+  }
+
+  if (!isPublicInternetIP(clientIp)) {
+    return "LAN";
+  }
+
+  try {
+    const geo = await fetchGeoIP(clientIp);
+    if (geo?.country_code) {
+      return geo.country_code.toUpperCase();
+    }
+  } catch {
+    // Gracefully ignore geo resolution errors
+  }
+
+  return "UNKNOWN";
 }

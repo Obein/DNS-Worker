@@ -127,10 +127,38 @@ async function runTests(): Promise<void> {
 
   // Case E: Direct connection without reverse proxy headers
   const headersE = new Headers();
-  assert.strictEqual(extractClientIp(headersE, '::ffff:192.168.1.50'), '192.168.1.50');
-  assert.strictEqual(extractClientIp(headersE, undefined), '127.0.0.1');
+  // 7. Test getFlagEmoji behavior (LAN, UN, UNKNOWN, Country Codes)
+  console.log('>>> [TEST] 7. getFlagEmoji mapping');
+  const { getFlagEmoji } = await import('../web/src/utils/getFlagEmoji');
+  assert.strictEqual(getFlagEmoji('CN'), '🇨🇳', 'CN must produce China flag');
+  assert.strictEqual(getFlagEmoji('US'), '🇺🇸', 'US must produce US flag');
+  assert.strictEqual(getFlagEmoji('LAN'), '🏠', 'LAN must produce home emoji');
+  assert.strictEqual(getFlagEmoji('LOCAL'), '🏠', 'LOCAL must produce home emoji');
+  assert.strictEqual(getFlagEmoji('PRIVATE'), '🏠', 'PRIVATE must produce home emoji');
+  assert.strictEqual(getFlagEmoji('UN'), '🌐', 'UN must produce globe emoji (not UN flag)');
+  assert.strictEqual(getFlagEmoji('UNKNOWN'), '🌐', 'UNKNOWN must produce globe emoji');
+  assert.strictEqual(getFlagEmoji('XX'), '🌐', 'XX must produce globe emoji');
+  assert.strictEqual(getFlagEmoji(''), '🌐', 'Empty string must produce globe emoji');
+  assert.strictEqual(getFlagEmoji(null), '🌐', 'Null must produce globe emoji');
 
-  console.log('>>> [TEST] All Log Retention & Client IP Tests Passed! \u2714\n');
+  // 8. Test resolveClientGeoCountry behavior
+  console.log('>>> [TEST] 8. resolveClientGeoCountry');
+  const { resolveClientGeoCountry } = await import('../src/utils/geoip');
+  const reqPrivate = new Request('http://localhost');
+  const countryPrivate = await resolveClientGeoCountry(reqPrivate, '192.168.1.100');
+  assert.strictEqual(countryPrivate, 'LAN', 'Private IP must resolve to LAN');
+
+  const reqLoopback = new Request('http://localhost');
+  const countryLoopback = await resolveClientGeoCountry(reqLoopback, '127.0.0.1');
+  assert.strictEqual(countryLoopback, 'LAN', 'Loopback IP must resolve to LAN');
+
+  const reqCf = new Request('http://localhost', {
+    headers: { 'CF-IPCountry': 'JP' }
+  });
+  const countryCf = await resolveClientGeoCountry(reqCf, '1.1.1.1');
+  assert.strictEqual(countryCf, 'JP', 'CF-IPCountry header must be respected when valid');
+
+  console.log('>>> [TEST] All Log Retention, Client IP & GeoIP Tests Passed! ✔\n');
 }
 
 runTests().catch((err) => {

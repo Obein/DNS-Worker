@@ -6,6 +6,7 @@ import {
   parseDNSAnswer,
   DNSRecord
 } from "../../utils/dns";
+import { resolveClientGeoCountry } from "../../utils/geoip";
 import { enqueueLog } from "../logBatcher";
 
 /**
@@ -136,21 +137,18 @@ export async function handleBlockOrRedirect(
   }
 
   const latency = Date.now() - context.startTime;
-  const cfCountry =
-    (request as unknown as { cf?: { country?: string } }).cf?.country ||
-    request.headers.get("CF-IPCountry") ||
-    "UN";
 
   context.ctx.waitUntil(
     (async () => {
       try {
+        const clientCountry = await resolveClientGeoCountry(request, clientIp);
         enqueueLog(
           {
             profile_id: context.profileId,
             access_point_id: context.accessPointId,
             timestamp: Math.floor(Date.now() / 1000),
             client_ip: clientIp,
-            geo_country: cfCountry,
+            geo_country: clientCountry,
             domain: query.name,
             record_type: query.type,
             action,
