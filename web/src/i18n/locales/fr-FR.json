@@ -728,6 +728,7 @@
     "dangerZone": "Zone de danger",
     "clearLogs": "Effacer tous les journaux",
     "clearLogsDesc": "Cela supprimera tous les journaux de requêtes DNS générés sous vos profils. Cette action est irréversible.",
+    "currentDbSize": "Taille actuelle de la base de données",
     "clearLogsBtn": "Effacer les journaux maintenant",
     "deleteAccount": "Supprimer le compte",
     "deleteAccountDesc": "Supprimez définitivement votre compte et toutes ses données associées. Vous perdrez l'accès à toutes vos configurations DNS.",

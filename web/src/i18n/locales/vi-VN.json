@@ -728,6 +728,7 @@
     "dangerZone": "Khu vực nguy hiểm",
     "clearLogs": "Xóa tất cả nhật ký",
     "clearLogsDesc": "Hành động này sẽ xóa nhật ký truy vấn được tạo bởi tất cả các cấu hình DNS dưới tên bạn. Hành động này không thể hoàn tác.",
+    "currentDbSize": "Kích thước cơ sở dữ liệu hiện tại",
     "clearLogsBtn": "Xóa nhật ký ngay bây giờ",
     "deleteAccount": "Xóa tài khoản",
     "deleteAccountDesc": "Xóa vĩnh viễn tài khoản của bạn và tất cả dữ liệu liên quan. Hành động này sẽ khiến bạn mất tất cả các cấu hình phân giải.",

@@ -728,6 +728,7 @@
     "dangerZone": "Danger Zone",
     "clearLogs": "Clear All Logs",
     "clearLogsDesc": "This will delete all resolution logs for all your profiles. This cannot be undone.",
+    "currentDbSize": "Current Database Size",
     "clearLogsBtn": "Clear Logs Now",
     "deleteAccount": "Delete Account",
     "deleteAccountDesc": "Permanently delete your account and all associated data. You will lose all DNS configurations.",

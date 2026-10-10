@@ -728,6 +728,7 @@
     "dangerZone": "Gefahrenbereich",
     "clearLogs": "Alle Protokolle löschen",
     "clearLogsDesc": "Dadurch werden alle DNS-Abfrageprotokolle gelöscht, die unter Ihren Profilen generiert wurden. Diese Aktion ist unumkehrbar.",
+    "currentDbSize": "Aktuelle Datenbankgröße",
     "clearLogsBtn": "Protokolle jetzt löschen",
     "deleteAccount": "Konto löschen",
     "deleteAccountDesc": "Löschen Sie Ihr Konto und alle damit verbundenen Daten dauerhaft. Sie verlieren den Zugriff auf alle Ihre DNS-Konfigurationen.",

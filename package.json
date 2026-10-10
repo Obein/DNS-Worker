@@ -43,6 +43,7 @@
     "test:compat": "tsx test/test_legacy_compat.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "test:reset": "tsx test/test_serverfull_reset.ts",
+    "test:dbsize": "tsx test/test_db_size.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "ui:dev": "cd web && npm run dev",
     "ui:build": "cd web && npm run build",

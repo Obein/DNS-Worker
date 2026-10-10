@@ -17,7 +17,7 @@ export async function handlePersonalAccountRequest(
   const action = pathParts[2];
 
   // Delegate basic account info and lifecycle actions
-  if (action === 'me' || action === 'delete' || action === 'logs') {
+  if (action === 'me' || action === 'delete' || action === 'logs' || action === 'db-size') {
     return handleMeRequest(request, env, user, pathParts, ctx);
   }
 

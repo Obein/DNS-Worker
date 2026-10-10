@@ -728,6 +728,7 @@
     "dangerZone": "Опасная зона",
     "clearLogs": "Очистить логи",
     "clearLogsDesc": "Удалит все логи DNS. Необратимо.",
+    "currentDbSize": "Текущий размер базы данных",
     "clearLogsBtn": "Очистить",
     "deleteAccount": "Удалить аккаунт",
     "deleteAccountDesc": "Удалит аккаунт и данные. Необратимо.",

@@ -4,6 +4,7 @@ import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
 import { PasskeyModel } from "../../models/passkey";
 import { USERNAME_REGEX } from "../../utils/validator";
+import { getDatabaseStorageSize } from "../../utils/dbSize";
 
 /**
  * Handle requests to /api/account/me, /api/account/logs, /api/account/delete
@@ -125,9 +126,21 @@ export async function handleMeRequest(
     return new Response("Method Not Allowed", { status: 405 });
   }
 
+  // GET /api/account/db-size
+  if (action === 'db-size' && request.method === 'GET') {
+    const sizeInfo = await getDatabaseStorageSize(env);
+    return new Response(JSON.stringify(sizeInfo), {
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
   // DELETE /api/account/logs
   if (action === 'logs' && request.method === 'DELETE') {
     await logModel.deleteByOwner(user.id);
+    const dbAny = env.DB as unknown as { vacuum?: () => void };
+    if (typeof dbAny?.vacuum === 'function') {
+      dbAny.vacuum();
+    }
     return new Response(JSON.stringify({ success: true }));
   }
 

@@ -728,6 +728,7 @@
     "dangerZone": "危険ゾーン",
     "clearLogs": "すべてのログを消去",
     "clearLogsDesc": "あなたのアカウントに関連付けられたすべての設定のクエリログを削除します。この操作は元に戻せません。",
+    "currentDbSize": "現在のデータベースサイズ",
     "clearLogsBtn": "今すぐログを消去する",
     "deleteAccount": "アカウントの退会",
     "deleteAccountDesc": "アカウントおよび関連するすべてのデータを永久に削除します。作成したすべてのDNS解決設定にアクセスできなくなります。",

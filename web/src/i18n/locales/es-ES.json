@@ -728,6 +728,7 @@
     "dangerZone": "Zona de peligro",
     "clearLogs": "Borrar todos los registros",
     "clearLogsDesc": "Esto eliminará todos los registros de consultas DNS generados bajo tus perfiles. Esta acción es irreversible.",
+    "currentDbSize": "Tamaño actual de la base de datos",
     "clearLogsBtn": "Borrar registros ahora",
     "deleteAccount": "Eliminar cuenta",
     "deleteAccountDesc": "Elimina de forma permanente tu cuenta y todos los datos asociados. Perderás el acceso a todas tus configuraciones DNS.",

@@ -728,6 +728,7 @@
     "dangerZone": "危险区域",
     "clearLogs": "清空所有日志",
     "clearLogsDesc": "这将删除您名下所有 DNS 配置生成的查询日志。此操作不可恢复。",
+    "currentDbSize": "当前数据库大小",
     "clearLogsBtn": "立即清空日志",
     "deleteAccount": "注销账号",
     "deleteAccountDesc": "永久删除您的账号及所有关联数据。此操作将导致您失去所有解析配置。",

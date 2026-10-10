@@ -469,6 +469,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS: process.env.NORMAL_USER_DEFAULT_LOG_RETENTION_DAYS || 1,
     MAX_LOGS_PER_PROFILE: process.env.MAX_LOGS_PER_PROFILE || 500000,
     SERVERFULL_DEFAULT_PROFILE_KEY: defaultProfileKey,
+    SERVERFULL_DB_PATH: dbPath,
     SERVERFULL_DOT_DOMAIN: dotDomain,
     DOT_DOMAIN: dotDomain,
     SERVERFULL_HTTPS_PORT: httpsPort,

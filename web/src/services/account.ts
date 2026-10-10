@@ -99,6 +99,18 @@ export async function getActivityLog(params: string): Promise<ActivityEntry[]> {
   return res.json();
 }
 
+export interface DatabaseSizeInfo {
+  size_bytes: number;
+  formatted: string;
+  mode: "serverfull" | "serverless";
+}
+
+export async function getDatabaseSize(): Promise<DatabaseSizeInfo> {
+  const res = await fetch("/api/account/db-size");
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function clearLogs(): Promise<void> {
   const res = await fetch("/api/account/logs", { method: "DELETE" });
   if (!res.ok) throw new Error(await res.text());

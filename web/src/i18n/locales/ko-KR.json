@@ -728,6 +728,7 @@
     "dangerZone": "위험 구역",
     "clearLogs": "모든 로그 지우기",
     "clearLogsDesc": "계정에 등록된 모든 설정에서 발생한 쿼리 로그를 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+    "currentDbSize": "현재 데이터베이스 크기",
     "clearLogsBtn": "즉시 로그 지우기",
     "deleteAccount": "회원 탈퇴",
     "deleteAccountDesc": "계정 및 모든 관련 데이터를 영구적으로 삭제합니다. 모든 DNS 해석 설정을 잃게 됩니다.",

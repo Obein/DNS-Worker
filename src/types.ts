@@ -38,6 +38,7 @@ export interface Env {
   LOG_CLEANUP_DAILY_BUDGET?: string | number;
   DOMAIN_ROLLUP_MIN_COUNT?: string | number;
   SERVERFULL_DOT_DOMAIN?: string;
+  SERVERFULL_DB_PATH?: string;
   DOT_DOMAIN?: string;
   [key: string]: any;
 }
