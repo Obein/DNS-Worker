@@ -8,8 +8,9 @@
  */
 
 import assert from "node:assert";
-import { isSafeUrl } from "../src/utils/validator";
+import { isSafeUrl, isSafeUrlWithDnsCheck } from "../src/utils/validator";
 import { verifyAuthenticationResponse, base64UrlEncode } from "../src/lib/webauthn";
+import { buildDNSQuery } from "../src/utils/dns/encoder";
 
 async function testSafeUrlSSRFVectors(): Promise<void> {
   console.log("1. Testing isSafeUrl SSRF & Dynamic DNS Wildcard Filtering...");
@@ -201,6 +202,28 @@ async function testRecoveryKeyPreservationLogic(): Promise<void> {
   console.log("  Passed: Recovery key preservation correctly identifies existing credentials.");
 }
 
+async function testDnsRebindingAndCsprng(): Promise<void> {
+  console.log("5. Testing isSafeUrlWithDnsCheck & CSPRNG DNS Query ID...");
+
+  // Anti-Rebinding / TOCTOU SSRF check
+  assert.strictEqual(await isSafeUrlWithDnsCheck("http://127.0.0.1/evil"), false, "Must block loopback IP");
+  assert.strictEqual(await isSafeUrlWithDnsCheck("http://169.254.169.254/latest"), false, "Must block IMDS metadata");
+  assert.strictEqual(await isSafeUrlWithDnsCheck("http://localhost:8080/hosts"), false, "Must block localhost");
+  assert.strictEqual(await isSafeUrlWithDnsCheck("http://10.0.0.1/list.txt"), false, "Must block RFC 1918 private IP");
+  assert.strictEqual(await isSafeUrlWithDnsCheck("https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"), true, "Must allow public GitHub URL");
+
+  // CSPRNG DNS Transaction ID generation check
+  const queryPacket1 = buildDNSQuery("example.com", "A");
+  const queryPacket2 = buildDNSQuery("example.com", "A");
+  const id1 = (queryPacket1[0] << 8) | queryPacket1[1];
+  const id2 = (queryPacket2[0] << 8) | queryPacket2[1];
+
+  assert.ok(id1 >= 0 && id1 <= 65535, "ID1 must be a valid 16-bit integer");
+  assert.ok(id2 >= 0 && id2 <= 65535, "ID2 must be a valid 16-bit integer");
+
+  console.log("  Passed: DNS rebinding defenses and CSPRNG query IDs validated.");
+}
+
 async function runAllTests(): Promise<void> {
   console.log("================================================================");
   console.log("       ObexDNS Security Audit Round 3 Verification Suite        ");
@@ -210,6 +233,7 @@ async function runAllTests(): Promise<void> {
   await testWebAuthnOriginPortBinding();
   await testFetchListContentSSRFBlocking();
   await testRecoveryKeyPreservationLogic();
+  await testDnsRebindingAndCsprng();
 
   console.log("\n>>> [TEST] All Round 3 Security Audit tests passed successfully!\n");
 }

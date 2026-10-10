@@ -251,3 +251,67 @@ export function isSafeUrl(urlString: string): boolean {
     return false; // Invalid URL
   }
 }
+
+/**
+ * Asynchronously checks whether a URL is safe to fetch, including DNS pre-resolution
+ * in Node.js / Bun environments to guard against DNS rebinding / TOCTOU SSRF (CWE-918 / SEC-02).
+ *
+ * In Cloudflare Workers, outbound loopback/private RFC 1918 traffic is already blocked by the edge runtime.
+ * In Serverfull mode (Node.js/Bun), any domain name is pre-resolved and all resulting IP addresses
+ * are checked against isPublicInternetIP.
+ *
+ * @param urlString - The URL string to validate.
+ * @returns Promise resolving to true if safe, false if forbidden or resolves to private IP.
+ */
+export async function isSafeUrlWithDnsCheck(urlString: string): Promise<boolean> {
+  if (!isSafeUrl(urlString)) {
+    return false;
+  }
+
+  // In Node.js / Serverfull runtime, resolve domain and verify resulting IPs
+  if (typeof process !== 'undefined' && !!process.versions?.node) {
+    try {
+      let targetUrl = urlString;
+      if (urlString.startsWith('sdns://')) {
+        const stamp = parseDnsStamp(urlString);
+        targetUrl = stamp.resolvedUrl;
+      }
+
+      let parseableUrl: string;
+      if (targetUrl.startsWith('tcp://') || targetUrl.startsWith('udp://')) {
+        parseableUrl = targetUrl.replace(/^(tcp|udp):\/\//, 'http://');
+      } else if (targetUrl.startsWith('tls://') || targetUrl.startsWith('dot://')) {
+        parseableUrl = targetUrl.replace(/^(tls|dot):\/\//, 'http://');
+      } else if (targetUrl.startsWith('http://') || targetUrl.startsWith('https://')) {
+        parseableUrl = targetUrl;
+      } else {
+        parseableUrl = `http://${targetUrl}`;
+      }
+
+      const url = new URL(parseableUrl);
+      const rawHostname = url.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+
+      // If already an IP address, isSafeUrl already ensured it is a public IP
+      if (isIPv4(rawHostname) || isIPv6(rawHostname)) {
+        return true;
+      }
+
+      const dnsPromises = await import('node:dns/promises');
+      const addresses = await dnsPromises.lookup(rawHostname, { all: true });
+      if (!addresses || addresses.length === 0) {
+        return false;
+      }
+
+      for (const addr of addresses) {
+        if (!isPublicInternetIP(addr.address)) {
+          return false;
+        }
+      }
+    } catch {
+      // Resolution error or invalid hostname
+      return false;
+    }
+  }
+
+  return true;
+}

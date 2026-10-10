@@ -1,4 +1,4 @@
-import { isSafeUrl } from "./validator";
+import { isSafeUrl, isSafeUrlWithDnsCheck } from "./validator";
 import { parseLine } from "./parser";
 
 /** 单个列表的拉取结果 */
@@ -36,7 +36,7 @@ export async function fetchListContent(
 
   try {
     while (true) {
-      if (!isSafeUrl(currentUrl)) {
+      if (!(await isSafeUrlWithDnsCheck(currentUrl))) {
         return {
           count: 0,
           error: "Invalid list URL. Private networks, localhosts, and internal domains are not allowed.",

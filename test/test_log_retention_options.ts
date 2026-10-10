@@ -125,8 +125,21 @@ async function runTests(): Promise<void> {
   });
   assert.strictEqual(extractClientIp(headersD, '127.0.0.1'), '1.1.1.1');
 
-  // Case E: Direct connection without reverse proxy headers
+  // Case E: Direct connection from public IP without proxy headers
   const headersE = new Headers();
+  assert.strictEqual(extractClientIp(headersE, '93.184.216.34'), '93.184.216.34');
+
+  // Case F: Direct connection from untrusted public IP attempting to spoof headers -> headers ignored!
+  const headersF = new Headers({
+    'CF-Connecting-IP': '1.1.1.1',
+    'X-Real-IP': '8.8.8.8',
+    'X-Forwarded-For': '9.9.9.9'
+  });
+  assert.strictEqual(extractClientIp(headersF, '93.184.216.34'), '93.184.216.34', 'Must ignore spoofed headers from untrusted public socket');
+
+  // Case G: Direct connection with explicitly trusted proxy configured
+  assert.strictEqual(extractClientIp(headersF, '93.184.216.34', '93.184.216.34'), '1.1.1.1', 'Must honor headers from explicitly trusted proxy');
+
   // 7. Test getFlagEmoji behavior (LAN, UN, UNKNOWN, Country Codes)
   console.log('>>> [TEST] 7. getFlagEmoji mapping');
   const { getFlagEmoji } = await import('../web/src/utils/getFlagEmoji');

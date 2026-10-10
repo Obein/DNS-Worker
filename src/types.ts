@@ -40,6 +40,7 @@ export interface Env {
   SERVERFULL_DOT_DOMAIN?: string;
   SERVERFULL_DB_PATH?: string;
   DOT_DOMAIN?: string;
+  TRUSTED_PROXIES?: string;
   [key: string]: any;
 }
 

@@ -195,8 +195,8 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
 
   if (url.pathname.startsWith('/api/icon/')) {
     const domain = url.pathname.replace('/api/icon/', '');
-    if (!domain) {
-      return new Response("Missing domain", { status: 400 });
+    if (!domain || !/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain) || domain.includes('..') || domain.includes('/') || domain.includes('\\')) {
+      return new Response("Invalid domain format", { status: 400 });
     }
     
     // Proxy request to DuckDuckGo

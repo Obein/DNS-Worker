@@ -127,11 +127,45 @@ export function sanitizeClientIp(candidate?: string | null): string | null {
   return null;
 }
 
+import { isPublicInternetIP } from '../utils/validator';
+
+/**
+ * Checks whether an IP matches the optional trusted proxies configuration.
+ */
+function isTrustedProxyIp(ip: string, trustedProxies?: string | string[]): boolean {
+  if (!trustedProxies) return false;
+  const list = Array.isArray(trustedProxies)
+    ? trustedProxies
+    : trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+  return list.includes(ip);
+}
+
 /**
  * Resolves the real client IP address from proxy headers (CF-Connecting-IP, X-Real-IP, X-Forwarded-For)
- * or falls back to the underlying socket remote address.
+ * only when connecting through a trusted reverse proxy (loopback, private network, or configured trusted proxies).
+ * If the connection arrives directly from a public Internet address, proxy headers are ignored to prevent spoofing (SEC-01).
+ *
+ * @param headers - HTTP request headers.
+ * @param socketRemoteAddress - Underlying TCP socket remote address.
+ * @param trustedProxies - Optional list or comma-separated string of trusted proxy IPs.
+ * @returns Sanitized client IP address.
  */
-export function extractClientIp(headers: Headers, socketRemoteAddress?: string): string {
+export function extractClientIp(
+  headers: Headers,
+  socketRemoteAddress?: string,
+  trustedProxies?: string | string[]
+): string {
+  const socketIp = sanitizeClientIp(socketRemoteAddress);
+
+  // If socket IP is a public Internet IP and not explicitly configured in trusted proxies,
+  // do not trust incoming proxy headers to prevent IP spoofing (CWE-290 / SEC-01).
+  if (socketIp && isPublicInternetIP(socketIp)) {
+    const isExplicitlyTrusted = isTrustedProxyIp(socketIp, trustedProxies);
+    if (!isExplicitlyTrusted) {
+      return socketIp;
+    }
+  }
+
   // 1. Check CF-Connecting-IP (Cloudflare Edge standard)
   const cfIp = sanitizeClientIp(headers.get('CF-Connecting-IP'));
   if (cfIp) return cfIp;
@@ -152,7 +186,6 @@ export function extractClientIp(headers: Headers, socketRemoteAddress?: string):
   }
 
   // 4. Fallback to socket remote address
-  const socketIp = sanitizeClientIp(socketRemoteAddress);
   return socketIp || '127.0.0.1';
 }
 
@@ -188,7 +221,7 @@ export function createHttpRequestHandler(
       }
 
       // Populate remote client IP (supports direct connections, Cloudflare, Caddy, Nginx)
-      const clientIp = extractClientIp(headers, req.socket.remoteAddress);
+      const clientIp = extractClientIp(headers, req.socket.remoteAddress, env.TRUSTED_PROXIES);
       headers.set('CF-Connecting-IP', clientIp);
 
       // Populate fallback geolocation coordinates for serverfull environments without Cloudflare edge proxy
