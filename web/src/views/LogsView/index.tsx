@@ -43,6 +43,7 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction, to
     logs,
     loading,
     loadingMore,
+    syncing,
     hasMore,
     stats,
     logRetentionDays,
@@ -117,6 +118,8 @@ export const LogsView: React.FC<LogsViewProps> = ({ profileId, onQuickAction, to
         logRetentionDays={logRetentionDays}
         onExport={handleExportLogs}
         exporting={exporting}
+        loading={loading}
+        syncing={syncing}
       />
 
       {isE2eeEnabled && !isE2eeUnlocked && (
