@@ -237,7 +237,7 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
         ip: targetIp,
         city: 'Local',
         country: 'Private Network',
-        flag: { emoji: '🏠' }
+        flag: { emoji: '🛜' }
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
