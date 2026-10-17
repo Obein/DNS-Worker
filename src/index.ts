@@ -16,9 +16,14 @@ import { handleDoHRequest } from './api/doh';
 import { handleScheduled } from './cron';
 import { handleMapDataRequest } from './api/mapData';
 import { isUsableJwtSecret } from './lib/jwt';
+import { isTursoConfigured, getTursoDatabase } from './lib/turso';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    if (isTursoConfigured(env)) {
+      env.DB = getTursoDatabase(env);
+    }
+
     const nonceBytes = new Uint8Array(16);
     crypto.getRandomValues(nonceBytes);
     const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -37,7 +42,7 @@ export default {
       if (url.pathname.startsWith('/api/')) {
         let isDbMissing = false;
         try {
-          isDbMissing = !env.DB;
+          isDbMissing = !env.DB && !isTursoConfigured(env);
         } catch (e) {
           isDbMissing = true;
         }
@@ -191,7 +196,7 @@ export default {
         if (contentType.includes('text/html')) {
           let isDbMissing = false;
           try {
-            isDbMissing = !env.DB;
+            isDbMissing = !env.DB && !isTursoConfigured(env);
           } catch (e) {
             isDbMissing = true;
           }
@@ -211,6 +216,7 @@ export default {
                isDbMissing,
                isJwtSecretMissing,
                isServerfull,
+               isTurso: isTursoConfigured(env),
                mode: isServerfull ? 'serverfull' : 'cloudflare'
              });
           } catch (e) { }
@@ -269,6 +275,9 @@ export default {
   },
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (isTursoConfigured(env)) {
+      env.DB = getTursoDatabase(env);
+    }
     await handleScheduled(event, env, ctx);
   }
 };

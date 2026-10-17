@@ -18,6 +18,8 @@ import { formatBanner, formatKeyValueSection, formatTip } from './format';
 import { getPortOccupant, formatOccupantSummary } from './port';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 import { inspectTlsCertificate, getCertbotCommand } from './cert';
+import { createTursoClient, maskDatabaseUrl } from '../lib/turso';
+import { getTursoMigrationStats } from '../lib/turso/migrate';
 
 /**
  * Result of a network port accessibility probe.
@@ -184,6 +186,50 @@ export function inspectDatabase(dbPath: string): DbStatusInfo {
 }
 
 /**
+ * Inspects remote Turso database connectivity, migration status, and table metrics.
+ *
+ * @param url - Turso database URL.
+ * @param token - Turso authorization token.
+ * @returns Database status metrics.
+ */
+export async function inspectTursoDatabase(url: string, token: string): Promise<DbStatusInfo> {
+  try {
+    const db = createTursoClient(url, token);
+    const migStats = await getTursoMigrationStats(db);
+    let usersCount = 0;
+    let profilesCount = 0;
+    try {
+      const userRes = await db.prepare('SELECT count(*) as count FROM users').first<{ count: number }>();
+      usersCount = userRes?.count || 0;
+      const profRes = await db.prepare('SELECT count(*) as count FROM profiles').first<{ count: number }>();
+      profilesCount = profRes?.count || 0;
+    } catch {
+      // Tables might not exist if migrations haven't run yet
+    }
+
+    const details = [
+      migStats.count > 0 ? `${migStats.count} migrations` : null,
+      usersCount > 0 ? `${usersCount} user(s)` : null,
+      profilesCount > 0 ? `${profilesCount} profile(s)` : null
+    ].filter(Boolean).join(', ');
+
+    return {
+      exists: true,
+      migrationsCount: migStats.count,
+      usersCount,
+      profilesCount,
+      statusText: `Ready (Connected${details ? `: ${details}` : ''})`
+    };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return {
+      exists: false,
+      statusText: `Connection Failed (${errorMsg})`
+    };
+  }
+}
+
+/**
  * Inspects all Serverfull service ports, database, and configurations, printing a declarative status report.
  *
  * @param config - The parsed serverfull configuration.
@@ -192,15 +238,18 @@ export function inspectDatabase(dbPath: string): DbStatusInfo {
 export async function showServerfullStatus(config: ServerfullConfig, envJwtSecret?: string): Promise<void> {
   const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
   const canProbeHttps = !config.disableHttps && certInfo.configured && certInfo.filesExist;
+  const isTurso = Boolean(config.tursoDatabaseUrl && config.tursoAuthToken);
+  const dbStatusPromise = isTurso
+    ? inspectTursoDatabase(config.tursoDatabaseUrl, config.tursoAuthToken)
+    : Promise.resolve(inspectDatabase(config.dbPath));
 
-  const [httpState, httpsState, udpState, dotState] = await Promise.all([
+  const [httpState, httpsState, udpState, dotState, dbStatus] = await Promise.all([
     probeTcpPort(config.httpPort, config.host),
     canProbeHttps ? probeTcpPort(config.httpsPort, config.host) : Promise.resolve('disabled' as const),
     !config.disableUdp ? probeUdpPort(config.udpPort, config.host) : Promise.resolve('disabled' as const),
-    !config.disableDot ? probeTcpPort(config.dotPort, config.host) : Promise.resolve('disabled' as const)
+    !config.disableDot ? probeTcpPort(config.dotPort, config.host) : Promise.resolve('disabled' as const),
+    dbStatusPromise
   ]);
-
-  const dbStatus = inspectDatabase(config.dbPath);
 
   let jwtStatus = 'Default (Insecure fallback, please configure JWT_SECRET)';
   if (isUsableJwtSecret(envJwtSecret)) {
@@ -281,13 +330,22 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ? `${loadedEnvs.join(', ')} [Loaded]`
     : `None found (Using built-in presets & defaults; default path: ${getDefaultConfigFilePath()})`;
 
+  const databaseItems = isTurso
+    ? [
+        { label: 'Database Engine', value: 'Turso (libSQL over HTTP)' },
+        { label: 'Turso URL', value: maskDatabaseUrl(config.tursoDatabaseUrl) },
+        { label: 'Database Status', value: dbStatus.statusText }
+      ]
+    : [
+        { label: 'Database Engine', value: 'Local SQLite (node:sqlite)' },
+        { label: 'SQLite Path', value: config.dbPath },
+        { label: 'Database Status', value: dbStatus.statusText },
+        { label: 'Persistent Data Dir', value: getDefaultDataDir() }
+      ];
+
   const databaseSection = formatKeyValueSection({
     title: '\nDatabase & Storage:',
-    items: [
-      { label: 'SQLite Path', value: config.dbPath },
-      { label: 'Database Status', value: dbStatus.statusText },
-      { label: 'Persistent Data Dir', value: getDefaultDataDir() }
-    ]
+    items: databaseItems
   });
 
   let tlsCertText = 'Not Configured (HTTP only, HTTPS & DoT disabled)';

@@ -41,6 +41,9 @@ export interface Env {
   SERVERFULL_DB_PATH?: string;
   DOT_DOMAIN?: string;
   TRUSTED_PROXIES?: string;
+  TURSO_DATABASE_URL?: string;
+  TURSO_URL?: string;
+  TURSO_AUTH_TOKEN?: string;
   [key: string]: any;
 }
 

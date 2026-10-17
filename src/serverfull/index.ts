@@ -21,6 +21,8 @@ import {
 } from './config';
 import { DEFAULT_ENV_SERVERFULL_TEMPLATE, writeDefaultConfigFile } from './defaults';
 import { initServerfullDb } from './db';
+import { createTursoClient, maskDatabaseUrl } from '../lib/turso';
+import { runTursoMigrations } from '../lib/turso/migrate';
 import { UdpDnsServer } from './udp';
 import { DotDnsServer } from './dot';
 import { HttpServer, HttpsServer } from './http';
@@ -225,6 +227,8 @@ function printHelp(): void {
       { label: '--ech-fronting-domain <domain>', desc: 'ECH outer SNI fronting domain (default: cloudflare-ech.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
       { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
+      { label: '--turso-url <url>', desc: 'Turso / libSQL database URL (e.g. libsql://your-db.turso.io)' },
+      { label: '--turso-token <token>', desc: 'Turso database authorization token' },
       { label: '--default-profile <key>', desc: 'Default Profile Key or Access Point Token for standard queries' },
       { label: '--disable-udp', desc: 'Disable Classic UDP DNS server' },
       { label: '--disable-dot', desc: 'Disable DoT server' },
@@ -243,6 +247,8 @@ function printHelp(): void {
       { label: 'SERVERFULL_ECH_CONFIG', desc: 'Custom Base64-encoded ECHConfigList' },
       { label: 'SERVERFULL_ECH_FRONTING_DOMAIN', desc: 'Fronting domain for ECH outer SNI' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
+      { label: 'TURSO_DATABASE_URL / TURSO_URL', desc: 'Turso / libSQL database URL (e.g. libsql://your-db.turso.io)' },
+      { label: 'TURSO_AUTH_TOKEN', desc: 'Turso database authorization token' },
       { label: 'JWT_SECRET', desc: 'JWT secret key (recommended >= 32 characters)' },
       { label: 'SERVERFULL_TLS_KEY_PATH', desc: 'Path to TLS private key for HTTPS & DoT' },
       { label: 'SERVERFULL_TLS_CERT_PATH', desc: 'Path to TLS certificate for HTTPS & DoT' }
@@ -273,6 +279,8 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         'dot-domain': { type: 'string' },
         host: { type: 'string', short: 'h' },
         db: { type: 'string' },
+        'turso-url': { type: 'string' },
+        'turso-token': { type: 'string' },
         'default-profile': { type: 'string' },
         'disable-udp': { type: 'boolean' },
         'disable-dot': { type: 'boolean' },
@@ -474,9 +482,17 @@ async function bootstrap(): Promise<void> {
     }));
   }
 
-  // 4. Initialize SQLite D1 adapter and execute schema migrations
-  const db = initServerfullDb(config.dbPath);
-  env.DB = db;
+  // 4. Initialize Database adapter (Turso if configured, otherwise local SQLite) and execute schema migrations
+  if (config.tursoDatabaseUrl && config.tursoAuthToken) {
+    console.log(`[Database] Using Turso Database: ${maskDatabaseUrl(config.tursoDatabaseUrl)}`);
+    const tursoDb = createTursoClient(config.tursoDatabaseUrl, config.tursoAuthToken);
+    const migrationsDir = path.join(config.packageRoot, 'migrations');
+    await runTursoMigrations(tursoDb, migrationsDir);
+    env.DB = tursoDb;
+  } else {
+    const db = initServerfullDb(config.dbPath);
+    env.DB = db;
+  }
 
   // 5. Initialize servers
   const udpServer = !config.disableUdp ? new UdpDnsServer({
