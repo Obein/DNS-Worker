@@ -226,6 +226,7 @@ function printHelp(): void {
       { label: '--ech-config <base64>', desc: 'Custom Base64-encoded ECHConfigList' },
       { label: '--ech-fronting-domain <domain>', desc: 'ECH outer SNI fronting domain (default: cloudflare-ech.com)' },
       { label: '-h, --host <address>', desc: 'Network address to bind (default: 0.0.0.0)' },
+      { label: '--database-service <D1|Turso|File>', desc: 'Database engine (default: File in Serverfull, D1 in Serverless)' },
       { label: '--db <path>', desc: `SQLite database file path (default: ${getDefaultDbPath()})` },
       { label: '--turso-url <url>', desc: 'Turso / libSQL database URL (e.g. libsql://your-db.turso.io)' },
       { label: '--turso-token <token>', desc: 'Turso database authorization token' },
@@ -246,6 +247,7 @@ function printHelp(): void {
       { label: 'SERVERFULL_ECH_ENABLED', desc: 'Enable or disable ECH (true/false)' },
       { label: 'SERVERFULL_ECH_CONFIG', desc: 'Custom Base64-encoded ECHConfigList' },
       { label: 'SERVERFULL_ECH_FRONTING_DOMAIN', desc: 'Fronting domain for ECH outer SNI' },
+      { label: 'DATABASE_SERVICE', desc: 'Database engine (D1, Turso, File. Default: File)' },
       { label: 'DB_PATH / SERVERFULL_DB_PATH', desc: 'SQLite database file path' },
       { label: 'TURSO_DATABASE_URL / TURSO_URL', desc: 'Turso / libSQL database URL (e.g. libsql://your-db.turso.io)' },
       { label: 'TURSO_AUTH_TOKEN', desc: 'Turso database authorization token' },
@@ -278,6 +280,8 @@ async function parseCli(): Promise<ServerfullCliArgs> {
         'dot-port': { type: 'string' },
         'dot-domain': { type: 'string' },
         host: { type: 'string', short: 'h' },
+        'database-service': { type: 'string' },
+        'db-service': { type: 'string' },
         db: { type: 'string' },
         'turso-url': { type: 'string' },
         'turso-token': { type: 'string' },
@@ -482,14 +486,37 @@ async function bootstrap(): Promise<void> {
     }));
   }
 
-  // 4. Initialize Database adapter (Turso if configured, otherwise local SQLite) and execute schema migrations
-  if (config.tursoDatabaseUrl && config.tursoAuthToken) {
+  // 4. Initialize Database adapter based on DATABASE_SERVICE (File | Turso | D1)
+  if (config.databaseService === 'Turso') {
+    if (!config.tursoDatabaseUrl || !config.tursoAuthToken) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'Database Configuration Error',
+        message: "DATABASE_SERVICE is set to 'Turso', but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing.",
+        solutions: [
+          'Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in .env or via CLI arguments (--turso-url, --turso-token).',
+          "Alternatively, set DATABASE_SERVICE='File' to use local SQLite."
+        ]
+      }));
+      process.exit(1);
+    }
     console.log(`[Database] Using Turso Database: ${maskDatabaseUrl(config.tursoDatabaseUrl)}`);
     const tursoDb = createTursoClient(config.tursoDatabaseUrl, config.tursoAuthToken);
     const migrationsDir = path.join(config.packageRoot, 'migrations');
     await runTursoMigrations(tursoDb, migrationsDir);
     env.DB = tursoDb;
+  } else if (config.databaseService === 'D1') {
+    console.error(formatDiagnostic({
+      level: 'error',
+      title: 'Database Configuration Error',
+      message: "DATABASE_SERVICE='D1' is designed for Cloudflare Workers environments with D1 bindings.",
+      solutions: [
+        "In Serverfull mode, please set DATABASE_SERVICE='File' (default local SQLite) or DATABASE_SERVICE='Turso'."
+      ]
+    }));
+    process.exit(1);
   } else {
+    // Default: 'File' (Local SQLite)
     const db = initServerfullDb(config.dbPath);
     env.DB = db;
   }

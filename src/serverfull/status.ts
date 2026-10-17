@@ -238,9 +238,11 @@ export async function inspectTursoDatabase(url: string, token: string): Promise<
 export async function showServerfullStatus(config: ServerfullConfig, envJwtSecret?: string): Promise<void> {
   const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
   const canProbeHttps = !config.disableHttps && certInfo.configured && certInfo.filesExist;
-  const isTurso = Boolean(config.tursoDatabaseUrl && config.tursoAuthToken);
+  const isTurso = config.databaseService === 'Turso';
   const dbStatusPromise = isTurso
-    ? inspectTursoDatabase(config.tursoDatabaseUrl, config.tursoAuthToken)
+    ? (config.tursoDatabaseUrl && config.tursoAuthToken
+        ? inspectTursoDatabase(config.tursoDatabaseUrl, config.tursoAuthToken)
+        : Promise.resolve({ exists: false, statusText: 'Configuration Error (TURSO_DATABASE_URL or TURSO_AUTH_TOKEN missing)' }))
     : Promise.resolve(inspectDatabase(config.dbPath));
 
   const [httpState, httpsState, udpState, dotState, dbStatus] = await Promise.all([
@@ -332,12 +334,12 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
 
   const databaseItems = isTurso
     ? [
-        { label: 'Database Engine', value: 'Turso (libSQL over HTTP)' },
+        { label: 'Database Service', value: `${config.databaseService} (Turso libSQL over HTTP)` },
         { label: 'Turso URL', value: maskDatabaseUrl(config.tursoDatabaseUrl) },
         { label: 'Database Status', value: dbStatus.statusText }
       ]
     : [
-        { label: 'Database Engine', value: 'Local SQLite (node:sqlite)' },
+        { label: 'Database Service', value: `${config.databaseService} (Local SQLite via node:sqlite)` },
         { label: 'SQLite Path', value: config.dbPath },
         { label: 'Database Status', value: dbStatus.statusText },
         { label: 'Persistent Data Dir', value: getDefaultDataDir() }

@@ -17,6 +17,7 @@ import {
   DEFAULT_FAIL_OPEN_UPSTREAM
 } from '../constants/presets';
 import { writeDefaultConfigFile } from './defaults';
+import { getDatabaseService, DatabaseServiceType } from '../lib/turso';
 
 export interface ServerfullCliArgs {
   port?: string;
@@ -28,6 +29,8 @@ export interface ServerfullCliArgs {
   'dot-domain'?: string;
   host?: string;
   db?: string;
+  'database-service'?: string;
+  'db-service'?: string;
   'default-profile'?: string;
   'disable-udp'?: boolean;
   'disable-dot'?: boolean;
@@ -52,6 +55,7 @@ export interface ServerfullConfig {
   httpsPort: number;
   host: string;
   dbPath: string;
+  databaseService: DatabaseServiceType;
   tursoDatabaseUrl: string;
   tursoAuthToken: string;
   defaultProfileKey: string;
@@ -446,6 +450,15 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   const echFrontingDomain = (cliArgs?.['ech-fronting-domain'] || process.env.SERVERFULL_ECH_FRONTING_DOMAIN || 'cloudflare-ech.com').trim();
   const tursoDatabaseUrl = (cliArgs?.['turso-url'] || process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || '').trim();
   const tursoAuthToken = (cliArgs?.['turso-token'] || process.env.TURSO_AUTH_TOKEN || '').trim();
+  const rawService = cliArgs?.['database-service'] || cliArgs?.['db-service'] || process.env.DATABASE_SERVICE || process.env.DB_SERVICE;
+  const databaseService = getDatabaseService(
+    {
+      DATABASE_SERVICE: rawService,
+      TURSO_DATABASE_URL: tursoDatabaseUrl,
+      TURSO_AUTH_TOKEN: tursoAuthToken
+    },
+    true
+  );
 
   const config: ServerfullConfig = {
     tlsKeyPath: effectiveKeyPath,
@@ -457,6 +470,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     httpsPort,
     host,
     dbPath,
+    databaseService,
     tursoDatabaseUrl,
     tursoAuthToken,
     defaultProfileKey,
@@ -471,6 +485,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
 
   const env: Env = {
     DB: null as any, // Set by db.ts or turso client
+    DATABASE_SERVICE: databaseService,
     TURSO_DATABASE_URL: tursoDatabaseUrl,
     TURSO_AUTH_TOKEN: tursoAuthToken,
     ASSETS: null as any, // Set by http.ts

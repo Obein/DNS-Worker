@@ -161,6 +161,11 @@ export function maskDatabaseUrl(rawUrl: string): string {
 }
 
 /**
+ * Supported database service engine types.
+ */
+export type DatabaseServiceType = 'D1' | 'Turso' | 'File';
+
+/**
  * Checks whether Turso database is configured in the given environment.
  *
  * @param env - Application environment bindings or process.env.
@@ -171,6 +176,35 @@ export function isTursoConfigured(env?: Partial<Env> | NodeJS.ProcessEnv | null)
   const url = (env.TURSO_DATABASE_URL || (env as any).TURSO_URL)?.trim();
   const token = env.TURSO_AUTH_TOKEN?.trim();
   return Boolean(url && token);
+}
+
+/**
+ * Resolves the active database service type ('D1' | 'Turso' | 'File') based on environment variables.
+ * - Serverless mode (Cloudflare Workers) defaults to 'D1'.
+ * - Serverfull mode (Node.js/Bun/Docker) defaults to 'File'.
+ * - Explicit DATABASE_SERVICE ('D1', 'Turso', 'File', case-insensitive) takes highest precedence.
+ * - If DATABASE_SERVICE is omitted but Turso credentials are fully configured, automatically resolves to 'Turso'.
+ *
+ * @param env - Application environment bindings or process.env.
+ * @param isServerfull - True if running in Serverfull mode.
+ * @returns Resolved DatabaseServiceType ('D1' | 'Turso' | 'File').
+ */
+export function getDatabaseService(
+  env?: Partial<Env> | NodeJS.ProcessEnv | null,
+  isServerfull = false
+): DatabaseServiceType {
+  const raw = (env?.DATABASE_SERVICE || (env as any)?.DB_SERVICE)?.trim().toLowerCase();
+  if (raw === 'turso') return 'Turso';
+  if (raw === 'd1') return 'D1';
+  if (raw === 'file') return 'File';
+
+  // If DATABASE_SERVICE is not explicitly set, but Turso credentials are fully provided, auto-enable Turso
+  if (isTursoConfigured(env)) {
+    return 'Turso';
+  }
+
+  // Standard platform defaults: D1 for Serverless, File for Serverfull
+  return isServerfull ? 'File' : 'D1';
 }
 
 /**

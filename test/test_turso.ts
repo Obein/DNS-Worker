@@ -20,6 +20,7 @@ import {
   normalizeTursoUrl,
   maskDatabaseUrl,
   isTursoConfigured,
+  getDatabaseService,
   splitSqlStatements,
   createTursoClient,
   TursoD1Database,
@@ -80,7 +81,41 @@ async function runTestSuite(): Promise<void> {
     'isTursoConfigured returns false when empty'
   );
 
-  // 4. Value serialization (toHranaValue & fromHranaValue)
+  // 4. DATABASE_SERVICE resolution
+  assert(
+    getDatabaseService({}, false) === 'D1',
+    'getDatabaseService defaults to D1 in Serverless mode'
+  );
+  assert(
+    getDatabaseService({}, true) === 'File',
+    'getDatabaseService defaults to File in Serverfull mode'
+  );
+  assert(
+    getDatabaseService({ DATABASE_SERVICE: 'Turso' }, false) === 'Turso',
+    'DATABASE_SERVICE=Turso resolves to Turso in Serverless'
+  );
+  assert(
+    getDatabaseService({ DATABASE_SERVICE: 'turso' }, true) === 'Turso',
+    'DATABASE_SERVICE=turso (lowercase) resolves to Turso in Serverfull'
+  );
+  assert(
+    getDatabaseService({ DATABASE_SERVICE: 'File' }, false) === 'File',
+    'DATABASE_SERVICE=File resolves to File'
+  );
+  assert(
+    getDatabaseService({ DATABASE_SERVICE: 'D1' }, true) === 'D1',
+    'DATABASE_SERVICE=D1 resolves to D1'
+  );
+  assert(
+    getDatabaseService({ TURSO_DATABASE_URL: 'libsql://foo', TURSO_AUTH_TOKEN: 'bar' }, true) === 'Turso',
+    'getDatabaseService auto-enables Turso when credentials provided without DATABASE_SERVICE'
+  );
+  assert(
+    getDatabaseService({ DATABASE_SERVICE: 'File', TURSO_DATABASE_URL: 'libsql://foo', TURSO_AUTH_TOKEN: 'bar' }, true) === 'File',
+    'DATABASE_SERVICE=File overrides Turso credentials'
+  );
+
+  // 5. Value serialization (toHranaValue & fromHranaValue)
   assert(toHranaValue(null).type === 'null', 'null serialized as null');
   assert(toHranaValue(undefined).type === 'null', 'undefined serialized as null');
   assert(toHranaValue('hello').type === 'text' && (toHranaValue('hello') as any).value === 'hello', 'string serialized as text');
