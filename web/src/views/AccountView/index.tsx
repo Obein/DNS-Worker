@@ -45,7 +45,6 @@ export const AccountView: React.FC = () => {
   const [usernameFocused, setUsernameFocused] = useState(false);
 
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
-  const [dbSizeRefreshTrigger, setDbSizeRefreshTrigger] = useState(0);
 
   const fetchUsers = async () => {
     try {
@@ -226,7 +225,6 @@ export const AccountView: React.FC = () => {
             <SystemSettingsCard
               initialSettings={sysSettings}
               onRefresh={fetchSystemSettings}
-              refreshDbSizeTrigger={dbSizeRefreshTrigger}
             />
           </div>
         </>
@@ -237,7 +235,6 @@ export const AccountView: React.FC = () => {
       <div className="space-y-4">
         <DangerZoneCard
           isAdmin={me?.role === "admin"}
-          onLogsCleared={() => setDbSizeRefreshTrigger((k) => k + 1)}
         />
       </div>
     </div>

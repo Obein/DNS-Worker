@@ -1,43 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { Card, Elevation, H4, FormGroup, InputGroup, Switch, Divider, Button, Intent, Tag, Spinner } from "@blueprintjs/core";
-import { Settings, Database } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Card, Elevation, H4, FormGroup, InputGroup, Switch, Divider, Button, Intent } from "@blueprintjs/core";
+import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { updateSystemSettings, getDatabaseSize, type DatabaseSizeInfo } from "../../../services";
+import { updateSystemSettings } from "../../../services";
 
 export interface SystemSettingsCardProps {
   initialSettings: Record<string, string>;
   onRefresh: () => void;
-  refreshDbSizeTrigger?: number;
 }
 
 export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
   initialSettings,
-  onRefresh,
-  refreshDbSizeTrigger
+  onRefresh
 }) => {
   const { t } = useTranslation();
   const [sysSettings, setSysSettings] = useState<Record<string, string>>(initialSettings);
   const [sysLoading, setSysLoading] = useState(false);
   const [showTurnstileSecretKey, setShowTurnstileSecretKey] = useState(false);
-  const [dbSize, setDbSize] = useState<DatabaseSizeInfo | null>(null);
-  const [loadingSize, setLoadingSize] = useState<boolean>(true);
-
-  const fetchDbSize = useCallback(async () => {
-    setLoadingSize(true);
-    try {
-      const data = await getDatabaseSize();
-      setDbSize(data);
-    } catch (e) {
-      console.error("Failed to fetch database size:", e);
-    } finally {
-      setLoadingSize(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDbSize();
-  }, [fetchDbSize, refreshDbSizeTrigger]);
 
   useEffect(() => {
     setSysSettings(initialSettings);
@@ -63,37 +43,9 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Settings size={20} className="text-gray-500" />
-          <H4 style={{ margin: 0 }}>{t("account.systemSettings", "System Settings")}</H4>
-        </div>
-        <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-2.5 py-1 rounded border border-gray-200 dark:border-gray-700 text-xs">
-          <Database size={14} className="text-gray-500 flex-shrink-0" />
-          <span className="text-gray-700 dark:text-gray-300 font-medium">
-            {t("account.currentDbSize")}:
-          </span>
-          {loadingSize ? (
-            <Spinner size={12} />
-          ) : (
-            <Tag
-              minimal
-              round
-              intent={Intent.PRIMARY}
-              className="font-mono font-semibold"
-            >
-              {dbSize?.formatted || "0 B"}
-            </Tag>
-          )}
-          <Button
-            minimal
-            small
-            icon="refresh"
-            loading={loadingSize}
-            onClick={fetchDbSize}
-            title={t("common.refresh") || "Refresh"}
-          />
-        </div>
+      <div className="flex items-center gap-2">
+        <Settings size={20} className="text-gray-500" />
+        <H4 style={{ margin: 0 }}>{t("account.systemSettings", "System Settings")}</H4>
       </div>
       <Card elevation={Elevation.ONE}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
