@@ -25,7 +25,9 @@ binding = "ASSETS"
 # Force the Worker to run first for all incoming requests (API, DoH, SPA rewriting)
 run_worker_first = true
 
-# D1 Database for Profiles, Rules and Logs
+# D1 Database for Profiles, Rules and Logs (Default database backend for Serverless mode)
+# Note: If DATABASE_SERVICE is set to "Turso", the Worker will connect to Turso (libSQL over HTTP) instead of D1.
+# 注意：若在 [vars] 中设置 DATABASE_SERVICE = "Turso"，Worker 将使用 Turso 远程数据库替代 D1。
 [[d1_databases]]
 binding = "DB"
 database_name = "dns_worker_db"
@@ -61,6 +63,20 @@ head_sampling_rate = 0.001
 
 [vars]
 # Runtime configuration values exposed to the Worker.
+
+# Database backend service engine selection ("D1" or "Turso").
+# Serverless (Cloudflare Workers) mode defaults to "D1". Set to "Turso" to switch database engine to Turso.
+# 数据库引擎选择（"D1" 或 "Turso"）。Serverless 模式下默认使用 "D1"；配置为 "Turso" 时自动切换使用远程 Turso 数据库。
+DATABASE_SERVICE = "D1"
+
+# Turso (libSQL over HTTP) Database Configuration / Turso 远程数据库配置
+# When DATABASE_SERVICE is set to "Turso", configure your Turso database URL and auth token.
+# 当 DATABASE_SERVICE 配置为 "Turso" 时有效。支持 libsql:// 及 https:// 协议 (例如 "libsql://your-db-org.turso.io")。
+# TURSO_DATABASE_URL = "libsql://your-database-name.turso.io"
+# Recommended: store TURSO_AUTH_TOKEN in Worker Secrets (`npx wrangler secret put TURSO_AUTH_TOKEN`) to avoid committing secrets to git.
+# 推荐使用 Worker Secrets 存储敏感鉴权令牌 (`npx wrangler secret put TURSO_AUTH_TOKEN`)，避免将密钥提交到代码仓库。
+# TURSO_AUTH_TOKEN = ""
+
 # Recommended: configure JWT_SECRET via Worker Secrets / Environment Variables
 # (e.g. `npx wrangler secret put JWT_SECRET` or via dashboard) to keep secrets out of git.
 # JWT_SECRET = ""
