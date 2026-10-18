@@ -18,9 +18,7 @@ import { IdleSessionLock } from "./components/IdleSessionLock";
 import { DeploymentGuideView } from "./views/DeploymentGuideView";
 import { loadLocale } from "./i18n/config";
 
-const AuthView = lazyWithPreload(() =>
-  import("./components/AuthView").then((m) => ({ default: m.AuthView })),
-);
+import { AuthView } from "./components/AuthView";
 
 const AccountView = lazyWithPreload(() =>
   import("./views/AccountView").then((m) => ({ default: m.AccountView })),

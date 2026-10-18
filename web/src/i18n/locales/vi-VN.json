@@ -73,6 +73,7 @@
     "password": "Mật khẩu",
     "passwordPlaceholder": "Mật khẩu của bạn",
     "loginBtn": "Đăng nhập",
+    "unlockSession": "Mở khóa màn hình",
     "signupBtn": "Đăng ký",
     "totpVerification": "Xác thực TOTP",
     "noAccount": "Chưa có tài khoản? Đăng ký ngay",

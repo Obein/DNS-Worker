@@ -73,6 +73,7 @@
     "password": "Passwort",
     "passwordPlaceholder": "Ihr Passwort",
     "loginBtn": "Anmelden",
+    "unlockSession": "Bildschirm entsperren",
     "signupBtn": "Registrieren",
     "totpVerification": "2FA/TOTP-Verifizierung",
     "noAccount": "Kein Konto? Jetzt registrieren",

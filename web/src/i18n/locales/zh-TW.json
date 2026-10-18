@@ -74,6 +74,7 @@
     "password": "密碼",
     "passwordPlaceholder": "您的密碼",
     "loginBtn": "登入",
+    "unlockSession": "解鎖螢幕",
     "signupBtn": "註冊",
     "totpVerification": "TOTP 驗證",
     "noAccount": "沒有帳戶？立即註冊",

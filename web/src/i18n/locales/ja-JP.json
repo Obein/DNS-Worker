@@ -73,6 +73,7 @@
     "password": "パスワード",
     "passwordPlaceholder": "パスワードを入力してください",
     "loginBtn": "ログイン",
+    "unlockSession": "画面のロックを解除",
     "signupBtn": "新規登録",
     "totpVerification": "TOTP 認証",
     "noAccount": "アカウントをお持ちでないですか？ 新規登録",
