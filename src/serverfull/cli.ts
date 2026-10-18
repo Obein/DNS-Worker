@@ -82,6 +82,18 @@ export function handleConfigCommand(subAction: string, targetArg?: string): void
 
   if (subAction === 'init') {
     const isForce = process.argv.includes('--force') || targetArg === '--force';
+    if (targetArg && targetArg !== '--force' && /[;&|`$><\n\r]/.test(targetArg)) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'Invalid Configuration Path',
+        message: 'The provided config path contains unsupported characters.',
+        solutions: [
+          'Use a normal filesystem path without shell metacharacters such as ; | & ` $ > <.',
+          'If your path includes spaces, pass it as a quoted argument in your shell.'
+        ]
+      }));
+      process.exit(1);
+    }
     const effectivePath = (targetArg && targetArg !== '--force') ? path.resolve(targetArg) : getDefaultConfigFilePath();
     const result = writeDefaultConfigFile(effectivePath, isForce);
     if (result.created) {
@@ -356,7 +368,7 @@ export async function parseCli(): Promise<ServerfullCliArgs> {
         const { dataDir, configFile } = ensurePersistentDirs(true);
         console.log(`[dns-worker] Initialized data directory: ${dataDir}`);
         console.log(`[dns-worker] Initialized configuration file: ${configFile}`);
-      } catch {}
+      } catch { }
       process.exit(0);
     }
 
