@@ -15,7 +15,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
 import { loadEnvFiles, getPackageRoot } from '../src/serverfull/config';
-import { createTursoClient, maskDatabaseUrl, getDatabaseService, isTursoConfigured } from '../src/lib/turso';
+import { createTursoClient, maskDatabaseUrl, getDatabaseService } from '../src/lib/turso';
 import { runTursoMigrations } from '../src/lib/turso/migrate';
 import { formatBanner, formatDiagnostic, formatHelpMenu } from '../src/serverfull/format';
 
@@ -64,7 +64,7 @@ async function main(): Promise<void> {
   }
 
   // Determine target database service
-  let targetService: 'Turso' | 'D1' = 'D1';
+  let targetService: 'Turso' | 'D1';
 
   if (values.turso) {
     targetService = 'Turso';

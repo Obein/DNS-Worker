@@ -9,7 +9,6 @@
  * 5. Schema migration tracking and idempotency.
  */
 
-import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -23,7 +22,6 @@ import {
   getDatabaseService,
   splitSqlStatements,
   createTursoClient,
-  TursoD1Database,
   HranaRequest,
   HranaStepResult,
   HranaPipelineResponse
