@@ -1,13 +1,10 @@
 /**
  * @file config.ts
- * @description Configuration loader and environment variable manager for Serverfull mode.
+ * @description Configuration builder and environment variable assembler for Serverfull mode.
+ * Re-exports paths, envLoader, and jwtSecret for backwards-compatible access.
  */
 
 import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import { Env } from '../types';
 import {
   DEFAULT_PRESET_UPSTREAMS,
@@ -16,7 +13,19 @@ import {
   DEFAULT_SUBSTITUTE_DOMAIN,
   DEFAULT_FAIL_OPEN_UPSTREAM
 } from '../constants/presets';
-import { writeDefaultConfigFile } from './defaults';
+import { getDatabaseService, DatabaseServiceType } from '../lib/turso';
+import {
+  getPackageRoot,
+  getDefaultDbPath,
+  ensurePersistentDirs
+} from './paths';
+import { loadEnvFiles } from './envLoader';
+import { getOrInitPersistentJwtSecret } from './jwtSecret';
+
+// Re-export submodules
+export * from './paths';
+export * from './envLoader';
+export * from './jwtSecret';
 
 export interface ServerfullCliArgs {
   port?: string;
@@ -28,12 +37,16 @@ export interface ServerfullCliArgs {
   'dot-domain'?: string;
   host?: string;
   db?: string;
+  'database-service'?: string;
+  'db-service'?: string;
   'default-profile'?: string;
   'disable-udp'?: boolean;
   'disable-dot'?: boolean;
   'ech-enabled'?: boolean;
   'ech-config'?: string;
   'ech-fronting-domain'?: string;
+  'turso-url'?: string;
+  'turso-token'?: string;
   user?: string;
   status?: boolean;
   version?: boolean;
@@ -50,6 +63,9 @@ export interface ServerfullConfig {
   httpsPort: number;
   host: string;
   dbPath: string;
+  databaseService: DatabaseServiceType;
+  tursoDatabaseUrl: string;
+  tursoAuthToken: string;
   defaultProfileKey: string;
   disableUdp: boolean;
   disableDot: boolean;
@@ -58,307 +74,6 @@ export interface ServerfullConfig {
   echConfig: string;
   echFrontingDomain: string;
   packageRoot: string;
-}
-
-/**
- * Resolves the root directory of the installed package (where static/ and migrations/ live).
- */
-export function getPackageRoot(): string {
-  try {
-    const currentDir = path.dirname(fileURLToPath(import.meta.url));
-    // 1. If running bundled (e.g. dist/serverfull.mjs -> root has migrations and static)
-    if (fs.existsSync(path.join(currentDir, 'migrations')) && fs.existsSync(path.join(currentDir, 'static'))) {
-      return currentDir;
-    }
-    // 2. One level up from dist/
-    const parent = path.resolve(currentDir, '..');
-    if (fs.existsSync(path.join(parent, 'migrations')) && fs.existsSync(path.join(parent, 'static'))) {
-      return parent;
-    }
-    // 3. Two levels up (from src/serverfull/)
-    const grandParent = path.resolve(currentDir, '../..');
-    if (fs.existsSync(path.join(grandParent, 'migrations')) && fs.existsSync(path.join(grandParent, 'static'))) {
-      return grandParent;
-    }
-  } catch {}
-  return process.cwd();
-}
-
-/**
- * Resolves package version from package.json if available.
- */
-export function getPackageVersion(): string {
-  try {
-    const pkgPath = path.join(getPackageRoot(), 'package.json');
-    if (fs.existsSync(pkgPath)) {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-      if (pkg.version) return pkg.version;
-    }
-  } catch {}
-  return '1.0.0';
-}
-
-/**
- * Resolves the fixed platform-specific default persistent data directory.
- * - Linux: /var/lib/dns-worker (with automatic fallback to ~/.local/share/dns-worker for unprivileged non-root users if /var/lib is not writable)
- * - Windows: %ProgramData%\DNS-Worker (e.g. C:\ProgramData\DNS-Worker)
- * - macOS: ~/Library/Application Support/DNS-Worker
- */
-export function getDefaultDataDir(): string {
-  if (process.platform === 'win32') {
-    const programData = process.env.ProgramData || path.join(process.env.SystemDrive || 'C:', 'ProgramData');
-    return path.join(programData, 'DNS-Worker');
-  }
-
-  if (process.platform === 'linux') {
-    const systemVarLib = '/var/lib/dns-worker';
-    // If running as root, or if /var/lib/dns-worker already exists and is writable
-    if (typeof process.getuid === 'function' && process.getuid() === 0) {
-      return systemVarLib;
-    }
-    if (fs.existsSync(systemVarLib)) {
-      try {
-        fs.accessSync(systemVarLib, fs.constants.W_OK);
-        return systemVarLib;
-      } catch {
-        /* Not writable by current user, fall through */
-      }
-    }
-    // For unprivileged user when system /var/lib/dns-worker is not provisioned,
-    // use standard XDG user data directory: ~/.local/share/dns-worker
-    const homeDir = process.env.HOME || '/tmp';
-    const xdgDataHome = process.env.XDG_DATA_HOME || path.join(homeDir, '.local', 'share');
-    return path.join(xdgDataHome, 'dns-worker');
-  }
-
-  if (process.platform === 'darwin') {
-    const homeDir = process.env.HOME || '/tmp';
-    return path.join(homeDir, 'Library', 'Application Support', 'DNS-Worker');
-  }
-
-  return path.join(process.cwd(), 'data');
-}
-
-/**
- * Resolves the fixed platform-specific default SQLite database file path.
- *
- * @returns Persistent SQLite database file path.
- */
-export function getDefaultDbPath(): string {
-  return path.join(getDefaultDataDir(), 'dns_worker.sqlite');
-}
-
-/**
- * Resolves the platform-specific default configuration directory.
- * - Linux: /etc/dns-worker (with automatic fallback to ~/.config/dns-worker for unprivileged non-root users if /etc is not writable)
- * - Windows: %ProgramData%\DNS-Worker (e.g. C:\ProgramData\DNS-Worker)
- * - macOS: ~/Library/Application Support/DNS-Worker
- */
-export function getDefaultConfigDir(): string {
-  if (process.platform === 'win32') {
-    const programData = process.env.ProgramData || path.join(process.env.SystemDrive || 'C:', 'ProgramData');
-    return path.join(programData, 'DNS-Worker');
-  }
-
-  if (process.platform === 'linux') {
-    const systemEtc = '/etc/dns-worker';
-    // If running as root, or if /etc/dns-worker already exists and is writable
-    if (typeof process.getuid === 'function' && process.getuid() === 0) {
-      return systemEtc;
-    }
-    if (fs.existsSync(systemEtc)) {
-      try {
-        fs.accessSync(systemEtc, fs.constants.W_OK);
-        return systemEtc;
-      } catch {
-        /* Not writable by current user, fall through */
-      }
-    }
-    // For unprivileged user when system /etc/dns-worker is not provisioned,
-    // use standard XDG config directory: ~/.config/dns-worker
-    const homeDir = process.env.HOME || '/tmp';
-    const xdgConfigHome = process.env.XDG_CONFIG_HOME || path.join(homeDir, '.config');
-    return path.join(xdgConfigHome, 'dns-worker');
-  }
-
-  if (process.platform === 'darwin') {
-    const homeDir = process.env.HOME || '/tmp';
-    return path.join(homeDir, 'Library', 'Application Support', 'DNS-Worker');
-  }
-
-  return path.join(process.cwd(), 'config');
-}
-
-/**
- * Resolves the platform-specific default configuration file path.
- * - Linux: /etc/dns-worker/.env
- * - Windows: %ProgramData%\DNS-Worker\.env
- * - macOS: ~/Library/Application Support/DNS-Worker/.env
- */
-export function getDefaultConfigFilePath(): string {
-  return path.join(getDefaultConfigDir(), '.env');
-}
-
-/**
- * Ensures system persistent directories (Persistent Data Dir and Config Directory) exist if writable.
- * Optionally auto-seeds the default configuration file if not already present.
- *
- * @param autoSeedConfig - If true (default), automatically writes the default configuration template to the config file if missing.
- * @returns Persistent paths for data directory, configuration directory, and configuration file.
- */
-export function ensurePersistentDirs(autoSeedConfig: boolean = true): { dataDir: string; configDir: string; configFile: string } {
-  const dataDir = getDefaultDataDir();
-  const configDir = getDefaultConfigDir();
-  const configFile = getDefaultConfigFilePath();
-
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true, mode: 0o755 });
-    }
-  } catch {}
-
-  try {
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true, mode: 0o755 });
-    }
-  } catch {}
-
-  if (autoSeedConfig) {
-    try {
-      writeDefaultConfigFile(configFile, false);
-    } catch {}
-  }
-
-  // If running with sudo under Linux, ensure ownership of dataDir and configDir is assigned to the real user
-  if (process.platform === 'linux' && process.env.SUDO_USER && process.env.SUDO_USER !== 'root') {
-    const sudoUser = process.env.SUDO_USER.trim();
-    if (/^[a-zA-Z0-9._-]+$/.test(sudoUser)) {
-      try {
-        execSync(`chown -R ${sudoUser} "${dataDir}"`);
-      } catch {}
-      try {
-        execSync(`chown -R ${sudoUser} "${configDir}"`);
-      } catch {}
-    }
-  }
-
-  return { dataDir, configDir, configFile };
-}
-
-/**
- * Parsed and loaded environment files tracker.
- */
-const loadedEnvFiles: string[] = [];
-
-/**
- * Returns list of environment files successfully loaded into process.env.
- */
-export function getLoadedEnvFiles(): readonly string[] {
-  return loadedEnvFiles;
-}
-
-/**
- * Parses simple KEY=VALUE dotenv files.
- * Returns true if file was successfully read.
- */
-function loadDotEnv(filePath: string): boolean {
-  try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const lines = content.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-        const eqIdx = trimmed.indexOf('=');
-        if (eqIdx !== -1) {
-          const key = trimmed.slice(0, eqIdx).trim();
-          let val = trimmed.slice(eqIdx + 1).trim();
-          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-            val = val.slice(1, -1);
-          }
-          if (!(key in process.env)) {
-            process.env[key] = val;
-          }
-        }
-      }
-      return true;
-    }
-  } catch (err) {
-    console.warn(`[Config] Failed to read ${filePath}:`, err);
-  }
-  return false;
-}
-
-/**
- * Loads configuration files from multiple hierarchical search paths:
- * 1. Current working directory: .dev.vars, .env, .env.serverfull
- * 2. System config directory: /etc/dns-worker/.env on Linux, %ProgramData%\\DNS-Worker\\.env on Windows
- * 3. Linux system config directory & compatibility paths
- * 4. Package distribution root: <packageRoot>/.env.serverfull
- */
-export function loadEnvFiles(rootDir: string = process.cwd()): string[] {
-  ensurePersistentDirs(true);
-  loadedEnvFiles.length = 0;
-
-  const candidatePaths = [
-    // 1. Current working directory
-    path.join(rootDir, '.dev.vars'),
-    path.join(rootDir, '.env'),
-    path.join(rootDir, '.env.serverfull'),
-
-    // 2. Standard system configuration file (/etc/dns-worker/.env on Linux)
-    getDefaultConfigFilePath(),
-
-    // 3. Linux standard system paths & compatibility fallbacks
-    process.platform === 'linux' ? '/etc/dns-worker/.env' : null,
-    process.platform === 'linux' ? '/etc/default/dns-worker' : null,
-    process.platform === 'linux' ? path.join(getDefaultDataDir(), '.env') : null,
-
-    // 4. Package distribution root
-    path.join(getPackageRoot(), '.env.serverfull')
-  ].filter((p): p is string => Boolean(p));
-
-  const uniquePaths = Array.from(new Set(candidatePaths));
-  for (const filePath of uniquePaths) {
-    if (loadDotEnv(filePath)) {
-      loadedEnvFiles.push(filePath);
-    }
-  }
-
-  return loadedEnvFiles;
-}
-
-/**
- * Resolves or initializes a stable, persistent JWT secret.
- * Precedence:
- * 1. process.env.JWT_SECRET (if explicitly configured)
- * 2. <DataDir>/.jwt_secret (if previously generated and persisted)
- * 3. Generates 256-bit cryptographically secure hex string and persists it to <DataDir>/.jwt_secret
- */
-export function getOrInitPersistentJwtSecret(dataDir: string = getDefaultDataDir()): string {
-  if (process.env.JWT_SECRET && process.env.JWT_SECRET.trim().length > 0) {
-    return process.env.JWT_SECRET.trim();
-  }
-
-  const secretFile = path.join(dataDir, '.jwt_secret');
-  try {
-    if (fs.existsSync(secretFile)) {
-      const existing = fs.readFileSync(secretFile, 'utf-8').trim();
-      if (existing.length >= 16) {
-        return existing;
-      }
-    }
-  } catch {}
-
-  // Generate 256-bit secure random secret (64 hex characters)
-  const newSecret = Buffer.from(crypto.randomBytes(32)).toString('hex');
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(secretFile, newSecret, { encoding: 'utf-8', mode: 0o600 });
-  } catch {}
-  return newSecret;
 }
 
 /**
@@ -440,6 +155,17 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     : (process.env.SERVERFULL_ECH_ENABLED === undefined || process.env.SERVERFULL_ECH_ENABLED === 'true' || process.env.SERVERFULL_ECH_ENABLED === '1');
   const echConfig = (cliArgs?.['ech-config'] || process.env.SERVERFULL_ECH_CONFIG || '').trim();
   const echFrontingDomain = (cliArgs?.['ech-fronting-domain'] || process.env.SERVERFULL_ECH_FRONTING_DOMAIN || 'cloudflare-ech.com').trim();
+  const tursoDatabaseUrl = (cliArgs?.['turso-url'] || process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || '').trim();
+  const tursoAuthToken = (cliArgs?.['turso-token'] || process.env.TURSO_AUTH_TOKEN || '').trim();
+  const rawService = cliArgs?.['database-service'] || cliArgs?.['db-service'] || process.env.DATABASE_SERVICE || process.env.DB_SERVICE;
+  const databaseService = getDatabaseService(
+    {
+      DATABASE_SERVICE: rawService,
+      TURSO_DATABASE_URL: tursoDatabaseUrl,
+      TURSO_AUTH_TOKEN: tursoAuthToken
+    },
+    true
+  );
 
   const config: ServerfullConfig = {
     tlsKeyPath: effectiveKeyPath,
@@ -451,6 +177,9 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     httpsPort,
     host,
     dbPath,
+    databaseService,
+    tursoDatabaseUrl,
+    tursoAuthToken,
     defaultProfileKey,
     disableUdp,
     disableDot,
@@ -462,7 +191,10 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
   };
 
   const env: Env = {
-    DB: null as any, // Set by db.ts
+    DB: null as any, // Set by db.ts or turso client
+    DATABASE_SERVICE: databaseService,
+    TURSO_DATABASE_URL: tursoDatabaseUrl,
+    TURSO_AUTH_TOKEN: tursoAuthToken,
     ASSETS: null as any, // Set by http.ts
     JWT_SECRET: getOrInitPersistentJwtSecret(),
     FAIL_OPEN_UPSTREAM: process.env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM,

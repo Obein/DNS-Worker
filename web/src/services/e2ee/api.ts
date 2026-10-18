@@ -1,15 +1,31 @@
 /**
  * @file api.ts
- * @description HTTP network layer and key enrollment flows for E2EE account/profile endpoints.
+ * @description High-level orchestrator and API facade for End-to-End Encryption (E2EE).
  */
 
-import { ml_kem768_p256 } from "@noble/post-quantum/hybrid.js";
-import { profileFetch } from "../profiles";
 import type { ProfileE2eeStatus, UnlockedPrivateKey } from "./types";
-import { toBase64, fromBase64 } from "./crypto";
+import { fromBase64 } from "./crypto";
 import { derivePasskeyKek } from "./passkeyKek";
 import { wrapPrivateKeyWithRecoveryKey, unwrapPrivateKeyWithRecoveryKey } from "./recoveryKek";
 import type { KeyStore } from "./keyStore";
+import {
+  fetchUserE2eeStatus,
+  fetchProfileE2eeStatus,
+  postEnableUserE2ee,
+  postInitUserE2ee,
+  postInitProfileE2ee,
+  fetchWrappedKey,
+  fetchRecoveryWrappedKey,
+  postWrapKey,
+  postWrapRecoveryKey,
+  deleteUserE2ee,
+  deleteProfileE2ee
+} from "./http";
+import {
+  generatePqcKeyPairPayload,
+  wrapPrivateKeyWithKek,
+  unwrapPrivateKeyWithKek
+} from "./keyOperations";
 
 export class E2eeApi {
   private keyStore: KeyStore;
@@ -22,51 +38,16 @@ export class E2eeApi {
    * Retrieves account-level E2EE configuration and status.
    */
   async getUserStatus(): Promise<ProfileE2eeStatus> {
-    try {
-      const res = await fetch("/api/account/e2ee/status");
-      if (res.ok) {
-        const data = (await res.json()) as ProfileE2eeStatus;
-        this.keyStore.validateCachedKeyAgainstStatus(data);
-        return data;
-      }
-    } catch {
-      // Fallback
-    }
-
-    // Fallback: check profile list
-    try {
-      const profilesRes = await fetch("/api/profiles");
-      if (profilesRes.ok) {
-        const profiles = await profilesRes.json();
-        if (profiles && profiles.length > 0) {
-          const profileStatus = await this.getStatus(profiles[0].id);
-          this.keyStore.validateCachedKeyAgainstStatus(profileStatus);
-          return profileStatus;
-        }
-      }
-    } catch (err) {
-      console.warn("[E2EE API] Fallback status check failed:", err);
-    }
-
-    return {
-      enabled: false,
-      publicKey: null,
-      wrappedPasskeys: [],
-      hasRecoveryKey: false,
-      userPasskeyCount: 0,
-      createdAt: null,
-    };
+    const data = await fetchUserE2eeStatus();
+    this.keyStore.validateCachedKeyAgainstStatus(data);
+    return data;
   }
 
   /**
    * Retrieves E2EE configuration and status for a specific profile.
    */
   async getStatus(profileId: string): Promise<ProfileE2eeStatus> {
-    const res = await profileFetch(`/api/profiles/${profileId}/e2ee/status`);
-    if (!res.ok) {
-      throw new Error(`Failed to fetch E2EE status: ${await res.text()}`);
-    }
-    const data = (await res.json()) as ProfileE2eeStatus;
+    const data = await fetchProfileE2eeStatus(profileId);
     this.keyStore.validateCachedKeyAgainstStatus(data);
     return data;
   }
@@ -77,10 +58,7 @@ export class E2eeApi {
   async enableUserE2ee(passkeyIdOverride?: string): Promise<boolean> {
     const status = await this.getUserStatus();
     if (status.hasKeys) {
-      const res = await fetch("/api/account/e2ee/enable", { method: "POST" });
-      if (!res.ok) {
-        throw new Error(`Failed to enable user E2EE: ${await res.text()}`);
-      }
+      await postEnableUserE2ee();
       return true;
     }
 
@@ -88,51 +66,18 @@ export class E2eeApi {
     const chosenPasskeyId = passkeyIdOverride || passkeyId || "primary";
 
     // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
-    const pqcKeys = ml_kem768_p256.keygen();
-    const publicKeyPayload = {
-      alg: "P256-MLKEM768",
-      pqc_pk: toBase64(pqcKeys.publicKey),
-    };
-    const privateKeyObj: UnlockedPrivateKey = {
-      alg: "P256-MLKEM768",
-      seedBase64: toBase64(pqcKeys.secretKey),
-    };
+    const { publicKeyPayload, privateKeyObj } = generatePqcKeyPairPayload();
 
     // 2. Wrap SK with Passkey KEK
-    const kekKey = await crypto.subtle.importKey(
-      "raw",
-      kek as BufferSource,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt"]
-    );
-
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
-    const encryptedBuf = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      kekKey,
-      plaintext
-    );
-
-    const encryptedSk = toBase64(encryptedBuf);
-    const ivStr = toBase64(iv);
+    const { encryptedSk, iv } = await wrapPrivateKeyWithKek(kek, privateKeyObj);
 
     // 3. Upload to server
-    const res = await fetch("/api/account/e2ee/init", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publicKey: publicKeyPayload,
-        passkeyId: chosenPasskeyId,
-        encryptedSk,
-        iv: ivStr,
-      }),
+    await postInitUserE2ee({
+      publicKey: publicKeyPayload,
+      passkeyId: chosenPasskeyId,
+      encryptedSk,
+      iv
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to enable user E2EE: ${await res.text()}`);
-    }
 
     // Save in session for account
     this.keyStore.setPrivateKey("account", privateKeyObj);
@@ -158,52 +103,18 @@ export class E2eeApi {
     }
 
     // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
-    const pqcKeys = ml_kem768_p256.keygen();
-    const publicKeyPayload = {
-      alg: "P256-MLKEM768",
-      pqc_pk: toBase64(pqcKeys.publicKey),
-    };
-    const privateKeyObj: UnlockedPrivateKey = {
-      alg: "P256-MLKEM768",
-      seedBase64: toBase64(pqcKeys.secretKey),
-      ...(legacyKey ? { legacyKey } : {}),
-    };
+    const { publicKeyPayload, privateKeyObj } = generatePqcKeyPairPayload(legacyKey);
 
     // 2. Wrap SK with Passkey KEK
-    const kekKey = await crypto.subtle.importKey(
-      "raw",
-      kek as BufferSource,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt"]
-    );
-
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
-    const encryptedBuf = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      kekKey,
-      plaintext
-    );
-
-    const encryptedSk = toBase64(encryptedBuf);
-    const ivStr = toBase64(iv);
+    const { encryptedSk, iv } = await wrapPrivateKeyWithKek(kek, privateKeyObj);
 
     // 3. Upload to server
-    const res = await fetch("/api/account/e2ee/init", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publicKey: publicKeyPayload,
-        passkeyId: chosenPasskeyId,
-        encryptedSk,
-        iv: ivStr,
-      }),
+    await postInitUserE2ee({
+      publicKey: publicKeyPayload,
+      passkeyId: chosenPasskeyId,
+      encryptedSk,
+      iv
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to upgrade user E2EE key: ${await res.text()}`);
-    }
 
     // Save in session for account
     this.keyStore.setPrivateKey("account", privateKeyObj);
@@ -217,51 +128,18 @@ export class E2eeApi {
     const { kek } = await derivePasskeyKek(profileId);
 
     // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
-    const pqcKeys = ml_kem768_p256.keygen();
-    const publicKeyPayload = {
-      alg: "P256-MLKEM768",
-      pqc_pk: toBase64(pqcKeys.publicKey),
-    };
-    const privateKeyObj: UnlockedPrivateKey = {
-      alg: "P256-MLKEM768",
-      seedBase64: toBase64(pqcKeys.secretKey),
-    };
+    const { publicKeyPayload, privateKeyObj } = generatePqcKeyPairPayload();
 
     // 2. Wrap SK with Passkey KEK
-    const kekKey = await crypto.subtle.importKey(
-      "raw",
-      kek as BufferSource,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt"]
-    );
-
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const plaintext = new TextEncoder().encode(JSON.stringify(privateKeyObj));
-    const encryptedBuf = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      kekKey,
-      plaintext
-    );
-
-    const encryptedSk = toBase64(encryptedBuf);
-    const ivStr = toBase64(iv);
+    const { encryptedSk, iv } = await wrapPrivateKeyWithKek(kek, privateKeyObj);
 
     // 3. Upload to server
-    const res = await profileFetch(`/api/profiles/${profileId}/e2ee/init`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publicKey: publicKeyPayload,
-        passkeyId,
-        encryptedSk,
-        iv: ivStr,
-      }),
+    await postInitProfileE2ee(profileId, {
+      publicKey: publicKeyPayload,
+      passkeyId,
+      encryptedSk,
+      iv
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to enable E2EE: ${await res.text()}`);
-    }
 
     // Save in session
     this.keyStore.setPrivateKey(profileId, privateKeyObj);
@@ -287,69 +165,13 @@ export class E2eeApi {
     }
 
     const { kek, altKek, passkeyId } = await derivePasskeyKek("account");
-
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
-    let res = await fetch(
-      `/api/account/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
-    );
-    if (!res.ok) {
-      const profilesRes = await fetch("/api/profiles");
-      if (profilesRes.ok) {
-        const profiles = await profilesRes.json();
-        if (profiles && profiles.length > 0) {
-          res = await fetch(
-            `/api/profiles/${profiles[0].id}/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
-          );
-        }
-      }
-    }
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch wrapped key: ${await res.text()}`);
-    }
-
-    const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
+    const { encryptedSk, iv } = await fetchWrappedKey(targetPasskeyId);
     const ciphertextBuf = fromBase64(encryptedSk);
     const ivBuf = fromBase64(iv);
 
-    // Unwrap SK: Try primary KEK (account), then altKek (profile)
-    let decryptedBuf: ArrayBuffer | null = null;
-    try {
-      const kekKey = await crypto.subtle.importKey(
-        "raw",
-        kek as BufferSource,
-        { name: "AES-GCM" },
-        false,
-        ["decrypt"]
-      );
-      decryptedBuf = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: ivBuf as BufferSource },
-        kekKey,
-        ciphertextBuf as BufferSource
-      );
-    } catch {
-      if (altKek) {
-        try {
-          const altKekKey = await crypto.subtle.importKey(
-            "raw",
-            altKek as BufferSource,
-            { name: "AES-GCM" },
-            false,
-            ["decrypt"]
-          );
-          decryptedBuf = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: ivBuf as BufferSource },
-            altKekKey,
-            ciphertextBuf as BufferSource
-          );
-        } catch {}
-      }
-      if (!decryptedBuf) {
-        throw new Error("Failed to decrypt private key with this Passkey. Please unlock using your Recovery Key.");
-      }
-    }
-
-    const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
+    const privateKeyObj = await unwrapPrivateKeyWithKek(kek, altKek, ciphertextBuf, ivBuf);
     this.keyStore.setPrivateKey("account", privateKeyObj);
     return true;
   }
@@ -369,62 +191,13 @@ export class E2eeApi {
 
     // Use dual-salt derivation (account + profileId)
     const { kek, altKek, passkeyId } = await derivePasskeyKek(profileId);
-
     const targetPasskeyId = passkeyId || status.wrappedPasskeys[0];
-    let res = await fetch(
-      `/api/profiles/${profileId}/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
-    );
-    if (!res.ok) {
-      res = await fetch(
-        `/api/account/e2ee/wrapped-key${targetPasskeyId ? `?passkey_id=${encodeURIComponent(targetPasskeyId)}` : ""}`
-      );
-    }
-    if (!res.ok) {
-      throw new Error(`Failed to fetch wrapped key: ${await res.text()}`);
-    }
 
-    const { encryptedSk, iv } = (await res.json()) as { encryptedSk: string; iv: string };
+    const { encryptedSk, iv } = await fetchWrappedKey(targetPasskeyId, profileId);
     const ciphertextBuf = fromBase64(encryptedSk);
     const ivBuf = fromBase64(iv);
 
-    // Unwrap SK: Try primary KEK (account), then altKek (profile)
-    let decryptedBuf: ArrayBuffer | null = null;
-    try {
-      const kekKey = await crypto.subtle.importKey(
-        "raw",
-        kek as BufferSource,
-        { name: "AES-GCM" },
-        false,
-        ["decrypt"]
-      );
-      decryptedBuf = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: ivBuf as BufferSource },
-        kekKey,
-        ciphertextBuf as BufferSource
-      );
-    } catch {
-      if (altKek) {
-        try {
-          const altKekKey = await crypto.subtle.importKey(
-            "raw",
-            altKek as BufferSource,
-            { name: "AES-GCM" },
-            false,
-            ["decrypt"]
-          );
-          decryptedBuf = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: ivBuf as BufferSource },
-            altKekKey,
-            ciphertextBuf as BufferSource
-          );
-        } catch {}
-      }
-      if (!decryptedBuf) {
-        throw new Error("Failed to decrypt private key with this Passkey. Please unlock using your Recovery Key.");
-      }
-    }
-
-    const privateKeyObj = JSON.parse(new TextDecoder().decode(decryptedBuf)) as UnlockedPrivateKey;
+    const privateKeyObj = await unwrapPrivateKeyWithKek(kek, altKek, ciphertextBuf, ivBuf);
     this.keyStore.setPrivateKey(profileId, privateKeyObj);
     this.keyStore.setPrivateKey("account", privateKeyObj);
     return true;
@@ -435,32 +208,16 @@ export class E2eeApi {
    */
   async initUserE2eeWithRecoveryKey(plaintextRecoveryKey: string): Promise<boolean> {
     // 1. Generate Post-Quantum P256-MLKEM768 KeyPair
-    const pqcKeys = ml_kem768_p256.keygen();
-    const publicKeyPayload = {
-      alg: "P256-MLKEM768",
-      pqc_pk: toBase64(pqcKeys.publicKey),
-    };
-    const privateKeyObj: UnlockedPrivateKey = {
-      alg: "P256-MLKEM768",
-      seedBase64: toBase64(pqcKeys.secretKey),
-    };
+    const { publicKeyPayload, privateKeyObj } = generatePqcKeyPairPayload();
 
     // 2. Wrap SK with Recovery Key KEK
     const recoveryWrapped = await wrapPrivateKeyWithRecoveryKey(privateKeyObj, plaintextRecoveryKey);
 
     // 3. Upload to server
-    const res = await fetch("/api/account/e2ee/init", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        publicKey: publicKeyPayload,
-        recovery: recoveryWrapped,
-      }),
+    await postInitUserE2ee({
+      publicKey: publicKeyPayload,
+      recovery: recoveryWrapped
     });
-
-    if (!res.ok) {
-      throw new Error(`Failed to initialize E2EE with recovery key: ${await res.text()}`);
-    }
 
     // 4. Save in session for account
     this.keyStore.setPrivateKey("account", privateKeyObj);
@@ -471,16 +228,7 @@ export class E2eeApi {
    * Unlocks the account's log private key using the plaintext 30-digit Recovery Key.
    */
   async unlockWithRecoveryKey(plaintextRecoveryKey: string): Promise<boolean> {
-    const res = await fetch("/api/account/e2ee/recovery-wrapped-key");
-    if (!res.ok) {
-      throw new Error(`Failed to fetch recovery wrapped key: ${await res.text()}`);
-    }
-
-    const { encryptedSk, iv, salt } = (await res.json()) as {
-      encryptedSk: string;
-      iv: string;
-      salt: string;
-    };
+    const { encryptedSk, iv, salt } = await fetchRecoveryWrappedKey();
 
     let privateKeyObj: UnlockedPrivateKey;
     try {
@@ -510,33 +258,8 @@ export class E2eeApi {
 
     try {
       const { kek } = await derivePasskeyKek("account");
-      const kekKey = await crypto.subtle.importKey(
-        "raw",
-        kek as BufferSource,
-        { name: "AES-GCM" },
-        false,
-        ["encrypt"]
-      );
-
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const plaintext = new TextEncoder().encode(JSON.stringify(sk));
-      const encryptedBuf = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        kekKey,
-        plaintext
-      );
-
-      const res = await fetch("/api/account/e2ee/wrap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          passkeyId,
-          encryptedSk: toBase64(encryptedBuf),
-          iv: toBase64(iv),
-        }),
-      });
-
-      return res.ok;
+      const { encryptedSk, iv } = await wrapPrivateKeyWithKek(kek, sk);
+      return await postWrapKey({ passkeyId, encryptedSk, iv });
     } catch (err) {
       console.warn("[E2EE API] Failed to wrap passkey KEK:", err);
       return false;
@@ -554,25 +277,14 @@ export class E2eeApi {
     }
 
     const recoveryWrapped = await wrapPrivateKeyWithRecoveryKey(sk, newRecoveryKey);
-    const res = await fetch("/api/account/e2ee/wrap-recovery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(recoveryWrapped),
-    });
-
-    return res.ok;
+    return await postWrapRecoveryKey(recoveryWrapped);
   }
 
   /**
    * Disables E2EE across the entire user account.
    */
   async disableUserE2ee(): Promise<boolean> {
-    const res = await fetch("/api/account/e2ee", {
-      method: "DELETE",
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to disable E2EE: ${await res.text()}`);
-    }
+    await deleteUserE2ee();
     this.keyStore.clearStorage();
     return true;
   }
@@ -581,12 +293,7 @@ export class E2eeApi {
    * Disables E2EE for a profile.
    */
   async disableE2ee(profileId: string): Promise<boolean> {
-    const res = await profileFetch(`/api/profiles/${profileId}/e2ee`, {
-      method: "DELETE",
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to disable E2EE: ${await res.text()}`);
-    }
+    await deleteProfileE2ee(profileId);
     this.keyStore.deleteProfileKey(profileId);
     return true;
   }

@@ -16,9 +16,15 @@ import { handleDoHRequest } from './api/doh';
 import { handleScheduled } from './cron';
 import { handleMapDataRequest } from './api/mapData';
 import { isUsableJwtSecret } from './lib/jwt';
+import { isTursoConfigured, getTursoDatabase, getDatabaseService } from './lib/turso';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const dbService = getDatabaseService(env, false);
+    if (dbService === 'Turso' && isTursoConfigured(env)) {
+      env.DB = getTursoDatabase(env);
+    }
+
     const nonceBytes = new Uint8Array(16);
     crypto.getRandomValues(nonceBytes);
     const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -36,11 +42,25 @@ export default {
       // Business API Router
       if (url.pathname.startsWith('/api/')) {
         let isDbMissing = false;
-        try {
-          isDbMissing = !env.DB;
-        } catch (e) {
+        let dbErrorMessage = '';
+
+        if (dbService === 'Turso') {
+          if (!isTursoConfigured(env) || !env.DB) {
+            isDbMissing = true;
+            dbErrorMessage = 'DATABASE_SERVICE is set to Turso, but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is not configured.';
+          }
+        } else if (dbService === 'File') {
           isDbMissing = true;
+          dbErrorMessage = "DATABASE_SERVICE='File' is not supported in Cloudflare Workers. Please configure D1 database binding or use DATABASE_SERVICE='Turso'.";
+        } else {
+          // Default: 'D1'
+          try {
+            isDbMissing = !env.DB;
+          } catch (e) {
+            isDbMissing = true;
+          }
         }
+
         const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
 
         if (isDbMissing || isJwtSecretMissing) {
@@ -48,7 +68,8 @@ export default {
             error: "configuration_error",
             isDbMissing,
             isJwtSecretMissing,
-            message: "DNS Worker is not fully configured. Please configure the D1 database binding and JWT_SECRET secret variable."
+            databaseService: dbService,
+            message: dbErrorMessage || "DNS Worker is not fully configured. Please configure the database and JWT_SECRET secret variable."
           }), {
             status: 503,
             headers: {
@@ -190,10 +211,16 @@ export default {
         const contentType = response.headers.get('Content-Type') || '';
         if (contentType.includes('text/html')) {
           let isDbMissing = false;
-          try {
-            isDbMissing = !env.DB;
-          } catch (e) {
+          if (dbService === 'Turso') {
+            isDbMissing = !isTursoConfigured(env) || !env.DB;
+          } else if (dbService === 'File') {
             isDbMissing = true;
+          } else {
+            try {
+              isDbMissing = !env.DB;
+            } catch (e) {
+              isDbMissing = true;
+            }
           }
           const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
           const isServerfull = Boolean(
@@ -211,6 +238,8 @@ export default {
                isDbMissing,
                isJwtSecretMissing,
                isServerfull,
+               databaseService: dbService,
+               isTurso: dbService === 'Turso',
                mode: isServerfull ? 'serverfull' : 'cloudflare'
              });
           } catch (e) { }
@@ -269,6 +298,10 @@ export default {
   },
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    const dbService = getDatabaseService(env, false);
+    if (dbService === 'Turso' && isTursoConfigured(env)) {
+      env.DB = getTursoDatabase(env);
+    }
     await handleScheduled(event, env, ctx);
   }
 };

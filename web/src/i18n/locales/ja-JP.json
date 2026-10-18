@@ -930,7 +930,7 @@
     "totpCode": "認証コード"
   },
   "intro": {
-    "item1Title": "Obex 保護DNS",
+    "item1Title": "DNS Worker 保護DNS",
     "item1Desc": "速度とセキュリティを重視した Cloudflare Workers & D1 ベースの DNS リゾルバーです。",
     "item2Title": "DoH によるプライバシー保護",
     "item2Desc": "DNS over HTTPS (RFC 8484) による暗号化トンネルで、プロバイダーによる改ざんを防ぎプライバシーを保護します。",
@@ -947,7 +947,11 @@
     "item8Title": "複数設定の管理",
     "item8Desc": "デバイスやネットワーク環境ごとに、独立したDNS設定プロファイルを複数作成し管理できます。",
     "item9Title": "複数アクセスポイント管理",
-    "item9Desc": "異なるデバイスに対して専用のDNSアクセスポイントを設定し、ログや統計データの詳細な隔離と分析を実現します。"
+    "item9Desc": "異なるデバイスに対して専用のDNSアクセスポイントを設定し、ログや統計データの詳細な隔離と分析を実現します。",
+    "item10Title": "ゼロ知識ログ",
+    "item10Desc": "耐量子ハイブリッド暗号 (P256-MLKEM768) によるエンドツーエンド暗号化に対応。鍵は端末内にのみ保持され、サーバー側は完全なゼロ知識です。",
+    "item11Title": "D1/Turso/File マルチDB対応",
+    "item11Desc": "Cloudflare D1、Turso 分散クラウド SQLite、ローカルファイルストレージにネイティブ対応し、無料利用枠の制限を容易に回避します。"
   },
   "deploymentGuide": {
     "title": "DNS Worker セットアップ＆デプロイガイド",

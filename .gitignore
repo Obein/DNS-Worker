@@ -4,7 +4,6 @@ dist
 dist-*
 build
 .wrangler
-package-lock.json
 /web/stats.html
 .env
 .vscode

@@ -9,7 +9,9 @@ import {
   Edit3,
   Zap,
   Cpu,
-  MonitorSmartphone
+  MonitorSmartphone,
+  KeyRound,
+  Database
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useScrollingIntro } from "../hooks/useScrollingIntro";
@@ -24,6 +26,8 @@ interface IntroItem {
 const INTRO_ITEMS: IntroItem[] = [
   { icon: ShieldCheck, colorClass: "text-blue-500", titleKey: "intro.item1Title", descKey: "intro.item1Desc" },
   { icon: Lock, colorClass: "text-purple-500", titleKey: "intro.item2Title", descKey: "intro.item2Desc" },
+  { icon: KeyRound, colorClass: "text-emerald-500", titleKey: "intro.item10Title", descKey: "intro.item10Desc" },
+  { icon: Database, colorClass: "text-teal-500", titleKey: "intro.item11Title", descKey: "intro.item11Desc" },
   { icon: Globe, colorClass: "text-green-500", titleKey: "intro.item3Title", descKey: "intro.item3Desc" },
   { icon: Filter, colorClass: "text-orange-500", titleKey: "intro.item4Title", descKey: "intro.item4Desc" },
   { icon: BarChart3, colorClass: "text-red-500", titleKey: "intro.item5Title", descKey: "intro.item5Desc" },

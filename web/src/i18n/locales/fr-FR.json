@@ -947,7 +947,11 @@
     "item8Title": "Gérer plusieurs profils",
     "item8Desc": "Créez et gérez des profils DNS distincts pour différents appareils ou environnements réseau.",
     "item9Title": "Plusieurs points d'accès",
-    "item9Desc": "Configurez des points d'accès dédiés pour différents appareils afin d'analyser les journaux et les statistiques séparément."
+    "item9Desc": "Configurez des points d'accès dédiés pour différents appareils afin d'analyser les journaux et les statistiques séparément.",
+    "item10Title": "Journaux Zero-Knowledge",
+    "item10Desc": "Chiffrement de bout en bout avec KEM hybride post-quantique (P256-MLKEM768). Les clés restent locales, garantissant un serveur sans aucune connaissance.",
+    "item11Title": "Support multi-BD D1/Turso/File",
+    "item11Desc": "Prend en charge Cloudflare D1, Turso SQLite distribué et le stockage de fichiers locaux pour surmonter les limites de quota."
   },
   "deploymentGuide": {
     "title": "Guide de Configuration et Déploiement d'DNS Worker",

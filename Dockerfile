@@ -6,12 +6,12 @@
 FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS builder
 WORKDIR /app
 
-# Copy dependency manifests first for optimal Docker layer caching
-COPY package.json package-lock.json ./
-COPY web/package.json web/package-lock.json ./web/
+# Copy dependency manifests and configuration first for optimal Docker layer caching
+COPY package.json package-lock.json .npmrc* ./
+COPY web/package.json web/package-lock.json web/.npmrc ./web/
 
 # Install dependencies deterministically without running lifecycle scripts early
-RUN npm ci --ignore-scripts && npm --prefix web ci --ignore-scripts
+RUN npm ci --ignore-scripts && npm --prefix web ci --ignore-scripts --legacy-peer-deps
 
 # Copy full source tree
 COPY . .

@@ -1,12 +1,9 @@
 /**
  * @file status.ts
  * @description Runtime status and service diagnostic inspector for Serverfull mode.
+ * Re-exports probe and database inspection utilities.
  */
 
-import fs from 'node:fs';
-import net from 'node:net';
-import dgram from 'node:dgram';
-import { DatabaseSync } from 'node:sqlite';
 import {
   ServerfullConfig,
   getDefaultDataDir,
@@ -18,170 +15,12 @@ import { formatBanner, formatKeyValueSection, formatTip } from './format';
 import { getPortOccupant, formatOccupantSummary } from './port';
 import { isUsableJwtSecret, isStrongJwtSecret } from '../lib/jwt';
 import { inspectTlsCertificate, getCertbotCommand } from './cert';
+import { maskDatabaseUrl } from '../lib/turso';
+import { probeTcpPort, probeUdpPort } from './status/probe';
+import { inspectDatabase, inspectTursoDatabase } from './status/database';
 
-/**
- * Result of a network port accessibility probe.
- */
-export type PortProbeState = 'active' | 'free' | 'disabled';
-
-/**
- * Probes a TCP port to determine if a service is actively listening.
- *
- * @param port - TCP port number to probe.
- * @param host - Network address to connect to.
- * @param timeoutMs - Connection timeout in milliseconds.
- * @returns 'active' if listening, 'free' if connection is refused/times out.
- */
-export function probeTcpPort(port: number, host: string, timeoutMs: number = 300): Promise<'active' | 'free'> {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let isSettled = false;
-
-    const finish = (state: 'active' | 'free') => {
-      if (isSettled) return;
-      isSettled = true;
-      try { socket.destroy(); } catch {}
-      resolve(state);
-    };
-
-    socket.setTimeout(timeoutMs);
-    socket.once('connect', () => finish('active'));
-    socket.once('timeout', () => finish('free'));
-    socket.once('error', () => finish('free'));
-
-    // If host is wildcard 0.0.0.0 or ::, probe loopback
-    const targetHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
-    try {
-      socket.connect(port, targetHost);
-    } catch {
-      finish('free');
-    }
-  });
-}
-
-/**
- * Probes a UDP port to determine if it is currently occupied or available to bind.
- *
- * @param port - UDP port number to probe.
- * @param host - Network host to test.
- * @returns 'active' if already occupied (EADDRINUSE), 'free' if available.
- */
-export function probeUdpPort(port: number, host: string): Promise<'active' | 'free'> {
-  return new Promise((resolve) => {
-    const socket = dgram.createSocket('udp4');
-    let isSettled = false;
-
-    const finish = (state: 'active' | 'free') => {
-      if (isSettled) return;
-      isSettled = true;
-      try { socket.close(); } catch {}
-      resolve(state);
-    };
-
-    socket.once('error', (err: unknown) => {
-      const code = (err as { code?: string })?.code;
-      if (code === 'EADDRINUSE') {
-        finish('active');
-      } else {
-        finish('free');
-      }
-    });
-
-    try {
-      socket.bind(port, host, () => {
-        finish('free');
-      });
-    } catch {
-      finish('active');
-    }
-  });
-}
-
-/**
- * Information regarding SQLite database file and schema state.
- */
-export interface DbStatusInfo {
-  exists: boolean;
-  sizeFormatted?: string;
-  migrationsCount?: number;
-  usersCount?: number;
-  profilesCount?: number;
-  statusText: string;
-}
-
-/**
- * Inspects the SQLite database file and queries metadata if available.
- *
- * @param dbPath - Path to the SQLite database file.
- * @returns Database status metrics.
- */
-export function inspectDatabase(dbPath: string): DbStatusInfo {
-  if (!fs.existsSync(dbPath)) {
-    return {
-      exists: false,
-      statusText: 'Not Initialized (File does not exist yet; created on first start)'
-    };
-  }
-
-  try {
-    const stats = fs.statSync(dbPath);
-    const sizeFormatted = stats.size > 1024 * 1024
-      ? `${(stats.size / (1024 * 1024)).toFixed(2)} MB`
-      : `${(stats.size / 1024).toFixed(1)} KB`;
-
-    let migrationsCount = 0;
-    let usersCount = 0;
-    let profilesCount = 0;
-
-    try {
-      const rawDb = new DatabaseSync(dbPath, { readOnly: true });
-
-      const migTable = rawDb.prepare("SELECT count(*) as cnt FROM sqlite_master WHERE type='table' AND name='d1_migrations'").get() as { cnt: number } | undefined;
-      if (migTable && migTable.cnt > 0) {
-        const migRow = rawDb.prepare('SELECT count(*) as count FROM d1_migrations').get() as { count: number } | undefined;
-        migrationsCount = migRow?.count || 0;
-      }
-
-      const usersTable = rawDb.prepare("SELECT count(*) as cnt FROM sqlite_master WHERE type='table' AND name='users'").get() as { cnt: number } | undefined;
-      if (usersTable && usersTable.cnt > 0) {
-        const userRow = rawDb.prepare('SELECT count(*) as count FROM users').get() as { count: number } | undefined;
-        usersCount = userRow?.count || 0;
-      }
-
-      const profTable = rawDb.prepare("SELECT count(*) as cnt FROM sqlite_master WHERE type='table' AND name='profiles'").get() as { cnt: number } | undefined;
-      if (profTable && profTable.cnt > 0) {
-        const profRow = rawDb.prepare('SELECT count(*) as count FROM profiles').get() as { count: number } | undefined;
-        profilesCount = profRow?.count || 0;
-      }
-
-      rawDb.close();
-    } catch {
-      // Ignore database inspection query errors (e.g. locked database)
-    }
-
-    const details = [
-      sizeFormatted,
-      migrationsCount > 0 ? `${migrationsCount} migrations` : null,
-      usersCount > 0 ? `${usersCount} user(s)` : null,
-      profilesCount > 0 ? `${profilesCount} profile(s)` : null
-    ].filter(Boolean).join(', ');
-
-    return {
-      exists: true,
-      sizeFormatted,
-      migrationsCount,
-      usersCount,
-      profilesCount,
-      statusText: `Ready (${details})`
-    };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    return {
-      exists: true,
-      statusText: `Exists (Read warning: ${errorMsg})`
-    };
-  }
-}
+export * from './status/probe';
+export * from './status/database';
 
 /**
  * Inspects all Serverfull service ports, database, and configurations, printing a declarative status report.
@@ -192,15 +31,20 @@ export function inspectDatabase(dbPath: string): DbStatusInfo {
 export async function showServerfullStatus(config: ServerfullConfig, envJwtSecret?: string): Promise<void> {
   const certInfo = inspectTlsCertificate(config.tlsCertPath, config.tlsKeyPath);
   const canProbeHttps = !config.disableHttps && certInfo.configured && certInfo.filesExist;
+  const isTurso = config.databaseService === 'Turso';
+  const dbStatusPromise = isTurso
+    ? (config.tursoDatabaseUrl && config.tursoAuthToken
+        ? inspectTursoDatabase(config.tursoDatabaseUrl, config.tursoAuthToken)
+        : Promise.resolve({ exists: false, statusText: 'Configuration Error (TURSO_DATABASE_URL or TURSO_AUTH_TOKEN missing)' }))
+    : Promise.resolve(inspectDatabase(config.dbPath));
 
-  const [httpState, httpsState, udpState, dotState] = await Promise.all([
+  const [httpState, httpsState, udpState, dotState, dbStatus] = await Promise.all([
     probeTcpPort(config.httpPort, config.host),
     canProbeHttps ? probeTcpPort(config.httpsPort, config.host) : Promise.resolve('disabled' as const),
     !config.disableUdp ? probeUdpPort(config.udpPort, config.host) : Promise.resolve('disabled' as const),
-    !config.disableDot ? probeTcpPort(config.dotPort, config.host) : Promise.resolve('disabled' as const)
+    !config.disableDot ? probeTcpPort(config.dotPort, config.host) : Promise.resolve('disabled' as const),
+    dbStatusPromise
   ]);
-
-  const dbStatus = inspectDatabase(config.dbPath);
 
   let jwtStatus = 'Default (Insecure fallback, please configure JWT_SECRET)';
   if (isUsableJwtSecret(envJwtSecret)) {
@@ -281,13 +125,22 @@ export async function showServerfullStatus(config: ServerfullConfig, envJwtSecre
     ? `${loadedEnvs.join(', ')} [Loaded]`
     : `None found (Using built-in presets & defaults; default path: ${getDefaultConfigFilePath()})`;
 
+  const databaseItems = isTurso
+    ? [
+        { label: 'Database Service', value: `${config.databaseService} (Turso libSQL over HTTP)` },
+        { label: 'Turso URL', value: maskDatabaseUrl(config.tursoDatabaseUrl) },
+        { label: 'Database Status', value: dbStatus.statusText }
+      ]
+    : [
+        { label: 'Database Service', value: `${config.databaseService} (Local SQLite via node:sqlite)` },
+        { label: 'SQLite Path', value: config.dbPath },
+        { label: 'Database Status', value: dbStatus.statusText },
+        { label: 'Persistent Data Dir', value: getDefaultDataDir() }
+      ];
+
   const databaseSection = formatKeyValueSection({
     title: '\nDatabase & Storage:',
-    items: [
-      { label: 'SQLite Path', value: config.dbPath },
-      { label: 'Database Status', value: dbStatus.statusText },
-      { label: 'Persistent Data Dir', value: getDefaultDataDir() }
-    ]
+    items: databaseItems
   });
 
   let tlsCertText = 'Not Configured (HTTP only, HTTPS & DoT disabled)';

@@ -70,13 +70,26 @@ SERVERFULL_ECH_ENABLED=true
 SERVERFULL_ECH_FRONTING_DOMAIN=cloudflare-ech.com
 
 # ------------------------------------------------------------------------------
-# Database Configuration / 本地 SQLite 数据库配置
+# Database Configuration / 数据库配置 (Local SQLite 或远程 Turso / libSQL)
 # ------------------------------------------------------------------------------
+# Database service backend / 数据库后端服务选择 (D1 / Turso / File)
+# Serverless (Cloudflare Workers) mode defaults to D1; Serverfull mode defaults to File.
+# Serverless 模式下默认使用 D1，Serverfull 模式下默认使用 File (本地 SQLite)。
+# Options / 可选值: D1, Turso, File
+DATABASE_SERVICE=File
+
 # Local SQLite database file path / 本地 SQLite 数据库文件存储路径
 # Default: Linux: /var/lib/dns-worker/dns_worker.sqlite, Windows: %ProgramData%\\DNS-Worker\\dns_worker.sqlite
 # 默认值: Linux 使用 /var/lib/dns-worker/dns_worker.sqlite, Windows 使用 %ProgramData%\\DNS-Worker\\dns_worker.sqlite
 # Automatically applies all migrations on startup / 启动时自动执行表结构初始化与迁移
 # SERVERFULL_DB_PATH=
+
+# Turso (libSQL) Remote Database / 远程 Turso 分布式数据库配置 (选填)
+# When configured, DNS Worker automatically switches from local SQLite to Turso and runs schema migrations.
+# 当配置了 TURSO_DATABASE_URL 与 TURSO_AUTH_TOKEN 时，系统将自动使用 Turso 远程数据库替代本地 SQLite。
+# Supports both libsql:// and https:// URLs (e.g. libsql://your-db-org.turso.io)
+# TURSO_DATABASE_URL=libsql://your-db-org.turso.io
+# TURSO_AUTH_TOKEN=your_turso_jwt_auth_token_here
 
 # ------------------------------------------------------------------------------
 # Default Profile Routing / 默认解析配置路由

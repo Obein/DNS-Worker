@@ -930,7 +930,7 @@
     "totpCode": "验证器动态口令"
   },
   "intro": {
-    "item1Title": "Obex 保护性 DNS",
+    "item1Title": "DNS Worker 保护性 DNS",
     "item1Desc": "基于 Cloudflare Workers & D1 的 DNS 解析器，尽力提高速度与安全。",
     "item2Title": "DoH 隐私保护",
     "item2Desc": "通过 DNS over HTTPS (RFC 8484) 加密隧道防止劫持并增强隐私。",
@@ -947,7 +947,11 @@
     "item8Title": "多配置管理",
     "item8Desc": "为不同设备或网络环境创建并管理多个独立配置。",
     "item9Title": "多接入点管理",
-    "item9Desc": "为不同设备配置专属的 DNS 接入点，实现日志和统计数据的精细化隔离与分析。"
+    "item9Desc": "为不同设备配置专属的 DNS 接入点，实现日志和统计数据的精细化隔离与分析。",
+    "item10Title": "零知识日志",
+    "item10Desc": "支持端到端加密与后量子混合密码学 (P256-MLKEM768)，密钥仅由客户端掌控，服务端完全零知识。",
+    "item11Title": "D1/Turso/File 多种数据库支持",
+    "item11Desc": "原生支持 Cloudflare D1、Turso 分布式云原生 SQLite 及本地文件存储，从容应对免费配额限制。"
   },
   "deploymentGuide": {
     "title": "DNS Worker 部署与配置指南",
