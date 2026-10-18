@@ -17,7 +17,7 @@ import { parseArgs } from 'node:util';
 import { loadEnvFiles, getPackageRoot } from '../src/serverfull/config';
 import { createTursoClient, maskDatabaseUrl, getDatabaseService, isTursoConfigured } from '../src/lib/turso';
 import { runTursoMigrations } from '../src/lib/turso/migrate';
-import { formatBanner, formatDiagnostic } from '../src/serverfull/format';
+import { formatBanner, formatDiagnostic, formatHelpMenu } from '../src/serverfull/format';
 
 async function main(): Promise<void> {
   loadEnvFiles();
@@ -36,18 +36,30 @@ async function main(): Promise<void> {
   });
 
   if (values.help) {
-    console.log(`
-Usage:
-  npm run db:migrate:prod [options]
-  npx tsx scripts/migrate-prod.ts [options]
-
-Options:
-  --turso                       Force Turso database migration
-  --d1                          Force Cloudflare D1 remote database migration
-  --url, --turso-url <url>      Turso database URL (or set TURSO_DATABASE_URL)
-  --token, --turso-token <tok>  Turso authorization token (or set TURSO_AUTH_TOKEN)
-  -h, --help                    Show this help message
-`);
+    console.log(formatHelpMenu({
+      name: 'ObexDNS Production Database Migration',
+      description: 'Unified schema migration runner for Cloudflare D1 and Turso (libSQL)',
+      usage: [
+        'npm run db:migrate:prod [options]',
+        'npx tsx scripts/migrate-prod.ts [options]'
+      ],
+      options: [
+        { label: '--turso', desc: 'Force Turso database schema migration' },
+        { label: '--d1', desc: 'Force Cloudflare D1 remote database schema migration' },
+        { label: '--url, --turso-url <url>', desc: 'Turso database URL (or set TURSO_DATABASE_URL)' },
+        { label: '--token, --turso-token <tok>', desc: 'Turso database authorization token (or set TURSO_AUTH_TOKEN)' },
+        { label: '-h, --help', desc: 'Display this help message' }
+      ],
+      envVars: [
+        { label: 'DATABASE_SERVICE', desc: 'Active database engine (D1 or Turso, default: D1)' },
+        { label: 'TURSO_DATABASE_URL / TURSO_URL', desc: 'Turso database URL endpoint' },
+        { label: 'TURSO_AUTH_TOKEN', desc: 'Turso database authorization token' }
+      ],
+      tip: [
+        'When DATABASE_SERVICE=Turso, migrations run via the HTTP Hrana v2 pipeline directly.',
+        'When DATABASE_SERVICE=D1, migrations run via "wrangler d1 migrations apply dns_worker_db --remote".'
+      ]
+    }));
     process.exit(0);
   }
 
