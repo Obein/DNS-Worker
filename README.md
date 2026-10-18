@@ -26,6 +26,7 @@
 
 - **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance and high-availability DoH (HTTP/2 & HTTP/3 compatible).
 - **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (DoQ compatible with TLS SNI routing for Android Private DNS), and local SQLite.
+- **🗄️ Flexible Multi-Database Storage (D1 / Turso / File)**: Native support for multiple storage engines. In addition to Cloudflare D1 (Serverless) and local SQLite files (Serverfull), it natively supports **Turso** (distributed cloud SQLite). Switching `DATABASE_SERVICE` to Turso completely relieves the daily quota constraints of Cloudflare D1's free tier (5M reads / 100k writes daily), effortlessly handling high-throughput DNS query logs.
 
 > 📚 **User Documentation**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
@@ -64,6 +65,7 @@ docker run -d \
 
 ### Key Highlights
 - ⚡ **Full-Stack Protocols**: UDP 53, DoT 853 (DoQ RFC 9250 compatible), DoH (HTTP/2 & HTTP/3 compatible), ECH & DDR (RFC 9460).
+- 🗄️ **Multi-Database Engines**: Easily switch between `D1`, `Turso`, and `File` backends via the `DATABASE_SERVICE` environment variable, eliminating D1 free-tier quota limits.
 - 🛡️ **Post-Quantum Zero-Knowledge E2EE**: NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography + Hardware Passkeys (WebAuthn).
 - 🚀 **Local-First Architecture**: Embedded in-browser WebAssembly SQLite + OPFS for instant 0ms log analytics and charting.
 - 🛡️ **Granular Protection & Ad Blocking**: Built-in ad and malicious domain blocking, wildcard filtering, Bloom filter accelerated blocklist subscriptions, custom overrides, and ECH fronting.
@@ -92,7 +94,7 @@ docker run -d \
 
 DNS Worker stands on the shoulders of modern open-source infrastructure and cryptography:
 
-- **Compute & Runtime**: [Node.js](https://nodejs.org/) (native `node:sqlite`) / [Bun](https://bun.sh/) (>= 1.4.0) & [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/)
+- **Compute & Runtime**: [Node.js](https://nodejs.org/) (native `node:sqlite`) / [Bun](https://bun.sh/) (>= 1.4.0) & [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/) / [Turso Database](https://turso.tech/) (libSQL)
 - **User Interface**: [React](https://github.com/facebook/react), [Blueprint](https://github.com/palantir/blueprint) & [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
 - **Documentation**: [Astro](https://astro.build/) & [Starlight](https://starlight.astro.build/) (lightning-fast, zero-JS static documentation)
 - **Cryptography & Storage**: [NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768) & [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WASM + OPFS Local-First driver)

@@ -26,6 +26,7 @@
 
 - **☁️ 边缘模式 (Serverless)**：运行在 Cloudflare 全球 300+ 城市边缘节点，配合 D1 数据库享受零运维的高可用 DoH 服务（全面兼容 HTTP/2 与 HTTP/3）。
 - **🖥️ 独立服务器模式 (Serverfull)**：脱离 Cloudflare，运行在自有 VPS 或家庭服务器（Linux/Windows/macOS），原生支持经典 **UDP 53**、**DoT 853**（兼容 DoQ 并支持 TLS SNI 路由，原生适配 Android 私有 DNS）与本地 SQLite；
+- **🗄️ 多数据库支持 (D1 / Turso / File)**：支持灵活配置底层存储。除默认的 Cloudflare D1 (Serverless) 和本地 SQLite 文件 (Serverfull) 外，更原生支持接入 **Turso**（分布式云原生 SQLite）。无论在边缘还是独立服务器，均可无缝切换至 Turso 数据库，彻底缓解 Cloudflare 原生 D1 免费层级（每天 500 万行读 / 10 万行写）配额不足的痛点，从容承载高频 DNS 日志写入。
 
 > 📚 **用户文档**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
@@ -64,6 +65,7 @@ docker run -d \
 
 ### 核心功能
 - ⚡ **全栈协议**：UDP 53、DoT 853 (兼容 DoQ RFC 9250)、DoH (兼容 HTTP/2 与 HTTP/3)、ECH 与 DDR (RFC 9460)。
+- 🗄️ **多数据库自由切换**：支持 `D1`、`Turso`、`File` 多种数据库后端（通过 `DATABASE_SERVICE` 一键无缝切换），破解原生 D1 免费层用量限制。
 - 🛡️ **后量子零知识 E2EE**：NIST FIPS 203 **P256-MLKEM768** 混合格密码学 + 硬件通行密钥（Passkey / WebAuthn）。
 - 🚀 **本地优先 (Local-First)**：浏览器端 WebAssembly SQLite + OPFS，0ms 瞬间日志查询与统计分析。
 - 🛡️ **精细防护与广告拦截**：广告与恶意域名拦截、域名通配过滤、百万级外部规则布隆过滤器秒级命中、自定义解析覆盖与 ECH 伪装。
@@ -92,7 +94,7 @@ docker run -d \
 
 DNS Worker 的诞生与演进得益于现代开源生态的卓越基础设施与密码学成果：
 
-- **计算与运行时**：[Node.js](https://nodejs.org/)（原生内置 `node:sqlite`）/ [Bun](https://bun.sh/) (>= 1.4.0) 与 [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/)
+- **计算与运行时**：[Node.js](https://nodejs.org/)（原生内置 `node:sqlite`）/ [Bun](https://bun.sh/) (>= 1.4.0) 与 [Cloudflare Workers](https://workers.cloudflare.com/) + [D1 Database](https://developers.cloudflare.com/d1/) / [Turso](https://turso.tech/) (libSQL)
 - **用户界面**：[React](https://github.com/facebook/react)、[Blueprint](https://github.com/palantir/blueprint) 与 [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
 - **文档体系**：[Astro](https://astro.build/) & [Starlight](https://starlight.astro.build/)（极速静态文档驱动）
 - **密码学与数据存储**：[NIST FIPS 203](https://csrc.nist.gov/pubs/fips/203/final) (ML-KEM-768) 与 [wa-sqlite](https://github.com/rhashimoto/wa-sqlite) (WASM + OPFS 本地优先驱动)

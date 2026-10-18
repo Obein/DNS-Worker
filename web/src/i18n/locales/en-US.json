@@ -930,7 +930,7 @@
     "totpCode": "Authenticator Code"
   },
   "intro": {
-    "item1Title": "Obex Protective DNS",
+    "item1Title": "DNS Worker Protective DNS",
     "item1Desc": "Cloudflare Workers & D1 based DNS resolver, optimized for speed and security.",
     "item2Title": "DoH Privacy",
     "item2Desc": "Prevent hijacking and enhance privacy via DNS over HTTPS (RFC 8484) encryption.",
@@ -947,7 +947,11 @@
     "item8Title": "Multi-Profile Management",
     "item8Desc": "Manage independent configurations for different devices or environments.",
     "item9Title": "Multiple Access Points",
-    "item9Desc": "Configure unique sub-URLs for different devices to monitor logs and statistics independently."
+    "item9Desc": "Configure unique sub-URLs for different devices to monitor logs and statistics independently.",
+    "item10Title": "Zero-Knowledge Logs",
+    "item10Desc": "End-to-End Encryption with post-quantum hybrid KEM (P256-MLKEM768). Keys stay on your device, ensuring zero-knowledge on the server.",
+    "item11Title": "Multi-Database Engine (D1/Turso/File)",
+    "item11Desc": "Seamlessly adapts to Cloudflare D1, Turso distributed cloud SQLite, and local file storage, relieving single-tier quota limits."
   },
   "deploymentGuide": {
     "title": "DNS Worker Setup & Deployment Guide",

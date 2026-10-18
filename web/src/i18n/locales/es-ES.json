@@ -947,7 +947,11 @@
     "item8Title": "Gestionar múltiples perfiles",
     "item8Desc": "Crea y gestiona perfiles DNS separados para diferentes dispositivos o entornos de red.",
     "item9Title": "Múltiples puntos de acceso",
-    "item9Desc": "Configura puntos de acceso dedicados para diferentes dispositivos con el fin de analizar registros y estadísticas por separado."
+    "item9Desc": "Configura puntos de acceso dedicados para diferentes dispositivos con el fin de analizar registros y estadísticas por separado.",
+    "item10Title": "Registros de conocimiento cero",
+    "item10Desc": "Cifrado de extremo a extremo con KEM híbrido poscuántico (P256-MLKEM768). Las claves se guardan localmente, garantizando conocimiento cero en el servidor.",
+    "item11Title": "Soporte multi-BD D1/Turso/File",
+    "item11Desc": "Admite Cloudflare D1, Turso SQLite distribuido y almacenamiento en archivos locales, aliviando los límites de cuota gratuita."
   },
   "deploymentGuide": {
     "title": "Guía de Configuración y Despliegue de DNS Worker",
