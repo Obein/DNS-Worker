@@ -73,6 +73,7 @@
     "password": "Mot de passe",
     "passwordPlaceholder": "Votre mot de passe",
     "loginBtn": "Connexion",
+    "unlockSession": "Déverrouiller l'écran",
     "signupBtn": "S'inscrire",
     "totpVerification": "Vérification TOTP",
     "noAccount": "Pas de compte ? Inscrivez-vous maintenant",

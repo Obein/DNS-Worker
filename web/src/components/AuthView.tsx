@@ -6,8 +6,10 @@ import { clsx } from "clsx";
 import { ScrollingIntro } from "./ScrollingIntro";
 import { LoginForm } from "./LoginForm";
 import { SignupWizard } from "./SignupWizard";
+import { LockScreenForm } from "./LockScreenForm";
 import { loadTurnstileScript } from "../utils/auth";
 import { getAuthConfig } from "../services";
+import type { UserInfo } from "../services";
 
 /**
  * Authentication configuration settings fetched from server.
@@ -24,26 +26,40 @@ export interface AuthConfig {
 /**
  * Properties for the AuthView component.
  */
-interface AuthViewProps {
+export interface AuthViewProps {
   /** Callback triggered on successful login or complete signup. */
-  onSuccess: () => void;
+  onSuccess?: () => void;
+  /** Whether the view is rendered in session lock mode. */
+  isLocked?: boolean;
+  /** Current logged in user info for the lock screen. */
+  currentUser?: UserInfo | null;
+  /** Callback triggered when user unlocks their session with PIN. */
+  onUnlock?: () => void;
+  /** Callback triggered to log out and terminate the locked session. */
+  handleLogout?: () => Promise<void>;
 }
 
 /**
- * AuthView component orchestrates the user login and signup shell.
- * It fetches the environment configuration, dynamically loads the Turnstile script,
- * and displays the ScrollIntro sidebar along with the active authentication card (Login or Signup).
+ * AuthView component orchestrates the user login, signup, and lock screen shells.
+ * It displays the ScrollingIntro sidebar along with the active authentication card
+ * (Login, Signup, or LockScreen PIN unlock).
  *
- * @param props - Component props containing the onSuccess callback.
- * @returns React elements representing the full login/registration view.
+ * @param props - Component props containing authentication and lock screen state.
+ * @returns React elements representing the full login/registration/lock screen view.
  */
-export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isPanelVisible, setIsPanelVisible] = useState(true);
-  const [isBlurring, setIsBlurring] = useState(false);
+export const AuthView: React.FC<AuthViewProps> = ({
+  onSuccess,
+  isLocked = false,
+  currentUser,
+  onUnlock,
+  handleLogout,
+}): React.ReactElement => {
+  const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [isPanelVisible, setIsPanelVisible] = useState<boolean>(true);
+  const [isBlurring, setIsBlurring] = useState<boolean>(false);
   const { t } = useTranslation();
 
-  const handleToggleMode = () => {
+  const handleToggleMode = (): void => {
     setIsBlurring(true);
     setTimeout(() => {
       setIsLogin((prev) => !prev);
@@ -55,12 +71,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
   const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null);
 
   // Turnstile loading state
-  const [turnstileReady, setTurnstileReady] = useState(false);
+  const [turnstileReady, setTurnstileReady] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchConfig = async () => {
+    if (isLocked) return;
+    const fetchConfig = async (): Promise<void> => {
       try {
-        const configData = await getAuthConfig() as AuthConfig;
+        const configData = (await getAuthConfig()) as AuthConfig;
         setAuthConfig(configData);
         if (configData && configData.has_users === false) {
           setIsLogin(false);
@@ -70,11 +87,13 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       }
     };
     fetchConfig();
-  }, []);
+  }, [isLocked]);
 
-  const isTurnstileEnabled = isLogin
-    ? authConfig?.turnstile_enabled_login
-    : authConfig?.turnstile_enabled_signup;
+  const isTurnstileEnabled =
+    !isLocked &&
+    (isLogin
+      ? authConfig?.turnstile_enabled_login
+      : authConfig?.turnstile_enabled_signup);
 
   useEffect(() => {
     if (isTurnstileEnabled && authConfig?.turnstile_site_key) {
@@ -106,8 +125,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           <Button
             large
             intent="primary"
-            icon="log-in"
-            text={t("auth.loginBtn")}
+            icon={isLocked ? "lock" : "log-in"}
+            text={isLocked ? t("auth.unlockSession", "解锁屏幕") : t("auth.loginBtn")}
             onClick={() => setIsPanelVisible(true)}
             className="shadow-2xl px-8 py-4 rounded-full"
           />
@@ -117,9 +136,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
       {/* Form Container Card (Right Panel) */}
       <div
         className={`flex-1 flex items-center justify-center p-4 relative z-10 bg-gray-50/50 dark:bg-gray-900/30 lg:bg-gray-50 lg:dark:bg-gray-900/50 transition-all duration-500 ease-in-out ${
-          !isPanelVisible ? "max-lg:translate-x-full max-lg:opacity-0 max-lg:pointer-events-none" : "translate-x-0 opacity-100"
+          !isPanelVisible
+            ? "max-lg:translate-x-full max-lg:opacity-0 max-lg:pointer-events-none"
+            : "translate-x-0 opacity-100"
         }`}
-        onClick={(e) => {
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => {
           if (window.innerWidth < 1024 && e.target === e.currentTarget) {
             setIsPanelVisible(false);
           }
@@ -138,20 +159,26 @@ export const AuthView: React.FC<AuthViewProps> = ({ onSuccess }) => {
           <Card
             elevation={Elevation.FOUR}
             className="w-full p-8 rounded-2xl shadow-none! z-10 dark:bg-gray-900 border border-gray-100 dark:border-gray-800"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
-            {isLogin ? (
+            {isLocked ? (
+              <LockScreenForm
+                currentUser={currentUser}
+                onUnlock={onUnlock}
+                handleLogout={handleLogout}
+              />
+            ) : isLogin ? (
               <LoginForm
                 authConfig={authConfig}
                 turnstileReady={turnstileReady}
-                onSuccess={onSuccess}
+                onSuccess={onSuccess || (() => {})}
                 onToggleMode={handleToggleMode}
               />
             ) : (
               <SignupWizard
                 authConfig={authConfig}
                 turnstileReady={turnstileReady}
-                onSuccess={onSuccess}
+                onSuccess={onSuccess || (() => {})}
                 onToggleMode={handleToggleMode}
               />
             )}

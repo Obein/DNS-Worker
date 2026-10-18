@@ -74,6 +74,7 @@
     "password": "Password",
     "passwordPlaceholder": "Your password",
     "loginBtn": "Login",
+    "unlockSession": "Unlock Screen",
     "signupBtn": "Sign Up",
     "totpVerification": "TOTP Verification",
     "noAccount": "Don't have an account? Sign up now",

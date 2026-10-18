@@ -73,6 +73,7 @@
     "password": "Пароль",
     "passwordPlaceholder": "Ваш пароль",
     "loginBtn": "Войти",
+    "unlockSession": "Разблокировать экран",
     "signupBtn": "Зарегистрироваться",
     "totpVerification": "TOTP проверка",
     "noAccount": "Нет аккаунта? Зарегистрируйтесь",
