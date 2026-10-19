@@ -147,6 +147,11 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 - **默认值**：`BLOOM_MEM_TTL=600000`（内存缓存 10 分钟），`SYNC_TIMEOUT_MS=30000`（规则下载超时 30 秒）。
 - **说明**：编译后布隆过滤器的内存缓存保鲜时间，以及外部列表抓取超时保护。
 
+### `CONFIG_MEM_TTL`
+- **支持模式**：Serverless & Serverfull
+- **默认值**：`300000`（5 分钟）
+- **说明**：每个 Worker 实例在内存中缓存配置文件设置与规则的时长。Cache-Tag 清除（`CF_ZONE_ID` / `CF_PURGE_TOKEN`）会清除所有数据中心的缓存副本，但无法清除其他实例的内存副本，因此该值决定了设置变更最长需要多久才能全局生效。调低该值（如 `60000`）成本很低：重新读取通常由 Cache API 提供，而非访问数据库。
+
 ### `SUBSTITUTE_DOMAIN`
 - **支持模式**：Serverless & Serverfull
 - **默认值**：`www.okx.com`

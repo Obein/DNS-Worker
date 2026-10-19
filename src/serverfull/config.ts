@@ -210,6 +210,7 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     SESSION_GEO_DISTANCE_KM: process.env.SESSION_GEO_DISTANCE_KM || 50,
     PREAUTH_TTL_SECONDS: process.env.PREAUTH_TTL_SECONDS || 300,
     BLOOM_MEM_TTL: process.env.BLOOM_MEM_TTL || 600000,
+    CONFIG_MEM_TTL: process.env.CONFIG_MEM_TTL || 300000,
     SYNC_TIMEOUT_MS: process.env.SYNC_TIMEOUT_MS || 30000,
     INACTIVITY_THRESHOLD_DAYS: process.env.INACTIVITY_THRESHOLD_DAYS || 180,
     THROTTLE_ACTIVE_SEC: process.env.THROTTLE_ACTIVE_SEC || 3600,
