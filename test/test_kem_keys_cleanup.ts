@@ -35,7 +35,10 @@ async function runTests(): Promise<void> {
                 return { meta: { changes: 0 } };
               },
               async first() {
-                return null;
+                // The candidate pre-check finds a key older than the safety window,
+                // so the DELETE runs; it removes nothing because every key still has
+                // dependent logs.
+                return { id: "key_old" };
               }
             };
           }
@@ -47,8 +50,8 @@ async function runTests(): Promise<void> {
     const deleted = await kemModel.cleanupOrphans(oneHour, 1000);
 
     assert.strictEqual(deleted, 0, "No keys should be deleted if they have dependent logs");
-    assert(executedQueries.length > 0, "Cleanup query should have been prepared and executed");
-    const cleanupQuery = executedQueries[0];
+    const cleanupQuery = executedQueries.find((q) => q.query.includes("DELETE FROM kem_keys"));
+    assert(cleanupQuery, "Cleanup DELETE should have been prepared and executed");
     assert(
       cleanupQuery.query.includes("NOT EXISTS"),
       "Query must check for non-existence of referencing logs (zero dependents)"
@@ -58,6 +61,39 @@ async function runTests(): Promise<void> {
       "Query must specifically check referencing rows in logs table"
     );
     console.log("  ✓ Passed: Keys with active logs are preserved regardless of expiration time.");
+  }
+
+  // ── Test 1b: No candidates past the safety window skips the DELETE ───────────
+  console.log("\n1b. Testing early return when no key is older than the safety window...");
+  {
+    const executedQueries: { query: string; params: any[] }[] = [];
+    const mockDb: any = {
+      prepare(query: string) {
+        return {
+          bind(...args: any[]) {
+            executedQueries.push({ query, params: args });
+            return {
+              async run() {
+                return { meta: { changes: 0 } };
+              },
+              async first() {
+                return null;
+              }
+            };
+          }
+        };
+      }
+    };
+
+    const kemModel = new KemKeyModel(mockDb);
+    const deleted = await kemModel.cleanupOrphans(oneHour, 1000);
+
+    assert.strictEqual(deleted, 0, "Nothing should be deleted when there are no candidates");
+    assert(
+      !executedQueries.some((q) => q.query.includes("DELETE FROM kem_keys")),
+      "The correlated DELETE must be skipped when the pre-check finds no candidate"
+    );
+    console.log("  ✓ Passed: No candidates means no correlated DELETE is run.");
   }
 
   // ── Test 2: In-Memory / SQLite Mocked State Simulation ─────────────────────────
@@ -115,6 +151,15 @@ async function runTests(): Promise<void> {
                   return { meta: { changes: toDelete.length } };
                 }
                 return { meta: { changes: 0 } };
+              },
+              async first() {
+                // Candidate pre-check: SELECT id FROM kem_keys WHERE created_at <= ? LIMIT 1
+                if (query.includes("SELECT id FROM kem_keys")) {
+                  const cutoff = args[0] as number;
+                  const candidate = kemKeysTable.find((k) => k.created_at <= cutoff);
+                  return candidate ? { id: candidate.id } : null;
+                }
+                return null;
               }
             };
           }
@@ -147,6 +192,10 @@ async function runTests(): Promise<void> {
             return {
               async run() {
                 return { meta: { changes: 2 } };
+              },
+              async first() {
+                // Candidate pre-check finds an eligible key for this profile.
+                return { id: "key_old" };
               }
             };
           }
@@ -158,8 +207,12 @@ async function runTests(): Promise<void> {
     const deleted = await kemModel.cleanupProfileOrphans("prof_xyz", 3600);
 
     assert.strictEqual(deleted, 2, "Should report 2 deleted keys");
-    assert(executedQueries.length === 1, "Should execute 1 statement");
-    const q = executedQueries[0];
+    assert(executedQueries.length === 2, "Should execute the candidate pre-check, then the DELETE");
+    const pre = executedQueries[0];
+    assert(pre.query.includes("SELECT id FROM kem_keys"), "First statement must be the candidate pre-check");
+    assert.strictEqual(pre.params[0], "prof_xyz", "Pre-check must bind target profile ID");
+    const q = executedQueries.find((e) => e.query.includes("DELETE FROM kem_keys"));
+    assert(q, "Must execute the scoped DELETE");
     assert(q.query.includes("profile_id = ?"), "Must bind profile_id");
     assert.strictEqual(q.params[0], "prof_xyz", "Must bind target profile ID");
     assert(q.query.includes("NOT EXISTS"), "Must check NOT EXISTS in logs");
@@ -188,6 +241,11 @@ async function runTests(): Promise<void> {
             return { results: [] };
           },
           async first() {
+            // Let the kem_keys candidate pre-check find an eligible key so the
+            // orphan DELETE runs; every other lookup (settings etc.) stays empty.
+            if (query.includes("SELECT id FROM kem_keys")) {
+              return { id: "key_old" };
+            }
             return null;
           },
           async run() {
