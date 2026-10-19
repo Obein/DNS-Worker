@@ -1,9 +1,28 @@
+let currentWorkerOrigin = "https://obex-dns.internal";
+
 export const cacheUtils = {
   /**
-   * 生成规范的缓存 URL
+   * Updates the canonical origin using the incoming request URL.
+   * This ensures Cloudflare's Cache API (caches.default) stores and matches entries
+   * against the Worker's active zone, eliminating cross-zone cache drops.
+   *
+   * @param origin - The HTTP/HTTPS origin string of the active request.
+   */
+  setOrigin(origin: string): void {
+    if (origin && (origin.startsWith("http://") || origin.startsWith("https://"))) {
+      currentWorkerOrigin = origin.replace(/\/+$/, "");
+    }
+  },
+
+  /**
+   * Generates a canonical cache URL using the active Worker origin so caches.default
+   * recognizes and caches entries under the active zone.
+   *
+   * @param key - Cache key identifier.
+   * @returns Formatted cache URL under the current worker origin.
    */
   generateCacheUrl(key: string): string {
-    return `https://obex.local/cache/${encodeURIComponent(key)}`;
+    return `${currentWorkerOrigin}/__cache__/${encodeURIComponent(key)}`;
   },
 
   async get<T>(cache: Cache | null | undefined, key: string): Promise<T | null> {

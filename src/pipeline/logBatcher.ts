@@ -51,8 +51,9 @@ export async function getProfileLogPublicKey(
     }
 
     const key = row?.public_key ? (JSON.parse(row.public_key) as ProfileLogPublicKey) : null;
-    // Cache active key for 5 minutes; if null (E2EE not enabled), cache for only 15 seconds for rapid activation
-    const ttlMs = key ? 5 * 60 * 1000 : 15 * 1000;
+    // Cache active key for 5 minutes; if null (E2EE not enabled), cache for 5 minutes as well
+    // Rapid invalidation is handled by invalidateProfileLogKeyCache() when user configures E2EE
+    const ttlMs = 5 * 60 * 1000;
     profileKeyCache.set(profileId, { key, expiresAt: now + ttlMs });
     return key;
   } catch (err) {
@@ -148,8 +149,9 @@ export async function tripWriteCircuitBreaker(cache?: any): Promise<void> {
  * Flushes a batch of logs to D1 via db.batch().
  *
  * @param env Cloudflare Worker environment bindings
+ * @param ctx ExecutionContext to extend background lifetime
  */
-export async function flushLogBatch(env: Env): Promise<void> {
+export async function flushLogBatch(env: Env, ctx?: ExecutionContext): Promise<void> {
   isFlushScheduled = false;
   lastFlushTime = Date.now();
 
@@ -275,7 +277,7 @@ export async function flushLogBatch(env: Env): Promise<void> {
 
   // If there are still items remaining in queue, schedule the next batch
   if (logBatchQueue.length > 0) {
-    scheduleDeferredFlush(env);
+    scheduleDeferredFlush(env, ctx);
   }
 }
 
@@ -283,20 +285,25 @@ export async function flushLogBatch(env: Env): Promise<void> {
  * Schedules a background deferred flush after FLUSH_INTERVAL_MS if one is not already pending.
  *
  * @param env Cloudflare Worker environment bindings
+ * @param ctx ExecutionContext to extend background lifetime
  */
-function scheduleDeferredFlush(env: Env): void {
+function scheduleDeferredFlush(env: Env, ctx?: ExecutionContext): void {
   if (isFlushScheduled) {
     return;
   }
   isFlushScheduled = true;
 
   // Use a promise timer resolved in background execution context
-  new Promise((resolve) => setTimeout(resolve, FLUSH_INTERVAL_MS))
-    .then(() => flushLogBatch(env))
+  const flushPromise = new Promise((resolve) => setTimeout(resolve, FLUSH_INTERVAL_MS))
+    .then(() => flushLogBatch(env, ctx))
     .catch((e) => {
       isFlushScheduled = false;
       console.error("[LogBatcher] Deferred flush error:", e);
     });
+
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(flushPromise);
+  }
 }
 
 /**
@@ -343,8 +350,8 @@ export function enqueueLog(
     logBatchQueue.length >= MAX_BATCH_SIZE ||
     now - lastFlushTime >= FLUSH_INTERVAL_MS
   ) {
-    ctx.waitUntil(flushLogBatch(env));
+    ctx.waitUntil(flushLogBatch(env, ctx));
   } else {
-    scheduleDeferredFlush(env);
+    scheduleDeferredFlush(env, ctx);
   }
 }

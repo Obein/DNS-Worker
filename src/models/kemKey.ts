@@ -44,7 +44,7 @@ export class KemKeyModel {
   async hasDependents(id: string): Promise<boolean> {
     try {
       const row = await this.db
-        .prepare("SELECT 1 FROM logs WHERE kem_key_id = ? LIMIT 1")
+        .prepare("SELECT 1 FROM logs WHERE kem_key_id = ? AND kem_key_id IS NOT NULL LIMIT 1")
         .bind(id)
         .first<{ 1: number } | null>();
       return row !== null;
@@ -70,6 +70,17 @@ export class KemKeyModel {
   async cleanupOrphans(safetyWindowSec = 3600, batchLimit = 1000): Promise<number> {
     const cutoffTimestamp = Math.floor(Date.now() / 1000) - safetyWindowSec;
     try {
+      // Fast index seek to check if any candidate keys older than the safety window exist.
+      // If none exist, skip the correlated subquery entirely to save database read quota.
+      const candidate = await this.db
+        .prepare("SELECT id FROM kem_keys WHERE created_at <= ? LIMIT 1")
+        .bind(cutoffTimestamp)
+        .first<{ id: string } | null>();
+
+      if (!candidate) {
+        return 0;
+      }
+
       const result = await this.db
         .prepare(`
           DELETE FROM kem_keys
@@ -77,7 +88,7 @@ export class KemKeyModel {
             SELECT k.id FROM kem_keys k
             WHERE k.created_at <= ?
               AND NOT EXISTS (
-                SELECT 1 FROM logs l WHERE l.kem_key_id = k.id
+                SELECT 1 FROM logs l WHERE l.kem_key_id = k.id AND l.kem_key_id IS NOT NULL
               )
             LIMIT ?
           )
@@ -104,13 +115,23 @@ export class KemKeyModel {
   async cleanupProfileOrphans(profileId: string, safetyWindowSec = 3600): Promise<number> {
     const cutoffTimestamp = Math.floor(Date.now() / 1000) - safetyWindowSec;
     try {
+      // Fast check if any candidate keys exist for this profile
+      const candidate = await this.db
+        .prepare("SELECT id FROM kem_keys WHERE profile_id = ? AND created_at <= ? LIMIT 1")
+        .bind(profileId, cutoffTimestamp)
+        .first<{ id: string } | null>();
+
+      if (!candidate) {
+        return 0;
+      }
+
       const result = await this.db
         .prepare(`
           DELETE FROM kem_keys
           WHERE profile_id = ?
             AND created_at <= ?
             AND NOT EXISTS (
-              SELECT 1 FROM logs l WHERE l.kem_key_id = kem_keys.id
+              SELECT 1 FROM logs l WHERE l.kem_key_id = kem_keys.id AND l.kem_key_id IS NOT NULL
             )
         `)
         .bind(profileId, cutoffTimestamp)
