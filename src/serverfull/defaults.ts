@@ -159,6 +159,9 @@ SUBSTITUTE_DOMAIN=www.okx.com
 # In-memory retention time for profile bloom filters (in milliseconds) / 内存中缓存布隆过滤器有效时长 (毫秒)
 # BLOOM_MEM_TTL=600000
 
+# In-memory retention time for profile config (in milliseconds) / 内存中缓存配置文件设置的有效时长 (毫秒)
+# CONFIG_MEM_TTL=300000
+
 # Timeout threshold when downloading upstream blocklists (in milliseconds) / 下载外部规则列表超时阈值 (毫秒)
 # SYNC_TIMEOUT_MS=30000
 

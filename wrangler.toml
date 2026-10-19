@@ -128,6 +128,10 @@ SESSION_GEO_DISTANCE_KM=50
 PREAUTH_TTL_SECONDS=300
 # In-memory retention time for profile bloom filters (in milliseconds)
 BLOOM_MEM_TTL=600000
+# In-memory retention time for profile config per isolate (in milliseconds).
+# Bounds how long a settings change takes to reach isolates that already cached it;
+# the Cache-Tag purge clears colo caches but cannot reach other isolates' memory.
+CONFIG_MEM_TTL=300000
 # Timeout threshold when downloading upstream blocklists (in milliseconds)
 SYNC_TIMEOUT_MS=30000
 # Number of days of inactivity before an account is cleared by cron jobs
