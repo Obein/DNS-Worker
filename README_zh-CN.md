@@ -27,6 +27,7 @@
 - **☁️ 边缘模式 (Serverless)**：运行在 Cloudflare 全球 300+ 城市边缘节点，配合 D1 数据库享受零运维的高可用 DoH 服务（全面兼容 HTTP/2 与 HTTP/3）。
 - **🖥️ 独立服务器模式 (Serverfull)**：脱离 Cloudflare，运行在自有 VPS 或家庭服务器（Linux/Windows/macOS），原生支持经典 **UDP 53**、**DoT 853**（兼容 DoQ 并支持 TLS SNI 路由，原生适配 Android 私有 DNS）与本地 SQLite；
 - **🗄️ 多数据库支持 (D1 / Turso / File)**：支持灵活配置底层存储。除默认的 Cloudflare D1 (Serverless) 和本地 SQLite 文件 (Serverfull) 外，更原生支持接入 **Turso**（分布式云原生 SQLite）。无论在边缘还是独立服务器，均可无缝切换至 Turso 数据库，彻底缓解 Cloudflare 原生 D1 免费层级（每天 500 万行读 / 10 万行写）配额不足的痛点，从容承载高频 DNS 日志写入。
+- **🔀 多配置与多接入点支持**：灵活的策略隔离与设备分流体系。支持为家庭成员、不同网络环境或客户端创建多套相互隔离的配置（Profiles），每套配置可派生多个专用接入点（Access Points）并配发独立 Token，实现精细的设备级识别、定制上游、独立日志审计与个性化拦截规则。
 
 > 📚 **用户文档**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
@@ -65,6 +66,7 @@ docker run -d \
 
 ### 核心功能
 - ⚡ **全栈协议**：UDP 53、DoT 853 (兼容 DoQ RFC 9250)、DoH (兼容 HTTP/2 与 HTTP/3)、ECH 与 DDR (RFC 9460)。
+- 🔀 **多配置与多接入点支持**：支持按用户、家庭成员或使用场景建立多套独立配置（Profiles），每套配置可派生多个专用接入点（Access Points）并配发专属 Token，实现精准的设备级识别、策略隔离与独立统计。
 - 🗄️ **多数据库自由切换**：支持 `D1`、`Turso`、`File` 多种数据库后端（通过 `DATABASE_SERVICE` 一键无缝切换），破解原生 D1 免费层用量限制。
 - 🛡️ **后量子零知识 E2EE**：NIST FIPS 203 **P256-MLKEM768** 混合格密码学 + 硬件通行密钥（Passkey / WebAuthn）。
 - 🚀 **本地优先 (Local-First)**：浏览器端 WebAssembly SQLite + OPFS，0ms 瞬间日志查询与统计分析。
@@ -72,19 +74,23 @@ docker run -d \
 
 ---
 
-## 🖼️ 预览
+## 🔎 预览
 
 | 分析统计 | 解析目的地 |
 |:---:|:---:|
 | ![统计分析](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![解析目的地](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
-| 规则设置 | 外部拦截列表 |
+| 多接入点与端点设置 | 规则设置 |
 |:---:|:---:|
-| ![规则设置](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) | ![过滤列表](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) |
+| ![多接入点](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) | ![规则设置](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) |
 
-| 解析日志 | 移动端适配 |
+| 外部拦截列表 | 解析日志 |
 |:---:|:---:|
-| ![解析日志](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![移动端统计](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
+| ![过滤列表](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) | ![解析日志](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) |
+
+| 移动端统计 | 移动端日志 |
+|:---:|:---:|
+| ![移动端统计](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) | ![移动端日志](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) |
 
 > 💡 更多功能演示与端点设置，请部署后访问 Web 控制台或参阅 [官方文档](https://obein.github.io/DNS-Worker/)。
 
