@@ -27,6 +27,7 @@
 - **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance and high-availability DoH (HTTP/2 & HTTP/3 compatible).
 - **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (DoQ compatible with TLS SNI routing for Android Private DNS), and local SQLite.
 - **🗄️ Flexible Multi-Database Storage (D1 / Turso / File)**: Native support for multiple storage engines. In addition to Cloudflare D1 (Serverless) and local SQLite files (Serverfull), it natively supports **Turso** (distributed cloud SQLite). Switching `DATABASE_SERVICE` to Turso completely relieves the daily quota constraints of Cloudflare D1's free tier (5M reads / 100k writes daily), effortlessly handling high-throughput DNS query logs.
+- **🔀 Multi-Profile & Multi-Access Points**: Flexible policy isolation and device routing. Create isolated profiles for different users, family members, or environments, and derive dedicated sub-access points with unique tokens for granular device-level filtering, independent statistics, and personalized overrides.
 
 > 📚 **User Documentation**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
@@ -65,6 +66,7 @@ docker run -d \
 
 ### Key Highlights
 - ⚡ **Full-Stack Protocols**: UDP 53, DoT 853 (DoQ RFC 9250 compatible), DoH (HTTP/2 & HTTP/3 compatible), ECH & DDR (RFC 9460).
+- 🔀 **Multi-Profile & Multi-Access Points**: Create separate protection profiles for different users or scenarios, and derive unlimited sub-access points with independent routing tokens for granular per-device identification, filtering, and analytics.
 - 🗄️ **Multi-Database Engines**: Easily switch between `D1`, `Turso`, and `File` backends via the `DATABASE_SERVICE` environment variable, eliminating D1 free-tier quota limits.
 - 🛡️ **Post-Quantum Zero-Knowledge E2EE**: NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography + Hardware Passkeys (WebAuthn).
 - 🚀 **Local-First Architecture**: Embedded in-browser WebAssembly SQLite + OPFS for instant 0ms log analytics and charting.
@@ -72,19 +74,23 @@ docker run -d \
 
 ---
 
-## 🖼️ Preview
+## 🔎 Quick Look
 
 | Analytics & Insights | Destinations Map |
 |:---:|:---:|
 | ![Analytics](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
-| Rules Configuration | Filter Subscriptions |
+| Multi-Access Points & Endpoints | Rules Configuration |
 |:---:|:---:|
-| ![Rules](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) | ![Filters](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) |
+| ![Access Points](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) | ![Rules](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) |
 
-| Query Logs | Mobile Responsive |
+| Filter Subscriptions | Query Logs |
 |:---:|:---:|
-| ![Query Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) | ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) |
+| ![Filters](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) | ![Query Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) |
+
+| Mobile Responsive | Mobile Logs |
+|:---:|:---:|
+| ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) | ![Mobile Log](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) |
 
 > 💡 For live demonstrations and endpoints setup, visit your Web Dashboard after launch or refer to the [Official Documentation](https://obein.github.io/DNS-Worker/).
 
