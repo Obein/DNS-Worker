@@ -7,6 +7,11 @@ import { syncNextListForProfile } from './utils/sync';
 import { syncCloudflareIpRanges } from './utils/ech';
 import { cacheUtils } from './utils/cache';
 
+import { SystemSettingsModel } from './models/systemSettings';
+
+/** In-memory throttle tracker for cron cleanup phase across executions in the same isolate */
+let lastCleanupMemoryTs = 0;
+
 /**
  * Handles cron-scheduled events to run background cleanup and list synchronization.
  *
@@ -21,16 +26,49 @@ export async function handleScheduled(
   ctx: ExecutionContext
 ): Promise<void> {
   try {
-    const cache = (caches as any).default;
+    const cache = typeof caches !== 'undefined' ? (caches as any).default : null;
     const now = Math.floor(Date.now() / 1000);
 
     // ── CLEANUP (Hourly Throttled) ────────────────────────────────────────────
     // Heavy D1 cleanups are throttled to run at most once per hour (3,600s)
     // rather than every minute, saving ~98% of cron D1 read/write operations.
-    const lastCleanupKey = "cron:last_cleanup_timestamp";
-    const lastCleanup = await cacheUtils.get<number>(cache, lastCleanupKey);
+    let shouldRunCleanup = true;
 
-    if (!lastCleanup || now - lastCleanup >= 3600) {
+    // 1. Fast L1 in-memory check (0ms, 0 subrequests)
+    if (lastCleanupMemoryTs && now - lastCleanupMemoryTs < 3600) {
+      shouldRunCleanup = false;
+    }
+
+    const lastCleanupKey = "cron:last_cleanup_timestamp";
+    const settingsModel = new SystemSettingsModel(env.DB);
+
+    if (shouldRunCleanup) {
+      // 2. L2 Cache API check
+      const lastCleanup = await cacheUtils.get<number>(cache, lastCleanupKey);
+      if (lastCleanup && now - lastCleanup < 3600) {
+        lastCleanupMemoryTs = lastCleanup;
+        shouldRunCleanup = false;
+      }
+    }
+
+    if (shouldRunCleanup) {
+      // 3. Persistent DB fallback check via system_settings
+      try {
+        const persisted = await settingsModel.get("cron_last_cleanup_timestamp");
+        if (persisted) {
+          const persistedTs = parseInt(persisted, 10) || 0;
+          if (now - persistedTs < 3600) {
+            lastCleanupMemoryTs = persistedTs;
+            shouldRunCleanup = false;
+          }
+        }
+      } catch (err) {
+        console.warn("[Cron] Failed to read persistent cleanup timestamp:", err);
+      }
+    }
+
+    if (shouldRunCleanup) {
+      lastCleanupMemoryTs = now;
       try {
         const userModel = new UserModel(env.DB, env);
         const { clearedProfiles, deletedUsers } = await userModel.applyInactivityPolicy(now);
@@ -69,6 +107,11 @@ export async function handleScheduled(
       }
 
       await cacheUtils.set(cache, lastCleanupKey, now, 3600);
+      try {
+        await settingsModel.set("cron_last_cleanup_timestamp", String(now));
+      } catch (err) {
+        console.warn("[Cron] Failed to persist cleanup timestamp:", err);
+      }
       console.log("[Cron] Cleanup phase completed at", new Date().toISOString());
     }
 

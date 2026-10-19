@@ -300,6 +300,9 @@ export default {
   },
 
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (env.SUBSTITUTE_DOMAIN) {
+      cacheUtils.setOrigin(`https://${env.SUBSTITUTE_DOMAIN}`);
+    }
     const dbService = getDatabaseService(env, false);
     if (dbService === 'Turso' && isTursoConfigured(env)) {
       env.DB = getTursoDatabase(env);
