@@ -36,14 +36,14 @@ class SizeCappedMap<K, V> extends Map<K, V> {
 // 布隆过滤器占用较大（每个 ~2.4MB），限制最多缓存 3 个 Profile，内存硬顶为 ~7.2MB，规避 GC 抖动崩溃
 export const bloomMemoryMap = new SizeCappedMap<string, { bloom: BloomFilter; ts: number }>(3);
 
-// 基础配置体积较小，允许缓存 10 个 Profile
-export const configCache = new SizeCappedMap<string, ConfigCacheEntry>(10);
+// 基础配置体积较小，允许缓存 200 个 Profile
+export const configCache = new SizeCappedMap<string, ConfigCacheEntry>(200);
 
 // DNS 缓存限制最多 500 条记录，防止遭受海量随机子域名查询（DNS Tunnel / Random Query Attack）时导致 Isolate 内存耗尽
 export const dnsCache = new SizeCappedMap<string, any>(500);
 
-// Profile Key 到 Profile 元数据映射缓存 (L1 内存缓存，限制最多 100 个 Key)
-export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(100);
+// Profile Key 到 Profile 元数据映射缓存 (L1 内存缓存，限制最多 500 个 Key)
+export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(500);
 
 // 默认 Profile 元数据内存缓存 (L1 内存缓存，5 分钟 TTL，防范 UDP DNS 高频穿透)
 export let defaultProfileMemoryCache: { data: any; ts: number } | null = null;

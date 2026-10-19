@@ -12,6 +12,9 @@ import {
 import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 import { DEFAULT_FAIL_OPEN_UPSTREAM } from '../constants/presets';
 
+/** In-memory throttle tracker for profile and user last_active database updates */
+const activeThrottleMemoryMap = new Map<string, number>();
+
 /**
  * Safely extracts raw wire-format DNS query bytes from incoming HTTP GET or POST request.
  */
@@ -199,23 +202,36 @@ export async function handleDoHRequest(
 
         // Update profile activity timestamp (throttled hourly)
         const nowSec = Math.floor(Date.now() / 1000);
+        const throttleSec = Number(env.THROTTLE_ACTIVE_SEC) || 3600;
+
+        // 1. Fast L1 in-memory check (0ms, 0 subrequests)
+        const inMemThrottle = activeThrottleMemoryMap.get(profileId);
+        if (inMemThrottle && nowSec - inMemThrottle < throttleSec) {
+          return;
+        }
+
+        // 2. Check L2 Cache API (across isolates in the same datacenter)
         const lastActiveKey = `active_throttle:${profileId}`;
         const lastActiveThrottled = await cacheUtils.get<number>(cache, lastActiveKey);
-
-        const throttleSec = Number(env.THROTTLE_ACTIVE_SEC) || 3600;
-        if (!lastActiveThrottled || nowSec - lastActiveThrottled > throttleSec) {
-          try {
-            const profileModel = new ProfileModel(env.DB);
-            await profileModel.updateLastActive(profileId, nowSec);
-            
-            const userModel = new UserModel(env.DB, env);
-            await userModel.updateLastActiveByProfile(profileId, nowSec);
-          } catch {
-            /* ignore D1 write quota errors */
-          }
-          
-          await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
+        if (lastActiveThrottled && nowSec - lastActiveThrottled < throttleSec) {
+          activeThrottleMemoryMap.set(profileId, lastActiveThrottled);
+          return;
         }
+
+        // Mark in-memory immediately to prevent concurrent requests in this isolate from issuing duplicate DB updates
+        activeThrottleMemoryMap.set(profileId, nowSec);
+
+        try {
+          const profileModel = new ProfileModel(env.DB);
+          await profileModel.updateLastActive(profileId, nowSec);
+          
+          const userModel = new UserModel(env.DB, env);
+          await userModel.updateLastActiveByProfile(profileId, nowSec);
+        } catch {
+          /* ignore DB write quota errors */
+        }
+        
+        await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
       } catch (e) {
         console.error(`[Background Task] Error for ${profileId}:`, e);
       }

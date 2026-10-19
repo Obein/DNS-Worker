@@ -17,9 +17,11 @@ import { handleScheduled } from './cron';
 import { handleMapDataRequest } from './api/mapData';
 import { isUsableJwtSecret } from './lib/jwt';
 import { isTursoConfigured, getTursoDatabase, getDatabaseService } from './lib/turso';
+import { cacheUtils } from './utils/cache';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    cacheUtils.setOrigin(new URL(request.url).origin);
     const dbService = getDatabaseService(env, false);
     if (dbService === 'Turso' && isTursoConfigured(env)) {
       env.DB = getTursoDatabase(env);

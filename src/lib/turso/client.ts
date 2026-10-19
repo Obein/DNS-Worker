@@ -135,12 +135,26 @@ export class TursoD1PreparedStatement implements D1PreparedStatement {
  */
 export class TursoD1Database implements D1Database {
   public readonly endpoint: string;
+  private selectCache = new Map<string, { result: HranaExecuteResult; expiresAt: number }>();
+  private readonly maxSelectCacheEntries = 300;
 
   constructor(
     public readonly url: string,
     public readonly authToken: string
   ) {
     this.endpoint = `${normalizeTursoUrl(url)}/v2/pipeline`;
+  }
+
+  private isReadOnlyQuery(sql: string): boolean {
+    const trimmed = sql.trim().toUpperCase();
+    return trimmed.startsWith('SELECT') || trimmed.startsWith('PRAGMA');
+  }
+
+  /**
+   * Clears in-memory SELECT cache when mutating queries execute.
+   */
+  clearSelectCache(): void {
+    this.selectCache.clear();
   }
 
   prepare(query: string): D1PreparedStatement {
@@ -174,12 +188,25 @@ export class TursoD1Database implements D1Database {
 
   /**
    * Executes a single parameterized statement and returns the raw execute result.
+   * Caches read-only SELECT queries in-memory for 30 seconds to protect against subrequest exhaustion.
    *
    * @param sql - SQL query text.
    * @param params - Query parameters.
    * @returns HranaExecuteResult object.
    */
   async executeStatement(sql: string, params: any[]): Promise<HranaExecuteResult> {
+    const isReadOnly = this.isReadOnlyQuery(sql);
+    const cacheKey = isReadOnly ? `${sql}::${JSON.stringify(params)}` : '';
+
+    if (isReadOnly) {
+      const cached = this.selectCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.result;
+      }
+    } else {
+      this.clearSelectCache();
+    }
+
     const hranaArgs = params.map(toHranaValue);
     const results = await this.executePipeline([
       {
@@ -201,23 +228,33 @@ export class TursoD1Database implements D1Database {
       throw new Error(`[Turso D1] Query error: ${msg}\nSQL: ${sql}`);
     }
 
-    return (
-      first.response?.result ?? {
-        cols: [],
-        rows: [],
-        affected_row_count: 0,
-        last_insert_rowid: null
+    const result = first.response?.result ?? {
+      cols: [],
+      rows: [],
+      affected_row_count: 0,
+      last_insert_rowid: null
+    };
+
+    if (isReadOnly) {
+      if (this.selectCache.size >= this.maxSelectCacheEntries) {
+        const oldestKey = this.selectCache.keys().next().value;
+        if (oldestKey !== undefined) this.selectCache.delete(oldestKey);
       }
-    );
+      this.selectCache.set(cacheKey, { result, expiresAt: Date.now() + 30_000 });
+    }
+
+    return result;
   }
 
   /**
    * Executes multiple prepared statements atomically inside a transaction.
+   * Automatically clears SELECT cache as mutations may occur in the batch.
    *
    * @param statements - Array of prepared statements to batch.
    * @returns Array of D1Result objects.
    */
   async batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]> {
+    this.clearSelectCache();
     if (statements.length === 0) return [];
     const start = Date.now();
 
@@ -311,6 +348,7 @@ export class TursoD1Database implements D1Database {
    * @returns D1ExecResult object.
    */
   async exec(query: string): Promise<D1ExecResult> {
+    this.clearSelectCache();
     const start = Date.now();
     const stmts = splitSqlStatements(query);
     if (stmts.length === 0) {
