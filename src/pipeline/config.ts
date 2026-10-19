@@ -34,7 +34,7 @@ export const pipelineConfig = {
     // settings change can take to apply everywhere. Only a finite positive
     // value is accepted: a negative one would disable L1 hits entirely and
     // Infinity would stop the entry from ever expiring.
-    const configuredMemTtl = Number(env.CONFIG_MEM_TTL);
+    const configuredMemTtl = Number(env.CONFIG_MEM_TTL) || 300000;
     const configMemTtl = Number.isFinite(configuredMemTtl) && configuredMemTtl > 0
       ? configuredMemTtl
       : 300000;
