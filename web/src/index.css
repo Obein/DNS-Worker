@@ -74,3 +74,8 @@
 .animate-row-glow {
   animation: rowGlow 2.5s ease-out;
 }
+
+/* Ensure Blueprint portals appear above modals, overlays, and lock screen */
+.bp6-portal {
+  z-index: 20000 !important;
+}
