@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "eslint"
+  ],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": "warn",
+    "react/set-state-in-effect": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "no-useless-escape": "warn",
+    "react/refs": "warn",
+    "react/preserve-manual-memoization": "warn",
+    "react/purity": "warn"
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "static/**",
+    "temp_test_data/**",
+    "docs/**",
+    "node_modules/**",
+    "web/dist/**",
+    "web/node_modules/**"
+  ]
+}

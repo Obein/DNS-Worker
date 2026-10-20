@@ -50,7 +50,7 @@
     "test:turso": "tsx test/test_turso.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "test:reset": "tsx test/test_serverfull_reset.ts",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "oxlint",
     "ui:dev": "cd web && npm run dev",
     "ui:build": "cd web && npm run build",
     "ui:install": "cd web && npm install"
@@ -76,6 +76,7 @@
     "@cloudflare/workers-types": "^5.20261019.1",
     "@types/node": "^26.6.5",
     "concurrently": "^10.0.6",
+    "oxlint": "^1.89.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "wrangler": "^4.151.1"
