@@ -148,6 +148,11 @@ Configure these variables in `.env` (Serverfull) or `wrangler.toml` (Cloudflare 
 - **Defaults**: `BLOOM_MEM_TTL=600000` (10 minutes in-memory cache) & `SYNC_TIMEOUT_MS=30000` (30s download timeout).
 - **Description**: Cache retention time for compiled bloom filters in memory and maximum network timeout when downloading upstream blocklists.
 
+### `CONFIG_MEM_TTL`
+- **Supported in**: Serverless & Serverfull
+- **Default**: `300000` (5 minutes)
+- **Description**: How long each Worker isolate keeps a profile's settings and rules in memory. The Cache-Tag purge (`CF_ZONE_ID` / `CF_PURGE_TOKEN`) clears the cached copy in every data center, but not the in-memory copy held by other isolates, so this value bounds how long a settings change can take to apply everywhere. Lowering it (e.g. `60000`) is cheap: a re-read is normally served from the Cache API rather than the database.
+
 ### `SUBSTITUTE_DOMAIN`
 - **Supported in**: Serverless & Serverfull
 - **Default**: `www.okx.com`

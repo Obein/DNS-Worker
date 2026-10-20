@@ -147,6 +147,11 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 - **預設值**：`BLOOM_MEM_TTL=600000`（記憶體快取 10 分鐘），`SYNC_TIMEOUT_MS=30000`（規則下載超時 30 秒）。
 - **說明**：編譯後布隆過濾器的記憶體快取保鮮時間，以及外部列表抓取超時保護。
 
+### `CONFIG_MEM_TTL`
+- **支援模式**：Serverless & Serverfull
+- **預設值**：`300000`（5 分鐘）
+- **說明**：每個 Worker 實例在記憶體中快取設定檔設定與規則的時長。Cache-Tag 清除（`CF_ZONE_ID` / `CF_PURGE_TOKEN`）會清除所有資料中心的快取副本，但無法清除其他實例的記憶體副本，因此該值決定了設定變更最長需要多久才能全域生效。調低該值（如 `60000`）成本很低：重新讀取通常由 Cache API 提供，而非存取資料庫。
+
 ### `SUBSTITUTE_DOMAIN`
 - **支援模式**：Serverless & Serverfull
 - **預設值**：`www.okx.com`

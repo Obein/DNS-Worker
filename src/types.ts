@@ -12,6 +12,7 @@ export interface Env {
   SESSION_GEO_DISTANCE_KM?: string | number;
   PREAUTH_TTL_SECONDS?: string | number;
   BLOOM_MEM_TTL?: string | number;
+  CONFIG_MEM_TTL?: string | number;
   SYNC_TIMEOUT_MS?: string | number;
   INACTIVITY_THRESHOLD_DAYS?: string | number;
   PRESET_UPSTREAMS?: string;

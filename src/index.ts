@@ -22,7 +22,15 @@ import { cacheUtils } from './utils/cache';
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     cacheUtils.setOrigin(new URL(request.url).origin);
-    const dbService = getDatabaseService(env, false);
+    const isServerfull = Boolean(
+      env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+      env.SERVERFULL_HOST !== undefined ||
+      env.SERVERFULL_DOT_DOMAIN !== undefined ||
+      env.SERVERFULL_HTTP_PORT !== undefined ||
+      env.SERVERFULL_HTTPS_PORT !== undefined ||
+      env.SERVERFULL_DB_PATH !== undefined
+    );
+    const dbService = getDatabaseService(env, isServerfull);
     if (dbService === 'Turso' && isTursoConfigured(env)) {
       env.DB = getTursoDatabase(env);
     }
@@ -52,14 +60,24 @@ export default {
             dbErrorMessage = 'DATABASE_SERVICE is set to Turso, but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is not configured.';
           }
         } else if (dbService === 'File') {
-          isDbMissing = true;
-          dbErrorMessage = "DATABASE_SERVICE='File' is not supported in Cloudflare Workers. Please configure D1 database binding or use DATABASE_SERVICE='Turso'.";
+          if (!isServerfull) {
+            isDbMissing = true;
+            dbErrorMessage = "DATABASE_SERVICE='File' is not supported in Cloudflare Workers. Please configure D1 database binding or use DATABASE_SERVICE='Turso'.";
+          } else if (!env.DB) {
+            isDbMissing = true;
+            dbErrorMessage = 'Database file is missing. Please restart the service or verify file permissions.';
+          }
         } else {
           // Default: 'D1'
-          try {
-            isDbMissing = !env.DB;
-          } catch (e) {
+          if (isServerfull) {
             isDbMissing = true;
+            dbErrorMessage = "DATABASE_SERVICE='D1' is designed for Cloudflare Workers. In Serverfull mode, please set DATABASE_SERVICE='File' or 'Turso'.";
+          } else {
+            try {
+              isDbMissing = !env.DB;
+            } catch (e) {
+              isDbMissing = true;
+            }
           }
         }
 
@@ -216,22 +234,11 @@ export default {
           if (dbService === 'Turso') {
             isDbMissing = !isTursoConfigured(env) || !env.DB;
           } else if (dbService === 'File') {
-            isDbMissing = true;
+            isDbMissing = !isServerfull || !env.DB;
           } else {
-            try {
-              isDbMissing = !env.DB;
-            } catch (e) {
-              isDbMissing = true;
-            }
+            isDbMissing = isServerfull || !env.DB;
           }
           const isJwtSecretMissing = !isUsableJwtSecret(env.JWT_SECRET);
-          const isServerfull = Boolean(
-            env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
-            env.SERVERFULL_HOST !== undefined ||
-            env.SERVERFULL_DOT_DOMAIN !== undefined ||
-            env.SERVERFULL_HTTP_PORT !== undefined ||
-            env.SERVERFULL_HTTPS_PORT !== undefined
-          );
 
           let configStr = "{}";
           try {
