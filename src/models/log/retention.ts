@@ -141,16 +141,34 @@ export class LogRetentionModel {
       // ── Orphan kem_keys cleanup (Zero Dependents) ───────────────────────────
       // Automatically purges kem_keys that have zero referencing logs in D1,
       // strictly ensuring keys with active dependent logs are preserved regardless of age.
+      // Performance optimization: only run orphan key cleanup if logs were actually purged
+      // in this run (newlyDeletedLogs > 0), OR once a day during the first UTC run.
+      // This eliminates redundant subqueries during normal hours when zero logs were deleted.
+      let isDailyOrphanCheckDue = false;
       try {
-        const kemKeyModel = new KemKeyModel(this.db);
-        const deletedOrphanKeys = await kemKeyModel.cleanupOrphans();
-        if (deletedOrphanKeys > 0) {
-          console.log(
-            `[LogRetentionModel] Cleaned up ${deletedOrphanKeys} orphaned kem_keys with zero referencing logs.`
-          );
+        const lastOrphanCleanupDate = await this.settingsModel.get("kem_orphan_cleanup_date");
+        if (lastOrphanCleanupDate !== todayDate) {
+          isDailyOrphanCheckDue = true;
         }
-      } catch (kemErr) {
-        console.warn("[LogRetentionModel] Failed to cleanup orphaned kem_keys:", kemErr);
+      } catch {
+        // Fallback to checking newlyDeletedLogs only
+      }
+
+      if (newlyDeletedLogs > 0 || isDailyOrphanCheckDue) {
+        try {
+          const kemKeyModel = new KemKeyModel(this.db);
+          const deletedOrphanKeys = await kemKeyModel.cleanupOrphans(86400, 100);
+          if (isDailyOrphanCheckDue) {
+            await this.settingsModel.set("kem_orphan_cleanup_date", todayDate).catch(() => {});
+          }
+          if (deletedOrphanKeys > 0) {
+            console.log(
+              `[LogRetentionModel] Cleaned up ${deletedOrphanKeys} orphaned kem_keys with zero referencing logs.`
+            );
+          }
+        } catch (kemErr) {
+          console.warn("[LogRetentionModel] Failed to cleanup orphaned kem_keys:", kemErr);
+        }
       }
 
       console.log(
