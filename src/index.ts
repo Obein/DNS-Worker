@@ -126,13 +126,13 @@ export default {
           return new Response("Unauthorized", { status: 401 });
         }
 
-        // Handle paused sessions: block all routes except unlock, logout, and refresh
+        // Handle paused sessions: block all routes except unlock, logout, refresh, and locale preference update
         if (currentUser && currentUser.isPaused) {
           const isAllowedWhilePaused = [
             '/api/auth/unlock-session',
             '/api/auth/logout',
             '/api/auth/refresh'
-          ].includes(url.pathname);
+          ].includes(url.pathname) || (url.pathname === '/api/account/me' && request.method === 'PATCH');
           if (!isAllowedWhilePaused) {
             return new Response("session_paused", { status: 403 });
           }

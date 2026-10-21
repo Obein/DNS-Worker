@@ -48,6 +48,7 @@ export const LanguageSwitcher = ({
   return (
     <PopoverNext
       placement="bottom-start"
+      portalClassName="z-20000"
       disabled={isLoading}
       content={
         <Menu style={{ maxHeight: "300px", overflowY: "auto" }}>
