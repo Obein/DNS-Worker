@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { validateUsername, formatApiErrorMessage } from "../../utils/auth";
 import { prelogin } from "../../services";
-import { useTurnstile } from "./hooks/useTurnstile";
+import { useTurnstile } from "../../hooks/useTurnstile";
 import { useLoginAuth } from "./hooks/useLoginAuth";
 import { useMfaStep } from "./hooks/useMfaStep";
 
