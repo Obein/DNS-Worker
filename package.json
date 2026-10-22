@@ -53,7 +53,9 @@
     "lint": "oxlint",
     "ui:dev": "cd web && npm run dev",
     "ui:build": "cd web && npm run build",
-    "ui:install": "cd web && npm install"
+    "ui:install": "cd web && npm install",
+    "tag-promote": "npm version patch",
+    "tag-push": "git push && git push --tags"
   },
   "keywords": [
     "dns",
