@@ -142,7 +142,7 @@ export const SetupTabs: React.FC<SetupTabsProps> = ({
                       <Tag minimal interactive onClick={() => copyToClipboard(item.ip)} icon="duplicate" className="font-mono">
                         {item.ip}
                       </Tag>
-                      {!isMobile && <span className="text-[9px] opacity-40 ml-1">{item.area}</span>}
+                      <span className="text-[9px] opacity-50 ml-1 font-mono">{item.area}</span>
                     </div>
                   ))}
                 </div>

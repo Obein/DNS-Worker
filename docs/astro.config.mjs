@@ -168,6 +168,16 @@ export default defineConfig({
               slug: 'deployment/matrix',
             },
             {
+              label: 'Database Modes & Deployment',
+              translations: {
+                'zh-CN': '数据库配置与引擎选型',
+                'zh-cn': '数据库配置与引擎选型',
+                'zh-TW': '資料庫配置與引擎選型',
+                'zh-tw': '資料庫配置與引擎選型',
+              },
+              slug: 'deployment/database',
+            },
+            {
               label: 'Cloudflare Workers Edge (Recommended)',
               translations: {
                 'zh-CN': 'Cloudflare Workers 边缘模式 (首选推荐)',

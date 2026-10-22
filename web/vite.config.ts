@@ -48,7 +48,7 @@ function sqliteWasmPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   envDir: '../',
-  envPrefix: ['VITE_', 'IP_REGION_'],
+  envPrefix: ['VITE_'],
   resolve: {
     alias: {
       '@blueprintjs/icons/lib/esm/allPaths.js': path.resolve(__dirname, 'src/shims/blueprint-allPaths.ts'),

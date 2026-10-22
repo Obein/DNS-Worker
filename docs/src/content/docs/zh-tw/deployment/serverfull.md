@@ -39,13 +39,13 @@ dns-worker config init
 
 ---
 
-## 容器化部署 (Docker / Bun LTS 執行階段)
+## 容器化部署 (Docker / Bun LTS 執行時)
 
-DNS Worker 提供官方容器映像檔建置流程，基於 **Bun LTS** (`oven/bun:1-slim`) 最小化執行基底，具備極低記憶體佔用與毫秒級冷啟動特性。
+DNS Worker 提供官方容器映象構建流程，基於 **Bun LTS** (`oven/bun:1-slim`) 最小化執行基底，具備極低記憶體佔用與毫秒級冷啟動特性。
 
-### Docker 極速運行
+### Docker 極速執行
 
-以背景分離模式執行容器，直接對應 443 埠並掛載持久化資料、設定與 TLS 憑證磁碟區：
+以後臺分離模式執行容器，直接對映 443 埠並掛載持久化資料、配置與 TLS 證書卷：
 
 ```bash
 docker run -d \
@@ -62,32 +62,32 @@ docker run -d \
 ```
 
 > [!TIP]
-> **HTTPS 自動重新導向**：正式生產環境中不建議直接透過純 HTTP 埠存取。當在 `/etc/ssl/dns-worker` 掛載 TLS 憑證（或設定 `SERVERFULL_TLS_CERT_PATH`）後，DNS Worker 將自動啟用 443 埠的 HTTPS 服務，並且 **所有存取 80 埠的純 HTTP 請求將自動 301/307 跳轉至 HTTPS**。
+> **HTTPS 自動重定向**：生產環境中不建議直接通過純 HTTP 埠訪問。當在 `/etc/ssl/dns-worker` 掛載 TLS 證書（或配置 `SERVERFULL_TLS_CERT_PATH`）後，DNS Worker 將自動啟用 443 埠的 HTTPS 服務，並且 **所有訪問 80 埠的純 HTTP 請求將自動 301/307 跳轉至 HTTPS**。
 
-### 連接埠與資料磁碟區對應規範
+### 埠與資料卷對映規範
 
-- **網路連接埠**：
+- **網路埠**：
   - `53:53/udp`：經典 UDP DNS（RFC 1035）
   - `853:853/tcp`：加密 DoT（RFC 7858，相容 DoQ）
-  - `80:80/tcp`：HTTP Web 主控台（設定憑證後自動跳轉至 HTTPS 443）
-  - `443:443/tcp`：HTTPS Web 主控台與 DoH 解析介面（主要/建議存取方式）
-- **持久化資料磁碟區**：
+  - `80:80/tcp`：HTTP Web 控制台（配置證書後自動跳轉至 HTTPS 443）
+  - `443:443/tcp`：HTTPS Web 控制台與 DoH 解析介面（主要/推薦訪問方式）
+- **持久化資料卷**：
   - `/var/lib/dns-worker`：儲存 SQLite 資料庫檔案（`dns_worker.sqlite`）與自動持久化的 JWT 金鑰
-  - `/etc/dns-worker`：掛載主機目錄以提供自訂 `.env` 設定檔案
-  - `/etc/ssl/dns-worker`：掛載 TLS 憑證鏈與私鑰（`fullchain.pem` 與 `privkey.pem`），系統啟動時自動識別並啟用 HTTPS / DoT
+  - `/etc/dns-worker`：掛載宿主機目錄以提供自定義 `.env` 配置檔案
+  - `/etc/ssl/dns-worker`：掛載 TLS 證書鏈與私鑰（`fullchain.pem` 與 `privkey.pem`），系統啟動時自動識別並激活 HTTPS / DoT
 
-### 打包與發布至 Docker Hub
+### 打包與釋出至 Docker Hub
 
-映像檔在推送 Git 發版標籤（`v*`）時會自動透過 GitHub Actions 建置並發布至 Docker Hub，亦可在本地透過指令碼手動建置發布：
+映象在推送 Git 發版標籤（`v*`）時會自動通過 GitHub Actions 構建併發布至 Docker Hub，亦可在本地通過指令碼手動構建釋出：
 
 ```bash
-# 本地建置映像檔（自動讀取 package.json 版本並加上標籤）
+# 本地构建镜像（自动读取 package.json 版本并打标签）
 npm run docker:build
 
-# 多架構打包（linux/amd64, linux/arm64）並發布至 Docker Hub
+# 多架构打包（linux/amd64, linux/arm64）并发布至 Docker Hub
 npm run docker:multiarch -- --push
 
-# 推送本地標籤至 Docker Hub
+# 推送本地标签至 Docker Hub
 npm run docker:push
 ```
 

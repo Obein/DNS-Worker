@@ -33,7 +33,6 @@ import {
 import {
   DEFAULT_PRESET_UPSTREAMS,
   DEFAULT_PRESET_EXTERNAL_FILTERS,
-  DEFAULT_IP_REGION_CN,
   DEFAULT_SUBSTITUTE_DOMAIN,
   DEFAULT_FAIL_OPEN_UPSTREAM
 } from '../src/constants/presets';
@@ -168,9 +167,6 @@ function runServiceUnitTests(): void {
   }
   if (!Array.isArray(DEFAULT_PRESET_EXTERNAL_FILTERS) || DEFAULT_PRESET_EXTERNAL_FILTERS.length === 0) {
     throw new Error('DEFAULT_PRESET_EXTERNAL_FILTERS must be non-empty array');
-  }
-  if (!Array.isArray(DEFAULT_IP_REGION_CN) || DEFAULT_IP_REGION_CN.length === 0) {
-    throw new Error('DEFAULT_IP_REGION_CN must be non-empty array');
   }
   if (DEFAULT_SUBSTITUTE_DOMAIN !== 'www.okx.com' || !DEFAULT_FAIL_OPEN_UPSTREAM) {
     throw new Error('DEFAULT_SUBSTITUTE_DOMAIN or DEFAULT_FAIL_OPEN_UPSTREAM invalid');

@@ -1,5 +1,5 @@
-import React from "react";
-import { Section, SectionCard, Button, Spinner, Intent } from "@blueprintjs/core";
+import React, { useState } from "react";
+import { Section, SectionCard, Button, Spinner, Intent, PopoverNext } from "@blueprintjs/core";
 import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
@@ -35,6 +35,31 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isServerfull } = useDeploymentMode();
+  const [isTraceOpen, setIsTraceOpen] = useState(false);
+
+  const edgeServerCardNode = (
+    <div
+      className={clsx(
+        "bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none h-full transition-all",
+        !isServerfull && "cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md"
+      )}
+    >
+      <Server size={18} className="text-purple-500 mt-1 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase font-bold opacity-40">
+          {isServerfull ? t("setup.serverLocation", "服务器位置") : t("setup.edgeServer")}
+        </div>
+        <div
+          className="font-bold truncate"
+          title={isServerfull ? (edgeLocation || "") : (edgeLocation || traceInfo?.colo || "")}
+        >
+          {isServerfull
+            ? (edgeLocation || t("setup.detecting"))
+            : (edgeLocation || traceInfo?.colo || t("setup.detecting"))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Section title={t("setup.verifyConnection")} icon={<Activity size={16} />}>
@@ -112,19 +137,30 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none">
-                <Server size={18} className="text-purple-500 mt-1" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold opacity-40">
-                    {isServerfull ? t("setup.serverLocation", "服务器位置") : t("setup.edgeServer")}
-                  </div>
-                  <div className="font-bold truncate" title={isServerfull ? (edgeLocation || "") : (edgeLocation || traceInfo?.colo || "")}>
-                    {isServerfull
-                      ? (edgeLocation || t("setup.detecting"))
-                      : (edgeLocation || traceInfo?.colo || t("setup.detecting"))}
-                  </div>
-                </div>
-              </div>
+              {!isServerfull ? (
+                <PopoverNext
+                  isOpen={isTraceOpen}
+                  onInteraction={setIsTraceOpen}
+                  placement="bottom-end"
+                  portalClassName="z-20000"
+                  fill={true}
+                  targetProps={{ className: "h-full" }}
+                  content={
+                    <div className="p-3 select-text w-72 sm:w-80 max-w-[85vw] space-y-2">
+                      <div className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide border-b border-gray-100 dark:border-gray-800 pb-1.5">
+                        /cdn-cgi/trace
+                      </div>
+                      <pre className="m-0 font-mono text-xs leading-relaxed overflow-x-auto max-h-64 overflow-y-auto text-gray-800 dark:text-gray-200">
+                        {traceInfo?.raw || t("setup.noTraceData", "暂无 Trace 数据")}
+                      </pre>
+                    </div>
+                  }
+                >
+                  {edgeServerCardNode}
+                </PopoverNext>
+              ) : (
+                edgeServerCardNode
+              )}
             </div>
           )}
         </div>

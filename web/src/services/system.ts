@@ -16,12 +16,6 @@ export async function getClientInfo(): Promise<ClientInfo> {
   return res.json();
 }
 
-export async function getRegions(): Promise<Record<string, any>> {
-  const res = await fetch("/api/regions");
-  if (!res.ok) throw new Error("Failed to fetch regions");
-  return res.json();
-}
-
 export async function getSubstituteInfo(): Promise<SubstituteInfo> {
   const res = await fetch("/api/substitute");
   if (!res.ok) throw new Error("Failed to fetch substitute info");

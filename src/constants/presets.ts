@@ -14,11 +14,6 @@ export interface PresetFilter {
   url: string;
 }
 
-export interface PresetRegionIp {
-  ip: string;
-  area: string;
-}
-
 /**
  * Built-in default preset upstream DNS servers.
  */
@@ -46,16 +41,6 @@ export const DEFAULT_PRESET_EXTERNAL_FILTERS: readonly PresetFilter[] = [
   { label: 'filtering.presetOisdNsfw', url: 'https://nsfw.oisd.nl' },
   { label: 'filtering.presetAdGuard', url: 'https://adguardteam.github.io/AdguardFilters/BaseFilter/sections/adservers.txt' },
   { label: 'filtering.presetStevenBlack', url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts' }
-];
-
-/**
- * Built-in default region IPs for substitute domain mapping (China/Asia-Pacific fallback).
- */
-export const DEFAULT_IP_REGION_CN: readonly PresetRegionIp[] = [
-  { ip: '198.41.222.102', area: 'SG' },
-  { ip: '173.245.59.246', area: 'SG' },
-  { ip: '104.18.47.174', area: 'HK' },
-  { ip: '104.19.50.3', area: 'HK' }
 ];
 
 /**

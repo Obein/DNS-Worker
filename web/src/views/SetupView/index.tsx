@@ -15,6 +15,7 @@ import type { AccessPoint } from "../../types/auth";
 import {
   getClientInfo,
   getTraceInfo,
+  getSubstituteInfo,
   getProfileAccessPoints,
   getProfileDetails,
   getDomainGeoLocation,
@@ -145,10 +146,27 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
         .then((loc) => setEdgeLocation(loc))
         .catch((e) => console.warn("Failed fetching domain geo location:", e));
 
-      // Resolve IPv4 and IPv6 addresses for the current domain
-      resolveDomainDnsIps(domainToResolve)
-        .then((ips) => setDomainIps(ips))
-        .catch((e) => console.warn("Failed resolving domain DNS IPs:", e));
+      // Resolve IPv4 and IPv6 addresses for SUBSTITUTE_DOMAIN (for Windows 11 setup)
+      const targetSubstituteDomain = clientData.substituteDomain || "www.okx.com";
+      getSubstituteInfo()
+        .then((sub) => {
+          setDomainIps((prev) => {
+            if (prev.ipv4.length > 0 || prev.ipv6.length > 0) return prev;
+            return {
+              ipv4: sub.ip ? [sub.ip] : [],
+              ipv6: sub.ipv6 ? [sub.ipv6] : [],
+            };
+          });
+        })
+        .catch(() => {});
+
+      resolveDomainDnsIps(targetSubstituteDomain)
+        .then((ips) => {
+          if (ips.ipv4.length > 0 || ips.ipv6.length > 0) {
+            setDomainIps(ips);
+          }
+        })
+        .catch((e) => console.warn("Failed resolving substitute domain DNS IPs:", e));
 
       setVerifyResult({
         success: !!clientData.connectedProfileId,
@@ -165,20 +183,22 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
     handleVerify();
   }, [profileId]); // Ensure it only runs once unless profileId changes
 
-  // DNS IPs resolved directly from current domain (IPv4 and IPv6)
+  // DNS IPs resolved directly from SUBSTITUTE_DOMAIN (capped at max 2 IPv4 and 2 IPv6)
   const currentIps = useMemo(() => {
     const list: { ip: string; area: string | null }[] = [];
+    const v4 = (domainIps.ipv4 || []).slice(0, 2);
+    const v6 = (domainIps.ipv6 || []).slice(0, 2);
 
-    for (const ip of domainIps.ipv4) {
+    for (const ip of v4) {
       list.push({
         ip,
-        area: "IPv4",
+        area: "SUBSTITUTE_DOMAIN IPv4",
       });
     }
-    for (const ip of domainIps.ipv6) {
+    for (const ip of v6) {
       list.push({
         ip,
-        area: "IPv6",
+        area: "SUBSTITUTE_DOMAIN IPv6",
       });
     }
 
