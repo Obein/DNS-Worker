@@ -18,6 +18,7 @@ import {
 import { clsx } from "clsx";
 import LogoIcon from "../assets/obex_cat_eye_logo-256.webp";
 import type { UserInfo } from "../types/auth";
+import { useUpstreamUpdate } from "../hooks/useUpstreamUpdate";
 
 /**
  * Properties for the DesktopSidebar component.
@@ -61,6 +62,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   navItems,
 }) => {
   const { t } = useTranslation();
+  const { hasUpdate, latestTag, appVersion } = useUpstreamUpdate();
 
   return (
     <aside
@@ -69,17 +71,36 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         isSidebarOpen ? "w-64" : "w-16",
       )}
     >
-      <div className="h-14 flex items-center px-4 shrink-0">
+      <div className="h-14 flex items-center pl-3.5 pr-2 shrink-0">
         <img
           src={LogoIcon}
           alt="DNS Worker"
           className="w-8 h-8 object-contain shrink-0"
         />
         {isSidebarOpen && (
-          <div className="ml-3 flex flex-col justify-center min-w-0">
-            <span className="font-bold text-base leading-tight dark:text-white truncate">
-              DNS Worker
-            </span>
+          <div className="ml-2.5 flex flex-col justify-center min-w-0 flex-1">
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="font-bold text-base leading-tight dark:text-white shrink-0">
+                DNS Worker
+              </span>
+              <span
+                className="text-xs text-gray-500 dark:text-gray-400 font-mono leading-tight truncate shrink-0 inline-flex items-center"
+                title={hasUpdate ? (latestTag ? `New version available: ${latestTag}` : "Update available") : appVersion}
+              >
+                <span>{appVersion}</span>
+                {hasUpdate && (
+                  <a
+                    href="https://github.com/Obein/DNS-Worker/releases"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 text-[11px] leading-none hover:scale-125 transition-transform"
+                    title={latestTag ? `New version available: ${latestTag}` : "Update available"}
+                  >
+                    🔺
+                  </a>
+                )}
+              </span>
+            </div>
             <span
               className="text-xs text-gray-500 dark:text-gray-400 font-mono leading-tight mt-0.5 truncate select-all"
               title={typeof window !== "undefined" ? window.location.host || window.location.hostname : ""}
