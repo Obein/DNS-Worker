@@ -2,8 +2,54 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
+
+/**
+ * Resolves the closest git tag for version reporting.
+ */
+function getGitTag(): string {
+  try {
+    const exactTag = execSync('git tag --points-at HEAD', { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf-8' }).trim()
+    if (exactTag) return exactTag.split('\n')[0].trim()
+  } catch {}
+
+  try {
+    const ancestorTag = execSync('git describe --tags --abbrev=0', { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf-8' }).trim()
+    if (ancestorTag) return ancestorTag
+  } catch {}
+
+  try {
+    const latestTag = execSync('git tag --sort=-v:refname', { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf-8' }).trim()
+    if (latestTag) return latestTag.split('\n')[0].trim()
+  } catch {}
+
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'))
+    return pkg.version ? (pkg.version.startsWith('v') ? pkg.version : `v${pkg.version}`) : 'v0.0.0'
+  } catch {
+    return 'v0.0.0'
+  }
+}
+
+/**
+ * Resolves the short git commit hash for version reporting.
+ */
+function getGitCommit(): string {
+  try {
+    const commit = execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf-8' }).trim()
+    if (commit) return commit
+  } catch {}
+
+  return process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) ||
+         process.env.GITHUB_SHA?.slice(0, 7) ||
+         'dev'
+}
+
+const gitTag = process.env.VITE_APP_GIT_TAG || getGitTag()
+const gitCommit = process.env.VITE_APP_GIT_COMMIT || getGitCommit()
+const appVersion = `${gitTag}-${gitCommit}`
 
 /**
  * Compiles/emits SQLite WASM OPFS async proxy worker directly into the build output
@@ -49,6 +95,11 @@ function sqliteWasmPlugin(): Plugin {
 export default defineConfig({
   envDir: '../',
   envPrefix: ['VITE_'],
+  define: {
+    __APP_GIT_TAG__: JSON.stringify(gitTag),
+    __APP_GIT_COMMIT__: JSON.stringify(gitCommit),
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   resolve: {
     alias: {
       '@blueprintjs/icons/lib/esm/allPaths.js': path.resolve(__dirname, 'src/shims/blueprint-allPaths.ts'),
