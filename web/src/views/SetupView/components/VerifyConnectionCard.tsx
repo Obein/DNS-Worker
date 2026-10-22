@@ -1,6 +1,6 @@
-import React from "react";
-import { Section, SectionCard, Button, Spinner, Intent } from "@blueprintjs/core";
-import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Section, SectionCard, Button, Spinner, Intent, PopoverNext } from "@blueprintjs/core";
+import { Activity, ShieldCheck, Server, Globe, MapPin, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import type { ClientInfo } from "../types";
@@ -35,6 +35,68 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const { isServerfull } = useDeploymentMode();
+  const [isTraceOpen, setIsTraceOpen] = useState(false);
+  const [copiedTrace, setCopiedTrace] = useState(false);
+
+  const handleCopyTrace = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (traceInfo?.raw) {
+      navigator.clipboard.writeText(traceInfo.raw);
+      setCopiedTrace(true);
+      setTimeout(() => setCopiedTrace(false), 2000);
+    }
+  };
+
+  const traceEntries = useMemo(() => {
+    if (!traceInfo?.raw) return [];
+    return traceInfo.raw
+      .trim()
+      .split("\n")
+      .map((line) => {
+        const idx = line.indexOf("=");
+        if (idx === -1) return null;
+        return {
+          key: line.slice(0, idx).trim(),
+          value: line.slice(idx + 1).trim(),
+        };
+      })
+      .filter((entry): entry is { key: string; value: string } => Boolean(entry));
+  }, [traceInfo?.raw]);
+
+  const edgeServerCardNode = (
+    <div
+      className={clsx(
+        "bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none h-full transition-all",
+        !isServerfull && "cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md group"
+      )}
+    >
+      <Server size={18} className="text-purple-500 mt-1 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] uppercase font-bold opacity-40">
+            {isServerfull ? t("setup.serverLocation", "服务器位置") : t("setup.edgeServer")}
+          </div>
+          {!isServerfull && (
+            <ChevronDown
+              size={14}
+              className={clsx(
+                "text-gray-400 group-hover:text-purple-500 transition-transform duration-200",
+                isTraceOpen && "rotate-180 text-purple-500"
+              )}
+            />
+          )}
+        </div>
+        <div
+          className="font-bold truncate"
+          title={isServerfull ? (edgeLocation || "") : (edgeLocation || traceInfo?.colo || "")}
+        >
+          {isServerfull
+            ? (edgeLocation || t("setup.detecting"))
+            : (edgeLocation || traceInfo?.colo || t("setup.detecting"))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Section title={t("setup.verifyConnection")} icon={<Activity size={16} />}>
@@ -112,19 +174,69 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                   </div>
                 </div>
               </div>
-              <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none">
-                <Server size={18} className="text-purple-500 mt-1" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] uppercase font-bold opacity-40">
-                    {isServerfull ? t("setup.serverLocation", "服务器位置") : t("setup.edgeServer")}
-                  </div>
-                  <div className="font-bold truncate" title={isServerfull ? (edgeLocation || "") : (edgeLocation || traceInfo?.colo || "")}>
-                    {isServerfull
-                      ? (edgeLocation || t("setup.detecting"))
-                      : (edgeLocation || traceInfo?.colo || t("setup.detecting"))}
-                  </div>
-                </div>
-              </div>
+              {!isServerfull ? (
+                <PopoverNext
+                  isOpen={isTraceOpen}
+                  onInteraction={setIsTraceOpen}
+                  placement="bottom-end"
+                  portalClassName="z-20000"
+                  fill={true}
+                  targetProps={{ className: "h-full" }}
+                  content={
+                    <div className="p-4 w-80 sm:w-96 max-w-[90vw] text-left text-sm space-y-3">
+                      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2">
+                        <div className="flex items-center gap-2">
+                          <Server size={16} className="text-purple-500" />
+                          <span className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm">
+                            {t("setup.traceDetails", "/cdn-cgi/trace")}
+                          </span>
+                        </div>
+                        <Button
+                          size="small"
+                          variant="minimal"
+                          icon={copiedTrace ? "tick" : "duplicate"}
+                          intent={copiedTrace ? Intent.SUCCESS : Intent.NONE}
+                          text={copiedTrace ? t("common.copied", "已复制") : t("common.copy", "复制")}
+                          onClick={handleCopyTrace}
+                          disabled={!traceInfo?.raw}
+                        />
+                      </div>
+
+                      {traceInfo?.raw ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            {traceEntries
+                              .filter((e) => ["colo", "loc", "http", "tls", "kex", "sni", "warp"].includes(e.key))
+                              .map((e) => (
+                                <div
+                                  key={e.key}
+                                  className="bg-gray-50 dark:bg-gray-800/80 p-2 rounded border border-gray-100 dark:border-gray-700/60 flex flex-col min-w-0"
+                                >
+                                  <span className="text-[10px] uppercase font-mono opacity-50">{e.key}</span>
+                                  <span className="font-mono font-bold text-purple-600 dark:text-purple-400 truncate" title={e.value}>
+                                    {e.value}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+
+                          <pre className="bg-gray-50 dark:bg-gray-900 p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-[11px] font-mono leading-relaxed overflow-x-auto max-h-48 overflow-y-auto text-gray-700 dark:text-gray-300 select-text">
+                            {traceInfo.raw}
+                          </pre>
+                        </>
+                      ) : (
+                        <div className="text-center py-4 text-xs opacity-60">
+                          {t("setup.noTraceData", "暂无 Trace 数据")}
+                        </div>
+                      )}
+                    </div>
+                  }
+                >
+                  {edgeServerCardNode}
+                </PopoverNext>
+              ) : (
+                edgeServerCardNode
+              )}
             </div>
           )}
         </div>

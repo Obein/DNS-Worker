@@ -215,6 +215,8 @@
     "currentLocation": "Vị trí hiện tại",
     "edgeServer": "Máy chủ Edge",
     "serverLocation": "Vị trí máy chủ",
+    "traceDetails": "Cloudflare Trace (/cdn-cgi/trace)",
+    "noTraceData": "Không có dữ liệu trace",
     "dohUrlTitle": "DoH URL của cấu hình hiện tại",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Thiết bị-1",

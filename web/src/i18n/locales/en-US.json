@@ -215,6 +215,8 @@
     "currentLocation": "Current Location",
     "edgeServer": "Edge Server",
     "serverLocation": "Server Location",
+    "traceDetails": "Cloudflare Trace (/cdn-cgi/trace)",
+    "noTraceData": "No trace data available",
     "dohUrlTitle": "Current Config DoH URL",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Device-1",

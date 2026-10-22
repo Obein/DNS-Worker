@@ -54,7 +54,6 @@ DNS Worker integrates **RFC 9460 / RFC 8484 Encrypted Client Hello (ECH)**:
 
 To prevent Content Delivery Networks (CDNs) from routing users to distant edge nodes, DNS Worker supports intelligent EDNS Client Subnet (ECS) forwarding:
 - **Subnet Precision**: Forwards truncated `/24` (IPv4) or `/48` (IPv6) client subnets to authoritative nameservers, preserving geographical routing accuracy without exposing user IP addresses.
-- **Regional IP Classification**: Checks queries against `IP_REGION` to route domestic and international domains to their geographically optimal upstream resolvers.
 
 ---
 

@@ -112,7 +112,6 @@ export default {
           '/api/auth/logout',
           '/api/auth/unlock-session',
           '/api/clientinfo',
-          '/api/regions',
           '/api/substitute',
           '/api/resolve',
           '/api/geoip'
@@ -151,7 +150,6 @@ export default {
         }
         if (
           url.pathname === '/api/clientinfo' ||
-          url.pathname === '/api/regions' ||
           url.pathname === '/api/substitute' ||
           url.pathname === '/api/resolve' ||
           url.pathname === '/api/geoip' ||

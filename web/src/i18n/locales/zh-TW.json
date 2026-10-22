@@ -215,6 +215,8 @@
     "currentLocation": "當前位置",
     "edgeServer": "邊緣伺服器",
     "serverLocation": "伺服器位置",
+    "traceDetails": "Cloudflare Trace (/cdn-cgi/trace)",
+    "noTraceData": "暫無 Trace 資料",
     "dohUrlTitle": "當前配置 DoH URL",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "裝置-1",

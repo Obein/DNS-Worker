@@ -215,6 +215,8 @@
     "currentLocation": "現在地",
     "edgeServer": "エッジサーバー",
     "serverLocation": "サーバーの場所",
+    "traceDetails": "Cloudflare Trace (/cdn-cgi/trace)",
+    "noTraceData": "Trace データがありません",
     "dohUrlTitle": "現在の設定の DoH URL",
     "accessPointTitle": "アクセス用 DoH URL",
     "defaultAccessPointName": "デバイス-1",

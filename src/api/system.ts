@@ -6,7 +6,6 @@ import { isPublicInternetIP } from '../utils/validator';
 import {
   DEFAULT_PRESET_UPSTREAMS,
   DEFAULT_PRESET_EXTERNAL_FILTERS,
-  DEFAULT_IP_REGION_CN,
   DEFAULT_SUBSTITUTE_DOMAIN
 } from '../constants/presets';
 
@@ -83,30 +82,6 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
       isServerfull,
       mode: isServerfull ? 'serverfull' : 'cloudflare'
     }), { headers: { 'Content-Type': 'application/json' } });
-  }
-
-  if (url.pathname === '/api/regions') {
-    const regions: Record<string, any> = {};
-    for (const [key, value] of Object.entries(env)) {
-      if (key.startsWith('IP_REGION_') && typeof value === 'string') {
-        try {
-          const regionKey = key.replace('IP_REGION_', '');
-          let cleanVal = value.trim();
-          cleanVal = cleanVal
-            .replace(/^"""|"""$/g, "")
-            .replace(/^"|"$/g, "")
-            .replace(/^'|'$/g, "")
-            .trim();
-          regions[regionKey] = JSON.parse(cleanVal);
-        } catch (e) {
-          // Ignore parse errors for malformed env variables
-        }
-      }
-    }
-    if (Object.keys(regions).length === 0) {
-      regions['CN'] = DEFAULT_IP_REGION_CN;
-    }
-    return new Response(JSON.stringify(regions), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname === '/api/substitute') {

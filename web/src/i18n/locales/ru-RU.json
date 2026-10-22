@@ -215,6 +215,8 @@
     "currentLocation": "Текущее местоположение",
     "edgeServer": "Edge-сервер",
     "serverLocation": "Расположение сервера",
+    "traceDetails": "Cloudflare Trace (/cdn-cgi/trace)",
+    "noTraceData": "Данные Trace недоступны",
     "dohUrlTitle": "Текущий URL DoH",
     "accessPointTitle": "Access DoH URL",
     "defaultAccessPointName": "Устройство-1",
