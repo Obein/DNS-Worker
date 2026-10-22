@@ -72,6 +72,10 @@ export const useLoginForm = ({
 
   const isTurnstileEnabled = authConfig?.turnstile_enabled_login;
 
+  const handleClearError = React.useCallback(() => {
+    setError("");
+  }, [setError]);
+
   // Turnstile hook
   const {
     turnstileToken,
@@ -84,7 +88,7 @@ export const useLoginForm = ({
     turnstileReady,
     isActive: loginStep === 1,
     onError: setError,
-    onClearError: () => setError("")
+    onClearError: handleClearError
   });
 
   // Step 3 MFA hook
