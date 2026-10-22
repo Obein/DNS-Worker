@@ -14,8 +14,62 @@ import { KemKeyRecord } from "../types";
  * reference it (zero dependents), with a safety grace period to protect active in-memory
  * keys currently being rotated by running Worker isolates.
  */
+let hasEnsuredKemIndexes = false;
+
+/**
+ * Ensures critical covering index exists on logs(kem_key_id) and kem_keys(created_at)
+ * to prevent full table scans that otherwise read millions of rows.
+ *
+ * @param db - D1Database instance.
+ * @returns True if index creation was initiated or already performed.
+ */
+export async function ensureKemIndexes(db: D1Database): Promise<boolean> {
+  if (hasEnsuredKemIndexes) return true;
+  try {
+    const s1 = db.prepare("CREATE INDEX IF NOT EXISTS idx_logs_kem_key_id ON logs(kem_key_id) WHERE kem_key_id IS NOT NULL");
+    if (typeof s1.run === "function") {
+      await s1.run();
+    } else if (typeof s1.bind === "function") {
+      await (s1.bind() as any).run();
+    }
+
+    const s2 = db.prepare("CREATE INDEX IF NOT EXISTS idx_kem_keys_created_at ON kem_keys(created_at)");
+    if (typeof s2.run === "function") {
+      await s2.run();
+    } else if (typeof s2.bind === "function") {
+      await (s2.bind() as any).run();
+    }
+
+    hasEnsuredKemIndexes = true;
+    return true;
+  } catch (e) {
+    console.warn("[KemKeyModel] Failed to ensure indexes:", e);
+    return false;
+  }
+}
+
 export class KemKeyModel {
   constructor(private readonly db: D1Database) {}
+
+  /**
+   * Resets the module-level flag for testing index creation.
+   */
+  static resetIndexFlag(): void {
+    hasEnsuredKemIndexes = false;
+  }
+
+  /**
+   * Verifies if idx_logs_kem_key_id exists in sqlite_master.
+   */
+  private async hasLogsKemKeyIndex(): Promise<boolean> {
+    try {
+      const stmt = this.db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'index' AND name = 'idx_logs_kem_key_id'");
+      const row = typeof stmt.first === "function" ? await stmt.first() : await (stmt.bind() as any).first();
+      return !!row;
+    } catch {
+      return hasEnsuredKemIndexes;
+    }
+  }
 
   /**
    * Retrieves a KEM key record by ID.
@@ -59,18 +113,28 @@ export class KemKeyModel {
    *
    * Criterion: NOT EXISTS (SELECT 1 FROM logs WHERE logs.kem_key_id = kem_keys.id)
    * Notice: Time (expires_at) is NOT the deletion criterion. Even very old keys
-   * are kept as long as logs reference them. A safety window (default 3600s = 1h)
-   * protects newly minted keys in active isolate memory from being deleted before
-   * their first log batch lands in D1.
+   * are kept as long as logs reference them. A safety window (default 86400s = 24h)
+   * protects newly minted keys in active isolate memory and recent retention periods
+   * from triggering unnecessary subqueries.
    *
-   * @param safetyWindowSec Minimum age in seconds before an unreferenced key can be purged (default 3600).
-   * @param batchLimit Maximum rows to delete in a single batch (default 1000).
+   * @param safetyWindowSec Minimum age in seconds before an unreferenced key can be purged (default 86400 = 24h).
+   * @param batchLimit Maximum rows to delete in a single batch (default 100).
    * @returns Total number of orphaned keys deleted.
    */
-  async cleanupOrphans(safetyWindowSec = 3600, batchLimit = 1000): Promise<number> {
+  async cleanupOrphans(safetyWindowSec = 86400, batchLimit = 100): Promise<number> {
     const cutoffTimestamp = Math.floor(Date.now() / 1000) - safetyWindowSec;
     try {
-      // Fast index seek to check if any candidate keys older than the safety window exist.
+      // 1. Ensure covering index on logs(kem_key_id) exists to guarantee index-seek instead of full scan
+      await ensureKemIndexes(this.db);
+
+      // 2. Defensive index check: if index is missing and could not be verified, abort to save read quota
+      const indexReady = await this.hasLogsKemKeyIndex();
+      if (!indexReady && !hasEnsuredKemIndexes) {
+        console.warn("[KemKeyModel] Aborting orphan cleanup: idx_logs_kem_key_id index is not confirmed. Run migrations to enable index-based cleanup.");
+        return 0;
+      }
+
+      // 3. Fast index seek to check if any candidate keys older than the safety window exist.
       // If none exist, skip the correlated subquery entirely to save database read quota.
       const candidate = await this.db
         .prepare("SELECT id FROM kem_keys WHERE created_at <= ? LIMIT 1")
@@ -109,12 +173,14 @@ export class KemKeyModel {
    * Useful when a profile's logs have been explicitly cleared or disabled.
    *
    * @param profileId Profile identifier.
-   * @param safetyWindowSec Minimum age in seconds before an unreferenced key can be purged (default 3600).
+   * @param safetyWindowSec Minimum age in seconds before an unreferenced key can be purged (default 86400 = 24h).
    * @returns Total number of orphaned keys deleted for this profile.
    */
-  async cleanupProfileOrphans(profileId: string, safetyWindowSec = 3600): Promise<number> {
+  async cleanupProfileOrphans(profileId: string, safetyWindowSec = 86400): Promise<number> {
     const cutoffTimestamp = Math.floor(Date.now() / 1000) - safetyWindowSec;
     try {
+      await ensureKemIndexes(this.db);
+
       // Fast check if any candidate keys exist for this profile
       const candidate = await this.db
         .prepare("SELECT id FROM kem_keys WHERE profile_id = ? AND created_at <= ? LIMIT 1")
