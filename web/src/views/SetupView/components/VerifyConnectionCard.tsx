@@ -150,7 +150,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                       <div className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide border-b border-gray-100 dark:border-gray-800 pb-1.5">
                         /cdn-cgi/trace
                       </div>
-                      <pre className="m-0 font-mono text-xs leading-relaxed overflow-x-auto max-h-64 overflow-y-auto text-gray-800 dark:text-gray-200">
+                      <pre className="m-0 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all overflow-x-hidden max-h-64 overflow-y-auto text-gray-800 dark:text-gray-200">
                         {traceInfo?.raw || t("setup.noTraceData", "暂无 Trace 数据")}
                       </pre>
                     </div>

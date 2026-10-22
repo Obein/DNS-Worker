@@ -188,22 +188,23 @@ export const SetupView: React.FC<SetupViewProps> = ({ profileId, profileKey, pro
     const list: { ip: string; area: string | null }[] = [];
     const v4 = (domainIps.ipv4 || []).slice(0, 2);
     const v6 = (domainIps.ipv6 || []).slice(0, 2);
+    const domainLabel = clientInfo?.substituteDomain || "www.okx.com";
 
     for (const ip of v4) {
       list.push({
         ip,
-        area: "SUBSTITUTE_DOMAIN IPv4",
+        area: `${domainLabel} IPv4`,
       });
     }
     for (const ip of v6) {
       list.push({
         ip,
-        area: "SUBSTITUTE_DOMAIN IPv6",
+        area: `${domainLabel} IPv6`,
       });
     }
 
     return list;
-  }, [domainIps]);
+  }, [domainIps, clientInfo?.substituteDomain]);
 
   return (
     <div className={`mx-auto space-y-8 pb-24 ${isMobile ? "p-1" : "px-8 max-w-5xl"}`}>

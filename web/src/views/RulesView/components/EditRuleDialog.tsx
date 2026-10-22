@@ -10,9 +10,19 @@ export interface EditRuleDialogProps {
   saveEditRule: () => void;
   cancelEdit: () => void;
   deleteRule: (id: number) => void;
+  isSaving?: boolean;
+  isDeleting?: boolean;
 }
 
-export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEditRule, saveEditRule, cancelEdit, deleteRule }) => {
+export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({
+  editRule,
+  setEditRule,
+  saveEditRule,
+  cancelEdit,
+  deleteRule,
+  isSaving,
+  isDeleting,
+}) => {
   const { t } = useTranslation();
 
   return (
@@ -86,8 +96,15 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEdi
       <DialogFooter
         actions={
           <div className="flex gap-2">
-            <Button onClick={cancelEdit}>{t("rules.cancel", "Cancel")}</Button>
-            <Button intent={Intent.PRIMARY} onClick={saveEditRule}>
+            <Button onClick={cancelEdit} disabled={isSaving || isDeleting}>
+              {t("rules.cancel", "Cancel")}
+            </Button>
+            <Button
+              intent={Intent.PRIMARY}
+              onClick={saveEditRule}
+              loading={isSaving}
+              disabled={isSaving || isDeleting}
+            >
               {t("rules.saveChanges", "Save Changes")}
             </Button>
           </div>
@@ -100,6 +117,8 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({ editRule, setEdi
           onClick={() => {
             if (editRule) deleteRule(editRule.id);
           }}
+          loading={isDeleting}
+          disabled={isSaving || isDeleting}
         />
       </DialogFooter>
     </Dialog>

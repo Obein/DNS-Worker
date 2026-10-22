@@ -14,9 +14,10 @@ export interface AddRuleCardProps {
   };
   setNewRule: (rule: any) => void;
   addRule: () => void;
+  loading?: boolean;
 }
 
-export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, addRule }) => {
+export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, addRule, loading }) => {
   const { t } = useTranslation();
 
   return (
@@ -52,7 +53,14 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
           </div>
           {newRule.type !== "REDIRECT" && (
             <FormGroup label="" labelFor="">
-              <Button intent={Intent.PRIMARY} size="large" icon={<Plus size={18} />} onClick={addRule}>
+              <Button
+                intent={Intent.PRIMARY}
+                size="large"
+                icon={<Plus size={18} />}
+                onClick={addRule}
+                loading={loading}
+                disabled={loading}
+              >
                 {t("rules.addRule")}
               </Button>
             </FormGroup>
@@ -107,6 +115,8 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
                 icon={<Plus size={18} />}
                 onClick={addRule}
                 text={t("rules.saveRedirectRule")}
+                loading={loading}
+                disabled={loading}
               />
             </div>
           </div>
