@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   initForgotPassword,
@@ -17,6 +17,7 @@ import {
   formatApiErrorMessage
 } from "../../utils/auth";
 import { startPasskeyAuthentication } from "../../utils/webauthn";
+import { useTurnstile } from "../../hooks/useTurnstile";
 
 /**
  * Authentication configuration relevant to login & password recovery.
@@ -131,12 +132,25 @@ export const useForgotPasswordForm = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // Step 1: Turnstile state & ref
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileStatus, setTurnstileStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
-  const turnstileRef = useRef<HTMLDivElement | null>(null);
-  const widgetIdRef = useRef<string | null>(null);
   const isTurnstileEnabled = authConfig?.turnstile_enabled_login;
+
+  const handleClearError = React.useCallback(() => {
+    setError("");
+  }, []);
+
+  const {
+    turnstileToken,
+    turnstileStatus,
+    turnstileRef,
+    resetTurnstile
+  } = useTurnstile({
+    siteKey: authConfig?.turnstile_site_key,
+    enabled: isTurnstileEnabled,
+    turnstileReady,
+    isActive: isOpen && step === 1,
+    onError: setError,
+    onClearError: handleClearError
+  });
 
   // Step 1: Server init response
   const [initData, setInitData] = useState<ForgotPasswordInitResponse | null>(null);
@@ -167,8 +181,7 @@ export const useForgotPasswordForm = ({
     setNewPassword("");
     setConfirmPassword("");
     setShowPassword(false);
-    setTurnstileToken(null);
-    setTurnstileStatus("idle");
+    resetTurnstile();
   };
 
   // Sync initial username and clear states when modal opens
@@ -177,53 +190,6 @@ export const useForgotPasswordForm = ({
       resetForm();
     }
   }, [isOpen, initialUsername]);
-
-  // Turnstile widget initialization and teardown for Step 1
-  useEffect(() => {
-    if (
-      isOpen &&
-      step === 1 &&
-      isTurnstileEnabled &&
-      authConfig?.turnstile_site_key &&
-      (turnstileReady || window.turnstile) &&
-      turnstileRef.current
-    ) {
-      try {
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.remove(widgetIdRef.current);
-          widgetIdRef.current = null;
-        }
-        setTurnstileStatus("verifying");
-        turnstileRef.current.innerHTML = "";
-        const widgetId = window.turnstile.render(turnstileRef.current, {
-          sitekey: authConfig.turnstile_site_key,
-          callback: (token: string) => {
-            setTurnstileToken(token);
-            setTurnstileStatus("success");
-            setError("");
-          },
-          "expired-callback": () => {
-            setTurnstileToken(null);
-            setTurnstileStatus("idle");
-          },
-          "error-callback": () => {
-            setTurnstileStatus("error");
-            setError(t("auth.turnstileError", "Verification service failed to load."));
-            setTurnstileToken(null);
-          }
-        });
-        widgetIdRef.current = widgetId;
-      } catch (e) {
-        console.error("Turnstile render error:", e);
-      }
-    }
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
-    };
-  }, [isOpen, step, isTurnstileEnabled, authConfig, turnstileReady, t]);
 
   /**
    * Step 1: Submit Username and initialize password recovery flow.
@@ -255,10 +221,7 @@ export const useForgotPasswordForm = ({
       setStep(2);
     } catch (err: unknown) {
       setError(formatApiErrorMessage(err, t));
-      if (window.turnstile) {
-        window.turnstile.reset();
-      }
-      setTurnstileToken(null);
+      resetTurnstile();
     } finally {
       setLoading(false);
     }

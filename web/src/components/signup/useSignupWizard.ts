@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   validateUsername,
@@ -20,6 +20,7 @@ import {
 } from "../../services";
 import { setAccessToken } from "../../utils/token";
 import { startPasskeyRegistration } from "../../utils/webauthn";
+import { useTurnstile } from "../../hooks/useTurnstile";
 
 interface AuthConfig {
   turnstile_site_key: string;
@@ -78,70 +79,27 @@ export const useSignupWizard = ({
   const [passkeyRegLoading, setPasskeyRegLoading] = useState(false);
   const [passkeyRegError, setPasskeyRegError] = useState("");
 
-  // Turnstile state
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileStatus, setTurnstileStatus] = useState<
-    "idle" | "verifying" | "success" | "error"
-  >("idle");
-  const turnstileRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
   const { t } = useTranslation();
 
   const isTurnstileEnabled = authConfig?.turnstile_enabled_signup;
 
-  useEffect(() => {
-    // Only render turnstile in Step 2 (password step)
-    if (
-      signupStep === "password" &&
-      isTurnstileEnabled &&
-      authConfig?.turnstile_site_key &&
-      (turnstileReady || window.turnstile) &&
-      turnstileRef.current
-    ) {
-      try {
-        if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.remove(widgetIdRef.current);
-          widgetIdRef.current = null;
-        }
-        setTurnstileStatus("verifying");
-        turnstileRef.current.innerHTML = "";
-        const widgetId = window.turnstile.render(turnstileRef.current, {
-          sitekey: authConfig.turnstile_site_key,
-          callback: (token: string) => {
-            setTurnstileToken(token);
-            setTurnstileStatus("success");
-            setError("");
-          },
-          "expired-callback": () => {
-            setTurnstileToken(null);
-            setTurnstileStatus("idle");
-          },
-          "error-callback": (err: unknown) => {
-            console.error("Turnstile error:", err);
-            setTurnstileStatus("error");
-            setError(
-              t(
-                "auth.turnstileError",
-                "Verification service failed to load. Please reload and try again."
-              )
-            );
-            setTurnstileToken(null);
-          }
-        });
-        widgetIdRef.current = widgetId;
-      } catch (e) {
-        console.error("Turnstile render error:", e);
-        setTurnstileStatus("error");
-      }
-    }
-    return () => {
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.remove(widgetIdRef.current);
-        widgetIdRef.current = null;
-      }
-    };
-  }, [isTurnstileEnabled, authConfig, signupStep, turnstileReady, t]);
+  const handleClearError = React.useCallback(() => {
+    setError("");
+  }, []);
+
+  const {
+    turnstileToken,
+    turnstileStatus,
+    turnstileRef,
+    resetTurnstile
+  } = useTurnstile({
+    siteKey: authConfig?.turnstile_site_key,
+    enabled: isTurnstileEnabled,
+    turnstileReady,
+    isActive: signupStep === "password",
+    onError: setError,
+    onClearError: handleClearError
+  });
 
   const checkUsernameDuplicate = async (uname: string) => {
     if (!uname || !validateUsername(uname)) return;
@@ -309,8 +267,7 @@ export const useSignupWizard = ({
       } else {
         setError(formatApiErrorMessage(err, t));
       }
-      if (window.turnstile) window.turnstile.reset();
-      setTurnstileToken(null);
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
