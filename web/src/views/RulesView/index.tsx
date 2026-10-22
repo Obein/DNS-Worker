@@ -9,7 +9,6 @@ import { AddRuleCard } from "./components/AddRuleCard";
 import { RulesTable } from "./components/RulesTable";
 import { EditRuleDialog } from "./components/EditRuleDialog";
 import { useIsMobile } from "../../hooks/useIsMobile";
-import { DeploymentModeBadge } from "../../components/DeploymentMode";
 import {
   getProfileRules,
   getProfileDetails,
@@ -249,9 +248,8 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
             <p className="bp6-text-muted mt-2!">{t("rules.subtitle")}</p>
           </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto flex-wrap">
-            <DeploymentModeBadge />
-            {!hasSelfRedirect && (
+          {!hasSelfRedirect && (
+            <div className="flex items-center gap-3 self-start md:self-auto">
               <PopoverNext
                 isOpen={isPromptOpen}
                 onInteraction={setIsPromptOpen}
@@ -288,8 +286,8 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
                   {t("rules.addSelfRedirectTag", "增加本站重定向？")}
                 </Tag>
               </PopoverNext>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

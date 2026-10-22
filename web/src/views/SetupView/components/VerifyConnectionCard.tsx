@@ -146,7 +146,10 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
                   fill={true}
                   targetProps={{ className: "h-full" }}
                   content={
-                    <div className="p-3 select-text max-w-[90vw]">
+                    <div className="p-3 select-text w-72 sm:w-80 max-w-[85vw] space-y-2">
+                      <div className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide border-b border-gray-100 dark:border-gray-800 pb-1.5">
+                        /cdn-cgi/trace
+                      </div>
                       <pre className="m-0 font-mono text-xs leading-relaxed overflow-x-auto max-h-64 overflow-y-auto text-gray-800 dark:text-gray-200">
                         {traceInfo?.raw || t("setup.noTraceData", "暂无 Trace 数据")}
                       </pre>
