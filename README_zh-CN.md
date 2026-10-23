@@ -23,12 +23,10 @@
 
 ## 📖 序
 
-**DNS Worker** 是一套专为隐私、安全与性能而生的 Protective DNS 解析系统，原生支持广告与恶意域名拦截，采用独创的**双引擎架构**：
+**DNS Worker** 是一套专为隐私、安全与性能而生的 Protective DNS 解析系统，原生支持广告与恶意域名拦截，支持**双引擎架构**：
 
 - **☁️ 边缘模式 (Serverless)**：运行在 Cloudflare 全球 300+ 城市边缘节点，配合 D1 数据库享受零运维的高可用 DoH 服务（全面兼容 HTTP/2 与 HTTP/3）。
 - **🖥️ 独立服务器模式 (Serverfull)**：脱离 Cloudflare，运行在自有 VPS 或家庭服务器（Linux/Windows/macOS），原生支持经典 **UDP 53**、**DoT 853**（兼容 DoQ 并支持 TLS SNI 路由，原生适配 Android 私有 DNS）与本地 SQLite；
-- **🗄️ 多数据库支持 (D1 / Turso / File)**：支持灵活配置底层存储。除默认的 Cloudflare D1 (Serverless) 和本地 SQLite 文件 (Serverfull) 外，更原生支持接入 **Turso**（分布式云原生 SQLite）。无论在边缘还是独立服务器，均可无缝切换至 Turso 数据库，彻底缓解 Cloudflare 原生 D1 免费层级（每天 500 万行读 / 10 万行写）配额不足的痛点，从容承载高频 DNS 日志写入。
-- **🔀 多配置与多接入点支持**：灵活的策略隔离与设备分流体系。支持为家庭成员、不同网络环境或客户端创建多套相互隔离的配置（Profiles），每套配置可派生多个专用接入点（Access Points）并配发独立 Token，实现精细的设备级识别、定制上游、独立日志审计与个性化拦截规则。
 
 > 📚 **用户文档**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
