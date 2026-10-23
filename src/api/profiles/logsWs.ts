@@ -189,7 +189,7 @@ export async function handleProfileLogsWs(
           break;
         }
         case 'SYNC_GAP': {
-          const limit = Math.min(msg.limit || 100, 100);
+          const limit = Math.max(1, Math.min(Number(msg.limit) || 100, 100));
           const { results } = await env.DB.prepare(`
             SELECT l.id, l.timestamp, l.client_ip, l.domain, l.action, l.record_type, 
                    l.latency, l.answer, l.geo_country, l.reason, l.access_point_id, 

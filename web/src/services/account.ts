@@ -57,8 +57,12 @@ export async function updateMe(payload: {
   return res.json();
 }
 
-export async function deleteMe(): Promise<void> {
-  const res = await fetch("/api/account/me", { method: "DELETE" });
+export async function deleteMe(payload?: VerifyIdentityPayload): Promise<void> {
+  const res = await fetch("/api/account/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {})
+  });
   if (!res.ok) throw new Error(await res.text());
 }
 
@@ -207,9 +211,11 @@ export async function renamePasskey(id: string, name: string): Promise<void> {
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }
 
-export async function deletePasskey(id: string): Promise<void> {
+export async function deletePasskey(id: string, payload?: VerifyIdentityPayload): Promise<void> {
   const res = await fetch(`/api/account/passkeys/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {})
   });
   if (!res.ok) throw new ApiError(res.status, await res.text());
 }

@@ -1,17 +1,35 @@
 import React, { useState } from "react";
-import { Card, Elevation, H4, Button, Intent, Callout } from "@blueprintjs/core";
+import {
+  Card,
+  Elevation,
+  H4,
+  Button,
+  Intent,
+  Callout,
+  Dialog,
+  Classes,
+  FormGroup,
+  InputGroup
+} from "@blueprintjs/core";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { clearLogs, deleteMe } from "../../../services";
+import type { UserInfo } from "../types";
+import { hashPasswordClient } from "../../../utils/auth";
 
 export interface DangerZoneCardProps {
   isAdmin: boolean;
   onLogsCleared?: () => void;
+  user?: UserInfo | null;
 }
 
-export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin, onLogsCleared }) => {
+export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin, onLogsCleared, user }) => {
   const { t } = useTranslation();
   const [clearingLogs, setClearingLogs] = useState<boolean>(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [deletePassword, setDeletePassword] = useState<string>("");
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string>("");
 
   const handleClearAllLogs = async () => {
     if (!confirm(t("account.confirmClearLogs"))) return;
@@ -27,14 +45,22 @@ export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin, onLogsC
     }
   };
 
-  const handleDeleteMyAccount = async () => {
-    if (!confirm(t("account.confirmDeleteAccount"))) return;
+  const handleDeleteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!deletePassword) return;
+    setDeleteLoading(true);
+    setDeleteError("");
     try {
-      await deleteMe();
+      let passwordPayload = deletePassword;
+      if (user?.password_version === 2 && user.username) {
+        passwordPayload = await hashPasswordClient(deletePassword, user.username);
+      }
+      await deleteMe({ password: passwordPayload });
       window.location.href = "/";
     } catch (e: any) {
-      console.error(e);
-      alert(e.message || t("common.errorNetwork"));
+      setDeleteError(e.message || t("common.errorNetwork"));
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -69,7 +95,11 @@ export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin, onLogsC
               intent={Intent.DANGER}
               text={t("account.deleteAccountBtn")}
               icon="delete"
-              onClick={handleDeleteMyAccount}
+              onClick={() => {
+                setDeletePassword("");
+                setDeleteError("");
+                setDeleteDialogOpen(true);
+              }}
             />
           </Card>
         )}
@@ -77,6 +107,55 @@ export const DangerZoneCard: React.FC<DangerZoneCardProps> = ({ isAdmin, onLogsC
       <Callout intent={Intent.WARNING} icon="info-sign" title={t("account.inactivityPolicy")}>
         <p className="text-sm">{t("account.inactivityDesc")}</p>
       </Callout>
+
+      <Dialog
+        isOpen={deleteDialogOpen}
+        onClose={() => !deleteLoading && setDeleteDialogOpen(false)}
+        title={t("account.deleteAccount")}
+        className="max-w-md"
+      >
+        <form onSubmit={handleDeleteSubmit}>
+          <div className={Classes.DIALOG_BODY}>
+            <p className="text-sm opacity-80 mb-3 text-red-500 font-medium">
+              {t("account.confirmDeleteAccount")}
+            </p>
+            <FormGroup
+              label={t("account.totp.enterPassword", "Enter your password to confirm:")}
+              labelFor="delete-account-password"
+            >
+              <InputGroup
+                id="delete-account-password"
+                type="password"
+                placeholder={t("account.totp.passwordPlaceholder", "Account password")}
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                autoFocus
+              />
+            </FormGroup>
+            {deleteError && (
+              <Callout intent={Intent.DANGER} className="mt-2 text-xs">
+                {deleteError}
+              </Callout>
+            )}
+          </div>
+          <div className={Classes.DIALOG_FOOTER}>
+            <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+              <Button
+                text={t("common.cancel", "Cancel")}
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={deleteLoading}
+              />
+              <Button
+                intent={Intent.DANGER}
+                text={t("account.deleteAccountBtn", "Delete Account")}
+                type="submit"
+                loading={deleteLoading}
+                disabled={deleteLoading || !deletePassword.trim()}
+              />
+            </div>
+          </div>
+        </form>
+      </Dialog>
     </>
   );
 };

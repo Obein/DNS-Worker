@@ -235,6 +235,7 @@ export const AccountView: React.FC = () => {
       <div className="space-y-4">
         <DangerZoneCard
           isAdmin={me?.role === "admin"}
+          user={me}
         />
       </div>
     </div>

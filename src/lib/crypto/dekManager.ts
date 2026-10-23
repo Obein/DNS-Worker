@@ -37,14 +37,18 @@ const inFlightDekPromises = new Map<string, Promise<ActiveDek>>();
 
 /**
  * Key Provider / Consumer Interface:
- * Retrieves the currently published DEK for a profile with ZERO expiration checks.
- * The encryption pipeline consumes this directly without blocking or validating timestamps.
+ * Retrieves the currently published DEK for a profile if still within its valid lifetime.
+ * Returns null if not yet initialized or expired in this worker isolate.
  *
  * @param profileId Profile identifier
- * @returns ActiveDek or null if not yet initialized in this worker isolate
+ * @returns ActiveDek or null if not yet initialized or expired
  */
 export function getCurrentDek(profileId: string): ActiveDek | null {
-  return activeDekMap.get(profileId) || null;
+  const existing = activeDekMap.get(profileId);
+  if (existing && existing.expiresAt > Date.now()) {
+    return existing;
+  }
+  return null;
 }
 
 /**

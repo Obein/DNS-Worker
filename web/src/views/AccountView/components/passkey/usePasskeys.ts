@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Intent, OverlayToaster } from "@blueprintjs/core";
-import { validatePasskeyName } from "../../../../utils/auth";
+import { validatePasskeyName, hashPasswordClient } from "../../../../utils/auth";
+import type { UserInfo } from "../../types";
 import {
   getPasskeys,
   getPasskeyRegistrationOptions,
@@ -22,6 +23,8 @@ export interface UsePasskeysProps {
   onRefresh?: () => void;
   /** Optional ref to Blueprint OverlayToaster for notifications. */
   toasterRef?: React.RefObject<OverlayToaster | null>;
+  /** Current user security state. */
+  user?: UserInfo | null;
 }
 
 /**
@@ -75,6 +78,10 @@ export interface UsePasskeysReturn {
   deleteConfirmOpen: boolean;
   setDeleteConfirmOpen: (open: boolean) => void;
   targetToDelete: Passkey | null;
+  deletePassword: string;
+  setDeletePassword: (pwd: string) => void;
+  deleteError: string;
+  setDeleteError: (err: string) => void;
   handleOpenDelete: (pk: Passkey) => void;
   handleDeleteSubmit: () => Promise<void>;
 
@@ -93,7 +100,7 @@ export interface UsePasskeysReturn {
  * @param props - Hook configuration.
  * @returns State and event handlers for managing passkeys.
  */
-export const usePasskeys = ({ onRefresh, toasterRef }: UsePasskeysProps): UsePasskeysReturn => {
+export const usePasskeys = ({ onRefresh, toasterRef, user }: UsePasskeysProps): UsePasskeysReturn => {
   const { t } = useTranslation();
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -245,24 +252,36 @@ export const usePasskeys = ({ onRefresh, toasterRef }: UsePasskeysProps): UsePas
     }
   };
 
+  // Delete state
+  const [deletePassword, setDeletePassword] = useState<string>("");
+  const [deleteError, setDeleteError] = useState<string>("");
+
   const handleOpenDelete = (pk: Passkey): void => {
     setTargetToDelete(pk);
+    setDeletePassword("");
+    setDeleteError("");
     setDeleteConfirmOpen(true);
   };
 
   const handleDeleteSubmit = async (): Promise<void> => {
     if (!targetToDelete) return;
     setDeletingId(targetToDelete.id);
+    setDeleteError("");
     try {
-      await deletePasskey(targetToDelete.id);
+      let passwordPayload = deletePassword;
+      if (user?.password_version === 2 && user.username) {
+        passwordPayload = await hashPasswordClient(deletePassword, user.username);
+      }
+      await deletePasskey(targetToDelete.id, { password: passwordPayload });
       setDeleteConfirmOpen(false);
       setTargetToDelete(null);
+      setDeletePassword("");
       await fetchPasskeys();
       onRefresh?.();
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : t("common.errorNetwork");
-      alert(msg);
+      setDeleteError(msg);
     } finally {
       setDeletingId(null);
     }
@@ -343,6 +362,10 @@ export const usePasskeys = ({ onRefresh, toasterRef }: UsePasskeysProps): UsePas
     deleteConfirmOpen,
     setDeleteConfirmOpen,
     targetToDelete,
+    deletePassword,
+    setDeletePassword,
+    deleteError,
+    setDeleteError,
     handleOpenDelete,
     handleDeleteSubmit,
     testingId,
