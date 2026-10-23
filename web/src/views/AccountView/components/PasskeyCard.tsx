@@ -10,6 +10,7 @@ import {
 import { Key, Plus, ShieldAlert, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TOTPRecoveryKeys } from "./totp/TOTPRecoveryKeys";
+import type { UserInfo } from "../types";
 import {
   usePasskeys,
   PasskeyList,
@@ -20,6 +21,7 @@ import {
 
 export interface PasskeyCardProps {
   onRefresh?: () => void;
+  user?: UserInfo | null;
 }
 
 /**
@@ -30,7 +32,7 @@ export interface PasskeyCardProps {
  * @param props - Component props containing optional refresh callback.
  * @returns React component representing the Passkeys management card.
  */
-export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
+export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => {
   const { t } = useTranslation();
   const toasterRef = useRef<OverlayToaster | null>(null);
 
@@ -68,11 +70,14 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
     deleteConfirmOpen,
     setDeleteConfirmOpen,
     targetToDelete,
+    deletePassword,
+    setDeletePassword,
+    deleteError,
     handleOpenDelete,
     handleDeleteSubmit,
     testingId,
     handleTestPasskey
-  } = usePasskeys({ onRefresh, toasterRef });
+  } = usePasskeys({ onRefresh, toasterRef, user });
 
   // Phase 1: show recovery keys after setup if generated
   if (recoveryKeys) {
@@ -194,6 +199,9 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh }) => {
         targetToDelete={targetToDelete}
         deleting={Boolean(deletingId)}
         onConfirm={handleDeleteSubmit}
+        password={deletePassword}
+        setPassword={setDeletePassword}
+        error={deleteError}
       />
     </div>
   );

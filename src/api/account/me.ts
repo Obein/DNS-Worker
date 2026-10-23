@@ -4,6 +4,7 @@ import { UserModel } from "../../models/user";
 import { LogModel } from "../../models/log";
 import { PasskeyModel } from "../../models/passkey";
 import { USERNAME_REGEX } from "../../utils/validator";
+import { verifyUserReauth, ReauthPayload } from "./security/reauth";
 
 /**
  * Handle requests to /api/account/me, /api/account/logs, /api/account/delete
@@ -152,8 +153,23 @@ export async function handleMeRequest(
     return new Response(JSON.stringify({ success: true }));
   }
 
-  // POST /api/account/delete (delete account)
-  if (action === 'delete' && request.method === 'POST') {
+  // POST /api/account/delete or DELETE /api/account/me (delete account with step-up reauthentication)
+  if ((action === 'delete' && request.method === 'POST') || (action === 'me' && request.method === 'DELETE')) {
+    const dbUser = await userModel.getById(user.id);
+    if (!dbUser) return new Response("User not found", { status: 404 });
+
+    let body: ReauthPayload = {};
+    try {
+      if (request.headers.get("content-type")?.includes("application/json")) {
+        body = (await request.json()) as ReauthPayload;
+      }
+    } catch {}
+
+    const authResult = await verifyUserReauth(dbUser, body, env, request);
+    if (!authResult.success) {
+      return new Response(authResult.error || "Authentication failed", { status: 400 });
+    }
+
     const { invalidateSession } = await import("../../lib/auth");
     const cookieHeader = request.headers.get("Cookie") || "";
     const refreshToken = readRefreshTokenCookie(cookieHeader);

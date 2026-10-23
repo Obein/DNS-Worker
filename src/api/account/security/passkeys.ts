@@ -12,6 +12,7 @@ import {
 } from "../../../lib/webauthn";
 import { cacheUtils } from "../../../utils/cache";
 import { generateRecoveryKeys, hashRecoveryKey } from "../../../lib/totp";
+import { verifyUserReauth, ReauthPayload } from "./reauth";
 
 /**
  * Handles WebAuthn Passkeys lifecycle endpoints:
@@ -347,18 +348,33 @@ export async function handlePasskeysRequest(
     });
   }
 
-  // DELETE /api/account/passkeys/:id — 删除通行密钥
+  // DELETE /api/account/passkeys/:id — 删除通行密钥 (enforcing step-up reauthentication)
   if (subAction && request.method === "DELETE") {
     const passkeyId = subAction;
     const passkey = await passkeyModel.getById(passkeyId, user.id);
     if (!passkey) return new Response("Passkey not found", { status: 404 });
 
+    const dbUser = await userModel.getById(user.id);
+    if (!dbUser) return new Response("User not found", { status: 404 });
+
+    let body: ReauthPayload = {};
+    try {
+      if (request.headers.get("content-type")?.includes("application/json")) {
+        body = (await request.json()) as ReauthPayload;
+      }
+    } catch {}
+
+    const authResult = await verifyUserReauth(dbUser, body, env, request);
+    if (!authResult.success) {
+      await activityLog.record(user.id, "passkey_verify_fail", clientIp, userAgent, { reason: authResult.reason }, sessionHash);
+      return new Response(authResult.error || "Authentication failed", { status: 400 });
+    }
+
     await passkeyModel.delete(passkeyId, user.id);
-    await activityLog.record(user.id, "passkey_deleted", clientIp, userAgent, { name: passkey.name }, sessionHash);
+    await activityLog.record(user.id, "passkey_deleted", clientIp, userAgent, { name: passkey.name, method: authResult.method }, sessionHash);
 
     // 若用户不再拥有任何 Passkey 且停用 TOTP，则自动关闭无密码登录
     const remainingPasskeys = await passkeyModel.countByUser(user.id);
-    const dbUser = await userModel.getById(user.id);
     if (remainingPasskeys === 0 && !dbUser?.totp_enabled) {
       await userModel.updateTOTPSettings(user.id, false);
     }

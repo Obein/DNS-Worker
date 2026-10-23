@@ -23,12 +23,10 @@
 
 ## 📖 Introduction
 
-**DNS Worker** is a privacy-first protective DNS resolution system with built-in ad & malicious domain blocking, powered by an innovative **Dual-Engine Architecture**:
+**DNS Worker** is a privacy-first protective DNS resolution system with built-in ad & malicious domain blocking, supporting **Dual-Engine Architecture**:
 
 - **☁️ Edge Serverless Mode**: Run on Cloudflare Workers across 300+ edge locations worldwide with D1 database, enjoying zero maintenance and high-availability DoH (HTTP/2 & HTTP/3 compatible).
 - **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (DoQ compatible with TLS SNI routing for Android Private DNS), and local SQLite.
-- **🗄️ Flexible Multi-Database Storage (D1 / Turso / File)**: Native support for multiple storage engines. In addition to Cloudflare D1 (Serverless) and local SQLite files (Serverfull), it natively supports **Turso** (distributed cloud SQLite). Switching `DATABASE_SERVICE` to Turso completely relieves the daily quota constraints of Cloudflare D1's free tier (5M reads / 100k writes daily), effortlessly handling high-throughput DNS query logs.
-- **🔀 Multi-Profile & Multi-Access Points**: Flexible policy isolation and device routing. Create isolated profiles for different users, family members, or environments, and derive dedicated sub-access points with unique tokens for granular device-level filtering, independent statistics, and personalized overrides.
 
 > 📚 **User Documentation**  
 > 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)

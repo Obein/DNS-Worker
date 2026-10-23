@@ -110,7 +110,7 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
       <Divider />
 
       {/* Section 1: Passkey */}
-      <PasskeyCard onRefresh={onRefresh} />
+      <PasskeyCard user={user} onRefresh={onRefresh} />
 
       <Divider />
 

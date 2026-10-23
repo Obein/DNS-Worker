@@ -8,7 +8,6 @@ import {
   PqcProfilePublicKey,
 } from "../lib/crypto/e2ee";
 import {
-  getCurrentDek,
   ensureActiveDek,
   invalidateActiveDek,
   ActiveDek,
@@ -186,11 +185,10 @@ export async function flushLogBatch(env: Env, ctx?: ExecutionContext): Promise<v
       if (pubKey) {
         keyMap.set(pid, pubKey);
         if ("pqc_pk" in pubKey) {
-          // Retrieve current DEK, or ensure initial provisioning if isolate is fresh
-          let activeDek = getCurrentDek(pid);
-          if (!activeDek) {
-            activeDek = await ensureActiveDek(env.DB, pid, pubKey.pqc_pk);
-          }
+          // Directly ensure an active, unexpired DEK is provisioned.
+          // ensureActiveDek checks in-memory expiration (existing.expiresAt > now)
+          // and rotates only when the key has expired, incurring zero D1 I/O while valid.
+          const activeDek = await ensureActiveDek(env.DB, pid, pubKey.pqc_pk);
           if (activeDek) {
             dekMap.set(pid, activeDek);
           }

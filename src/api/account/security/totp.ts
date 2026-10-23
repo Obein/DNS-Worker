@@ -1,5 +1,5 @@
 import { Env, User, ExecutionContext } from "../../../types";
-import { generateSessionHash, verifyPassword } from "../../../utils/crypto";
+import { generateSessionHash } from "../../../utils/crypto";
 import {
   generateTOTPSecret,
   getTOTPUri,
@@ -11,6 +11,7 @@ import {
 import { UserModel } from "../../../models/user";
 import { ActivityLogModel } from "../../../models/activityLog";
 import { PasskeyModel } from "../../../models/passkey";
+import { verifyUserReauth, ReauthPayload } from "./reauth";
 
 /**
  * Handles TOTP multi-factor authentication and unified MFA settings:
@@ -145,16 +146,16 @@ export async function handleTotpAndMfaRequest(
       });
     }
 
-    // DELETE /api/account/totp — disable TOTP (requires password verification unless in skip_password mode)
+    // DELETE /api/account/totp — disable TOTP (strictly requires step-up reauthentication)
     if (!subAction && request.method === "DELETE") {
-      const { password } = (await request.json()) as { password?: string };
+      const body = (await request.json().catch(() => ({}))) as ReauthPayload;
       const dbUser = await userModel.getById(user.id);
       if (!dbUser) return new Response("User not found", { status: 404 });
 
-      if (!dbUser.totp_skip_password) {
-        if (!password || !(await verifyPassword(password, dbUser.hashed_password, dbUser.password_version ?? 1))) {
-          return new Response("Incorrect password", { status: 400 });
-        }
+      const authResult = await verifyUserReauth(dbUser, body, env, request);
+      if (!authResult.success) {
+        await activityLog.record(user.id, "totp_verify_fail", clientIp, userAgent, { reason: authResult.reason }, sessionHash);
+        return new Response(authResult.error || "Authentication failed", { status: 400 });
       }
 
       const passkeyModel = new PasskeyModel(env.DB);
@@ -162,7 +163,7 @@ export async function handleTotpAndMfaRequest(
       const hasPasskey = passkeys.length > 0;
 
       await userModel.removeTOTP(user.id, hasPasskey);
-      await activityLog.record(user.id, "totp_removed", clientIp, userAgent, undefined, sessionHash);
+      await activityLog.record(user.id, "totp_removed", clientIp, userAgent, { method: authResult.method }, sessionHash);
       return new Response(JSON.stringify({ success: true }), {
         headers: { "Content-Type": "application/json" }
       });
