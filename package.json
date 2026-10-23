@@ -48,6 +48,7 @@
     "test": "tsx test/test_legacy_compat.ts",
     "test:compat": "tsx test/test_legacy_compat.ts",
     "test:turso": "tsx test/test_turso.ts",
+    "test:turnstile": "tsx test/test_turnstile.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "test:reset": "tsx test/test_serverfull_reset.ts",
     "lint": "oxlint",
