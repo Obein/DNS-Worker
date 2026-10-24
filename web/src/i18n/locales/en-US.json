@@ -49,7 +49,8 @@
     "disable": "Disable",
     "confirmDisable": "Confirm Disable",
     "modeServerfull": "Serverfull Mode",
-    "modeCloudflare": "Cloudflare Worker Mode"
+    "modeCloudflare": "Cloudflare Worker Mode",
+    "unknown": "Unknown"
   },
   "nav": {
     "setup": "Setup",
@@ -302,7 +303,8 @@
     "e2eeDesc": "Encrypts DNS logs at the edge with your unique post-quantum hybrid key (P256-MLKEM768). The cloud cannot inspect logs; data is decrypted and analyzed only on devices authorized by your hardware Passkey.",
     "detecting": "Detecting...",
     "dotUnavailableCfTitle": "DoT / DoQ Unavailable in Cloudflare Worker Mode",
-    "dotUnavailableCfDesc": "Currently running in Cloudflare Worker (Serverless) mode. Due to edge serverless runtime network limitations, listening on raw TCP/UDP port 853 is unsupported. To use DoT or DoQ, deploy in Standalone (Serverfull) mode; in the current mode, please use DoH (DNS over HTTPS)."
+    "dotUnavailableCfDesc": "Currently running in Cloudflare Worker (Serverless) mode. Due to edge serverless runtime network limitations, listening on raw TCP/UDP port 853 is unsupported. To use DoT or DoQ, deploy in Standalone (Serverfull) mode; in the current mode, please use DoH (DNS over HTTPS).",
+    "privateNetwork": "Private Network"
   },
   "rules": {
     "title": "Custom Rules",
@@ -455,7 +457,8 @@
     "notEncrypted": "No",
     "encryptedRecord": "[Encrypted Record]",
     "exportSuccess": "Logs exported successfully",
-    "exportError": "Failed to export logs"
+    "exportError": "Failed to export logs",
+    "e2eeLockedExportWarning": "Some logs are encrypted and currently locked; the exported file may contain encrypted placeholders."
   },
   "filtering": {
     "title": "External Filters",
@@ -796,7 +799,9 @@
       "testSuccess": "Verification successful! Your authenticator app is configured properly.",
       "testFailed": "Invalid verification code or clock desynchronized",
       "verificationCode": "6-Digit Verification Code",
-      "verifyBtn": "Verify Now"
+      "verifyBtn": "Verify Now",
+      "enterPassword": "Enter your password to confirm:",
+      "passwordPlaceholder": "Account password"
     },
     "sessions": {
       "session": "Session",

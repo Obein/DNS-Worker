@@ -49,7 +49,8 @@
     "disable": "关闭",
     "confirmDisable": "确认关闭",
     "modeServerfull": "Serverfull 模式",
-    "modeCloudflare": "Cloudflare Worker 模式"
+    "modeCloudflare": "Cloudflare Worker 模式",
+    "unknown": "未知"
   },
   "nav": {
     "setup": "安装",
@@ -302,7 +303,8 @@
     "e2eeDesc": "使用专属后量子混合密钥 (P256-MLKEM768) 在边缘即刻加密 DNS 日志。云端无法窥视，数据仅在通过您的硬件 Passkey 授权的客户端本地解密并分析。",
     "detecting": "正在检测...",
     "dotUnavailableCfTitle": "DoT / DoQ 在 Cloudflare Worker 模式下不可用",
-    "dotUnavailableCfDesc": "当前运行于 Cloudflare Worker (Serverless) 模式。受边缘无服务器运行环境网络限制，不支持监听原生 TCP/UDP 853 端口。若需使用 DoT 或 DoQ，请部署在独立服务器 (Serverfull 模式) 下；在当前模式下请使用 DoH (DNS over HTTPS)。"
+    "dotUnavailableCfDesc": "当前运行于 Cloudflare Worker (Serverless) 模式。受边缘无服务器运行环境网络限制，不支持监听原生 TCP/UDP 853 端口。若需使用 DoT 或 DoQ，请部署在独立服务器 (Serverfull 模式) 下；在当前模式下请使用 DoH (DNS over HTTPS)。",
+    "privateNetwork": "专用网络"
   },
   "rules": {
     "title": "自定义规则",
@@ -455,7 +457,8 @@
     "notEncrypted": "否",
     "encryptedRecord": "[加密记录]",
     "exportSuccess": "日志导出成功",
-    "exportError": "日志导出失败"
+    "exportError": "日志导出失败",
+    "e2eeLockedExportWarning": "部分日志处于加密状态且未解锁，导出的数据可能包含未解密占位内容。"
   },
   "filtering": {
     "title": "外部拦截列表",
@@ -796,7 +799,9 @@
       "testSuccess": "验证成功！您的身份验证器配置正确并能正常生成验证码。",
       "testFailed": "验证码错误或设备时钟未同步",
       "verificationCode": "6 位验证码",
-      "verifyBtn": "立即验证"
+      "verifyBtn": "立即验证",
+      "enterPassword": "请输入您的账户密码进行确认：",
+      "passwordPlaceholder": "账户密码"
     },
     "sessions": {
       "session": "会话",

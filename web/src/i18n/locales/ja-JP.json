@@ -49,7 +49,8 @@
     "disable": "無効化",
     "confirmDisable": "無効化を確認",
     "modeServerfull": "Serverfull モード",
-    "modeCloudflare": "Cloudflare Worker モード"
+    "modeCloudflare": "Cloudflare Worker モード",
+    "unknown": "不明"
   },
   "nav": {
     "setup": "インストール",
@@ -302,7 +303,8 @@
     "e2eeDesc": "独自のエッジ耐量子ハイブリッド鍵 (P256-MLKEM768) で DNS ログを暗号化します。クラウド側からは閲覧できず、Passkey で認証されたローカル環境でのみ復号されます。",
     "detecting": "検出中...",
     "dotUnavailableCfTitle": "Cloudflare Worker モードでは DoT / DoQ を利用できません",
-    "dotUnavailableCfDesc": "現在 Cloudflare Worker (Serverless) モードで実行されています。エッジ環境の制約により、ネイティブの TCP/UDP 853 ポートのリッスンはサポートされていません。DoT / DoQ を使用するには Serverfull モードでデプロイしてください。現在は DoH をご利用ください。"
+    "dotUnavailableCfDesc": "現在 Cloudflare Worker (Serverless) モードで実行されています。エッジ環境の制約により、ネイティブの TCP/UDP 853 ポートのリッスンはサポートされていません。DoT / DoQ を使用するには Serverfull モードでデプロイしてください。現在は DoH をご利用ください。",
+    "privateNetwork": "プライベートネットワーク"
   },
   "rules": {
     "title": "カスタムルール",
@@ -455,7 +457,8 @@
     "notEncrypted": "いいえ",
     "encryptedRecord": "[暗号化された記録]",
     "exportSuccess": "ログのエクスポートに成功しました",
-    "exportError": "ログのエクスポートに失敗しました"
+    "exportError": "ログのエクスポートに失敗しました",
+    "e2eeLockedExportWarning": "一部のログは暗号化されておりロックされています。エクスポートされたデータには未復号のプレースホルダーが含まれている可能性があります。"
   },
   "filtering": {
     "title": "外部ブロックリスト",
@@ -796,7 +799,9 @@
       "testSuccess": "検証に成功しました！認証アプリは正常に設定されています。",
       "testFailed": "無効な確認コードまたは端末の時刻が同期されていません",
       "verificationCode": "6桁の確認コード",
-      "verifyBtn": "今すぐ検証"
+      "verifyBtn": "今すぐ検証",
+      "enterPassword": "確認のためパスワードを入力してください：",
+      "passwordPlaceholder": "アカウントのパスワード"
     },
     "activity": {
       "title": "アカウントアクティビティ履歴",

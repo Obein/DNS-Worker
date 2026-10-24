@@ -49,7 +49,8 @@
     "disable": "Vô hiệu hóa",
     "confirmDisable": "Xác nhận vô hiệu hóa",
     "modeServerfull": "Chế độ Serverfull",
-    "modeCloudflare": "Chế độ Cloudflare Worker"
+    "modeCloudflare": "Chế độ Cloudflare Worker",
+    "unknown": "Không xác định"
   },
   "nav": {
     "setup": "Thiết lập",
@@ -302,7 +303,8 @@
     "e2eeDesc": "Mã hóa nhật ký DNS tại edge bằng khóa lai hậu lượng tử (P256-MLKEM768). Đám mây không thể xem dữ liệu; giải mã chỉ diễn ra cục bộ thông qua Passkey.",
     "detecting": "Đang phát hiện...",
     "dotUnavailableCfTitle": "DoT / DoQ không khả dụng trong chế độ Cloudflare Worker",
-    "dotUnavailableCfDesc": "Hiện đang chạy ở chế độ Cloudflare Worker (Serverless). Do các giới hạn mạng edge, việc lắng nghe trên cổng TCP/UDP 853 không được hỗ trợ. Để sử dụng DoT hoặc DoQ, hãy triển khai ở chế độ Serverfull; hiện tại vui lòng sử dụng DoH."
+    "dotUnavailableCfDesc": "Hiện đang chạy ở chế độ Cloudflare Worker (Serverless). Do các giới hạn mạng edge, việc lắng nghe trên cổng TCP/UDP 853 không được hỗ trợ. Để sử dụng DoT hoặc DoQ, hãy triển khai ở chế độ Serverfull; hiện tại vui lòng sử dụng DoH.",
+    "privateNetwork": "Mạng riêng tư"
   },
   "rules": {
     "title": "Quy tắc tùy chỉnh",
@@ -455,7 +457,8 @@
     "notEncrypted": "Không",
     "encryptedRecord": "[Bản ghi đã mã hóa]",
     "exportSuccess": "Xuất nhật ký thành công",
-    "exportError": "Không thể xuất nhật ký"
+    "exportError": "Không thể xuất nhật ký",
+    "e2eeLockedExportWarning": "Một số nhật ký đã được mã hóa và hiện đang bị khóa; tệp đã xuất có thể chứa nội dung giữ chỗ đã mã hóa."
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",
@@ -796,7 +799,9 @@
       "testSuccess": "Xác minh thành công! Ứng dụng xác thực của bạn đã được cấu hình đúng.",
       "testFailed": "Mã xác thực không hợp lệ hoặc thời gian chưa được đồng bộ",
       "verificationCode": "Mã xác thực 6 chữ số",
-      "verifyBtn": "Xác minh ngay"
+      "verifyBtn": "Xác minh ngay",
+      "enterPassword": "Nhập mật khẩu tài khoản để xác nhận:",
+      "passwordPlaceholder": "Mật khẩu tài khoản"
     },
     "activity": {
       "title": "Nhật ký hoạt động tài khoản",
