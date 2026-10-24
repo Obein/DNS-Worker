@@ -36,6 +36,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
 
   const isInitialLoad = useRef(true);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastConfirmedSettingsRef = useRef<ProfileSettings | null>(null);
+  const saveSeqRef = useRef(0);
+
+  const cloneSettings = (s: ProfileSettings): ProfileSettings => {
+    return typeof structuredClone === "function" ? structuredClone(s) : JSON.parse(JSON.stringify(s));
+  };
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState("");
@@ -49,12 +55,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
+    isInitialLoad.current = true;
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
     const fetchProfile = async () => {
+      setLoading(true);
       try {
         const data = await getProfileDetails(profileId) as any;
         setProfile(data);
         setEditName(data.name);
-        setSettings(JSON.parse(data.settings));
+        const parsed = JSON.parse(data.settings);
+        lastConfirmedSettingsRef.current = cloneSettings(parsed);
+        setSettings(parsed);
         return profile;
       } catch (e) {
         console.error(e);
@@ -66,9 +80,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
   }, [profileId]);
 
   useEffect(() => {
-    if (!loading && settings) {
+    if (!loading && settings && isInitialLoad.current) {
       const timer = setTimeout(() => {
         isInitialLoad.current = false;
+        if (settings) {
+          lastConfirmedSettingsRef.current = cloneSettings(settings);
+        }
       }, 500);
       return () => clearTimeout(timer);
     }
@@ -111,18 +128,36 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
 
   const saveSettings = useCallback(async (settingsToSave: ProfileSettings) => {
     if (!settingsToSave) return;
+    const currentSeq = ++saveSeqRef.current;
     setSaving(true);
     try {
       await updateProfileSettings(profileId, settingsToSave as any);
+      if (currentSeq === saveSeqRef.current) {
+        lastConfirmedSettingsRef.current = cloneSettings(settingsToSave);
+      }
     } catch (e) {
       console.error(e);
-      toasterRef?.current?.show({
-        message: t("settings.saveError"),
-        intent: Intent.DANGER,
-        icon: "error",
-      });
+      if (currentSeq === saveSeqRef.current) {
+        // 1. 取消正在等待的防抖定时器，防止覆盖回滚
+        if (debounceTimer.current) {
+          clearTimeout(debounceTimer.current);
+          debounceTimer.current = null;
+        }
+        // 2. 将视图显示的值恢复为上一次保存成功的原值
+        if (lastConfirmedSettingsRef.current) {
+          setSettings(cloneSettings(lastConfirmedSettingsRef.current));
+        }
+        // 3. Toast 提示保存失败
+        toasterRef?.current?.show({
+          message: t("settings.saveError", "保存失败"),
+          intent: Intent.DANGER,
+          icon: "error",
+        });
+      }
     } finally {
-      setSaving(false);
+      if (currentSeq === saveSeqRef.current) {
+        setSaving(false);
+      }
     }
   }, [profileId, toasterRef, t]);
 
