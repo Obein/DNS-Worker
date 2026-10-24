@@ -41,7 +41,7 @@ export const VerifyConnectionCard: React.FC<VerifyConnectionCardProps> = ({
     <div
       className={clsx(
         "bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm flex items-start gap-3 select-none h-full transition-all",
-        !isServerfull && "cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md"
+        !isServerfull
       )}
     >
       <Server size={18} className="text-purple-500 mt-1 shrink-0" />
