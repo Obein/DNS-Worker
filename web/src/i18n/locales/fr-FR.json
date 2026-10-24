@@ -49,7 +49,8 @@
     "disable": "Désactiver",
     "confirmDisable": "Confirmer la désactivation",
     "modeServerfull": "Mode Serverfull",
-    "modeCloudflare": "Mode Cloudflare Worker"
+    "modeCloudflare": "Mode Cloudflare Worker",
+    "unknown": "Inconnu"
   },
   "nav": {
     "setup": "Installation",
@@ -302,7 +303,8 @@
     "e2eeDesc": "Chiffre les journaux DNS à la périphérie avec votre clé hybride post-quantique (P256-MLKEM768). Le cloud ne peut pas les lire; le déchiffrement se fait localement via votre Passkey.",
     "detecting": "Détection en cours...",
     "dotUnavailableCfTitle": "DoT / DoQ indisponible en mode Cloudflare Worker",
-    "dotUnavailableCfDesc": "Actuellement exécuté en mode Cloudflare Worker (Serverless). En raison des limites du runtime edge, l'écoute sur les ports TCP/UDP 853 n'est pas prise en charge. Pour utiliser DoT ou DoQ, déployez en mode Serverfull ; utilisez DoH pour le moment."
+    "dotUnavailableCfDesc": "Actuellement exécuté en mode Cloudflare Worker (Serverless). En raison des limites du runtime edge, l'écoute sur les ports TCP/UDP 853 n'est pas prise en charge. Pour utiliser DoT ou DoQ, déployez en mode Serverfull ; utilisez DoH pour le moment.",
+    "privateNetwork": "Réseau privé"
   },
   "rules": {
     "title": "Règles personnalisées",
@@ -455,7 +457,8 @@
     "notEncrypted": "Non",
     "encryptedRecord": "[Enregistrement chiffré]",
     "exportSuccess": "Journaux exportés avec succès",
-    "exportError": "Échec de l'exportation des journaux"
+    "exportError": "Échec de l'exportation des journaux",
+    "e2eeLockedExportWarning": "Certains journaux sont chiffrés et actuellement verrouillés ; le fichier exporté peut contenir des espaces réservés chiffrés."
   },
   "filtering": {
     "title": "Listes de blocage externes",
@@ -796,7 +799,9 @@
       "testSuccess": "Vérification réussie ! Votre application d'authentification est correctement configurée.",
       "testFailed": "Code de vérification invalide ou horloge désynchronisée",
       "verificationCode": "Code de vérification à 6 chiffres",
-      "verifyBtn": "Vérifier maintenant"
+      "verifyBtn": "Vérifier maintenant",
+      "enterPassword": "Entrez votre mot de passe pour confirmer :",
+      "passwordPlaceholder": "Mot de passe du compte"
     },
     "activity": {
       "title": "Historique d'activité du compte",

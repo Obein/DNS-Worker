@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const CACHE_KEY = "obexdns_upstream_update_check";
+const CACHE_KEY = "obexdns_upstream_release_check_v2";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1-hour cache TTL to prevent hitting GitHub unauthenticated rate limits (60 req/hr)
 const REQUEST_TIMEOUT_MS = 6000;
 
@@ -8,12 +8,16 @@ const REQUEST_TIMEOUT_MS = 6000;
  * Result returned by the useUpstreamUpdate hook.
  */
 export interface UpstreamUpdateResult {
-  /** True if the upstream GitHub repository has a newer release or commits. */
+  /** True if the upstream GitHub repository has a newer release tag. */
   hasUpdate: boolean;
   /** The latest tag found in the upstream repository, if retrieved. */
   latestTag: string | null;
   /** The current application version string in `{git tag}-{commit hash}` format. */
   appVersion: string;
+  /** The current git tag (e.g. "v1.1.5"). */
+  gitTag: string;
+  /** The current short git commit hash (e.g. "99a2e7b"). */
+  gitCommit: string;
 }
 
 /**
@@ -110,7 +114,7 @@ export function useUpstreamUpdate(): UpstreamUpdateResult {
         let upstreamTag: string | null = null;
         let isNewer = false;
 
-        // Try /releases/latest first
+        // Strictly check GitHub releases tag_name
         const releaseRes = await fetch(
           "https://api.github.com/repos/Obein/DNS-Worker/releases/latest",
           {
@@ -128,57 +132,22 @@ export function useUpstreamUpdate(): UpstreamUpdateResult {
             }
           }
         } else if (releaseRes.status === 404) {
-          // If no formal releases yet, fallback to latest tag
-          const tagRes = await fetch(
-            "https://api.github.com/repos/Obein/DNS-Worker/tags?per_page=1",
+          // If latest release is 404 (e.g. only pre-releases exist), check releases list
+          const releasesRes = await fetch(
+            "https://api.github.com/repos/Obein/DNS-Worker/releases?per_page=1",
             {
               signal: controller.signal,
               headers: { Accept: "application/vnd.github.v3+json" },
             },
           );
-          if (tagRes.ok) {
-            const tags = (await tagRes.json()) as Array<{ name?: string }>;
-            if (Array.isArray(tags) && tags.length > 0 && typeof tags[0]?.name === "string") {
-              upstreamTag = tags[0].name;
+          if (releasesRes.ok) {
+            const releases = (await releasesRes.json()) as Array<{ tag_name?: string }>;
+            if (Array.isArray(releases) && releases.length > 0 && typeof releases[0]?.tag_name === "string") {
+              upstreamTag = releases[0].tag_name;
               if (compareVersions(upstreamTag, currentTag) > 0) {
                 isNewer = true;
               }
             }
-          }
-        }
-
-        // If release tag is not newer, also check if current commit is behind main
-        if (
-          !isNewer &&
-          currentCommit &&
-          currentCommit !== "dev" &&
-          currentCommit !== "unknown"
-        ) {
-          try {
-            const compareRes = await fetch(
-              `https://api.github.com/repos/Obein/DNS-Worker/compare/${currentCommit}...main`,
-              {
-                signal: controller.signal,
-                headers: { Accept: "application/vnd.github.v3+json" },
-              },
-            );
-            if (compareRes.ok) {
-              const compareData = (await compareRes.json()) as {
-                status?: string;
-                ahead_by?: number;
-                behind_by?: number;
-              };
-              if (
-                compareData &&
-                (compareData.status === "behind" ||
-                  (compareData.status === "diverged" && (compareData.behind_by ?? 0) > 0) ||
-                  (compareData.ahead_by ?? 0) > 0)
-              ) {
-                isNewer = true;
-              }
-            }
-          } catch {
-            // Compare endpoint optional check failure, keep isNewer based on tag
           }
         }
 
@@ -213,7 +182,13 @@ export function useUpstreamUpdate(): UpstreamUpdateResult {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [currentTag, currentCommit, initialCache.isExpired]);
+  }, [currentTag, initialCache.isExpired]);
 
-  return { hasUpdate, latestTag, appVersion };
+  return {
+    hasUpdate,
+    latestTag,
+    appVersion,
+    gitTag: currentTag,
+    gitCommit: currentCommit,
+  };
 }

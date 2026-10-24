@@ -41,7 +41,21 @@ export function generateCSV(logsData: any[]): string {
       if (header === "time") {
         val = formatToISO8601WithOffset(item.timestamp);
       } else {
-        val = item[header] !== null && item[header] !== undefined ? String(item[header]) : "";
+        const raw = item[header];
+        if (raw !== null && raw !== undefined) {
+          val = typeof raw === "object" ? JSON.stringify(raw) : String(raw);
+        } else if (
+          header === "dest_geoip" &&
+          (item.dest_country_code || item.dest_country || item.dest_isp)
+        ) {
+          val = JSON.stringify({
+            country_code: item.dest_country_code || "",
+            country: item.dest_country || "",
+            isp: item.dest_isp || ""
+          });
+        } else {
+          val = "";
+        }
       }
       
       const escaped = val.replace(/"/g, '""');
@@ -73,8 +87,9 @@ export function buildExportFilename(
   oldestTimestamp: number,
   params: URLSearchParams
 ): string {
-  const endStr = formatToISO8601WithOffset(newestTimestamp);
-  const startStr = formatToISO8601WithOffset(oldestTimestamp);
-  const filterParamsStr = params.toString();
-  return `query_logs_${profileId}_${endStr}_${startStr}_${filterParamsStr}.csv`;
+  const sanitize = (str: string) => str.replace(/[:*?"<>|]/g, "-");
+  const endStr = sanitize(formatToISO8601WithOffset(newestTimestamp));
+  const startStr = sanitize(formatToISO8601WithOffset(oldestTimestamp));
+  const filterParamsStr = sanitize(params.toString());
+  return `query_logs_${profileId}_${endStr}_${startStr}${filterParamsStr ? `_${filterParamsStr}` : ""}.csv`;
 }

@@ -62,7 +62,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   navItems,
 }) => {
   const { t } = useTranslation();
-  const { hasUpdate, latestTag, appVersion } = useUpstreamUpdate();
+  const { hasUpdate, latestTag, appVersion, gitTag, gitCommit } = useUpstreamUpdate();
 
   return (
     <aside
@@ -87,18 +87,19 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 className="text-xs text-gray-500 dark:text-gray-400 font-mono leading-tight truncate shrink-0 inline-flex items-center"
                 title={hasUpdate ? (latestTag ? `New version available: ${latestTag}` : "Update available") : appVersion}
               >
-                <span>{appVersion}</span>
-                {hasUpdate && (
+                {hasUpdate ? (
                   <a
                     href="https://github.com/Obein/DNS-Worker/releases"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-1 text-[11px] leading-none hover:scale-125 transition-transform"
-                    title={latestTag ? `New version available: ${latestTag}` : "Update available"}
+                    className="text-amber-500 dark:text-amber-400 hover:underline transition-colors"
                   >
-                    🔺
+                    {gitTag}
                   </a>
+                ) : (
+                  <span>{gitTag}</span>
                 )}
+                {gitCommit ? `-${gitCommit}` : ""}
               </span>
             </div>
             <span

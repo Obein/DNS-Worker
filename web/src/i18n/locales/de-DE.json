@@ -49,7 +49,8 @@
     "disable": "Deaktivieren",
     "confirmDisable": "Deaktivierung bestätigen",
     "modeServerfull": "Serverfull-Modus",
-    "modeCloudflare": "Cloudflare Worker-Modus"
+    "modeCloudflare": "Cloudflare Worker-Modus",
+    "unknown": "Unbekannt"
   },
   "nav": {
     "setup": "Installation",
@@ -302,7 +303,8 @@
     "e2eeDesc": "Verschlüsselt DNS-Protokolle direkt am Edge mit Ihrem Post-Quanten-Hybridschlüssel (P256-MLKEM768). Die Cloud kann Ihre Daten nicht einsehen; Entschlüsselung erfolgt nur lokal über Ihren Passkey.",
     "detecting": "Wird ermittelt...",
     "dotUnavailableCfTitle": "DoT / DoQ im Cloudflare Worker-Modus nicht verfügbar",
-    "dotUnavailableCfDesc": "Wird derzeit im Cloudflare Worker-Modus ausgeführt. Aufgrund von Laufzeitbeschränkungen wird das Abhören von TCP/UDP-Port 853 nicht unterstützt. Verwenden Sie für DoT oder DoQ den Serverfull-Modus; nutzen Sie ansonsten DoH."
+    "dotUnavailableCfDesc": "Wird derzeit im Cloudflare Worker-Modus ausgeführt. Aufgrund von Laufzeitbeschränkungen wird das Abhören von TCP/UDP-Port 853 nicht unterstützt. Verwenden Sie für DoT oder DoQ den Serverfull-Modus; nutzen Sie ansonsten DoH.",
+    "privateNetwork": "Privates Netzwerk"
   },
   "rules": {
     "title": "Benutzerdefinierte Regeln",
@@ -455,7 +457,8 @@
     "notEncrypted": "Nein",
     "encryptedRecord": "[Verschlüsselter Eintrag]",
     "exportSuccess": "Protokolle erfolgreich exportiert",
-    "exportError": "Fehler beim Exportieren der Protokolle"
+    "exportError": "Fehler beim Exportieren der Protokolle",
+    "e2eeLockedExportWarning": "Einige Protokolle sind verschlüsselt und derzeit gesperrt; die exportierte Datei enthält möglicherweise verschlüsselte Platzhalter."
   },
   "filtering": {
     "title": "Externe Blockierlisten",
@@ -796,7 +799,9 @@
       "testSuccess": "Verifizierung erfolgreich! Ihre Authentifikator-App ist ordnungsgemäß konfiguriert.",
       "testFailed": "Ungültiger Bestätigungscode oder nicht synchronisierte Uhrzeit",
       "verificationCode": "6-stelliger Bestätigungscode",
-      "verifyBtn": "Jetzt bestätigen"
+      "verifyBtn": "Jetzt bestätigen",
+      "enterPassword": "Geben Sie zur Bestätigung Ihr Kennwort ein:",
+      "passwordPlaceholder": "Kontokennwort"
     },
     "activity": {
       "title": "Aktivitätsprotokoll des Kontos",
