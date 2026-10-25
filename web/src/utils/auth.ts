@@ -239,9 +239,11 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
   if (
     bodyText === "jwt_secret_missing" ||
     bodyText.includes("jwt_secret_missing") ||
-    bodyText.includes("JWT_SECRET is missing")
+    bodyText.includes("isJwtSecretMissing") ||
+    bodyText.includes("JWT_SECRET is missing") ||
+    bodyText.includes("JWT_SECRET secret variable")
   ) {
-    return t("auth.jwtSecretMissing", "缺少 JWT_SECRET，请在环境变量中配置安全密钥后重新部署。");
+    return t("auth.jwtSecretMissing", "缺少 JWT_SECRET，请在环境变量或 .dev.vars 中配置安全密钥。");
   }
   if (bodyText === "jwt_secret_invalid") {
     return t("auth.jwtSecretInvalid", "JWT_SECRET 密钥格式无效，请检查配置。");
