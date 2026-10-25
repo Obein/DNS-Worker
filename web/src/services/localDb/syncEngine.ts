@@ -1,167 +1,49 @@
 /**
- * @file localDb.ts
- * @description Client-side Local Database Service backed by SQLite WASM with OPFS.
- * Implements Local-First incremental syncing, querying, and client-side retention.
+ * @file syncEngine.ts
+ * @description Synchronization engine handling forward delta syncs, missing interval backfills,
+ * and watermark tracking between server and local SQLite.
  */
 
-import type { LogEntry } from '../views/LogsView/types';
-import type { AnalyticsData } from '../views/AnalyticsView/types';
-import { profileFetch } from './profiles';
-import { e2ee } from './e2ee';
-import SqliteWorker from '../workers/sqlite.worker?worker';
+import type { LogEntry } from '../../views/LogsView/types';
+import type { SyncWatermark } from './types';
+import type { LocalDbWorkerBridge } from './workerBridge';
+import { profileFetch } from '../profiles';
+import { e2ee } from '../e2ee';
 
-export interface LocalStorageInfo {
-  totalRows: number;
-  isOpfs: boolean;
-  profileStats: {
-    profile_id: string;
-    count: number;
-    earliest: number;
-    latest: number;
-  }[];
-}
+/**
+ * Orchestrates log ingestion, pagination, decryption, and watermark maintenance.
+ */
+export class LocalDbSyncEngine {
+  /** In-flight synchronization promises per profile to deduplicate concurrent requests */
+  private inFlightSyncs = new Map<string, Promise<number>>();
+  private readonly bridge: LocalDbWorkerBridge;
 
-export interface SyncWatermark {
-  profile_id: string;
-  latest_timestamp: number;
-  earliest_timestamp: number;
-  last_synced_at: number;
-  total_synced_count: number;
-}
-
-export interface LocalQueryLogsParams {
-  profileId: string;
-  search?: string;
-  action?: string;
-  accessPointId?: string;
-  destCountry?: string;
-  isp?: string;
-  since?: number;
-  until?: number;
-  before?: number;
-  limit: number;
-  offset?: number;
-}
-
-export interface LocalQueryResult {
-  rows: LogEntry[];
-  total: number;
-  stats?: { total: number; pass: number; block: number; redirect: number };
-}
-
-export interface LocalAnalyticsParams {
-  profileId: string;
-  since: number;
-  until: number;
-  bucketSec: number;
-  accessPointId?: string;
-}
-
-class LocalDbService {
-  private worker: Worker | null = null;
-  private pendingRequests = new Map<string, { resolve: (val: any) => void; reject: (err: any) => void }>();
-  private initPromise: Promise<boolean> | null = null;
-  private isOpfs = false;
-  private workerFailed = false;
-
-  private getWorker(): Worker {
-    if (!this.worker) {
-      try {
-        this.worker = new SqliteWorker();
-
-        this.worker.onmessage = (e: MessageEvent) => {
-          const { id, success, data, error } = e.data;
-          const pending = this.pendingRequests.get(id);
-          if (pending) {
-            this.pendingRequests.delete(id);
-            if (success) {
-              pending.resolve(data);
-            } else {
-              pending.reject(new Error(error || 'Worker execution error'));
-            }
-          }
-        };
-
-        this.worker.onerror = (err) => {
-          console.error('[LocalDb] Worker fatal error:', err);
-          this.workerFailed = true;
-          for (const [, pending] of this.pendingRequests.entries()) {
-            pending.reject(new Error('SQLite Worker error: ' + ((err as any)?.message || 'Load failure')));
-          }
-          this.pendingRequests.clear();
-        };
-      } catch (err) {
-        console.error('[LocalDb] Failed to instantiate worker:', err);
-        this.workerFailed = true;
-        throw err;
-      }
-    }
-    return this.worker;
-  }
-
-  private sendRequest<T = any>(type: string, payload?: any): Promise<T> {
-    const worker = this.getWorker();
-    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-
-    return new Promise((resolve, reject) => {
-      this.pendingRequests.set(id, { resolve, reject });
-      worker.postMessage({ id, type, payload });
-    });
-  }
-
-  /**
-   * Initializes the client SQLite WASM engine and OPFS storage.
-   */
-  async init(): Promise<boolean> {
-    if (this.workerFailed) return false;
-    if (this.initPromise) return this.initPromise;
-
-    this.initPromise = (async () => {
-      try {
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('SQLite Worker init timed out (12s)')), 12000)
-        );
-        const res = await Promise.race([
-          this.sendRequest<{ ready: boolean; isOpfs: boolean }>('INIT'),
-          timeoutPromise,
-        ]);
-        this.isOpfs = res.isOpfs;
-        console.log(`[LocalDb] Initialized (OPFS storage: ${this.isOpfs ? 'ENABLED' : 'IN-MEMORY'})`);
-
-        // Automatically trigger background cleanup on startup
-        const retentionDays = this.getLocalRetentionDays();
-        if (retentionDays > 0) {
-          void this.cleanup(retentionDays);
-        }
-
-        return res.ready;
-      } catch (err) {
-        console.warn('[LocalDb] SQLite engine unavailable, falling back to server:', err);
-        this.workerFailed = true;
-        return false;
-      }
-    })();
-
-    return this.initPromise;
-  }
-
-  /**
-   * Returns whether persistent OPFS storage is active in the current browser.
-   */
-  getIsOpfs(): boolean {
-    return this.isOpfs;
+  constructor(bridge: LocalDbWorkerBridge) {
+    this.bridge = bridge;
   }
 
   /**
    * Retrieves the sync watermark for a given profile.
+   *
+   * @param profileId - Profile identifier.
+   * @returns Watermark row or null.
    */
   async getWatermark(profileId: string): Promise<SyncWatermark | null> {
-    await this.init();
-    return this.sendRequest<SyncWatermark | null>('GET_WATERMARK', { profileId });
+    await this.bridge.init();
+    return this.bridge.sendRequest<SyncWatermark | null>('GET_WATERMARK', { profileId });
   }
 
-  /** In-flight synchronization promises per profile to deduplicate concurrent requests */
-  private inFlightSyncs = new Map<string, Promise<number>>();
+  /**
+   * Updates or expands the watermark time boundaries for a profile.
+   *
+   * @param profileId - Profile identifier.
+   * @param start - Start timestamp in seconds.
+   * @param end - End timestamp in seconds.
+   */
+  async updateWatermarkBounds(profileId: string, start: number, end: number): Promise<void> {
+    await this.bridge.init();
+    await this.bridge.sendRequest('UPDATE_WATERMARK_BOUNDS', { profileId, start, end });
+  }
 
   /**
    * Synchronizes latest logs from the server into local SQLite.
@@ -187,7 +69,7 @@ class LocalDbService {
     }
 
     const syncPromise = (async () => {
-      await this.init();
+      await this.bridge.init();
       if (signal?.aborted) return 0;
 
       const watermark = await this.getWatermark(profileId);
@@ -237,7 +119,7 @@ class LocalDbService {
         const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
 
         // Insert this batch into local SQLite
-        const { inserted } = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+        const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
           profileId,
           logs
         });
@@ -277,18 +159,6 @@ class LocalDbService {
   }
 
   /**
-   * Updates or expands the watermark time boundaries for a profile.
-   *
-   * @param profileId - Profile identifier.
-   * @param start - Start timestamp (seconds).
-   * @param end - End timestamp (seconds).
-   */
-  async updateWatermarkBounds(profileId: string, start: number, end: number): Promise<void> {
-    await this.init();
-    await this.sendRequest('UPDATE_WATERMARK_BOUNDS', { profileId, start, end });
-  }
-
-  /**
    * Synchronizes missing raw logs for a specific time interval [start, end] from the server into local SQLite.
    * Paginates backwards through up to 50 pages (5,000 logs) to avoid incomplete window ingestions.
    *
@@ -306,7 +176,7 @@ class LocalDbService {
     signal?: AbortSignal,
     onProgress?: (inserted: number) => void
   ): Promise<number> {
-    await this.init();
+    await this.bridge.init();
     if (signal?.aborted || start >= end) return 0;
 
     let totalInserted = 0;
@@ -325,7 +195,7 @@ class LocalDbService {
 
       const res = await profileFetch(url, { signal });
       if (!res.ok) {
-        console.warn(`[localDb] Failed to fetch logs for interval [${start}, ${end}] (${res.status}):`, await res.text());
+        console.warn(`[LocalDbSyncEngine] Failed to fetch logs for interval [${start}, ${end}] (${res.status}):`, await res.text());
         break;
       }
 
@@ -338,7 +208,7 @@ class LocalDbService {
       const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
 
       // Insert this batch into local SQLite
-      const { inserted } = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+      const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
         profileId,
         logs
       });
@@ -389,7 +259,7 @@ class LocalDbService {
     signal?: AbortSignal,
     onProgress?: (inserted: number) => void
   ): Promise<number> {
-    await this.init();
+    await this.bridge.init();
     if (signal?.aborted || since >= until) return 0;
 
     const watermark = await this.getWatermark(profileId);
@@ -434,6 +304,13 @@ class LocalDbService {
   /**
    * Backfills older logs from the server into local SQLite (e.g. when scrolling down).
    * Fetches at most 1 page (up to 100 logs) older than `before` down to `since`.
+   *
+   * @param profileId - Profile identifier.
+   * @param before - Maximum timestamp cursor.
+   * @param since - Minimum timestamp boundary.
+   * @param limit - Page size limit (default 50).
+   * @param signal - Optional AbortSignal.
+   * @returns Array of decrypted backfilled logs.
    */
   async backfillLogs(
     profileId: string,
@@ -442,7 +319,7 @@ class LocalDbService {
     limit: number = 50,
     signal?: AbortSignal
   ): Promise<LogEntry[]> {
-    await this.init();
+    await this.bridge.init();
     if (signal?.aborted || before <= since) return [];
 
     const url = `/api/profiles/${profileId}/logs?start=${since}&end=${before}&limit=${Math.min(limit, 100)}&before=${before}`;
@@ -453,7 +330,7 @@ class LocalDbService {
     if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) return [];
 
     const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
-    await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+    await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
       profileId,
       logs
     });
@@ -463,116 +340,17 @@ class LocalDbService {
   /**
    * Inserts a batch of log entries directly into local SQLite storage.
    *
-   * @param profileId - Profile identifier
-   * @param logs - Array of LogEntry records to insert
-   * @returns Number of inserted rows
+   * @param profileId - Profile identifier.
+   * @param logs - Array of LogEntry records to insert.
+   * @returns Number of inserted rows.
    */
   async batchInsertLogs(profileId: string, logs: LogEntry[]): Promise<number> {
     if (!logs || logs.length === 0) return 0;
-    await this.init();
-    const res = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+    await this.bridge.init();
+    const res = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
       profileId,
       logs
     });
     return res?.inserted || 0;
   }
-
-  /**
-   * Queries local logs from SQLite with pagination, search, and action filters.
-   */
-  async queryLogs(params: LocalQueryLogsParams): Promise<LocalQueryResult> {
-    await this.init();
-    return this.sendRequest<LocalQueryResult>('QUERY_LOGS', params);
-  }
-
-  /**
-   * Queries local analytics aggregations directly using SQLite GROUP BY queries.
-   */
-  async queryAnalytics(params: LocalAnalyticsParams): Promise<AnalyticsData> {
-    await this.init();
-    return this.sendRequest<AnalyticsData>('QUERY_ANALYTICS', params);
-  }
-
-  /**
-   * Queries local ISP aggregations optionally filtered by country code from SQLite.
-   */
-  async queryISPs(params: {
-    profileId: string;
-    countryCode?: string;
-    since: number;
-    until: number;
-    accessPointId?: string;
-    limit?: number;
-  }): Promise<{ name: string; count: number }[]> {
-    await this.init();
-    return this.sendRequest<{ name: string; count: number }[]>('QUERY_ISPS', params);
-  }
-
-  /**
-   * Cleans up local logs older than the specified retention days.
-   */
-  async cleanup(retentionDays: number): Promise<number> {
-    await this.init();
-    const { deleted } = await this.sendRequest<{ deleted: number }>('CLEANUP', { retentionDays });
-    if (deleted > 0) {
-      console.log(`[LocalDb] Cleaned up ${deleted} expired local logs`);
-    }
-    return deleted;
-  }
-
-  /**
-   * Returns storage stats across profiles.
-   */
-  async getStorageInfo(): Promise<LocalStorageInfo> {
-    await this.init();
-    return this.sendRequest<LocalStorageInfo>('GET_STORAGE_INFO');
-  }
-
-  /**
-   * Clears all local data for a profile.
-   */
-  async clearProfile(profileId: string): Promise<void> {
-    await this.init();
-    await this.sendRequest('CLEAR_PROFILE', { profileId });
-  }
-
-  /**
-   * Re-decrypts any local logs that were previously stored encrypted.
-   * Called when the user unlocks their Passkey key.
-   */
-  async reDecryptLocalLogs(profileId: string): Promise<number> {
-    await this.init();
-    const res = await this.sendRequest<{ rows: LogEntry[] }>('GET_ENCRYPTED_LOGS', { profileId, limit: 1000 });
-    if (!res.rows || res.rows.length === 0) return 0;
-
-    const decrypted = await e2ee.decryptLogsBatch(profileId, res.rows);
-    const successfullyDecrypted = decrypted.filter((l) => (l.encrypt_version ?? 0) === 0);
-    if (successfullyDecrypted.length === 0) return 0;
-
-    const updateRes = await this.sendRequest<{ updated: number }>('UPDATE_LOGS_BATCH', {
-      profileId,
-      logs: successfullyDecrypted,
-    });
-    return updateRes.updated;
-  }
-
-  /**
-   * Local storage retention settings (in days).
-   * 0 means unlimited (keep until user clears browser data).
-   */
-  getLocalRetentionDays(): number {
-    const val = localStorage.getItem('obex_local_log_retention');
-    if (val === null) return 90; // Default 90 days
-    const num = parseInt(val, 10);
-    return isNaN(num) ? 90 : num;
-  }
-
-  setLocalRetentionDays(days: number): void {
-    localStorage.setItem('obex_local_log_retention', days.toString());
-    if (days > 0) {
-      void this.cleanup(days);
-    }
-  }
 }
-
-export const localDb = new LocalDbService();
