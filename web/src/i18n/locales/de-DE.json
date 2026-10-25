@@ -460,7 +460,8 @@
     "encryptedRecord": "[Verschlüsselter Eintrag]",
     "exportSuccess": "Protokolle erfolgreich exportiert",
     "exportError": "Fehler beim Exportieren der Protokolle",
-    "e2eeLockedExportWarning": "Einige Protokolle sind verschlüsselt und derzeit gesperrt; die exportierte Datei enthält möglicherweise verschlüsselte Platzhalter."
+    "e2eeLockedExportWarning": "Einige Protokolle sind verschlüsselt und derzeit gesperrt; die exportierte Datei enthält möglicherweise verschlüsselte Platzhalter.",
+    "scrollToTop": "Nach oben"
   },
   "filtering": {
     "title": "Externe Blockierlisten",

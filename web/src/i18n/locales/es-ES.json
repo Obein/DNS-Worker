@@ -460,7 +460,8 @@
     "encryptedRecord": "[Registro cifrado]",
     "exportSuccess": "Registros exportados con éxito",
     "exportError": "Error al exportar los registros",
-    "e2eeLockedExportWarning": "Algunos registros están cifrados y actualmente bloqueados; el archivo exportado puede contener marcadores de posición cifrados."
+    "e2eeLockedExportWarning": "Algunos registros están cifrados y actualmente bloqueados; el archivo exportado puede contener marcadores de posición cifrados.",
+    "scrollToTop": "Ir arriba"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",

@@ -460,7 +460,8 @@
     "encryptedRecord": "[암호화된 기록]",
     "exportSuccess": "로그 내보내기 성공",
     "exportError": "로그 내보내기 실패",
-    "e2eeLockedExportWarning": "일부 로그가 암호화되어 있으며 잠겨 있습니다. 내보낸 파일에 암호화된 플레이스홀더가 포함될 수 있습니다."
+    "e2eeLockedExportWarning": "일부 로그가 암호화되어 있으며 잠겨 있습니다. 내보낸 파일에 암호화된 플레이스홀더가 포함될 수 있습니다.",
+    "scrollToTop": "맨 위로"
   },
   "filtering": {
     "title": "외부 차단 리스트",

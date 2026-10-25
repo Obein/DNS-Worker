@@ -460,7 +460,8 @@
     "encryptedRecord": "[Enregistrement chiffré]",
     "exportSuccess": "Journaux exportés avec succès",
     "exportError": "Échec de l'exportation des journaux",
-    "e2eeLockedExportWarning": "Certains journaux sont chiffrés et actuellement verrouillés ; le fichier exporté peut contenir des espaces réservés chiffrés."
+    "e2eeLockedExportWarning": "Certains journaux sont chiffrés et actuellement verrouillés ; le fichier exporté peut contenir des espaces réservés chiffrés.",
+    "scrollToTop": "Haut de page"
   },
   "filtering": {
     "title": "Listes de blocage externes",

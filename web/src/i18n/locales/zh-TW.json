@@ -460,7 +460,8 @@
     "encryptedRecord": "[加密記錄]",
     "exportSuccess": "日誌匯出成功",
     "exportError": "日誌匯出失敗",
-    "e2eeLockedExportWarning": "部分日誌處於加密狀態且未解鎖，匯出的資料可能包含未解密預留位置內容。"
+    "e2eeLockedExportWarning": "部分日誌處於加密狀態且未解鎖，匯出的資料可能包含未解密預留位置內容。",
+    "scrollToTop": "至頂"
   },
   "filtering": {
     "title": "外部攔截清單",

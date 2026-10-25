@@ -460,7 +460,8 @@
     "encryptedRecord": "[Bản ghi đã mã hóa]",
     "exportSuccess": "Xuất nhật ký thành công",
     "exportError": "Không thể xuất nhật ký",
-    "e2eeLockedExportWarning": "Một số nhật ký đã được mã hóa và hiện đang bị khóa; tệp đã xuất có thể chứa nội dung giữ chỗ đã mã hóa."
+    "e2eeLockedExportWarning": "Một số nhật ký đã được mã hóa và hiện đang bị khóa; tệp đã xuất có thể chứa nội dung giữ chỗ đã mã hóa.",
+    "scrollToTop": "Lên đầu"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",

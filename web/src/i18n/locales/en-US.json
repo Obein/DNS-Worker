@@ -460,7 +460,8 @@
     "encryptedRecord": "[Encrypted Record]",
     "exportSuccess": "Logs exported successfully",
     "exportError": "Failed to export logs",
-    "e2eeLockedExportWarning": "Some logs are encrypted and currently locked; the exported file may contain encrypted placeholders."
+    "e2eeLockedExportWarning": "Some logs are encrypted and currently locked; the exported file may contain encrypted placeholders.",
+    "scrollToTop": "Top"
   },
   "filtering": {
     "title": "External Filters",
