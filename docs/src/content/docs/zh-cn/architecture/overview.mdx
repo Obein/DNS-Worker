@@ -1,0 +1,290 @@
+---
+title: 系统架构
+description: "DNS Worker 系统架构：双引擎拓扑、代码工程结构、五层架构与核心组件设计、端到端数据流与交互机制。"
+sidebar:
+  order: 2
+---
+
+DNS Worker 采用统一业务内核与双运行时引擎架构，支持在 Cloudflare Workers 边缘网络以 Serverless 模式运行，或在独立服务器/VPS 以 Serverfull 守护进程模式运行。系统覆盖 DNS 全协议栈解析、分块布隆规则过滤、后量子端到端加密（PQC E2EE）以及前端本地优先（Local-First OPFS）数据分析。
+
+---
+
+## 架构拓扑
+
+系统通过运行时环境适配层，将同一套核心解析管道部署于边缘无服务器计算环境与独立主机环境。
+
+### 双引擎统一拓扑
+
+```mermaid
+flowchart TD
+    subgraph Clients["客户端接入层"]
+        C1["传统网络设备 (UDP 53)"]
+        C2["Android 私密 DNS (DoT 853)"]
+        C3["现代浏览器与操作系统 (DoH 443)"]
+    end
+
+    subgraph DualEngine["双引擎运行时网关"]
+        subgraph Serverfull["Serverfull 独立主机 (Node.js / Bun)"]
+            SF_UDP["UDP 53 Socket 服务 (dgram)"]
+            SF_DOT["DoT 853 TLS 服务 (SNI 动态分流)"]
+            SF_HTTP["嵌入式 HTTP/HTTPS (DoH & 管理面板)"]
+        end
+
+        subgraph Serverless["Cloudflare Workers 边缘网络"]
+            CF_FETCH["Worker Fetch Ingress (DoH & REST API)"]
+            CF_CRON["Cron Trigger (规则同步与维护)"]
+        end
+    end
+
+    subgraph Pipeline["统一核心业务管道 (Shared Core Pipeline)"]
+        CACHE["响应缓存 (TTL Cache)"]
+        FILTER["规则引擎 (精确匹配 / 通配符 / 分块布隆)"]
+        ECS["ECS 智能注入与隐私脱敏 (/24 & /48)"]
+        RESOLVER["多协议上游调度器 (DoQ / DoH+ECH / DoT / UDP)"]
+    end
+
+    subgraph Storage["持久化与安全存储层"]
+        DB["数据库抽象层 (Cloudflare D1 / Turso libSQL / 原生 SQLite)"]
+        SECU["双层信封加密体系 (System KEK)"]
+        PQC_STORE["后量子零知识加密存储 (ML-KEM-768 密文)"]
+    end
+
+    subgraph Frontend["前端本地优先分析架构 (Local-First Web PWA)"]
+        WORKER["后台独立线程 (Web Worker)"]
+        WASM_DB["WebAssembly 编译版 SQLite 数据库"]
+        OPFS["原生 OPFS 私有文件系统"]
+        DECRYPT["客户端 ML-KEM-768 零知识解密核心 (WebAuthn 授权)"]
+    end
+
+    C1 --> SF_UDP
+    C2 --> SF_DOT
+    C3 --> SF_HTTP
+    C3 --> CF_FETCH
+
+    SF_UDP --> Pipeline
+    SF_DOT --> Pipeline
+    SF_HTTP --> Pipeline
+    CF_FETCH --> Pipeline
+    CF_CRON --> Pipeline
+
+    CACHE --> FILTER
+    FILTER --> ECS
+    ECS --> RESOLVER
+
+    Pipeline -->|"异步缓冲写入"| Storage
+    Storage -->|"增量日志拉取"| Frontend
+
+    WORKER --- WASM_DB
+    WASM_DB --- OPFS
+    WORKER --- DECRYPT
+```
+
+---
+
+### 代码工程结构
+
+项目代码按职责划分为核心运行时、前端交互界面、数据库版本迁移与自动化测试套件：
+
+```text
+ObexDNS/
+├── src/                               # 核心后端逻辑（Serverless 与 Serverfull 共享）
+│   ├── index.ts                       # Cloudflare Workers 入口与计划任务调度
+│   ├── api/                           # RESTful 与 WebSocket API 路由分层
+│   │   ├── auth/                      # 认证子模块（Turnstile 验证、锁定屏、密码找回）
+│   │   ├── account/                   # 账户管理（个人资料、安全凭据、WebAuthn、E2EE 设置）
+│   │   ├── profiles/                  # 接入点配置、规则集配置、审计日志及实时 WebSocket 流
+│   │   ├── doh.ts                     # RFC 8484 DoH 标准请求处理器
+│   │   └── system.ts                  # 系统设置与状态端点
+│   ├── pipeline/                      # DNS 解析管线核心（缓存、过滤判定、ECS 注入、上游调度）
+│   ├── models/                        # 数据访问层与实体模型（Profile、Rule、List、KEM Key、Session 等）
+│   ├── lib/                           # 核心安全与数据库适配库
+│   │   ├── turso/                     # Turso / libSQL Hrana v2 协议适配层
+│   │   ├── crypto/                    # 密码学套件与每小时 KEM DEK 动态轮换管理
+│   │   └── webauthn/                  # FIDO2 / WebAuthn 挑战与验签
+│   ├── serverfull/                    # 独立服务器守护进程（UDP 53、DoT 853、嵌入式 HTTP、CLI 与系统服务）
+│   └── utils/                         # 工具库（DNS 编解码、ECH 编解码、规则拉取清洗、布隆编译器等）
+│
+├── web/                               # 本地优先前端单页面应用 (React + TypeScript + Vite)
+│   ├── src/views/                     # 业务视图组件（仪表盘、日志流、规则管理、接入点配置、系统设置）
+│   ├── src/services/localDb/          # 本地优先 SQLite 领域服务体系（Worker 通信、增量同步、分析查询、存储维护）
+│   ├── src/workers/                   # 后台 Web Worker（承载 SQLite WASM 与 OPFS 驱动）
+│   └── src/crypto/                    # 浏览器端 NIST FIPS 203 ML-KEM-768 解密核心
+│
+├── migrations/                        # 版本化 SQL 数据库结构迁移脚本
+└── test/                              # 自动化测试矩阵（Turnstile 门控、Turso 协议、Serverfull 守护进程集成测试）
+```
+
+---
+
+## 系统分层与组件设计
+
+DNS Worker 在逻辑架构上解构为五大垂直层级：
+
+### 1. 多协议网络接入层
+
+负责将异构传输协议的输入报文统一标准化为二进制 DNS 报文（DNS Message）：
+
+- **UDP 53 接入组件 (`src/serverfull/udp.ts`)**：基于 Node.js 原生 `dgram` 套接字绑定 `53` 端口，采用无锁二进制切片直接读取报文头部，内置滑动窗口速率限制防御 DNS 反弹放大攻击。
+- **DoT 853 接入组件 (`src/serverfull/dot.ts`)**：基于原生 `tls` 模块监听 `853` 端口，处理 RFC 7858 两字节长度前缀分包，并在 TLS 握手阶段动态提取 SNI 路由接入点（`<profileKey>.dns.example.com`），实现 Android 原生私密 DNS 接入多租户分流。
+- **DoH / HTTP 接入组件 (`src/api/doh.ts`, `src/serverfull/http.ts`)**：实现标准 RFC 8484 规范（支持 GET Base64URL 与 POST 二进制 Payload），支持 HTTP/2 与 HTTP/3，并在响应中动态注入包含公钥标识与参数的 RFC 9460 HTTPS / SVCB 资源记录以支持 ECH（加密客户端 Hello）。
+
+### 2. 规则引擎与布隆分发层
+
+负责对解析请求进行合规审计与拦截判定：
+
+- **三级级联过滤判定链**：
+  1. **白名单优先绕过**：匹配自定义白名单域名，命中直接放行。
+  2. **精确与通配符规则匹配**：基于倒排域名树和 Hash 表实现对自定义规则的亚微秒匹配。
+  3. **分块分层布隆过滤器**：针对收录数十万至数百万域名的开源规则集，通过 MurmurHash3 算法将其压缩为多组轻量级分块位图（每块 256KB~1MB），保持 0 假阴性且假阳性低于 0.1%，内存开销比传统树结构降低 90% 以上。
+- **规则同步与编译管道 (`src/utils/sync/`)**：定时拉取外部订阅，执行流式过滤、域名清洗、Punycode 转换与去重，编译完成后分块持久化至数据库。
+
+### 3. 核心解析与上游调度层
+
+负责在域名合规放行后，调度递归解析器获取权威结果：
+
+- **解析管线调度器 (`src/pipeline/index.ts`)**：
+  - **响应缓存 (`src/pipeline/cache.ts`)**：维护带 TTL 的自适应缓存，对拦截域名直接合成拦截响应并设置短 TTL，减少冗余请求。
+  - **ECS (EDNS Client Subnet) 注入与脱敏 (`src/utils/dns/injectEcs.ts`)**：截断客户端 IP 为 `/24` (IPv4) 或 `/48` (IPv6) 网段信息注入请求，使 CDN 获得就近调度能力的同时隔离客户端精确 IP。
+- **多协议并发上游调度**：同时管理 DoQ (`quic://`)、DoH+ECH (`https://`)、DoT (`tls://`) 与传统 UDP/TCP 上游，支持并发竞速（Race）与故障转移熔断机制。
+
+### 4. 数据持久化与存储抽象层
+
+负责提供跨平台统一的数据存取接口与敏感数据保护：
+
+- **统一数据库驱动抽象**：为 Cloudflare D1、Turso / libSQL（通过 Hrana v2 HTTP Pipeline 批量执行与短读缓存）以及本地 `node:sqlite` 提供一致的 `D1Database` 契约。
+- **双层系统信封加密 (`src/utils/envelope.ts`)**：通过系统主密钥 `KEK_v1`（兼容 `KEK_v0`），对存储于数据表中的敏感凭证（TOTP 密钥、API Token、Profile Key）在入库前执行 AES-256-GCM 信封加密。
+- **异步日志缓冲聚合器 (`src/pipeline/logBatcher.ts`)**：DNS 解析完成后，日志任务直接投递至内存队列，借助 Cloudflare Workers 的 `ctx.waitUntil()` 或 Node.js 异步事件循环在后台微批次合并写入，不占用关键响应链路时间。
+
+### 5. 前端交互与本地优先层
+
+负责将分析计算与日志解密下沉至客户端：
+
+- **WASM SQLite + OPFS 本地存储**：前端在独立的 Web Worker 线程中运行官方 WebAssembly SQLite 数据库，并持久化到 Origin Private File System (OPFS)。
+- **本地即时多维分析**：日志全文检索、客户端分布过滤与地理国家流向统计均在本地 Worker 线程毫秒级执行，不消耗云端数据库读配额。
+- **客户端后量子零知识解密 (`web/src/crypto/pqc.ts`)**：启用 E2EE 后，服务端仅存储密文；客户端通过 WebAuthn 硬件通行密钥（Passkey）在浏览器内存中解开主私钥，本地还原明文日志。
+
+---
+
+## 数据流与交互机制
+
+### 1. 端到端 DNS 查询与解析流
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 客户端
+    participant Ingress as 接入层 (UDP/DoT/DoH)
+    participant Pipeline as 业务管线
+    participant Filter as 过滤引擎 (Bloom/Rules)
+    participant Upstream as 递归上游 (DoQ/DoH/DoT)
+    participant Batcher as 异步日志缓冲器
+
+    Client->>Ingress: 发送 DNS 查询报文
+    Ingress->>Pipeline: 标准化二进制报文
+    Pipeline->>Pipeline: 检索本地响应缓存 (TTL Cache)
+    alt 缓存命中 (Cache Hit)
+        Pipeline-->>Ingress: 返回已缓存 DNS Answer
+        Ingress-->>Client: 交付响应结果
+    else 缓存未命中 (Cache Miss)
+        Pipeline->>Filter: 提交域名合规判定
+        Filter->>Filter: 校验白名单、黑名单与分块布隆过滤器
+        alt 判定拦截 (Blocked)
+            Filter-->>Pipeline: 阻断判定 (返回 0.0.0.0 / CNAME)
+        else 判定放行 (Allowed)
+            Filter-->>Pipeline: 放行判定
+            Pipeline->>Pipeline: 注入脱敏客户端子网 (ECS)
+            Pipeline->>Upstream: 并发向上游递归解析
+            Upstream-->>Pipeline: 返回权威解析记录
+            Pipeline->>Pipeline: 更新本地响应缓存
+        end
+        Pipeline-->>Ingress: 交付最终解析报文
+        Ingress-->>Client: 返回 DNS 响应给客户端
+        Pipeline-)Batcher: [异步解耦] 投递日志事件 (ctx.waitUntil)
+        Batcher->>Batcher: 微批次聚合与加密写入数据库
+    end
+```
+
+---
+
+### 2. 规则订阅、编译与布隆分块分发流
+
+```mermaid
+flowchart TD
+    CRON["定时调度任务 (Cron Trigger / 管理员手动触发)"] --> SYNC["规则同步拉取器 (src/utils/sync)"]
+    SYNC --> FETCH["并发获取远程规则源 (AdGuard, EasyList, 自定义 URL)"]
+    FETCH --> CLEAN["域名清洗、格式标准化与 Punycode 转换"]
+    CLEAN --> DEDUP["全局域名去重与内存排序"]
+    DEDUP --> COMPILE["编译分块布隆过滤器 (MurmurHash3 压缩)"]
+    COMPILE --> TX["开启数据库写入事务"]
+    TX --> CHUNKS["持久化存储至 profile_bloom_chunks / list_bloom"]
+    CHUNKS --> INVALIDATE["广播运行时内存缓存失效信号"]
+    INVALIDATE --> RELOAD["工作线程按需拉取并重建内存位图"]
+```
+
+---
+
+### 3. 审计日志采集与后量子零知识 E2EE 加密流
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as 管理员/用户设备
+    participant WebUI as 浏览器前端 (Local-First)
+    participant Passkey as 硬件通行密钥 (WebAuthn)
+    participant Server as 服务端 API / Worker
+    participant DEK as 每小时 DEK 管理器
+    participant DB as 数据库持久层
+
+    Note over Server,DB: 服务端加密采集阶段 (入库时不持有私钥)
+    Server->>DEK: 申请当前小时有效数据加密密钥 (DEK)
+    alt DEK 已过期或不存在
+        DEK->>DEK: 生成 256 位随机对称密钥 DEK
+        DEK->>Server: 读取用户公开的 ML-KEM-768 公钥
+        DEK->>DEK: 执行 KEM 封装: encapsulate(PubKey) -> (SharedSecret, kem_ct)
+        DEK->>DB: 登记封装密文 kem_ct 至 user_log_kem_keys 表
+    end
+    Server->>Server: 采用 AES-256-GCM (独立随机 IV) 加密日志敏感字段
+    Server->>DB: 持久化存储密文日志行
+
+    Note over Admin,DB: 客户端零知识解密阶段 (纯本地计算)
+    Admin->>WebUI: 访问日志审计流或统计页面
+    WebUI->>Server: 拉取加密日志批次与对应的 hourly kem_ct
+    Server-->>WebUI: 返回加密数据包
+    WebUI->>Passkey: 发起 WebAuthn 硬件签名授权
+    Passkey-->>WebUI: 释放受保护的 ML-KEM-768 用户主私钥
+    WebUI->>WebUI: 本地内存执行 ML-KEM-768 解封装: decapsulate(PrivKey, kem_ct)
+    WebUI->>WebUI: 还原当前小时对称 DEK
+    WebUI->>WebUI: 批量解密 AES-256-GCM 密文并写入本地 OPFS SQLite
+    WebUI-->>Admin: 呈现解密明文分析视图
+```
+
+---
+
+### 4. 本地优先 (Local-First OPFS) 增量同步与离线查询流
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 用户界面 (React UI)
+    participant Bridge as LocalDb 桥接层
+    participant Engine as 增量同步引擎 (SyncEngine)
+    participant OPFS as 本地 SQLite WASM (OPFS)
+    participant Remote as 远程 API (D1 / Turso)
+
+    User->>Bridge: 挂载视图并监听数据变更
+    Bridge->>Engine: 触发增量同步检查
+    Engine->>OPFS: 读取本地日志最小与最大 ID 水位线 (min_id, max_id)
+    OPFS-->>Engine: 返回当前边界水位
+    Engine->>Remote: 发送前向增量同步请求 (after_id = max_id)
+    Remote-->>Engine: 返回最新增量密文批次
+    opt 存在历史时间空隙
+        Engine->>Remote: 请求回填缺失时间区间的日志
+        Remote-->>Engine: 返回回填密文批次
+    end
+    Engine->>OPFS: 执行事务批量插入本地 SQLite
+    OPFS-->>Engine: 落盘完成确认
+    Engine-->>Bridge: 同步完成通知
+    Bridge-->>User: 触发状态响应更新
+    User->>OPFS: 发起复杂多维聚合查询 (按时间/ISP/国家/拦截原因)
+    OPFS-->>User: 本地 Worker 0ms 瞬间返回计算结果
+```

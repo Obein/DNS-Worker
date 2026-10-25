@@ -48,6 +48,51 @@ export default defineConfig({
           }
         },
         {
+          tag: 'script',
+          attrs: {
+            type: 'module',
+          },
+          content: `
+            async function renderMermaidDiagrams() {
+              const blocks = Array.from(document.querySelectorAll('pre code.language-mermaid, pre.language-mermaid, figure.expressive-code pre code.language-mermaid'));
+              if (!blocks.length) return;
+              try {
+                const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+                const isDark = document.documentElement.dataset.theme === 'dark' || document.documentElement.classList.contains('dark');
+                mermaid.initialize({
+                  startOnLoad: false,
+                  theme: isDark ? 'dark' : 'default',
+                  securityLevel: 'loose'
+                });
+                for (let i = 0; i < blocks.length; i++) {
+                  const el = blocks[i];
+                  const container = el.closest('figure.expressive-code') || el.closest('pre') || el;
+                  const code = el.textContent || '';
+                  if (!code.trim()) continue;
+                  const id = 'mermaid-dyn-' + i + '-' + Math.random().toString(36).slice(2, 7);
+                  const { svg } = await mermaid.render(id, code);
+                  const wrapper = document.createElement('div');
+                  wrapper.className = 'mermaid-container';
+                  wrapper.style.display = 'flex';
+                  wrapper.style.justifyContent = 'center';
+                  wrapper.style.margin = '1.5rem 0';
+                  wrapper.style.overflowX = 'auto';
+                  wrapper.innerHTML = svg;
+                  container.replaceWith(wrapper);
+                }
+              } catch (err) {
+                console.error('Mermaid render failure:', err);
+              }
+            }
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', renderMermaidDiagrams);
+            } else {
+              renderMermaidDiagrams();
+            }
+            document.addEventListener('astro:after-swap', renderMermaidDiagrams);
+          `
+        },
+        {
           tag: 'meta',
           attrs: {
             name: 'keywords',
@@ -145,6 +190,27 @@ export default defineConfig({
                 'zh-tw': '快速上手',
               },
               slug: 'guide/quickstart',
+            },
+          ],
+        },
+        {
+          label: 'Architecture',
+          translations: {
+            'zh-CN': '系统架构',
+            'zh-cn': '系统架构',
+            'zh-TW': '系統架構',
+            'zh-tw': '系統架構',
+          },
+          items: [
+            {
+              label: 'System Architecture',
+              translations: {
+                'zh-CN': '系统架构设计',
+                'zh-cn': '系统架构设计',
+                'zh-TW': '系統架構設計',
+                'zh-tw': '系統架構設計',
+              },
+              slug: 'architecture/overview',
             },
           ],
         },
