@@ -1,0 +1,290 @@
+---
+title: System Architecture
+description: "DNS Worker System Architecture: dual-engine topology, codebase structure, five-layer component design, and end-to-end data flows."
+sidebar:
+  order: 2
+---
+
+DNS Worker utilizes a shared core pipeline with a dual runtime engine architecture, supporting both Serverless deployment on Cloudflare Workers edge network and Serverfull daemon operation on standalone servers/VPS. The system covers universal DNS protocol resolution, partitioned bloom filter rule evaluation, post-quantum end-to-end encryption (PQC E2EE), and client-side local-first (Local-First OPFS) telemetry analysis.
+
+---
+
+## Architecture Topology
+
+Through an adaptive runtime abstraction layer, the same resolution pipeline runs across both edge serverless environments and dedicated host environments.
+
+### Dual-Engine Unified Topology
+
+```mermaid
+flowchart TD
+    subgraph Clients["Client Ingress Layer"]
+        C1["Legacy Devices (UDP 53)"]
+        C2["Android Private DNS (DoT 853)"]
+        C3["Modern Browsers & OS (DoH 443)"]
+    end
+
+    subgraph DualEngine["Dual-Engine Runtime Gateway"]
+        subgraph Serverfull["Serverfull Standalone (Node.js / Bun)"]
+            SF_UDP["UDP 53 Socket Server (dgram)"]
+            SF_DOT["DoT 853 TLS Server (Dynamic SNI Routing)"]
+            SF_HTTP["Embedded HTTP/HTTPS (DoH & Admin)"]
+        end
+
+        subgraph Serverless["Cloudflare Workers Edge Network"]
+            CF_FETCH["Worker Fetch Ingress (DoH & REST API)"]
+            CF_CRON["Cron Trigger (Rule Sync & Maintenance)"]
+        end
+    end
+
+    subgraph Pipeline["Unified Business Pipeline (Shared Core)"]
+        CACHE["Response Cache (TTL Cache)"]
+        FILTER["Rule Engine (Exact / Wildcard / Partitioned Bloom)"]
+        ECS["ECS Injection & Sanitization (/24 & /48)"]
+        RESOLVER["Multi-Protocol Upstream Orchestrator (DoQ / DoH+ECH / DoT / UDP)"]
+    end
+
+    subgraph Storage["Persistence & Security Layer"]
+        DB["Database Abstraction (Cloudflare D1 / Turso libSQL / Native SQLite)"]
+        SECU["System Envelope Encryption (System KEK)"]
+        PQC_STORE["Post-Quantum Zero-Knowledge Storage (ML-KEM-768 Ciphertext)"]
+    end
+
+    subgraph Frontend["Local-First Analytics Architecture (Web PWA)"]
+        WORKER["Dedicated Background Web Worker"]
+        WASM_DB["WebAssembly SQLite Engine"]
+        OPFS["Native OPFS File System"]
+        DECRYPT["Client-Side ML-KEM-768 Zero-Knowledge Decryptor (WebAuthn)"]
+    end
+
+    C1 --> SF_UDP
+    C2 --> SF_DOT
+    C3 --> SF_HTTP
+    C3 --> CF_FETCH
+
+    SF_UDP --> Pipeline
+    SF_DOT --> Pipeline
+    SF_HTTP --> Pipeline
+    CF_FETCH --> Pipeline
+    CF_CRON --> Pipeline
+
+    CACHE --> FILTER
+    FILTER --> ECS
+    ECS --> RESOLVER
+
+    Pipeline -->|"Async Decoupled Ingestion"| Storage
+    Storage -->|"Incremental Log Pull"| Frontend
+
+    WORKER --- WASM_DB
+    WASM_DB --- OPFS
+    WORKER --- DECRYPT
+```
+
+---
+
+### Codebase Structure
+
+The project code is organized into runtime core, frontend SPA, database migrations, and automated test suites:
+
+```text
+ObexDNS/
+├── src/                               # Shared backend runtime (Serverless & Serverfull)
+│   ├── index.ts                       # Cloudflare Workers entry and cron triggers
+│   ├── api/                           # RESTful & WebSocket API routing
+│   │   ├── auth/                      # Authentication submodules (Turnstile, lock screen, recovery)
+│   │   ├── account/                   # User profile, security credentials, WebAuthn, E2EE
+│   │   ├── profiles/                  # Access points, rulesets, audit logs, and WS streaming
+│   │   ├── doh.ts                     # RFC 8484 DoH standard request handler
+│   │   └── system.ts                  # System settings and telemetry endpoints
+│   ├── pipeline/                      # DNS pipeline core (cache, filter, ECS, upstream router)
+│   ├── models/                        # Domain models and DAL (Profile, Rule, List, KEM Key, Session)
+│   ├── lib/                           # Security and database adapters
+│   │   ├── turso/                     # Turso / libSQL Hrana v2 protocol adapter
+│   │   ├── crypto/                    # Cryptographic suites & hourly KEM DEK rotation manager
+│   │   └── webauthn/                  # FIDO2 / WebAuthn challenge & verification
+│   ├── serverfull/                    # Standalone daemon (UDP 53, DoT 853, embedded HTTP, CLI, services)
+│   └── utils/                         # Utilities (DNS codecs, ECH codecs, rule sync, bloom compiler)
+│
+├── web/                               # Local-First Frontend SPA (React + TypeScript + Vite)
+│   ├── src/views/                     # View components (Stats, Logs, Rules, Profiles, Settings)
+│   ├── src/services/localDb/          # Local SQLite domain services (Bridge, Sync, Query, Maintenance)
+│   ├── src/workers/                   # Background Web Worker (hosting SQLite WASM + OPFS)
+│   └── src/crypto/                    # Browser-side NIST FIPS 203 ML-KEM-768 decryptor
+│
+├── migrations/                        # Versioned SQL database schema migrations
+└── test/                              # Automated test suites (Turnstile, Turso, Serverfull daemon)
+```
+
+---
+
+## System Layering and Component Design
+
+DNS Worker is structured into five vertical architectural layers:
+
+### 1. Multi-Protocol Ingress Layer
+
+Normalizes heterogeneous network payloads into standard binary DNS messages:
+
+- **UDP 53 Ingress (`src/serverfull/udp.ts`)**: Binds to port `53` via Node.js `dgram` using zero-copy binary buffer slicing to read header flags directly, with sliding-window rate limiting to mitigate amplification attacks.
+- **DoT 853 Ingress (`src/serverfull/dot.ts`)**: Binds to port `853` via Node.js `tls`, handles RFC 7858 two-byte framing, and extracts the TLS SNI (`<profileKey>.dns.example.com`) during handshakes for multi-tenant isolation with native Android Private DNS.
+- **DoH / HTTP Ingress (`src/api/doh.ts`, `src/serverfull/http.ts`)**: Implements RFC 8484 specifications (supporting GET Base64URL and POST binary streams), supports HTTP/2 and HTTP/3, and injects RFC 9460 HTTPS / SVCB records for Encrypted Client Hello (ECH) support.
+
+### 2. Filtering & Bloom Engine Layer
+
+Arbitrates whether a domain query is permitted or blocked:
+
+- **Three-Tier Cascade Pipeline**:
+  1. **Whitelist Bypass**: Checks user-defined allowlists; matches bypass further inspection immediately.
+  2. **Exact & Wildcard Rules**: Evaluates domain tree hash maps in sub-microseconds.
+  3. **Partitioned Bloom Filters**: Compresses massive blocklists (hundreds of thousands of domains) into partitioned bitsets (256KB-1MB per chunk) using MurmurHash3, maintaining zero false negatives and a false positive rate under 0.1%, reducing memory footprint by over 90%.
+- **Rule Sync Pipeline (`src/utils/sync/`)**: Periodically downloads blocklist sources, cleans formatting, performs Punycode conversion and deduplication, writing compressed chunks directly to the database.
+
+### 3. Core Resolver & Upstream Router Layer
+
+Handles recursive query resolution for allowed requests:
+
+- **Pipeline Orchestrator (`src/pipeline/index.ts`)**:
+  - **Response Cache (`src/pipeline/cache.ts`)**: Maintains an in-memory TTL cache, synthesizing synthetic block answers (`0.0.0.0` or custom CNAME) with short TTL to suppress repeated client requests.
+  - **ECS Sanitization (`src/utils/dns/injectEcs.ts`)**: Truncates client IPs to `/24` (IPv4) or `/48` (IPv6) subnets, maintaining CDN edge geographic proximity without leaking individual IP addresses.
+- **Multi-Protocol Upstream Pooling**: Concurrently queries DoQ (`quic://`), DoH+ECH (`https://`), DoT (`tls://`), and standard UDP/TCP upstreams, with parallel racing and automatic circuit-breaking fallbacks.
+
+### 4. Data Persistence & Security Layer
+
+Provides uniform storage abstractions and sensitive data protection:
+
+- **Unified Database Driver**: Provides a consistent `D1Database` contract across Cloudflare D1, Turso / libSQL (via Hrana v2 HTTP Pipeline with statement batching and read caching), and native `node:sqlite`.
+- **System Envelope Encryption (`src/utils/envelope.ts`)**: Uses master key `KEK_v1` (with `KEK_v0` fallback) to encrypt sensitive stored values (TOTP secrets, API tokens, profile keys) with AES-256-GCM before writing to storage.
+- **Asynchronous Log Decoupling (`src/pipeline/logBatcher.ts`)**: Logging events are enqueued to memory and processed in the background via Cloudflare Workers `ctx.waitUntil()` or Node.js asynchronous event loops, incurring zero latency overhead on resolution.
+
+### 5. Frontend & Local-First Layer
+
+Pushes telemetry computations and cryptographic decryption to the client device:
+
+- **WASM SQLite + OPFS Storage**: Runs the official WebAssembly SQLite inside a dedicated Web Worker backed by the browser's Origin Private File System (OPFS).
+- **0ms Instant Query Execution**: Full-text searching, client filtering, and geographic telemetry aggregate in `< 1ms` inside the worker without cloud database read quota consumption.
+- **Client-Side Post-Quantum E2EE (`web/src/crypto/pqc.ts`)**: With E2EE enabled, the server holds only ciphertext; the browser authorizes via WebAuthn Passkey (biometrics/hardware key) to unseal the user private key in memory, decrypting logs purely locally.
+
+---
+
+## Data Flows and Interaction Mechanisms
+
+### 1. End-to-End DNS Query and Resolution Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Client
+    participant Ingress as Ingress (UDP/DoT/DoH)
+    participant Pipeline as Pipeline
+    participant Filter as Filter (Bloom/Rules)
+    participant Upstream as Upstream Resolver
+    participant Batcher as Async Log Batcher
+
+    Client->>Ingress: Send DNS Query
+    Ingress->>Pipeline: Parse Binary DNS Message
+    Pipeline->>Pipeline: Check Local Response Cache (TTL)
+    alt Cache Hit
+        Pipeline-->>Ingress: Return Cached Answer
+        Ingress-->>Client: Deliver Response
+    else Cache Miss
+        Pipeline->>Filter: Submit Domain for Evaluation
+        Filter->>Filter: Check Whitelist, Rules, and Partitioned Bloom
+        alt Blocked
+            Filter-->>Pipeline: Return Block Decision (0.0.0.0 / CNAME)
+        else Allowed
+            Filter-->>Pipeline: Return Allow Decision
+            Pipeline->>Pipeline: Inject Sanitized Subnet (ECS)
+            Pipeline->>Upstream: Concurrently Query Upstreams
+            Upstream-->>Pipeline: Return Authoritative Answer
+            Pipeline->>Pipeline: Update Response Cache
+        end
+        Pipeline-->>Ingress: Deliver Answer Message
+        Ingress-->>Client: Return DNS Response
+        Pipeline-)Batcher: [Async Non-blocking] Enqueue Log (ctx.waitUntil)
+        Batcher->>Batcher: Micro-batch Aggregation & Encrypted Write
+    end
+```
+
+---
+
+### 2. Rule Subscription, Compilation & Bloom Chunking Flow
+
+```mermaid
+flowchart TD
+    CRON["Cron Trigger / Manual Admin Action"] --> SYNC["Rule Sync Orchestrator (src/utils/sync)"]
+    SYNC --> FETCH["Fetch Remote Blocklists (AdGuard, EasyList, URLs)"]
+    FETCH --> CLEAN["Clean Syntax, Normalize, and Punycode Conversion"]
+    CLEAN --> DEDUP["Global Deduplication & Sorting"]
+    DEDUP --> COMPILE["Compile Partitioned Bloom Bitsets (MurmurHash3)"]
+    COMPILE --> TX["Open Database Transaction"]
+    TX --> CHUNKS["Persist to profile_bloom_chunks / list_bloom"]
+    CHUNKS --> INVALIDATE["Broadcast Runtime Cache Invalidation"]
+    INVALIDATE --> RELOAD["Workers Reload In-Memory Bitsets On Demand"]
+```
+
+---
+
+### 3. Log Ingestion & Post-Quantum Zero-Knowledge E2EE Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as User / Admin Device
+    participant WebUI as Frontend SPA (Local-First)
+    participant Passkey as Passkey (WebAuthn)
+    participant Server as Server API / Worker
+    participant DEK as Hourly DEK Manager
+    participant DB as Database Storage
+
+    Note over Server,DB: Server-Side Ingestion (No Private Key Stored)
+    Server->>DEK: Request Active Data Encryption Key (DEK)
+    alt DEK Expired or Not Found
+        DEK->>DEK: Generate 256-bit Random Symmetric DEK
+        DEK->>Server: Read User's Public ML-KEM-768 Key
+        DEK->>DEK: KEM Encapsulation: encapsulate(PubKey) -> (SharedSecret, kem_ct)
+        DEK->>DB: Register kem_ct in user_log_kem_keys Table
+    end
+    Server->>Server: Encrypt Sensitive Fields via AES-256-GCM (Random IVs)
+    Server->>DB: Persist Encrypted Ciphertext Records
+
+    Note over Admin,DB: Client-Side Decryption (Purely Local)
+    Admin->>WebUI: Navigate to Logs or Analytics View
+    WebUI->>Server: Fetch Encrypted Logs & Hourly kem_ct Envelopes
+    Server-->>WebUI: Return Encrypted Batch Payload
+    WebUI->>Passkey: Request WebAuthn Signature Authorization
+    Passkey-->>WebUI: Release ML-KEM-768 Master Private Key
+    WebUI->>WebUI: Local Memory Decapsulation: decapsulate(PrivKey, kem_ct)
+    WebUI->>WebUI: Recover Hourly Symmetric DEK
+    WebUI->>WebUI: Batch Decrypt AES-256-GCM Records into Local OPFS SQLite
+    WebUI-->>Admin: Render Decrypted Telemetry Instantly
+```
+
+---
+
+### 4. Local-First OPFS Incremental Sync and Query Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Interface (React UI)
+    participant Bridge as LocalDb Bridge
+    participant Engine as Incremental SyncEngine
+    participant OPFS as Local SQLite WASM (OPFS)
+    participant Remote as Remote API (D1 / Turso)
+
+    User->>Bridge: Mount View & Bind Listeners
+    Bridge->>Engine: Trigger Incremental Sync Check
+    Engine->>OPFS: Query Bound Watermarks (min_id, max_id)
+    OPFS-->>Engine: Return Stored Watermarks
+    Engine->>Remote: Send Forward Sync Request (after_id = max_id)
+    Remote-->>Engine: Return Latest Encrypted Increments
+    opt Missing Temporal Gaps Exist
+        Engine->>Remote: Request Backfill for Missing Interval
+        Remote-->>Engine: Return Backfilled Records
+    end
+    Engine->>OPFS: Execute Transactional Batch Insert
+    OPFS-->>Engine: Confirm Storage Write
+    Engine-->>Bridge: Notify Sync Complete
+    Bridge-->>User: Trigger Reactive UI Update
+    User->>OPFS: Execute Complex Analytics Query (ISP, Time, Geo, Action)
+    OPFS-->>User: Local Worker Computes & Returns Result in 0ms
+```

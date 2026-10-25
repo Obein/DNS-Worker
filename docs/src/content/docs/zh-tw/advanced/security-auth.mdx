@@ -19,18 +19,19 @@ DNS Worker 在後臺解析管道與 Web 控制面板中全面踐行零信任深�
 
 Web 管理面板嚴格遵循 **WebApp Trust** 零信任安全架構標準：
 
-```
-[ 浏览器客户端 ]                                         [ DNS Worker 服务端 ]
-       │                                                          │
-       │── 1. POST /api/auth/login (密码 + 随机数 Nonce) ────────▶│
-       │                                                          │ (Argon2 / PBKDF2)
-       │◀── 2. Access Token (内存) + Refresh Token (Cookie) ──────│
-       │                                                          │
-       │── 3. 授权 RPC 调用 (Authorization: Bearer) ─────────────▶│
-       │                                                          │
-       │── 4. POST /api/auth/refresh (RTR 宽限窗口) ──────────────▶│
-       │                                                          │ (签发全新令牌对)
-       │◀── 5. 轮换后的 Access Token + 轮换后的 Refresh Token ────│
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Browser as 浏览器客户端
+    participant Server as DNS Worker 服务端
+
+    Browser->>Server: POST /api/auth/login (密码 + 随机数 Nonce)
+    Note over Server: Argon2 / PBKDF2 校验
+    Server-->>Browser: Access Token (内存) + Refresh Token (Cookie)
+    Browser->>Server: 授权 API 调用 (Authorization: Bearer)
+    Browser->>Server: POST /api/auth/refresh (RTR 宽限窗口)
+    Note over Server: 签发全新令牌对
+    Server-->>Browser: 轮换后的 Access Token + 轮换后的 Refresh Token
 ```
 
 ### 核心安全防線
@@ -50,20 +51,14 @@ Web 管理面板嚴格遵循 **WebApp Trust** 零信任安全架構標準：
 
 服務端儲存的敏感資料（包括使用者會話令牌與加密查詢日誌）由兩層信封加密機制保護：
 
-```
-┌────────────────────────────────────────────────────────┐
-│ 密钥加密密钥 (KEK_v1 / KEK_v2)                          │
-│ (保存在安全环境变量或 Cloudflare Secrets 中)             │
-└────────────────────────────────────────────────────────┘
-                           │ (加密 / 解密)
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 数据加密密钥 (DEK)                                      │
-│ (为每批日志或会话动态独立生成)                           │
-└────────────────────────────────────────────────────────┘
-                           │ (加密 / 解密)
-                           ▼
-                [ 核心敏感数据 / 密文载荷 ]
+```mermaid
+flowchart TD
+    KEK["密钥加密密钥 (KEK_v1 / KEK_v2)<br/>(保存在安全环境变量或 Cloudflare Secrets 中)"]
+    DEK["数据加密密钥 (DEK)<br/>(为每批日志或会话动态独立生成)"]
+    PAYLOAD["核心敏感数据 / 密文载荷"]
+
+    KEK -->|"加密 / 解密"| DEK
+    DEK -->|"加密 / 解密"| PAYLOAD
 ```
 
 ### 無感平滑金鑰輪換

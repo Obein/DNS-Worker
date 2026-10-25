@@ -5,16 +5,16 @@ description: Comprehensive deployment guide for the three database storage engin
 
 DNS Worker features a unified Data Access Layer (DAL) abstraction, supporting **three distinct database storage engines** across Cloudflare 300+ global edge locations, self-hosted Linux VPS servers, Docker containers, and hybrid distributed setups.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                   DNS Worker Data Access Layer (DAL)             │
-└──────────────┬───────────────────┬───────────────────┬───────────┘
-               │                   │                   │
-               ▼                   ▼                   ▼
-    ┌────────────────────┐ ┌────────────────┐ ┌────────────────────┐
-    │   Cloudflare D1    │ │ Turso / libSQL │ │ Local File SQLite  │
-    │ (Serverless Default│ │(Multi-Node Sync│ │(Serverfull Default │
-    └────────────────────┘ └────────────────┘ └────────────────────┘
+```mermaid
+flowchart TD
+    DAL["DNS Worker Data Access Layer (DAL)"]
+    D1["Cloudflare D1<br/>(Serverless Default)"]
+    TURSO["Turso / libSQL<br/>(Multi-Node Shared)"]
+    SQLITE["Local File SQLite<br/>(Serverfull Default)"]
+
+    DAL --> D1
+    DAL --> TURSO
+    DAL --> SQLITE
 ```
 
 ---

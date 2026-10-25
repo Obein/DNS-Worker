@@ -13,21 +13,26 @@ DNS Worker 作為客戶端與根遞迴解析器之間的智慧防護樞紐。本
 
 DNS Worker 支援高併發的多協議遞迴查詢轉發：
 
-```
-[ 客户端设备 ]
-        │  (DoH / DoT / UDP)
-        ▼
-┌────────────────────────────────────────────────────────┐
-│ DNS Worker 解析引擎                                    │
-│  ├─ 域名规则评估与本地黑白名单匹配                      │
-│  ├─ 高速缓存与 ECS (EDNS Client Subnet) 注入            │
-│  └─ 多路复用上游调度器                                  │
-└────────────────────────────────────────────────────────┘
-        │
-   ┌────┴───────────────────────────┬──────────────────────┐
-   ▼                                ▼                      ▼
-[ DoQ / QUIC 上游 ]        [ DoH + ECH 上游 ]      [ DoT / TLS 上游 ]
- (RFC 9250 - quic://)       (RFC 8484 / RFC 9460)    (RFC 7858 - tls://)
+```mermaid
+flowchart TD
+    CLIENT["客户端设备"]
+    
+    subgraph Engine["DNS Worker 解析引擎"]
+        direction TB
+        E1["域名规则评估与本地黑白名单匹配"]
+        E2["高速缓存与 ECS 客户端子网注入"]
+        E3["多路复用上游调度器"]
+        E1 --- E2 --- E3
+    end
+
+    U_DOQ["DoQ / QUIC 上游<br/>(RFC 9250 - quic://)"]
+    U_DOH["DoH + ECH 上游<br/>(RFC 8484 / RFC 9460)"]
+    U_DOT["DoT / TLS 上游<br/>(RFC 7858 - tls://)"]
+
+    CLIENT -->|"DoH / DoT / UDP"| Engine
+    Engine --> U_DOQ
+    Engine --> U_DOH
+    Engine --> U_DOT
 ```
 
 ### 支援的上游 URI 協議格式

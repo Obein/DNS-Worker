@@ -30,14 +30,17 @@ import setupImg from '../../../../../screenshots/dns.obex-setup.webp';
 2. 輸入接入點名稱（例如 `Phone-Mobile`、`Living-Room-Router`、`Kids-Tablet`）。
 3. 點選 **Create Profile**（建立接入點）。
 
-```
-┌────────────────────────────────────────────────────────┐
-│ 接入点名称: Phone-Mobile                                 │
-│ 路由密钥: a8f9c2d14e...                                │
-│ 状态: 激活 (Active)                                     │
-│ 拦截响应: Zero IP (0.0.0.0 / ::)                        │
-│ 日志策略: 启用 (保留 30 天)                             │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph ProfileCard["接入点配置示例 (Profile)"]
+        direction TB
+        P1["接入点名称: Phone-Mobile"]
+        P2["路由密钥: a8f9c2d14e..."]
+        P3["运行状态: 激活 (Active)"]
+        P4["拦截响应: Zero IP (0.0.0.0 / ::)"]
+        P5["日志策略: 启用 (保留 30 天)"]
+        P1 --- P2 --- P3 --- P4 --- P5
+    end
 ```
 
 ### 步驟 3：多接入點快速切換

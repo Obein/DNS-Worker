@@ -36,7 +36,7 @@ export function useMapData(destinations: DestinationItem[]) {
   }, []);
 
   const totalQueriesCount = useMemo(() => {
-    return destinations.reduce((acc, d) => acc + d.count, 0);
+    return destinations.reduce((acc, d) => acc + (Number(d.count) || 0), 0);
   }, [destinations]);
 
   const scaleConfig = useMemo(() => {
@@ -57,11 +57,19 @@ export function useMapData(destinations: DestinationItem[]) {
     destinations.forEach((d) => {
       if (d.country_code) {
         const code = d.country_code.toUpperCase();
-        map[code] = {
-          count: d.count,
-          name: d.country,
-          countryCode: code,
-        };
+        const count = Number(d.count) || 0;
+        if (map[code]) {
+          map[code].count += count;
+          if ((!map[code].name || map[code].name === "Unknown") && d.country && d.country !== "Unknown") {
+            map[code].name = d.country;
+          }
+        } else {
+          map[code] = {
+            count,
+            name: d.country,
+            countryCode: code,
+          };
+        }
       }
     });
     return map;

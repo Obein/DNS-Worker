@@ -98,24 +98,20 @@ DNS Worker provides instant visibility into intercepted threats and permitted re
 
 To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps), DNS Worker uses a **Dual-Layer Bloom Filter** architecture:
 
-```
-Incoming Query (e.g. adserver.tracker.com)
-                │
-                ▼
-┌─────────────────────────────────┐
-│ Bloom Filter Fast Check         │
-│ (Compact Bitset in RAM / KV)    │
-└─────────────────────────────────┘
-        │                 │
-    (Negative)        (Positive)
-        │                 ▼
-        │     ┌─────────────────────────────────┐
-        │     │ Exact Trie Verification Check   │
-        │     │ (Prevents false positive blocks)│
-        │     └─────────────────────────────────┘
-        │                 │                 │
-        ▼                 ▼                 ▼
-   [ ALLOWED ]       [ BLOCKED ]       [ ALLOWED ]
+```mermaid
+flowchart TD
+    REQ["Incoming Query (e.g. adserver.tracker.com)"]
+    BLOOM["Bloom Filter Fast Check<br/>(Compact Bitset in RAM / KV)"]
+    TRIE["Exact Trie Verification Check<br/>(Prevents false positive blocks)"]
+    PASS1["ALLOWED"]
+    BLOCK["BLOCKED"]
+    PASS2["ALLOWED (Collision Resolved)"]
+
+    REQ --> BLOOM
+    BLOOM -->|"Negative (Clean)"| PASS1
+    BLOOM -->|"Positive (Possible Match)"| TRIE
+    TRIE -->|"Confirmed in Blocklist"| BLOCK
+    TRIE -->|"Hash Collision (False Alarm)"| PASS2
 ```
 
 1. **Bloom Filter Layer**: Queries are hashed across a compact bitset. Over 99% of non-blocked domains are instantly validated in $O(1)$ time without database I/O.

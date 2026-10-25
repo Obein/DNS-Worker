@@ -28,8 +28,8 @@ export class LogDestinationAnalytics {
   ): Promise<DestinationCountResult[]> {
     let queryStr = `
       SELECT 
-        COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) as country_code,
-        COALESCE(dest_country, json_extract(dest_geoip, '$.country')) as country,
+        UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) as country_code,
+        MAX(COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown')) as country,
         COUNT(*) as count
       FROM logs 
       WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)

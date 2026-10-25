@@ -27,14 +27,16 @@ sidebar:
 
 DNS Worker 定期執行週期性資料庫整理：
 
-```
-┌────────────────────────────────────────────────────────┐
-│ 周期性定时运维阶段                                      │
-│  ├─ 1. 清理超出设定保留天数的历史日志                  │
-│  ├─ 2. 检索并清理连续 30 天不活跃账号的历史日志        │
-│  ├─ 3. 作废并清理过期的 Web 登录 Session 与 Refresh 凭据 │
-│  └─ 4. 执行 SQLite WAL 检查点整理与 VACUUM 空间压缩    │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Maintenance["周期性定时运维阶段"]
+        direction TB
+        M1["1. 清理超出设定保留天数的历史日志"]
+        M2["2. 检索并清理连续 30 天不活跃账号的历史日志"]
+        M3["3. 作废并清理过期的 Web 登录 Session 与 Refresh 凭据"]
+        M4["4. 执行 SQLite WAL 检查点整理与 VACUUM 空间压缩"]
+        M1 --> M2 --> M3 --> M4
+    end
 ```
 
 - **Cloudflare Workers 模式**：通過 Cloudflare Cron Triggers（`scheduled(event, env, ctx)` 入口）定時觸發。

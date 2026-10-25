@@ -7,6 +7,7 @@
 import { getDatabase } from './database';
 import type {
   SyncBatchPayload,
+  UpdateWatermarkBoundsPayload,
   UpdateLogsBatchPayload,
   GetEncryptedLogsPayload,
   GetWatermarkPayload,
@@ -213,4 +214,46 @@ export function handleGetEncryptedLogs(payload: GetEncryptedLogsPayload): { rows
   }
 
   return { rows };
+}
+
+/**
+ * Updates or establishes the watermark time boundaries for a profile after
+ * completing synchronization of a time interval.
+ *
+ * @param payload - Profile ID and interval boundaries [start, end].
+ * @returns Confirmation object.
+ */
+export function handleUpdateWatermarkBounds(payload: UpdateWatermarkBoundsPayload): { success: boolean } {
+  const db = getDatabase();
+  const { profileId, start, end } = payload;
+  const now = Math.floor(Date.now() / 1000);
+
+  const existing = db.selectObject(
+    'SELECT latest_timestamp, earliest_timestamp, total_synced_count FROM sync_watermarks WHERE profile_id = ?;',
+    [profileId]
+  ) as Partial<SyncWatermarkRow> | undefined;
+
+  if (existing && existing.latest_timestamp !== undefined && existing.earliest_timestamp !== undefined) {
+    const newLatest = Math.max(Number(existing.latest_timestamp), end);
+    const newEarliest = Math.min(Number(existing.earliest_timestamp), start);
+
+    db.exec({
+      sql: `
+        UPDATE sync_watermarks 
+        SET latest_timestamp = ?, earliest_timestamp = ?, last_synced_at = ?
+        WHERE profile_id = ?;
+      `,
+      bind: [newLatest, newEarliest, now, profileId]
+    });
+  } else {
+    db.exec({
+      sql: `
+        INSERT INTO sync_watermarks (profile_id, latest_timestamp, earliest_timestamp, last_synced_at, total_synced_count)
+        VALUES (?, ?, ?, ?, 0);
+      `,
+      bind: [profileId, end, start, now]
+    });
+  }
+
+  return { success: true };
 }

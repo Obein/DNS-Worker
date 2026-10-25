@@ -48,6 +48,89 @@ export default defineConfig({
           }
         },
         {
+          tag: 'script',
+          attrs: {
+            src: '/DNS-Worker/scripts/mermaid.min.js',
+            defer: true,
+          },
+        },
+        {
+          tag: 'script',
+          content: `
+            async function renderMermaidDiagrams() {
+              let m = window.mermaid;
+              if (!m) {
+                try {
+                  const mod = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+                  m = mod.default;
+                } catch (e) {
+                  if (typeof mermaid === 'undefined') {
+                    setTimeout(renderMermaidDiagrams, 100);
+                    return;
+                  }
+                  m = window.mermaid;
+                }
+              }
+
+              const preBlocks = Array.from(document.querySelectorAll('pre[data-language="mermaid"], pre.language-mermaid'));
+              if (!preBlocks.length) return;
+
+              const isDark = document.documentElement.dataset.theme === 'dark' || 
+                             document.documentElement.classList.contains('dark') ||
+                             document.body?.classList.contains('dark');
+
+              m.initialize({
+                startOnLoad: false,
+                theme: isDark ? 'dark' : 'default',
+                securityLevel: 'loose',
+                fontFamily: 'inherit'
+              });
+
+              for (let i = 0; i < preBlocks.length; i++) {
+                const pre = preBlocks[i];
+                if (pre.dataset.mermaidRendered === 'true') continue;
+
+                const lineElements = Array.from(pre.querySelectorAll('.ec-line'));
+                let code = '';
+                if (lineElements.length > 0) {
+                  code = lineElements.map(el => el.textContent || '').join('\\n');
+                } else {
+                  code = pre.textContent || '';
+                }
+
+                code = code.trim();
+                if (!code) continue;
+
+                pre.dataset.mermaidRendered = 'true';
+                const container = pre.closest('.expressive-code') || pre.closest('figure') || pre;
+                const id = 'mermaid_' + i + '_' + Math.random().toString(36).slice(2, 8);
+
+                try {
+                  const { svg } = await m.render(id, code);
+                  const wrapper = document.createElement('div');
+                  wrapper.className = 'mermaid-container';
+                  wrapper.style.display = 'flex';
+                  wrapper.style.justifyContent = 'center';
+                  wrapper.style.margin = '1.5rem 0';
+                  wrapper.style.overflowX = 'auto';
+                  wrapper.innerHTML = svg;
+                  container.replaceWith(wrapper);
+                } catch (err) {
+                  console.error('Failed to render Mermaid diagram #' + i + ':', err, code);
+                }
+              }
+            }
+
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', renderMermaidDiagrams);
+            } else {
+              renderMermaidDiagrams();
+            }
+            document.addEventListener('astro:page-load', renderMermaidDiagrams);
+            document.addEventListener('astro:after-swap', renderMermaidDiagrams);
+          `,
+        },
+        {
           tag: 'meta',
           attrs: {
             name: 'keywords',
@@ -145,6 +228,27 @@ export default defineConfig({
                 'zh-tw': '快速上手',
               },
               slug: 'guide/quickstart',
+            },
+          ],
+        },
+        {
+          label: 'Architecture',
+          translations: {
+            'zh-CN': '系统架构',
+            'zh-cn': '系统架构',
+            'zh-TW': '系統架構',
+            'zh-tw': '系統架構',
+          },
+          items: [
+            {
+              label: 'System Architecture',
+              translations: {
+                'zh-CN': '系统架构设计',
+                'zh-cn': '系统架构设计',
+                'zh-TW': '系統架構設計',
+                'zh-tw': '系統架構設計',
+              },
+              slug: 'architecture/overview',
             },
           ],
         },

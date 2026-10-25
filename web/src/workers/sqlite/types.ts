@@ -73,6 +73,7 @@ export interface WorkerMessageRequest {
   type:
     | 'INIT'
     | 'SYNC_BATCH'
+    | 'UPDATE_WATERMARK_BOUNDS'
     | 'UPDATE_LOGS_BATCH'
     | 'GET_ENCRYPTED_LOGS'
     | 'GET_WATERMARK'
@@ -103,6 +104,15 @@ export interface SyncBatchPayload {
   logs: WorkerLogEntry[];
   minTimestamp?: number;
   maxTimestamp?: number;
+}
+
+/**
+ * Payload for updating watermark time boundaries after syncing missing intervals.
+ */
+export interface UpdateWatermarkBoundsPayload {
+  profileId: string;
+  start: number;
+  end: number;
 }
 
 /**

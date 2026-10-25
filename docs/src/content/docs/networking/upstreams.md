@@ -13,21 +13,26 @@ DNS Worker acts as an intelligent intermediary and privacy shield between client
 
 DNS Worker supports high-concurrency recursive query forwarding over multiple modern transport protocols:
 
-```
-[ Client Device ]
-        │  (DoH / DoT / UDP)
-        ▼
-┌────────────────────────────────────────────────────────┐
-│ DNS Worker Engine                                      │
-│  ├─ Policy & Blocklist Evaluation                      │
-│  ├─ Cache & ECS (EDNS Client Subnet) Injection         │
-│  └─ Multiplexed Upstream Dispatcher                    │
-└────────────────────────────────────────────────────────┘
-        │
-   ┌────┴───────────────────────────┬──────────────────────┐
-   ▼                                ▼                      ▼
-[ DoQ / QUIC Upstream ]    [ DoH + ECH Upstream ]   [ DoT / TLS Upstream ]
- (RFC 9250 - quic://)       (RFC 8484 / RFC 9460)    (RFC 7858 - tls://)
+```mermaid
+flowchart TD
+    CLIENT["Client Device"]
+    
+    subgraph Engine["DNS Worker Engine"]
+        direction TB
+        E1["Policy & Blocklist Evaluation"]
+        E2["Cache & ECS Injection"]
+        E3["Multiplexed Upstream Dispatcher"]
+        E1 --- E2 --- E3
+    end
+
+    U_DOQ["DoQ / QUIC Upstream<br/>(RFC 9250 - quic://)"]
+    U_DOH["DoH + ECH Upstream<br/>(RFC 8484 / RFC 9460)"]
+    U_DOT["DoT / TLS Upstream<br/>(RFC 7858 - tls://)"]
+
+    CLIENT -->|"DoH / DoT / UDP"| Engine
+    Engine --> U_DOQ
+    Engine --> U_DOH
+    Engine --> U_DOT
 ```
 
 ### Supported Upstream URI Schemes
