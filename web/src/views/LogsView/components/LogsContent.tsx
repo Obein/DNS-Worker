@@ -138,8 +138,8 @@ export const LogsContent: React.FC<LogsContentProps> = ({
         <button
           type="button"
           onClick={scrollToTop}
-          aria-label={t("logs.scrollToTop", "至顶")}
-          title={t("logs.scrollToTop", "至顶")}
+          aria-label={t("logs.scrollToTop")}
+          title={t("logs.scrollToTop")}
           className={clsx(
             "pointer-events-auto group inline-flex items-center gap-1.5 rounded-full select-none",
             "backdrop-blur-md bg-white/70 dark:bg-gray-900/70 hover:bg-white/90 dark:hover:bg-gray-800/90",
@@ -152,11 +152,8 @@ export const LogsContent: React.FC<LogsContentProps> = ({
           <ArrowUp
             size={isMobile ? 13 : 15}
             strokeWidth={2.4}
-            className="transition-transform duration-200 group-hover:-translate-y-0.5"
+            className="transition-transform duration-200 group-hover:scale-105"
           />
-          <span className="font-medium tracking-wider">
-            {t("logs.scrollToTop", "至顶")}
-          </span>
         </button>
       </div>
     </div>
