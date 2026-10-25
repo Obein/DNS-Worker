@@ -27,14 +27,16 @@ To protect privacy and conserve disk space:
 
 DNS Worker maintains database health through scheduled background tasks:
 
-```
-┌────────────────────────────────────────────────────────┐
-│ Scheduled Maintenance Phase                            │
-│  ├─ 1. Expire query logs older than retentionDays      │
-│  ├─ 2. Prune query logs for inactive accounts (30d)    │
-│  ├─ 3. Invalidate expired web sessions & refresh tokens │
-│  └─ 4. Periodic SQLite WAL checkpointing & VACUUM      │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Maintenance["Scheduled Maintenance Phase"]
+        direction TB
+        M1["1. Expire query logs older than retentionDays"]
+        M2["2. Prune query logs for inactive accounts (30d)"]
+        M3["3. Invalidate expired web sessions & refresh tokens"]
+        M4["4. Periodic SQLite WAL checkpointing & VACUUM"]
+        M1 --> M2 --> M3 --> M4
+    end
 ```
 
 - **Cloudflare Workers Mode**: Executed via Cloudflare Cron Triggers (`scheduled(event, env, ctx)` handler).

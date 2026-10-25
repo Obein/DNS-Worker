@@ -5,16 +5,16 @@ description: 详解 DNS Worker 支持的三种数据库存储模式（Cloudflare
 
 DNS Worker 采用统一的数据抽象层设计，支持 **三种不同的数据库存储引擎**，能够无缝覆盖从 Cloudflare 全球边缘节点到私有物理 VPS 乃至混合部署的各种场景。
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                   DNS Worker 数据访问层 (DAL)                     │
-└──────────────┬───────────────────┬───────────────────┬───────────┘
-               │                   │                   │
-               ▼                   ▼                   ▼
-    ┌────────────────────┐ ┌────────────────┐ ┌────────────────────┐
-    │   Cloudflare D1    │ │ Turso / libSQL │ │ 本地文件 SQLite     │
-    │ (Serverless 默认)   │ │ (全平台多端共享) │ │ (Serverfull 默认)   │
-    └────────────────────┘ └────────────────┘ └────────────────────┘
+```mermaid
+flowchart TD
+    DAL["DNS Worker 数据访问层 (DAL)"]
+    D1["Cloudflare D1<br/>(Serverless 默认)"]
+    TURSO["Turso / libSQL<br/>(全平台多端共享)"]
+    SQLITE["本地文件 SQLite<br/>(Serverfull 默认)"]
+
+    DAL --> D1
+    DAL --> TURSO
+    DAL --> SQLITE
 ```
 
 ---

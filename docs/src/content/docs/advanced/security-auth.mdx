@@ -19,18 +19,19 @@ DNS Worker implements defense-in-depth zero-trust security standards across both
 
 The Web Dashboard adheres to the **WebApp Trust** architectural framework:
 
-```
-[ Browser Client ]                                     [ DNS Worker Server ]
-        │                                                        │
-        │── 1. POST /api/auth/login (Password + Nonce) ─────────▶│
-        │                                                        │ (Argon2 / PBKDF2)
-        │◀── 2. Access Token (Memory) + Refresh Token (Cookie) ──│
-        │                                                        │
-        │── 3. Authenticated RPC (Authorization: Bearer) ───────▶│
-        │                                                        │
-        │── 4. POST /api/auth/refresh (RTR Grace Window) ───────▶│
-        │                                                        │ (Issues New Pair)
-        │◀── 5. Rotated Access Token + Rotated Refresh Token ───│
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Browser as Browser Client
+    participant Server as DNS Worker Server
+
+    Browser->>Server: POST /api/auth/login (Password + Nonce)
+    Note over Server: Argon2 / PBKDF2 Verification
+    Server-->>Browser: Access Token (Memory) + Refresh Token (Cookie)
+    Browser->>Server: Authenticated RPC (Authorization: Bearer)
+    Browser->>Server: POST /api/auth/refresh (RTR Grace Window)
+    Note over Server: Issues New Token Pair
+    Server-->>Browser: Rotated Access Token + Rotated Refresh Token
 ```
 
 ### Key Security Defenses
@@ -50,20 +51,14 @@ Configure your master security keys, Passkeys, and Post-Quantum E2EE directly in
 
 Sensitive data at rest — including client session tokens and private query logs — is protected using two-tier envelope encryption:
 
-```
-┌────────────────────────────────────────────────────────┐
-│ Key Encryption Key (KEK_v1 / KEK_v2)                   │
-│ (Stored securely in environment variables or secrets)  │
-└────────────────────────────────────────────────────────┘
-                           │ (Encrypts / Decrypts)
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ Data Encryption Key (DEK)                              │
-│ (Generated per log batch or session record)            │
-└────────────────────────────────────────────────────────┘
-                           │ (Encrypts / Decrypts)
-                           ▼
-               [ Sensitive Data / Payload ]
+```mermaid
+flowchart TD
+    KEK["Key Encryption Key (KEK_v1 / KEK_v2)<br/>(Stored securely in environment variables or secrets)"]
+    DEK["Data Encryption Key (DEK)<br/>(Generated per log batch or session record)"]
+    PAYLOAD["Sensitive Data / Payload"]
+
+    KEK -->|"Encrypts / Decrypts"| DEK
+    DEK -->|"Encrypts / Decrypts"| PAYLOAD
 ```
 
 ### Versioned Key Rotation Without Downtime

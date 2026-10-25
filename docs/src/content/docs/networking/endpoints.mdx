@@ -30,14 +30,17 @@ By configuring distinct profiles, you can separate policies across different env
 2. Enter a descriptive name for your profile (e.g., `Phone-Mobile`, `Living-Room-Router`, `Kids-Tablet`).
 3. Click **Create Profile**.
 
-```
-┌────────────────────────────────────────────────────────┐
-│ Profile: Phone-Mobile                                  │
-│ Profile Key: a8f9c2d14e...                             │
-│ Status: Active                                         │
-│ Block Mode: Zero IP (0.0.0.0 / ::)                     │
-│ Logging: Enabled (Retention: 30 Days)                  │
-└────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph ProfileCard["Profile Configuration Example"]
+        direction TB
+        P1["Profile Name: Phone-Mobile"]
+        P2["Profile Key: a8f9c2d14e..."]
+        P3["Status: Active"]
+        P4["Block Mode: Zero IP (0.0.0.0 / ::)"]
+        P5["Logging: Enabled (Retention: 30 Days)"]
+        P1 --- P2 --- P3 --- P4 --- P5
+    end
 ```
 
 ### Step 3: Fast Profile Switching
