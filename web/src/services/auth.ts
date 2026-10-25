@@ -46,6 +46,11 @@ export interface LoginResponse {
   accessToken: string;
   needsMigration?: boolean;
   rotatedRecoveryKey?: string;
+  user?: {
+    id: string;
+    username: string;
+    role: string;
+  };
 }
 
 export interface SignupPayload {
@@ -137,7 +142,14 @@ export async function refresh(): Promise<LoginResponse> {
   return activeRefreshPromise;
 }
 
-export async function getUnlockNonce(): Promise<{ nonce: string; legacy?: boolean }> {
+export interface UnlockNonceResponse {
+  nonce: string;
+  legacy?: boolean;
+  userId?: string;
+  username?: string;
+}
+
+export async function getUnlockNonce(): Promise<UnlockNonceResponse> {
   const res = await fetch("/api/auth/unlock-session", { method: "GET" });
   if (!res.ok) throw new ApiError(res.status, await res.text());
   return res.json();

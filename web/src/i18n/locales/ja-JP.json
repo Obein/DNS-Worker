@@ -125,7 +125,7 @@
     "pinMatchTip": "PINが一致しません",
     "passwordRequired": "確認にはパスワードが必要です",
     "sessionLocked": "無操作のためセッションがロックされました",
-    "sessionExpired": "試行回数が多すぎます。セッションが終了しました。",
+    "sessionExpired": "セッションの有効期限が切れました。再度ログインしてください。",
     "pinIncorrect": "PINが正しくありません",
     "attemptsRemaining": "残り試行回数: {{count}}回",
     "logoutAndReturn": "セッションからログアウト",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "リカバリキーを使用",
     "totpUseApp": "認証アプリを使用",
     "mfaMethodTotp": "認証アプリ (TOTP)",
-    "invalidTotp": "無効なTOTP認証コードです。もう一度お試しください。"
+    "invalidTotp": "無効なTOTP認証コードです。もう一度お試しください。",
+    "sessionExpiredNotice": "セッションが無効または期限切れです。再度ログインしてください。",
+    "tooManyAttemptsTerminate": "試行回数が多すぎます。セッションが終了しました。"
   },
   "setup": {
     "title": "インストールガイド",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[暗号化された記録]",
     "exportSuccess": "ログのエクスポートに成功しました",
     "exportError": "ログのエクスポートに失敗しました",
-    "e2eeLockedExportWarning": "一部のログは暗号化されておりロックされています。エクスポートされたデータには未復号のプレースホルダーが含まれている可能性があります。"
+    "e2eeLockedExportWarning": "一部のログは暗号化されておりロックされています。エクスポートされたデータには未復号のプレースホルダーが含まれている可能性があります。",
+    "scrollToTop": "トップへ"
   },
   "filtering": {
     "title": "外部ブロックリスト",

@@ -126,7 +126,7 @@
     "pinMatchTip": "PINs do not match",
     "passwordRequired": "Password is required for verification",
     "sessionLocked": "Session Locked due to inactivity",
-    "sessionExpired": "Too many failed attempts. Session terminated.",
+    "sessionExpired": "Session expired. Please log in again.",
     "pinIncorrect": "Incorrect PIN",
     "attemptsRemaining": "{{count}} attempts remaining",
     "logoutAndReturn": "Log Out Session",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "Use Recovery Key",
     "totpUseApp": "Use Authentication App",
     "mfaMethodTotp": "Authenticator App (TOTP)",
-    "invalidTotp": "Invalid TOTP verification code."
+    "invalidTotp": "Invalid TOTP verification code.",
+    "sessionExpiredNotice": "Session expired or missing. Please log in again.",
+    "tooManyAttemptsTerminate": "Too many failed attempts. Session terminated."
   },
   "setup": {
     "title": "Setup Guide",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[Encrypted Record]",
     "exportSuccess": "Logs exported successfully",
     "exportError": "Failed to export logs",
-    "e2eeLockedExportWarning": "Some logs are encrypted and currently locked; the exported file may contain encrypted placeholders."
+    "e2eeLockedExportWarning": "Some logs are encrypted and currently locked; the exported file may contain encrypted placeholders.",
+    "scrollToTop": "Top"
   },
   "filtering": {
     "title": "External Filters",

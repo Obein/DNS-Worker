@@ -7,8 +7,9 @@ import type { TimeRange } from "../types";
 
 export interface UseLogsE2eeParams {
   profileId: string;
-  range: TimeRange;
-  fetchLogs: (range: TimeRange, isInitial?: boolean) => Promise<void>;
+  range?: TimeRange;
+  fetchLogs?: (range: TimeRange, isInitial?: boolean) => Promise<void>;
+  onUnlocked?: () => void | Promise<void>;
   toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
@@ -38,6 +39,7 @@ export function useLogsE2ee({
   profileId,
   range,
   fetchLogs,
+  onUnlocked,
   toasterRef
 }: UseLogsE2eeParams): UseLogsE2eeReturn {
   const { t } = useTranslation();
@@ -61,10 +63,18 @@ export function useLogsE2ee({
     autoUnlockAttempted.current = false;
   }
 
+  const triggerPostUnlock = useCallback(async () => {
+    if (onUnlocked) {
+      await onUnlocked();
+    } else if (fetchLogs && range) {
+      await fetchLogs(range, true);
+    }
+  }, [onUnlocked, fetchLogs, range]);
+
   const checkE2ee = useCallback(async () => {
     try {
       const status = await e2ee.getStatus(profileId);
-      const enabled = Boolean(status.enabled);
+      const enabled = Boolean(status.enabled || status.hasKeys);
       setIsE2eeEnabled(enabled);
 
       const unlocked = e2ee.isProfileUnlocked(profileId);
@@ -84,7 +94,7 @@ export function useLogsE2ee({
           if (success) {
             setIsE2eeUnlocked(true);
             await localDb.reDecryptLocalLogs(profileId);
-            fetchLogs(range, true);
+            await triggerPostUnlock();
           }
         } catch (autoErr) {
           console.debug("[useLogsE2ee] Silent auto-unlock skipped or cancelled:", autoErr);
@@ -93,7 +103,7 @@ export function useLogsE2ee({
     } catch {
       setIsE2eeEnabled(false);
     }
-  }, [profileId, fetchLogs, range]);
+  }, [profileId, triggerPostUnlock]);
 
   useEffect(() => {
     checkE2ee();
@@ -110,7 +120,7 @@ export function useLogsE2ee({
           message: t("settings.e2eeUnlockSuccess", "私钥已成功在此设备解锁"),
           intent: Intent.SUCCESS
         });
-        fetchLogs(range, true);
+        await triggerPostUnlock();
       }
     } catch (err: unknown) {
       console.error("Failed to unlock E2EE via Passkey:", err);
@@ -152,7 +162,7 @@ export function useLogsE2ee({
         message: t("settings.e2eeUnlockSuccess", "私钥已成功在此设备解锁"),
         intent: Intent.SUCCESS
       });
-      fetchLogs(range, true);
+      await triggerPostUnlock();
     } catch (err: unknown) {
       console.error("Failed to unlock E2EE via recovery key:", err);
       setRecoveryError(

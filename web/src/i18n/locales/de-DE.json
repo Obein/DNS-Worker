@@ -125,7 +125,7 @@
     "pinMatchTip": "Die PINs stimmen nicht überein",
     "passwordRequired": "Passwort zur Verifizierung erforderlich",
     "sessionLocked": "Sitzung wegen Inaktivität gesperrt",
-    "sessionExpired": "Zu viele Fehlversuche. Sitzung beendet.",
+    "sessionExpired": "Sitzung abgelaufen. Bitte erneut anmelden.",
     "pinIncorrect": "Falsche PIN",
     "attemptsRemaining": "{{count}} verbleibende Versuche",
     "logoutAndReturn": "Sitzung abmelden",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "Wiederherstellungsschlüssel verwenden",
     "totpUseApp": "Authenticator-App verwenden",
     "mfaMethodTotp": "Authenticator-App (TOTP)",
-    "invalidTotp": "Ungültiger TOTP-Bestätigungscode."
+    "invalidTotp": "Ungültiger TOTP-Bestätigungscode.",
+    "sessionExpiredNotice": "Sitzung abgelaufen oder ungültig. Bitte erneut anmelden.",
+    "tooManyAttemptsTerminate": "Zu viele fehlgeschlagene Versuche. Sitzung beendet."
   },
   "setup": {
     "title": "Installationsanleitung",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[Verschlüsselter Eintrag]",
     "exportSuccess": "Protokolle erfolgreich exportiert",
     "exportError": "Fehler beim Exportieren der Protokolle",
-    "e2eeLockedExportWarning": "Einige Protokolle sind verschlüsselt und derzeit gesperrt; die exportierte Datei enthält möglicherweise verschlüsselte Platzhalter."
+    "e2eeLockedExportWarning": "Einige Protokolle sind verschlüsselt und derzeit gesperrt; die exportierte Datei enthält möglicherweise verschlüsselte Platzhalter.",
+    "scrollToTop": "Nach oben"
   },
   "filtering": {
     "title": "Externe Blockierlisten",

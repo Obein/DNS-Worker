@@ -24,6 +24,20 @@ export function getRequestCoordinates(request: Request): { latitude: number | nu
     }
   }
 
+  // Fallback for local development environments (e.g. wrangler dev on localhost/loopback)
+  const clientIp = request.headers.get("CF-Connecting-IP") || "";
+  try {
+    const url = new URL(request.url);
+    if (
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "localhost" ||
+      clientIp === "127.0.0.1" ||
+      clientIp === "::1"
+    ) {
+      return { latitude: null, longitude: null };
+    }
+  } catch {}
+
   return { latitude: null, longitude: null };
 }
 

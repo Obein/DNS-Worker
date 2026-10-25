@@ -125,7 +125,7 @@
     "pinMatchTip": "Los PIN no coinciden",
     "passwordRequired": "Se requiere contraseña para la verificación",
     "sessionLocked": "Sesión bloqueada por inactividad",
-    "sessionExpired": "Demasiados intentos fallidos. Sesión terminada.",
+    "sessionExpired": "Sesión caducada. Por favor, inicie sesión de nuevo.",
     "pinIncorrect": "PIN incorrecto",
     "attemptsRemaining": "{{count}} intentos restantes",
     "logoutAndReturn": "Cerrar sesión",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "Usar clave de recuperación",
     "totpUseApp": "Usar aplicación de autenticación",
     "mfaMethodTotp": "Aplicación de autenticación (TOTP)",
-    "invalidTotp": "Código de verificación TOTP inválido."
+    "invalidTotp": "Código de verificación TOTP inválido.",
+    "sessionExpiredNotice": "Sesión caducada o no válida. Por favor, inicie sesión de nuevo.",
+    "tooManyAttemptsTerminate": "Demasiados intentos fallidos. Sesión finalizada."
   },
   "setup": {
     "title": "Guía de instalación",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[Registro cifrado]",
     "exportSuccess": "Registros exportados con éxito",
     "exportError": "Error al exportar los registros",
-    "e2eeLockedExportWarning": "Algunos registros están cifrados y actualmente bloqueados; el archivo exportado puede contener marcadores de posición cifrados."
+    "e2eeLockedExportWarning": "Algunos registros están cifrados y actualmente bloqueados; el archivo exportado puede contener marcadores de posición cifrados.",
+    "scrollToTop": "Ir arriba"
   },
   "filtering": {
     "title": "Listas de bloqueo externas",

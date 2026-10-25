@@ -125,7 +125,7 @@
     "pinMatchTip": "Les codes PIN ne correspondent pas",
     "passwordRequired": "Mot de passe requis pour la vérification",
     "sessionLocked": "Session verrouillée pour inactivité",
-    "sessionExpired": "Trop de tentatives échouées. Session terminée.",
+    "sessionExpired": "Session expirée. Veuillez vous reconnecter.",
     "pinIncorrect": "Code PIN incorrect",
     "attemptsRemaining": "{{count}} tentatives restantes",
     "logoutAndReturn": "Déconnecter la session",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "Utiliser la clé de récupération",
     "totpUseApp": "Utiliser l'application d'authentification",
     "mfaMethodTotp": "Application d'authentification (TOTP)",
-    "invalidTotp": "Code de vérification TOTP invalide."
+    "invalidTotp": "Code de vérification TOTP invalide.",
+    "sessionExpiredNotice": "Session expirée ou invalide. Veuillez vous reconnecter.",
+    "tooManyAttemptsTerminate": "Trop de tentatives infructueuses. Session terminée."
   },
   "setup": {
     "title": "Guide d'installation",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[Enregistrement chiffré]",
     "exportSuccess": "Journaux exportés avec succès",
     "exportError": "Échec de l'exportation des journaux",
-    "e2eeLockedExportWarning": "Certains journaux sont chiffrés et actuellement verrouillés ; le fichier exporté peut contenir des espaces réservés chiffrés."
+    "e2eeLockedExportWarning": "Certains journaux sont chiffrés et actuellement verrouillés ; le fichier exporté peut contenir des espaces réservés chiffrés.",
+    "scrollToTop": "Haut de page"
   },
   "filtering": {
     "title": "Listes de blocage externes",

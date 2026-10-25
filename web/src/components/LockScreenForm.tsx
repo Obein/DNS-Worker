@@ -37,15 +37,44 @@ export const LockScreenForm: React.FC<LockScreenFormProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+  const [username, setUsername] = useState<string>(() =>
+    currentUser?.username ||
+    sessionStorage.getItem("obex_username") ||
+    localStorage.getItem("obex_username") ||
+    ""
+  );
   const digitInputRef = useRef<DigitInputRef>(null);
 
-  // Focus the first PIN input digit on mount
+  // Focus the first PIN input digit and prefetch challenge on mount
   useEffect(() => {
     const timer = setTimeout(() => {
       digitInputRef.current?.focus();
     }, 100);
+
+    // Proactively prefetch unlock challenge and user identity from server
+    getUnlockNonce()
+      .then((data) => {
+        if (data.userId) {
+          sessionStorage.setItem("obex_user_id", data.userId);
+          try { localStorage.setItem("obex_user_id", data.userId); } catch {}
+        }
+        if (data.username) {
+          sessionStorage.setItem("obex_username", data.username);
+          try { localStorage.setItem("obex_username", data.username); } catch {}
+          setUsername(data.username);
+        }
+      })
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 401) {
+          setError(t("auth.sessionExpiredNotice", "会话已失效，请重新登录。"));
+          setTimeout(() => {
+            handleLogout?.();
+          }, 1500);
+        }
+      });
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [handleLogout, t]);
 
   /**
    * Submits the entered PIN to the unlock API endpoint.
@@ -53,6 +82,7 @@ export const LockScreenForm: React.FC<LockScreenFormProps> = ({
    * @param pinValue - Optional direct PIN value from digit completion.
    */
   const submitUnlock = async (pinValue?: string): Promise<void> => {
+    if (loading) return;
     const pinToSubmit = pinValue || pin;
     if (!pinToSubmit || pinToSubmit.length < 4) return;
 
@@ -60,17 +90,33 @@ export const LockScreenForm: React.FC<LockScreenFormProps> = ({
     setError("");
 
     try {
-      const userId = currentUser?.id || sessionStorage.getItem("obex_user_id");
+      // Fetch challenge nonce from server
+      const { nonce, legacy, userId: nonceUserId, username: nonceUsername } = await getUnlockNonce();
+
+      if (nonceUsername && !username) {
+        setUsername(nonceUsername);
+        sessionStorage.setItem("obex_username", nonceUsername);
+        try { localStorage.setItem("obex_username", nonceUsername); } catch {}
+      }
+      if (nonceUserId) {
+        sessionStorage.setItem("obex_user_id", nonceUserId);
+        try { localStorage.setItem("obex_user_id", nonceUserId); } catch {}
+      }
+
+      const userId =
+        currentUser?.id ||
+        sessionStorage.getItem("obex_user_id") ||
+        localStorage.getItem("obex_user_id") ||
+        nonceUserId;
+
       if (!userId) {
-        setError(t("auth.sessionExpired", "会话已过期，正在退出..."));
+        setError(t("auth.sessionExpiredNotice", "会话已失效，请重新登录。"));
         setTimeout(() => {
           handleLogout?.();
         }, 1500);
         return;
       }
 
-      // Fetch challenge nonce from server
-      const { nonce, legacy } = await getUnlockNonce();
       const pinHash = await hashPin(pinToSubmit, userId);
 
       if (legacy) {
@@ -91,7 +137,7 @@ export const LockScreenForm: React.FC<LockScreenFormProps> = ({
       setPin(""); // Clear PIN on failure for immediate retry
       if (err instanceof ApiError) {
         if (err.status === 401 && err.bodyText.includes("too_many_attempts")) {
-          setError(t("auth.sessionExpired", "尝试次数过多，会话已终结。"));
+          setError(t("auth.tooManyAttemptsTerminate", "尝试次数过多，会话已终结。"));
           setTimeout(() => {
             handleLogout?.();
           }, 1500);
@@ -123,7 +169,12 @@ export const LockScreenForm: React.FC<LockScreenFormProps> = ({
     }
   };
 
-  const displayUsername = currentUser?.username || sessionStorage.getItem("obex_username") || "";
+  const displayUsername =
+    username ||
+    currentUser?.username ||
+    sessionStorage.getItem("obex_username") ||
+    localStorage.getItem("obex_username") ||
+    "";
 
   return (
     <div

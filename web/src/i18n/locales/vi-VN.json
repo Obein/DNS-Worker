@@ -125,7 +125,7 @@
     "pinMatchTip": "Mã PIN không khớp",
     "passwordRequired": "Yêu cầu nhập mật khẩu để xác minh",
     "sessionLocked": "Phiên bị khóa do không hoạt động",
-    "sessionExpired": "Quá nhiều lần thử thất bại. Phiên đã bị chấm dứt.",
+    "sessionExpired": "Phiên đã hết hạn. Vui lòng đăng nhập lại.",
     "pinIncorrect": "Mã PIN không chính xác",
     "attemptsRemaining": "Còn lại {{count}} lần thử",
     "logoutAndReturn": "Đăng xuất phiên",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "Sử dụng khóa khôi phục",
     "totpUseApp": "Sử dụng ứng dụng xác thực",
     "mfaMethodTotp": "Ứng dụng xác thực (TOTP)",
-    "invalidTotp": "Mã xác thực TOTP không hợp lệ."
+    "invalidTotp": "Mã xác thực TOTP không hợp lệ.",
+    "sessionExpiredNotice": "Phiên đã hết hạn hoặc không hợp lệ. Vui lòng đăng nhập lại.",
+    "tooManyAttemptsTerminate": "Quá nhiều lần thử không thành công. Phiên đã kết thúc."
   },
   "setup": {
     "title": "Hướng dẫn cài đặt",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[Bản ghi đã mã hóa]",
     "exportSuccess": "Xuất nhật ký thành công",
     "exportError": "Không thể xuất nhật ký",
-    "e2eeLockedExportWarning": "Một số nhật ký đã được mã hóa và hiện đang bị khóa; tệp đã xuất có thể chứa nội dung giữ chỗ đã mã hóa."
+    "e2eeLockedExportWarning": "Một số nhật ký đã được mã hóa và hiện đang bị khóa; tệp đã xuất có thể chứa nội dung giữ chỗ đã mã hóa.",
+    "scrollToTop": "Lên đầu"
   },
   "filtering": {
     "title": "Danh sách chặn bên ngoài",

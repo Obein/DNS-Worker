@@ -1,6 +1,6 @@
 import React from "react";
 import { Section, HTMLTable, Tag } from "@blueprintjs/core";
-import { Globe } from "lucide-react";
+import { Globe, Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getFlagEmoji } from "../../../utils/getFlagEmoji";
 import type { AnalyticsData } from "../types";
@@ -25,7 +25,21 @@ export const ClientActivitySection: React.FC<ClientActivitySectionProps> = ({ cl
         <tbody>
           {clients?.map((c, i) => (
             <tr key={i}>
-              <td className="font-mono text-xs">{c.client_ip || "-"}</td>
+              <td className="font-mono text-xs">
+                {c.client_ip === "[Encrypted]" ? (
+                  <span className="inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500 italic">
+                    <Lock size={12} className="text-amber-500 shrink-0" />
+                    <span>{t("logs.encryptedRecord", "[加密记录]")}</span>
+                  </span>
+                ) : c.client_ip === "[Decryption Failed]" ? (
+                  <span className="inline-flex items-center gap-1.5 text-red-400 dark:text-red-500 italic">
+                    <Lock size={12} className="text-red-500 shrink-0" />
+                    <span>{t("logs.decryptionFailed", "[解密失败]")}</span>
+                  </span>
+                ) : (
+                  c.client_ip || "-"
+                )}
+              </td>
               <td>
                 <Tag minimal>{getFlagEmoji(c.geo_country)}</Tag>
               </td>

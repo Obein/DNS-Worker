@@ -125,7 +125,7 @@
     "pinMatchTip": "PIN이 일치하지 않습니다",
     "passwordRequired": "인증을 위해 비밀번호가 필요합니다",
     "sessionLocked": "유휴 상태로 인해 세션이 잠겼습니다",
-    "sessionExpired": "실패 횟수가 너무 많습니다. 세션이 종료되었습니다.",
+    "sessionExpired": "세션이 만료되었습니다. 다시 로그인해 주세요.",
     "pinIncorrect": "올바르지 않은 PIN",
     "attemptsRemaining": "남은 시도 횟수: {{count}}회",
     "logoutAndReturn": "세션 로그아웃",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "복구 키 사용",
     "totpUseApp": "인증 앱 사용",
     "mfaMethodTotp": "인증 앱 (TOTP)",
-    "invalidTotp": "잘못된 TOTP 인증 코드입니다. 다시 시도해 주세요."
+    "invalidTotp": "잘못된 TOTP 인증 코드입니다. 다시 시도해 주세요.",
+    "sessionExpiredNotice": "세션이 만료되었거나 유효하지 않습니다. 다시 로그인해 주세요.",
+    "tooManyAttemptsTerminate": "시도 횟수가 너무 많습니다. 세션이 종료되었습니다."
   },
   "setup": {
     "title": "설치 가이드",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[암호화된 기록]",
     "exportSuccess": "로그 내보내기 성공",
     "exportError": "로그 내보내기 실패",
-    "e2eeLockedExportWarning": "일부 로그가 암호화되어 있으며 잠겨 있습니다. 내보낸 파일에 암호화된 플레이스홀더가 포함될 수 있습니다."
+    "e2eeLockedExportWarning": "일부 로그가 암호화되어 있으며 잠겨 있습니다. 내보낸 파일에 암호화된 플레이스홀더가 포함될 수 있습니다.",
+    "scrollToTop": "맨 위로"
   },
   "filtering": {
     "title": "외부 차단 리스트",

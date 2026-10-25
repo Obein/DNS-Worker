@@ -126,7 +126,7 @@
     "pinMatchTip": "两次输入的 PIN 码不匹配",
     "passwordRequired": "需要输入密码以验证身份",
     "sessionLocked": "由于长时间未活动，会话已锁定",
-    "sessionExpired": "尝试次数过多，会话已终结。",
+    "sessionExpired": "会话已过期，请重新登录。",
     "pinIncorrect": "PIN 码错误",
     "attemptsRemaining": "还剩 {{count}} 次尝试机会",
     "logoutAndReturn": "登出会话",
@@ -198,7 +198,9 @@
     "totpUseRecovery": "使用紧急恢复密钥",
     "totpUseApp": "使用身份验证器 App",
     "mfaMethodTotp": "数字验证器 (TOTP)",
-    "invalidTotp": "TOTP 验证码无效，请重试"
+    "invalidTotp": "TOTP 验证码无效，请重试",
+    "sessionExpiredNotice": "会话已失效，请重新登录。",
+    "tooManyAttemptsTerminate": "尝试次数过多，会话已终结。"
   },
   "setup": {
     "title": "安装指南",
@@ -458,7 +460,8 @@
     "encryptedRecord": "[加密记录]",
     "exportSuccess": "日志导出成功",
     "exportError": "日志导出失败",
-    "e2eeLockedExportWarning": "部分日志处于加密状态且未解锁，导出的数据可能包含未解密占位内容。"
+    "e2eeLockedExportWarning": "部分日志处于加密状态且未解锁，导出的数据可能包含未解密占位内容。",
+    "scrollToTop": "至顶"
   },
   "filtering": {
     "title": "外部拦截列表",
