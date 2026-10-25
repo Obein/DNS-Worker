@@ -6,7 +6,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 /**
  * Built-in canonical .env configuration template with comprehensive explanations.
@@ -239,7 +239,7 @@ export function writeDefaultConfigFile(targetPath: string, force: boolean = fals
     const sudoUser = process.env.SUDO_USER.trim();
     if (/^[a-zA-Z0-9._-]+$/.test(sudoUser)) {
       try {
-        execSync(`chown ${sudoUser} "${targetPath}"`);
+        execFileSync('chown', [sudoUser, targetPath]);
       } catch {}
     }
   }
