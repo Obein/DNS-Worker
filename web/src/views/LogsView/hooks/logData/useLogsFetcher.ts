@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { LogEntry, TimeRange } from "../../types";
-import { logsWs } from "../../../../services";
+import { logsWs, getProfileAnalytics } from "../../../../services";
 import { calculateTimeBoundaries } from "./timeBoundaries";
 import { prefetchDomainIcons } from "./utils/prefetchIcons";
 import { fetchServerLogs } from "./strategies/serverStrategy";
@@ -128,6 +128,35 @@ export function useLogsFetcher({
 
         if (isInitial) {
           if (!isAutoRefresh) setSyncing(true);
+
+          // Fetch authoritative server summary stats concurrently to ensure full-dataset accuracy
+          const statsParams = new URLSearchParams({ range: currentRange });
+          if (currentRange === "custom" && customRange.start && customRange.end) {
+            statsParams.set("start", String(since));
+            statsParams.set("end", String(until));
+          }
+          if (searchQuery) statsParams.set("search", searchQuery);
+          if (statusFilter) statsParams.set("status", statusFilter);
+          if (accessPointIdFilter) statsParams.set("access_point_id", accessPointIdFilter);
+          if (destCountryFilter) statsParams.set("dest_country", destCountryFilter);
+          if (ispFilter) statsParams.set("isp", ispFilter);
+
+          getProfileAnalytics(profileId, "summary", statsParams.toString(), { signal: controller.signal })
+            .then((statsData: Array<{ action: string; count: number }> | null) => {
+              if (controller.signal.aborted || !statsData) return;
+              const summary = { total: 0, pass: 0, block: 0, redirect: 0 };
+              statsData.forEach((item) => {
+                const count = Number(item.count) || 0;
+                summary.total += count;
+                if (item.action === "PASS") summary.pass = count;
+                else if (item.action === "BLOCK") summary.block = count;
+                else if (item.action === "REDIRECT") summary.redirect = count;
+              });
+              setStats(summary);
+            })
+            .catch(() => {
+              // Silently ignore network failures; local cached stats remain visible
+            });
 
           const localResult = await queryInitialLocalLogs(
             queryParams,

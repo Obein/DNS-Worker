@@ -93,9 +93,12 @@ export class LogModel {
     since: number,
     until: number,
     search?: string,
-    accessPointId?: string
+    accessPointId?: string,
+    destCountry?: string,
+    isp?: string,
+    status?: string
   ): Promise<ActionCountResult[]> {
-    return this.analytics.getSummary(profileId, since, until, search, accessPointId);
+    return this.analytics.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
   }
 
   async getTrend(

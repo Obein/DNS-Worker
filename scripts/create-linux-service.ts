@@ -41,7 +41,9 @@ function findTsxCli(): string {
  * @returns Complete systemd unit file string
  */
 function generateServiceContent(): string {
-  const nodePath = process.execPath;
+  // Use 'node' directly from PATH (or DNS_WORKER_NODE_BIN override) so Node version upgrades
+  // (e.g. system packages or symlinks) do not require regenerating the systemd service file.
+  const nodePath = process.env.DNS_WORKER_NODE_BIN || 'node';
   const tsxCli = findTsxCli();
 
   let execStart = '';
@@ -96,7 +98,12 @@ function main(): void {
   const isLinux = process.platform === 'linux';
 
   console.log(`Target Service File: ${SERVICE_PATH}`);
-  console.log(`Working Directory:   ${PROJECT_DIR}\n`);
+  console.log(`Working Directory:   ${PROJECT_DIR}`);
+  if (process.execPath.includes('nvm') || process.execPath.includes('.nvm')) {
+    console.log('[Tip] Detected Node.js running via NVM. To ensure systemd finds `node`, create a symlink if needed:');
+    console.log(`      sudo ln -sf ${process.execPath} /usr/local/bin/node`);
+  }
+  console.log('');
 
   if (!isLinux) {
     console.log('[Notice] Current OS is not Linux. Displaying generated systemd service template below:\n');

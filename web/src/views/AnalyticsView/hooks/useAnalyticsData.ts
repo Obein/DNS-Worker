@@ -191,59 +191,55 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
 
         if (serverAnalytics && !signal.aborted) {
           setData((prev) => {
-            const hasLocalDecrypted =
-              prev &&
-              (prev.top_allowed?.some(
+            // Check if server returned valid, unencrypted clients
+            const serverHasValidClients =
+              (serverAnalytics!.clients || []).length > 0 &&
+              serverAnalytics!.clients.some(
+                (c) =>
+                  c.client_ip &&
+                  c.client_ip !== "[Encrypted]" &&
+                  c.client_ip !== "[Decryption Failed]"
+              );
+
+            // Check if server returned valid, unencrypted top_allowed
+            const serverHasValidTopAllowed =
+              (serverAnalytics!.top_allowed || []).length > 0 &&
+              serverAnalytics!.top_allowed.some(
                 (d) =>
                   d.domain &&
                   d.domain !== "[Encrypted]" &&
                   d.domain !== "[Decryption Failed]"
-              ) ||
-                prev.top_blocked?.some(
-                  (d) =>
-                    d.domain &&
-                    d.domain !== "[Encrypted]" &&
-                    d.domain !== "[Decryption Failed]"
-                ) ||
-                prev.clients?.some(
-                  (c) =>
-                    c.client_ip &&
-                    c.client_ip !== "[Encrypted]" &&
-                    c.client_ip !== "[Decryption Failed]"
-                ));
+              );
 
-            // For destinations:
-            // If server returned non-empty destinations (plaintext profile), use server's complete analytics.
-            // If server returned empty destinations (E2EE profile where dest fields are null on server),
-            // retain local decrypted destinations from prev if available.
+            // Check if server returned valid, unencrypted top_blocked
+            const serverHasValidTopBlocked =
+              (serverAnalytics!.top_blocked || []).length > 0 &&
+              serverAnalytics!.top_blocked.some(
+                (d) =>
+                  d.domain &&
+                  d.domain !== "[Encrypted]" &&
+                  d.domain !== "[Decryption Failed]"
+              );
+
+            // Check if server returned non-empty destinations (plaintext profile)
             const serverHasDestinations = (serverAnalytics!.destinations || []).length > 0;
-            const effectiveDestinations = serverHasDestinations
-              ? serverAnalytics!.destinations
-              : (prev?.destinations && prev.destinations.length > 0 ? prev.destinations : []);
 
             return {
               ...serverAnalytics!,
               trend: serverAnalytics!.trend || [],
               summary: serverAnalytics!.summary || [],
-              top_allowed:
-                hasLocalDecrypted &&
-                prev?.top_allowed?.length &&
-                prev.top_allowed.some((d) => d.domain !== "[Encrypted]")
-                  ? prev.top_allowed
-                  : serverAnalytics!.top_allowed || [],
-              top_blocked:
-                hasLocalDecrypted &&
-                prev?.top_blocked?.length &&
-                prev.top_blocked.some((d) => d.domain !== "[Encrypted]")
-                  ? prev.top_blocked
-                  : serverAnalytics!.top_blocked || [],
-              clients:
-                hasLocalDecrypted &&
-                prev?.clients?.length &&
-                prev.clients.some((c) => c.client_ip !== "[Encrypted]")
-                  ? prev.clients
-                  : serverAnalytics!.clients || [],
-              destinations: effectiveDestinations
+              top_allowed: serverHasValidTopAllowed
+                ? serverAnalytics!.top_allowed
+                : (prev?.top_allowed?.length ? prev.top_allowed : serverAnalytics!.top_allowed || []),
+              top_blocked: serverHasValidTopBlocked
+                ? serverAnalytics!.top_blocked
+                : (prev?.top_blocked?.length ? prev.top_blocked : serverAnalytics!.top_blocked || []),
+              clients: serverHasValidClients
+                ? serverAnalytics!.clients
+                : (prev?.clients?.length ? prev.clients : serverAnalytics!.clients || []),
+              destinations: serverHasDestinations
+                ? serverAnalytics!.destinations
+                : (prev?.destinations && prev.destinations.length > 0 ? prev.destinations : [])
             };
           });
         }
@@ -280,24 +276,49 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
             if (!signal.aborted) {
               setData((curr) => {
                 if (!curr) return freshLocal;
+
+                // Only substitute local SQLite data for fields where the server data was missing or encrypted!
+                // NEVER overwrite authoritative server analytics (which cover all queries in DB)!
+                const currHasValidDestinations = (curr.destinations || []).length > 0;
+                const currHasValidClients =
+                  (curr.clients || []).length > 0 &&
+                  curr.clients.some(
+                    (c) =>
+                      c.client_ip &&
+                      c.client_ip !== "[Encrypted]" &&
+                      c.client_ip !== "[Decryption Failed]"
+                  );
+                const currHasValidTopAllowed =
+                  (curr.top_allowed || []).length > 0 &&
+                  curr.top_allowed.some(
+                    (d) =>
+                      d.domain &&
+                      d.domain !== "[Encrypted]" &&
+                      d.domain !== "[Decryption Failed]"
+                  );
+                const currHasValidTopBlocked =
+                  (curr.top_blocked || []).length > 0 &&
+                  curr.top_blocked.some(
+                    (d) =>
+                      d.domain &&
+                      d.domain !== "[Encrypted]" &&
+                      d.domain !== "[Decryption Failed]"
+                  );
+
                 return {
                   ...curr,
-                  destinations:
-                    freshLocal.destinations.length > 0
-                      ? freshLocal.destinations
-                      : curr.destinations,
-                  top_allowed:
-                    freshLocal.top_allowed.length > 0
-                      ? freshLocal.top_allowed
-                      : curr.top_allowed,
-                  top_blocked:
-                    freshLocal.top_blocked.length > 0
-                      ? freshLocal.top_blocked
-                      : curr.top_blocked,
-                  clients:
-                    freshLocal.clients.length > 0
-                      ? freshLocal.clients
-                      : curr.clients
+                  destinations: currHasValidDestinations
+                    ? curr.destinations
+                    : (freshLocal.destinations.length > 0 ? freshLocal.destinations : curr.destinations),
+                  top_allowed: currHasValidTopAllowed
+                    ? curr.top_allowed
+                    : (freshLocal.top_allowed.length > 0 ? freshLocal.top_allowed : curr.top_allowed),
+                  top_blocked: currHasValidTopBlocked
+                    ? curr.top_blocked
+                    : (freshLocal.top_blocked.length > 0 ? freshLocal.top_blocked : curr.top_blocked),
+                  clients: currHasValidClients
+                    ? curr.clients
+                    : (freshLocal.clients.length > 0 ? freshLocal.clients : curr.clients)
                 };
               });
             }

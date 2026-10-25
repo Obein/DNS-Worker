@@ -17,6 +17,9 @@ export class LogTrafficAnalytics {
    * @param until - End timestamp in seconds.
    * @param search - Optional domain search substring.
    * @param accessPointId - Optional device/access point ID.
+   * @param destCountry - Optional destination country code.
+   * @param isp - Optional ISP name filter.
+   * @param status - Optional action status filter (e.g. PASS, BLOCK).
    * @returns Array of action counts.
    */
   async getSummary(
@@ -24,7 +27,10 @@ export class LogTrafficAnalytics {
     since: number,
     until: number,
     search?: string,
-    accessPointId?: string
+    accessPointId?: string,
+    destCountry?: string,
+    isp?: string,
+    status?: string
   ): Promise<ActionCountResult[]> {
     let queryStr =
       "SELECT action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?";
@@ -36,6 +42,18 @@ export class LogTrafficAnalytics {
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";
       params.push(accessPointId);
+    }
+    if (status) {
+      queryStr += " AND action = ?";
+      params.push(status);
+    }
+    if (destCountry) {
+      queryStr += " AND UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?";
+      params.push(destCountry.toUpperCase());
+    }
+    if (isp) {
+      queryStr += " AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) = ?";
+      params.push(isp);
     }
     queryStr += " GROUP BY action";
     const { results } = await this.db

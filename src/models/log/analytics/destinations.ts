@@ -32,7 +32,10 @@ export class LogDestinationAnalytics {
         MAX(COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown')) as country,
         COUNT(*) as count
       FROM logs 
-      WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
+      WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? 
+        AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
+        AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) IS NOT NULL
+        AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) != ''
     `;
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
