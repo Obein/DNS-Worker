@@ -17,6 +17,8 @@ const clearCsrfToken = () => {
     sessionStorage.removeItem("obex_session_locked");
     sessionStorage.removeItem("obex_username");
     sessionStorage.removeItem("obex_user_id");
+    localStorage.removeItem("obex_username");
+    localStorage.removeItem("obex_user_id");
   } catch {}
 };
 
@@ -46,6 +48,14 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
         try {
           const data = await refresh();
           setAccessToken(data.accessToken);
+          if (data.user?.id) {
+            sessionStorage.setItem("obex_user_id", data.user.id);
+            try { localStorage.setItem("obex_user_id", data.user.id); } catch {}
+          }
+          if (data.user?.username) {
+            sessionStorage.setItem("obex_username", data.user.username);
+            try { localStorage.setItem("obex_username", data.user.username); } catch {}
+          }
         } catch {
           clearCsrfToken();
           setIsLoggedIn(false);
@@ -59,9 +69,11 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
         setCurrentUser(meData);
         if (meData.username) {
           sessionStorage.setItem("obex_username", meData.username);
+          try { localStorage.setItem("obex_username", meData.username); } catch {}
         }
         if (meData.id) {
           sessionStorage.setItem("obex_user_id", meData.id);
+          try { localStorage.setItem("obex_user_id", meData.id); } catch {}
         }
 
         if (meData.timezone) {
@@ -75,6 +87,26 @@ export function useAuth(toasterRef: React.RefObject<OverlayToaster | null>) {
       } catch (err: any) {
         if (err instanceof ApiError && err.status === 403 && err.bodyText === "session_paused") {
           setIsLoggedIn(true);
+          // Ensure user context is restored for lock screen even when paused
+          try {
+            const activeToken = getAccessToken();
+            if (activeToken) {
+              const base64Url = activeToken.split(".")[1];
+              const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+              const payload = JSON.parse(atob(base64));
+              if (payload?.userId) {
+                sessionStorage.setItem("obex_user_id", payload.userId);
+                try { localStorage.setItem("obex_user_id", payload.userId); } catch {}
+                const cachedUsername = sessionStorage.getItem("obex_username") || localStorage.getItem("obex_username") || "";
+                setCurrentUser({
+                  id: payload.userId,
+                  username: cachedUsername,
+                  role: payload.role || "user",
+                  pin_enabled: true
+                });
+              }
+            }
+          } catch {}
           window.dispatchEvent(new Event("session_paused"));
           return;
         }

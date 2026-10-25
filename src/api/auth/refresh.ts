@@ -58,5 +58,13 @@ export async function handleRefreshRequest(request: Request, env: Env): Promise<
   const isKeepLoggedIn = session.id.startsWith("k_");
   headers.append("Set-Cookie", createRefreshTokenCookie(newRefreshToken, env, isKeepLoggedIn));
 
-  return new Response(JSON.stringify({ success: true, accessToken }), { headers });
+  return new Response(JSON.stringify({
+    success: true,
+    accessToken,
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    }
+  }), { headers });
 }

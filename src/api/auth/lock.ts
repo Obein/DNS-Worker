@@ -92,7 +92,12 @@ export async function handleSessionLockRequest(request: Request, env: Env): Prom
       const cacheKey = `unlock_nonce:${payload.sessionId}`;
       await cacheUtils.set(cache, cacheKey, { nonce, isLegacy }, 300); // 5 minutes TTL
 
-      return new Response(JSON.stringify({ nonce, legacy: isLegacy }), {
+      return new Response(JSON.stringify({
+        nonce,
+        legacy: isLegacy,
+        userId: payload.userId,
+        username: dbUser?.username
+      }), {
         headers: { "Content-Type": "application/json" }
       });
     } catch (e) {
