@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { AnalyticsData, TimeRange } from "../types";
 import {
   getProfileAccessPoints,
@@ -40,6 +40,13 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
   const [accessPointIdFilter, setAccessPointIdFilter] = useState<string | null>(null);
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>([]);
   const [logRetentionDays, setLogRetentionDays] = useState<number>(30);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     getProfileAccessPoints(profileId)
@@ -71,6 +78,11 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
       customEnd?: string,
       apIdFilter?: string | null
     ): Promise<void> => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const signal = controller.signal;
+
       setLoading(true);
 
       const now = Math.floor(Date.now() / 1000);
@@ -124,7 +136,7 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
       // Step 1: Attempt Local-First SQLite aggregation for instant preview (0ms latency)
       try {
         const isDbReady = await localDb.init();
-        if (isDbReady) {
+        if (isDbReady && !signal.aborted) {
           const localAnalytics = await localDb.queryAnalytics({
             profileId,
             since,
@@ -133,7 +145,7 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
             accessPointId: apIdFilter || undefined
           });
 
-          if (localAnalytics.summary.some((s) => s.count > 0)) {
+          if (localAnalytics.summary.some((s) => s.count > 0) && !signal.aborted) {
             setData(localAnalytics);
             setLoading(false);
           }
@@ -156,6 +168,7 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
         try {
           serverAnalytics = await getProfileAnalytics(profileId, "", queryParams);
         } catch {
+          if (signal.aborted) return;
           // Fallback to separate endpoints if unified endpoint fails
           const [summary, trend, topAllowed, topBlocked, clients, destinations] =
             await Promise.all([
@@ -176,7 +189,7 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
           };
         }
 
-        if (serverAnalytics) {
+        if (serverAnalytics && !signal.aborted) {
           setData((prev) => {
             const hasLocalDecrypted =
               prev &&
@@ -197,8 +210,16 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
                     c.client_ip &&
                     c.client_ip !== "[Encrypted]" &&
                     c.client_ip !== "[Decryption Failed]"
-                ) ||
-                (prev.destinations && prev.destinations.length > 0));
+                ));
+
+            // For destinations:
+            // If server returned non-empty destinations (plaintext profile), use server's complete analytics.
+            // If server returned empty destinations (E2EE profile where dest fields are null on server),
+            // retain local decrypted destinations from prev if available.
+            const serverHasDestinations = (serverAnalytics!.destinations || []).length > 0;
+            const effectiveDestinations = serverHasDestinations
+              ? serverAnalytics!.destinations
+              : (prev?.destinations && prev.destinations.length > 0 ? prev.destinations : []);
 
             return {
               ...serverAnalytics!,
@@ -222,74 +243,72 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
                 prev.clients.some((c) => c.client_ip !== "[Encrypted]")
                   ? prev.clients
                   : serverAnalytics!.clients || [],
-              destinations:
-                (hasLocalDecrypted || (serverAnalytics!.destinations || []).length === 0) &&
-                prev?.destinations?.length
-                  ? prev.destinations
-                  : serverAnalytics!.destinations || []
+              destinations: effectiveDestinations
             };
           });
         }
       } catch (e) {
-        console.error("[useAnalyticsData] Failed to fetch server analytics:", e);
+        if (!signal.aborted) {
+          console.error("[useAnalyticsData] Failed to fetch server analytics:", e);
+        }
       } finally {
-        setLoading(false);
+        if (!signal.aborted) {
+          setLoading(false);
+        }
       }
 
-      // Step 3: Background sync of raw logs within query range into local SQLite
+      // Step 3: Download missing time intervals into local SQLite and refresh aggregations
       try {
         const isUnlocked = e2ee.isProfileUnlocked(profileId) || e2ee.isUnlocked();
-        localDb
-          .syncProfileLogs(profileId, undefined, since, undefined, isUnlocked)
-          .then(async (inserted) => {
-            if (inserted > 0 || isUnlocked) {
-              try {
-                const freshLocal = await localDb.queryAnalytics({
-                  profileId,
-                  since,
-                  until,
-                  bucketSec,
-                  accessPointId: apIdFilter || undefined
-                });
-                if (
-                  freshLocal.destinations?.length > 0 ||
-                  freshLocal.top_allowed?.length > 0 ||
-                  freshLocal.top_blocked?.length > 0 ||
-                  freshLocal.clients?.length > 0
-                ) {
-                  setData((curr) => {
-                    if (!curr) return freshLocal;
-                    return {
-                      ...curr,
-                      destinations:
-                        freshLocal.destinations.length > 0
-                          ? freshLocal.destinations
-                          : curr.destinations,
-                      top_allowed:
-                        freshLocal.top_allowed.length > 0
-                          ? freshLocal.top_allowed
-                          : curr.top_allowed,
-                      top_blocked:
-                        freshLocal.top_blocked.length > 0
-                          ? freshLocal.top_blocked
-                          : curr.top_blocked,
-                      clients:
-                        freshLocal.clients.length > 0
-                          ? freshLocal.clients
-                          : curr.clients
-                    };
-                  });
-                }
-              } catch {
-                // Ignore re-query errors
-              }
+        const inserted = await localDb.syncMissingIntervals(
+          profileId,
+          since,
+          until,
+          signal
+        );
+
+        if (!signal.aborted && (inserted > 0 || isUnlocked)) {
+          try {
+            const freshLocal = await localDb.queryAnalytics({
+              profileId,
+              since,
+              until,
+              bucketSec,
+              accessPointId: apIdFilter || undefined
+            });
+
+            if (!signal.aborted) {
+              setData((curr) => {
+                if (!curr) return freshLocal;
+                return {
+                  ...curr,
+                  destinations:
+                    freshLocal.destinations.length > 0
+                      ? freshLocal.destinations
+                      : curr.destinations,
+                  top_allowed:
+                    freshLocal.top_allowed.length > 0
+                      ? freshLocal.top_allowed
+                      : curr.top_allowed,
+                  top_blocked:
+                    freshLocal.top_blocked.length > 0
+                      ? freshLocal.top_blocked
+                      : curr.top_blocked,
+                  clients:
+                    freshLocal.clients.length > 0
+                      ? freshLocal.clients
+                      : curr.clients
+                };
+              });
             }
-          })
-          .catch((syncErr) => {
-            console.warn("[useAnalyticsData] Background sync error:", syncErr);
-          });
-      } catch {
-        // Ignore background sync errors
+          } catch {
+            // Ignore re-query errors
+          }
+        }
+      } catch (syncErr) {
+        if ((syncErr as Error)?.name !== "AbortError") {
+          console.warn("[useAnalyticsData] Missing intervals sync error:", syncErr);
+        }
       }
     },
     [profileId]

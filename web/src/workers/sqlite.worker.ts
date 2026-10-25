@@ -8,6 +8,7 @@ import type {
   WorkerMessageRequest,
   WorkerMessageResponse,
   SyncBatchPayload,
+  UpdateWatermarkBoundsPayload,
   UpdateLogsBatchPayload,
   GetEncryptedLogsPayload,
   GetWatermarkPayload,
@@ -22,6 +23,7 @@ import type {
 import { initDatabase } from './sqlite/database';
 import {
   handleSyncBatch,
+  handleUpdateWatermarkBounds,
   handleUpdateLogsBatch,
   handleGetEncryptedLogs,
   handleGetWatermark,
@@ -54,6 +56,9 @@ self.onmessage = async (e: MessageEvent<WorkerMessageRequest>): Promise<void> =>
       }
       case 'SYNC_BATCH':
         result = handleSyncBatch(payload as SyncBatchPayload);
+        break;
+      case 'UPDATE_WATERMARK_BOUNDS':
+        result = handleUpdateWatermarkBounds(payload as UpdateWatermarkBoundsPayload);
         break;
       case 'UPDATE_LOGS_BATCH':
         result = handleUpdateLogsBatch(payload as UpdateLogsBatchPayload);

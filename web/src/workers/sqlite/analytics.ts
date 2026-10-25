@@ -120,8 +120,8 @@ export function handleQueryAnalytics(params: WorkerAnalyticsParams): WorkerAnaly
   const destinations: { country_code: string; country: string; count: number }[] = [];
   const destStmt = db.prepare(`
     SELECT 
-      COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) as country_code,
-      COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown') as country,
+      UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) as country_code,
+      MAX(COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown')) as country,
       count(*) as count 
     FROM local_logs 
     WHERE ${baseWhere} 
@@ -130,14 +130,17 @@ export function handleQueryAnalytics(params: WorkerAnalyticsParams): WorkerAnaly
         OR
         (dest_geoip IS NOT NULL AND json_extract(dest_geoip, '$.country_code') IS NOT NULL AND json_extract(dest_geoip, '$.country_code') != '')
       )
-    GROUP BY country_code, country 
+    GROUP BY country_code 
     ORDER BY count DESC 
-    LIMIT 15;
+    LIMIT 250;
   `);
   try {
     destStmt.bind(baseBinds);
     while (destStmt.step()) {
-      destinations.push(destStmt.get<{ country_code: string; country: string; count: number }>({}));
+      const row = destStmt.get<{ country_code: string; country: string; count: number }>({});
+      if (row && row.country_code) {
+        destinations.push(row);
+      }
     }
   } finally {
     destStmt.finalize();

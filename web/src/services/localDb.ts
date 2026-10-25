@@ -277,6 +277,161 @@ class LocalDbService {
   }
 
   /**
+   * Updates or expands the watermark time boundaries for a profile.
+   *
+   * @param profileId - Profile identifier.
+   * @param start - Start timestamp (seconds).
+   * @param end - End timestamp (seconds).
+   */
+  async updateWatermarkBounds(profileId: string, start: number, end: number): Promise<void> {
+    await this.init();
+    await this.sendRequest('UPDATE_WATERMARK_BOUNDS', { profileId, start, end });
+  }
+
+  /**
+   * Synchronizes missing raw logs for a specific time interval [start, end] from the server into local SQLite.
+   * Paginates backwards through up to 50 pages (5,000 logs) to avoid incomplete window ingestions.
+   *
+   * @param profileId - Profile identifier.
+   * @param start - Start timestamp in seconds.
+   * @param end - End timestamp in seconds.
+   * @param signal - Optional AbortSignal.
+   * @param onProgress - Optional progress callback with running inserted count.
+   * @returns Total number of newly inserted logs.
+   */
+  async syncInterval(
+    profileId: string,
+    start: number,
+    end: number,
+    signal?: AbortSignal,
+    onProgress?: (inserted: number) => void
+  ): Promise<number> {
+    await this.init();
+    if (signal?.aborted || start >= end) return 0;
+
+    let totalInserted = 0;
+    let currentBefore: number | undefined = undefined;
+    let hasMore = true;
+    let pageCount = 0;
+    const MAX_PAGES = 50; // Safety guard: up to 5,000 logs per interval pass
+
+    while (hasMore && pageCount < MAX_PAGES) {
+      if (signal?.aborted) break;
+
+      let url = `/api/profiles/${profileId}/logs?start=${start}&end=${end}&limit=100`;
+      if (currentBefore !== undefined) {
+        url += `&before=${currentBefore}`;
+      }
+
+      const res = await profileFetch(url, { signal });
+      if (!res.ok) {
+        console.warn(`[localDb] Failed to fetch logs for interval [${start}, ${end}] (${res.status}):`, await res.text());
+        break;
+      }
+
+      const rawLogs: LogEntry[] = await res.json();
+      if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
+        break;
+      }
+
+      // Decrypt any encrypted logs before inserting into local SQLite
+      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+
+      // Insert this batch into local SQLite
+      const { inserted } = await this.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+        profileId,
+        logs
+      });
+
+      totalInserted += inserted;
+      pageCount++;
+      if (onProgress) {
+        onProgress(totalInserted);
+      }
+
+      if (logs.length < 100) {
+        hasMore = false;
+      } else {
+        const oldestInBatch = Number(logs[logs.length - 1].timestamp);
+        if (
+          isNaN(oldestInBatch) ||
+          oldestInBatch <= start ||
+          (currentBefore !== undefined && oldestInBatch >= currentBefore)
+        ) {
+          hasMore = false;
+        } else {
+          currentBefore = oldestInBatch;
+        }
+      }
+    }
+
+    // Explicitly update watermark boundaries so we record that [start, end] was checked
+    await this.updateWatermarkBounds(profileId, start, end);
+
+    return totalInserted;
+  }
+
+  /**
+   * Identifies and downloads all missing time intervals between `since` and `until` from the server.
+   * Compares the requested range against local SQLite sync watermarks (earliest and latest timestamps).
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start of the requested time range (seconds).
+   * @param until - End of the requested time range (seconds).
+   * @param signal - Optional AbortSignal.
+   * @param onProgress - Optional progress callback.
+   * @returns Total number of newly inserted logs across all missing intervals.
+   */
+  async syncMissingIntervals(
+    profileId: string,
+    since: number,
+    until: number,
+    signal?: AbortSignal,
+    onProgress?: (inserted: number) => void
+  ): Promise<number> {
+    await this.init();
+    if (signal?.aborted || since >= until) return 0;
+
+    const watermark = await this.getWatermark(profileId);
+    const intervals: { start: number; end: number }[] = [];
+
+    if (!watermark || !watermark.earliest_timestamp || !watermark.latest_timestamp || watermark.latest_timestamp <= 0) {
+      intervals.push({ start: since, end: until });
+    } else {
+      const { earliest_timestamp: early, latest_timestamp: late } = watermark;
+
+      if (until <= early) {
+        // Entire query range is strictly earlier than local data
+        intervals.push({ start: since, end: until });
+      } else if (since >= late) {
+        // Entire query range is strictly later than local data
+        intervals.push({ start: since, end: until });
+      } else {
+        // Overlapping range: check forward and historical missing intervals
+        if (until > late) {
+          intervals.push({ start: Math.max(since, late - 60), end: until });
+        }
+        if (since < early) {
+          intervals.push({ start: since, end: Math.min(until, early + 60) });
+        }
+      }
+    }
+
+    if (intervals.length === 0) {
+      return 0;
+    }
+
+    let totalInserted = 0;
+    for (const interval of intervals) {
+      if (signal?.aborted) break;
+      const count = await this.syncInterval(profileId, interval.start, interval.end, signal, onProgress);
+      totalInserted += count;
+    }
+
+    return totalInserted;
+  }
+
+  /**
    * Backfills older logs from the server into local SQLite (e.g. when scrolling down).
    * Fetches at most 1 page (up to 100 logs) older than `before` down to `since`.
    */
