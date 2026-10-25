@@ -71,7 +71,7 @@ export const LogsContent: React.FC<LogsContentProps> = ({
       <div
         ref={scrollContainerRef}
         onScroll={checkScroll}
-        className={clsx("flex-1 overflow-y-auto", isMobile ? "px-1" : "px-4")}
+        className={clsx("flex-1 overflow-y-auto", isMobile ? "px-1" : "px-0")}
       >
         {logs.length === 0 && !loading ? (
           <div className="py-20">
@@ -125,7 +125,7 @@ export const LogsContent: React.FC<LogsContentProps> = ({
         </div>
       </div>
 
-      {/* Swiss Style Semi-Transparent Scroll-to-Top Button */}
+      {/* Semi-Transparent Scroll-to-Top Button */}
       <div
         className={clsx(
           "absolute z-30 pointer-events-none transition-all duration-300 ease-out",
