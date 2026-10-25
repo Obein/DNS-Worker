@@ -69,6 +69,12 @@ export function checkNodeVersion(): void {
 /**
  * Handles `dns-worker config` subcommands (show, path, template, init).
  */
+function isSafeConfigPathArg(input: string): boolean {
+  // Allow common filesystem path characters and spaces; reject shell/control chars.
+  // This keeps behavior predictable if the value is ever propagated to shell-invoking code.
+  return /^[a-zA-Z0-9._\-\/\\ :]+$/.test(input);
+}
+
 export function handleConfigCommand(subAction: string, targetArg?: string): void {
   if (subAction === 'path') {
     console.log(getDefaultConfigFilePath());
@@ -82,14 +88,14 @@ export function handleConfigCommand(subAction: string, targetArg?: string): void
 
   if (subAction === 'init') {
     const isForce = process.argv.includes('--force') || targetArg === '--force';
-    if (targetArg && targetArg !== '--force' && /[;&|`$><\n\r]/.test(targetArg)) {
+    if (targetArg && targetArg !== '--force' && !isSafeConfigPathArg(targetArg)) {
       console.error(formatDiagnostic({
         level: 'error',
         title: 'Invalid Configuration Path',
         message: 'The provided config path contains unsupported characters.',
         solutions: [
-          'Use a normal filesystem path without shell metacharacters such as ; | & ` $ > <.',
-          'If your path includes spaces, pass it as a quoted argument in your shell.'
+          'Use a normal filesystem path containing letters, numbers, spaces, ".", "_", "-", "/", "\\", or ":" only.',
+          'Avoid shell metacharacters and control characters in path arguments.'
         ]
       }));
       process.exit(1);
