@@ -6,7 +6,8 @@ import {
   Spinner,
   Tag,
   Intent,
-  Section
+  Section,
+  OverlayToaster
 } from "@blueprintjs/core";
 import { MapPin } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,10 @@ import { useAnalyticsData } from "./hooks/useAnalyticsData";
 import { AnalyticsRangeSelector } from "./components/AnalyticsRangeSelector";
 import { AnalyticsMetricCards } from "./components/AnalyticsMetricCards";
 import { ClientActivitySection } from "./components/ClientActivitySection";
+import { E2eeUnlockBanner } from "../LogsView/components/E2eeUnlockBanner";
+import { UnlockWithRecoveryDialog } from "../LogsView/components/UnlockWithRecoveryDialog";
+import { RotatedKeyNotificationDialog } from "../LogsView/components/RotatedKeyNotificationDialog";
+import { useLogsE2ee } from "../LogsView/hooks/useLogsE2ee";
 
 // Lazy-load chart components so that recharts and react19-simple-maps
 // are only fetched when the Analytics page is actually rendered.
@@ -36,7 +41,12 @@ const ChartFallback = () => (
   </div>
 );
 
-export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) => {
+export interface AnalyticsViewProps {
+  profileId: string;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
+}
+
+export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ profileId, toasterRef }) => {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
@@ -53,6 +63,38 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
     logRetentionDays,
     fetchData
   } = useAnalyticsData(profileId);
+
+  const {
+    isE2eeEnabled,
+    isE2eeUnlocked,
+    unlocking,
+    recoveryDialogOpen,
+    setRecoveryDialogOpen,
+    recoveryKeyInput,
+    setRecoveryKeyInput,
+    recoveryError,
+    setRecoveryError,
+    rotatedKey,
+    setRotatedKey,
+    copiedKey,
+    handleCopyRotatedKey,
+    handleUnlockPasskey,
+    handleUnlockRecoveryKey
+  } = useLogsE2ee({
+    profileId,
+    range,
+    onUnlocked: () => {
+      fetchData(range, customRange.start, customRange.end, accessPointIdFilter);
+    },
+    toasterRef
+  });
+
+  const hasEncryptedData = Boolean(
+    data &&
+      (data.top_allowed?.some((d) => d.domain === "[Encrypted]") ||
+        data.top_blocked?.some((d) => d.domain === "[Encrypted]") ||
+        data.clients?.some((c) => c.client_ip === "[Encrypted]"))
+  );
 
   if (loading && !data) {
     return (
@@ -82,6 +124,20 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
           fetchData("custom", customRange.start, customRange.end, accessPointIdFilter);
         }}
       />
+
+      {/* E2EE Unlock Banner when records are encrypted and locked */}
+      {(isE2eeEnabled || hasEncryptedData) && !isE2eeUnlocked && (
+        <E2eeUnlockBanner
+          isMobile={isMobile}
+          unlocking={unlocking}
+          onUnlockPasskey={handleUnlockPasskey}
+          onOpenRecoveryDialog={() => {
+            setRecoveryError("");
+            setRecoveryKeyInput("");
+            setRecoveryDialogOpen(true);
+          }}
+        />
+      )}
 
       {/* Metrics */}
       <AnalyticsMetricCards data={data} />
@@ -133,6 +189,25 @@ export const AnalyticsView: React.FC<{ profileId: string }> = ({ profileId }) =>
         {/* Client Activity */}
         <ClientActivitySection clients={data?.clients} />
       </div>
+
+      {/* Recovery Key Dialog */}
+      <UnlockWithRecoveryDialog
+        isOpen={recoveryDialogOpen}
+        onClose={() => setRecoveryDialogOpen(false)}
+        recoveryKeyInput={recoveryKeyInput}
+        setRecoveryKeyInput={setRecoveryKeyInput}
+        recoveryError={recoveryError}
+        unlocking={unlocking}
+        onSubmit={handleUnlockRecoveryKey}
+      />
+
+      {/* Rotated Key Notification Modal */}
+      <RotatedKeyNotificationDialog
+        rotatedKey={rotatedKey}
+        onClose={() => setRotatedKey(null)}
+        copiedKey={copiedKey}
+        onCopyKey={handleCopyRotatedKey}
+      />
     </div>
   );
 };

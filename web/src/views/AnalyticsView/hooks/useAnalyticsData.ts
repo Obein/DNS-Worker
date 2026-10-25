@@ -114,7 +114,7 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
 
       // Step 0: Ensure local encrypted logs are re-decrypted if E2EE is unlocked
       try {
-        if (e2ee.isUnlocked()) {
+        if (e2ee.isProfileUnlocked(profileId) || e2ee.isUnlocked()) {
           await localDb.reDecryptLocalLogs(profileId);
         }
       } catch {
@@ -180,12 +180,24 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
           setData((prev) => {
             const hasLocalDecrypted =
               prev &&
-              (prev.top_allowed.some(
+              (prev.top_allowed?.some(
                 (d) =>
                   d.domain &&
                   d.domain !== "[Encrypted]" &&
                   d.domain !== "[Decryption Failed]"
               ) ||
+                prev.top_blocked?.some(
+                  (d) =>
+                    d.domain &&
+                    d.domain !== "[Encrypted]" &&
+                    d.domain !== "[Decryption Failed]"
+                ) ||
+                prev.clients?.some(
+                  (c) =>
+                    c.client_ip &&
+                    c.client_ip !== "[Encrypted]" &&
+                    c.client_ip !== "[Decryption Failed]"
+                ) ||
                 (prev.destinations && prev.destinations.length > 0));
 
             return {
@@ -193,15 +205,21 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
               trend: serverAnalytics!.trend || [],
               summary: serverAnalytics!.summary || [],
               top_allowed:
-                hasLocalDecrypted && prev?.top_allowed.length
+                hasLocalDecrypted &&
+                prev?.top_allowed?.length &&
+                prev.top_allowed.some((d) => d.domain !== "[Encrypted]")
                   ? prev.top_allowed
                   : serverAnalytics!.top_allowed || [],
               top_blocked:
-                hasLocalDecrypted && prev?.top_blocked.length
+                hasLocalDecrypted &&
+                prev?.top_blocked?.length &&
+                prev.top_blocked.some((d) => d.domain !== "[Encrypted]")
                   ? prev.top_blocked
                   : serverAnalytics!.top_blocked || [],
               clients:
-                hasLocalDecrypted && prev?.clients.length
+                hasLocalDecrypted &&
+                prev?.clients?.length &&
+                prev.clients.some((c) => c.client_ip !== "[Encrypted]")
                   ? prev.clients
                   : serverAnalytics!.clients || [],
               destinations:
@@ -220,10 +238,11 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
 
       // Step 3: Background sync of raw logs within query range into local SQLite
       try {
+        const isUnlocked = e2ee.isProfileUnlocked(profileId) || e2ee.isUnlocked();
         localDb
-          .syncProfileLogs(profileId, undefined, since)
+          .syncProfileLogs(profileId, undefined, since, undefined, isUnlocked)
           .then(async (inserted) => {
-            if (inserted > 0) {
+            if (inserted > 0 || isUnlocked) {
               try {
                 const freshLocal = await localDb.queryAnalytics({
                   profileId,
@@ -234,7 +253,9 @@ export function useAnalyticsData(profileId: string): UseAnalyticsDataReturn {
                 });
                 if (
                   freshLocal.destinations?.length > 0 ||
-                  freshLocal.top_allowed?.length > 0
+                  freshLocal.top_allowed?.length > 0 ||
+                  freshLocal.top_blocked?.length > 0 ||
+                  freshLocal.clients?.length > 0
                 ) {
                   setData((curr) => {
                     if (!curr) return freshLocal;

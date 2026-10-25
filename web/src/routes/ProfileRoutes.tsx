@@ -101,7 +101,10 @@ export const ProfileRoutes = ({
             />
           }
         />
-        <Route path="stats" element={<AnalyticsView profileId={id} />} />
+        <Route
+          path="stats"
+          element={<AnalyticsView profileId={id} toasterRef={toasterRef} />}
+        />
         <Route
           path="logs"
           element={

@@ -1,5 +1,6 @@
 import React from "react";
 import { Card, Elevation, H5, HTMLTable, Tag, Intent } from "@blueprintjs/core";
+import { Lock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export interface RankTableProps {
@@ -26,7 +27,25 @@ export const RankTable: React.FC<RankTableProps> = ({ title, data, intent }) => 
     {
       key: "domain",
       cellClassName: "font-medium text-sm truncate max-w-50",
-      render: (d: { domain: string; count: number }): React.ReactNode => d.domain,
+      render: (d: { domain: string; count: number }): React.ReactNode => {
+        if (d.domain === "[Encrypted]") {
+          return (
+            <span className="inline-flex items-center gap-1.5 text-gray-400 dark:text-gray-500 italic font-normal">
+              <Lock size={14} className="text-amber-500 shrink-0" />
+              <span>{t("logs.encryptedRecord", "[加密记录]")}</span>
+            </span>
+          );
+        }
+        if (d.domain === "[Decryption Failed]") {
+          return (
+            <span className="inline-flex items-center gap-1.5 text-red-400 dark:text-red-500 italic font-normal">
+              <Lock size={14} className="text-red-500 shrink-0" />
+              <span>{t("logs.decryptionFailed", "[解密失败]")}</span>
+            </span>
+          );
+        }
+        return d.domain;
+      },
     },
     {
       key: "count",
