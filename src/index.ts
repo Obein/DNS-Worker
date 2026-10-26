@@ -61,6 +61,12 @@ export default {
           if (!isTursoConfigured(env) || !env.DB) {
             isDbMissing = true;
             dbErrorMessage = 'DATABASE_SERVICE is set to Turso, but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is not configured.';
+          } else {
+            try {
+              await ensureTursoMigrations(env.DB as any);
+            } catch (migErr: any) {
+              console.warn('[Turso] API schema migration check notice:', migErr.message || migErr);
+            }
           }
         } else if (dbService === 'File') {
           if (!isServerfull) {
