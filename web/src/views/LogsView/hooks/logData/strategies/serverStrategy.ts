@@ -73,6 +73,10 @@ export async function fetchServerLogs(params: ServerStrategyParams): Promise<Ser
       statsParams.set("end", String(until));
     }
     if (searchQuery) statsParams.set("search", searchQuery);
+    if (statusFilter) statsParams.set("status", statusFilter);
+    if (accessPointIdFilter) statsParams.set("access_point_id", accessPointIdFilter);
+    if (destCountryFilter) statsParams.set("dest_country", destCountryFilter);
+    if (ispFilter) statsParams.set("isp", ispFilter);
     fetchStatsPromise = getProfileAnalytics(profileId, "summary", statsParams.toString(), { signal });
   }
 

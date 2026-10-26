@@ -25,7 +25,7 @@ export class LogClientAnalytics {
     accessPointId?: string
   ): Promise<ClientCountResult[]> {
     let queryStr =
-      "SELECT client_ip, geo_country, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?";
+      "SELECT client_ip, geo_country, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND client_ip IS NOT NULL AND client_ip != '' AND client_ip != '[Encrypted]'";
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";

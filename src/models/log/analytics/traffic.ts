@@ -17,6 +17,9 @@ export class LogTrafficAnalytics {
    * @param until - End timestamp in seconds.
    * @param search - Optional domain search substring.
    * @param accessPointId - Optional device/access point ID.
+   * @param destCountry - Optional destination country code.
+   * @param isp - Optional ISP name filter.
+   * @param status - Optional action status filter (e.g. PASS, BLOCK).
    * @returns Array of action counts.
    */
   async getSummary(
@@ -24,7 +27,10 @@ export class LogTrafficAnalytics {
     since: number,
     until: number,
     search?: string,
-    accessPointId?: string
+    accessPointId?: string,
+    destCountry?: string,
+    isp?: string,
+    status?: string
   ): Promise<ActionCountResult[]> {
     let queryStr =
       "SELECT action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?";
@@ -36,6 +42,26 @@ export class LogTrafficAnalytics {
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";
       params.push(accessPointId);
+    }
+    if (status) {
+      queryStr += " AND action = ?";
+      params.push(status);
+    }
+    if (destCountry) {
+      queryStr += ` AND UPPER(CASE 
+        WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+        WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+        ELSE ''
+      END) = ?`;
+      params.push(destCountry.toUpperCase());
+    }
+    if (isp) {
+      queryStr += ` AND (CASE 
+        WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+        WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.isp')
+        ELSE ''
+      END) = ?`;
+      params.push(isp);
     }
     queryStr += " GROUP BY action";
     const { results } = await this.db

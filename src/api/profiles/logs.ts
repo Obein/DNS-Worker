@@ -180,7 +180,10 @@ export async function handleProfileLogsAndAnalyticsRequest(
       let data: any = null;
       if (subResource === 'summary') {
         const search = urlParams.get('search') || undefined;
-        data = await logModel.getSummary(profileId, since, until, search, accessPointId);
+        const destCountry = urlParams.get('dest_country') || undefined;
+        const isp = urlParams.get('isp') || undefined;
+        const status = urlParams.get('status') || undefined;
+        data = await logModel.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
       } else if (subResource === 'trend') {
         data = await logModel.getTrend(profileId, since, until, interval, accessPointId);
       } else if (subResource === 'top_allowed') {

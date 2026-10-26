@@ -92,7 +92,23 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
 
     let isMounted = true;
     const timer = setTimeout(async () => {
-      // 1. Try Local-First SQLite query (for client-decrypted E2EE logs in OPFS)
+      // 1. Fetch authoritative ISPs from server API first (full coverage across all queries)
+      try {
+        const serverData: any = await getProfileAnalytics(profileId, "isps", queryParams);
+        const list = Array.isArray(serverData) ? serverData : [];
+        if (list.length > 0) {
+          onCacheIspRef.current(countryCode, list);
+          if (isMounted) {
+            setIsps(list);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (serverErr) {
+        console.debug("[MapTooltip] Server ISP fetch failed, trying local DB fallback:", serverErr);
+      }
+
+      // 2. Fallback to Local-First SQLite query (for client-decrypted E2EE logs in OPFS or offline)
       try {
         const localIsps = await localDb.queryISPs({
           profileId,
@@ -105,32 +121,16 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
           onCacheIspRef.current(countryCode, localIsps);
           if (isMounted) {
             setIsps(localIsps);
-            setLoading(false);
           }
-          return;
         }
       } catch (err) {
-        console.warn("[MapTooltip] Local SQLite ISP query failed, falling back to server:", err);
+        console.warn("[MapTooltip] Local SQLite ISP query failed:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-
-      // 2. Fallback to server API (for plaintext profiles or unhydrated local DB)
-      getProfileAnalytics(profileId, "isps", queryParams)
-        .then((data: any) => {
-          const list = Array.isArray(data) ? data : [];
-          onCacheIspRef.current(countryCode, list);
-          if (isMounted) {
-            setIsps(list);
-          }
-        })
-        .catch((e: any) => {
-          console.error("Failed to fetch ISPs", e);
-        })
-        .finally(() => {
-          if (isMounted) {
-            setLoading(false);
-          }
-        });
-    }, 200);
+    }, 150);
 
     return () => {
       isMounted = false;
