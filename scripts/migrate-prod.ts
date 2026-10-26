@@ -98,32 +98,50 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Determine target database service
-  let targetService: 'Turso' | 'D1';
+  // Determine database migration targets
+  const explicitTurso = Boolean(values.turso);
+  const explicitD1 = Boolean(values.d1);
 
-  if (values.turso) {
-    targetService = 'Turso';
-  } else if (values.d1) {
-    targetService = 'D1';
+  const tursoUrl = (values['turso-url'] || values.url || process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || '').trim();
+  const tursoToken = (values['turso-token'] || values.token || process.env.TURSO_AUTH_TOKEN || '').trim();
+  const hasTursoCreds = Boolean(tursoUrl && tursoToken);
+
+  let runTurso = false;
+  let runD1 = false;
+
+  if (explicitTurso) {
+    runTurso = true;
+  } else if (explicitD1) {
+    runD1 = true;
   } else {
-    const detected = getDatabaseService(process.env, false);
-    targetService = detected === 'Turso' ? 'Turso' : 'D1';
+    // Default: Apply to all connected databases
+    runTurso = hasTursoCreds;
+    runD1 = true; // D1 is standard Cloudflare binding in wrangler.toml
+
+    if (tursoUrl && !tursoToken) {
+      console.log(formatDiagnostic({
+        level: 'warning',
+        title: 'Turso Migration - Runtime Secret Detected',
+        message: 'TURSO_DATABASE_URL is configured, but TURSO_AUTH_TOKEN is absent in the build environment (e.g. Worker Dash encrypted secret).',
+        solutions: [
+          'Schema migrations on Turso will be automatically and safely applied at runtime upon worker start.',
+          'To migrate Turso immediately during build, add TURSO_AUTH_TOKEN to Worker Dash Build Variables, or run: npm run db:migrate:prod -- --turso'
+        ]
+      }));
+    }
   }
 
   // 1. TURSO MIGRATION BRANCH
-  if (targetService === 'Turso') {
-    const url = (values['turso-url'] || values.url || process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || '').trim();
-    const token = (values['turso-token'] || values.token || process.env.TURSO_AUTH_TOKEN || '').trim();
-
-    if (!url || !token) {
+  if (runTurso) {
+    if (!tursoUrl || !tursoToken) {
       console.error(formatDiagnostic({
         level: 'error',
         title: 'Turso Migration - Missing Credentials',
         message: 'DATABASE_SERVICE is set to Turso, but TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing.',
         details: [
           `Target Engine  : Turso (libSQL over HTTP)`,
-          `URL configured : ${url ? maskDatabaseUrl(url) : 'missing'}`,
-          `Token configured: ${token ? 'yes (masked)' : 'missing'}`
+          `URL configured : ${tursoUrl ? maskDatabaseUrl(tursoUrl) : 'missing'}`,
+          `Token configured: ${tursoToken ? 'yes (masked)' : 'missing'}`
         ],
         solutions: [
           'Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN in your .env or .env.serverfull file.',
@@ -134,12 +152,12 @@ async function main(): Promise<void> {
     }
 
     console.log(formatBanner({
-      title: 'Applying Database Migrations to Turso (DATABASE_SERVICE=Turso)',
+      title: 'Applying Database Migrations to Turso (libSQL)',
       borderChar: '=',
       bullet: '• ',
       items: [
         { label: 'Database Service', value: 'Turso (libSQL over HTTP)' },
-        { label: 'Target Endpoint', value: maskDatabaseUrl(url) },
+        { label: 'Target Endpoint', value: maskDatabaseUrl(tursoUrl) },
         { label: 'Protocol', value: 'Hrana v2 over HTTP (/v2/pipeline)' }
       ]
     }));
@@ -148,7 +166,7 @@ async function main(): Promise<void> {
     const migrationsDir = path.join(rootDir, 'migrations');
 
     try {
-      const client = createTursoClient(url, token);
+      const client = createTursoClient(tursoUrl, tursoToken);
       const applied = await runTursoMigrations(client, migrationsDir);
       console.log(formatDiagnostic({
         level: 'success',
@@ -180,33 +198,34 @@ async function main(): Promise<void> {
       }));
       process.exit(1);
     }
-    return;
   }
 
   // 2. CLOUDFLARE D1 MIGRATION BRANCH
-  console.log(formatBanner({
-    title: 'Applying Database Migrations to Cloudflare D1 (DATABASE_SERVICE=D1)',
-    borderChar: '=',
-    bullet: '• ',
-    items: [
-      { label: 'Database Service', value: 'Cloudflare D1 (Remote)' },
-      { label: 'Database Name', value: 'dns_worker_db' }
-    ]
-  }));
-
-  const result = spawnSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dns_worker_db', '--remote'], {
-    input: 'y\n',
-    stdio: ['pipe', 'inherit', 'inherit'],
-    shell: true
-  });
-
-  if (result.status !== 0) {
-    console.error(formatDiagnostic({
-      level: 'error',
-      title: 'Cloudflare D1 Migration Failed',
-      message: `wrangler d1 migrations exited with status code ${result.status}`
+  if (runD1) {
+    console.log(formatBanner({
+      title: 'Applying Database Migrations to Cloudflare D1',
+      borderChar: '=',
+      bullet: '• ',
+      items: [
+        { label: 'Database Service', value: 'Cloudflare D1 (Remote)' },
+        { label: 'Database Name', value: 'dns_worker_db' }
+      ]
     }));
-    process.exit(result.status || 1);
+
+    const result = spawnSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dns_worker_db', '--remote'], {
+      input: 'y\n',
+      stdio: ['pipe', 'inherit', 'inherit'],
+      shell: true
+    });
+
+    if (result.status !== 0) {
+      console.error(formatDiagnostic({
+        level: 'error',
+        title: 'Cloudflare D1 Migration Failed',
+        message: `wrangler d1 migrations exited with status code ${result.status}`
+      }));
+      process.exit(result.status || 1);
+    }
   }
 }
 

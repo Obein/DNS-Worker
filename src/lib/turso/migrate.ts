@@ -1,12 +1,28 @@
 /**
  * @file migrate.ts
  * @description Automatic SQL schema migration runner for Turso (libSQL) database.
- * Used by Serverfull mode and CLI migration scripts.
+ * Supports both universal runtime auto-migration (Cloudflare Workers via EMBEDDED_MIGRATIONS)
+ * and filesystem-based migrations (Node.js Serverfull mode & CLI tools).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { TursoD1Database } from './index';
+import { EMBEDDED_MIGRATIONS } from './embeddedMigrations';
+
+let nodeFs: any = null;
+let nodePath: any = null;
+
+async function getFs() {
+  if (!nodeFs && typeof process !== 'undefined' && process.versions?.node) {
+    try {
+      nodeFs = await import('node:fs');
+      nodePath = await import('node:path');
+    } catch {
+      nodeFs = null;
+      nodePath = null;
+    }
+  }
+  return { fs: nodeFs, path: nodePath };
+}
 
 /**
  * Migration statistics result.
@@ -53,27 +69,39 @@ export async function getTursoMigrationStats(db: TursoD1Database): Promise<Turso
 }
 
 /**
- * Runs all pending migrations from the given migrations directory against Turso.
+ * Runs all pending migrations against Turso.
+ * If migrationsOrDir is omitted, uses the compiled EMBEDDED_MIGRATIONS map,
+ * allowing safe execution in serverless runtimes (Cloudflare Workers) without filesystem access.
  *
  * @param db - TursoD1Database instance.
- * @param migrationsDir - Directory path containing numeric SQL migration files.
+ * @param migrationsOrDir - Optional directory path or custom Record<string, string> migration map.
  * @returns Number of newly applied migrations.
  */
 export async function runTursoMigrations(
   db: TursoD1Database,
-  migrationsDir: string
+  migrationsOrDir?: string | Record<string, string>
 ): Promise<number> {
   await ensureTursoMigrationsTable(db);
 
-  if (!fs.existsSync(migrationsDir)) {
-    console.warn(`[Turso Migrations] Directory not found: ${migrationsDir}`);
-    return 0;
+  let migrationsMap: Record<string, string> = EMBEDDED_MIGRATIONS;
+
+  if (typeof migrationsOrDir === 'object' && migrationsOrDir !== null) {
+    migrationsMap = migrationsOrDir;
+  } else if (typeof migrationsOrDir === 'string') {
+    const { fs: fsMod, path: pathMod } = await getFs();
+    if (fsMod && pathMod && fsMod.existsSync(migrationsOrDir)) {
+      const files = fsMod
+        .readdirSync(migrationsOrDir)
+        .filter((f: string) => f.endsWith('.sql'))
+        .sort();
+      migrationsMap = {};
+      for (const file of files) {
+        migrationsMap[file] = fsMod.readFileSync(pathMod.join(migrationsOrDir, file), 'utf-8');
+      }
+    }
   }
 
-  const files = fs
-    .readdirSync(migrationsDir)
-    .filter((f: string) => f.endsWith('.sql'))
-    .sort();
+  const files = Object.keys(migrationsMap).sort();
 
   const appliedQuery = await db.prepare('SELECT name FROM _cf_d1_migrations').all<{ name: string }>();
   const appliedSet = new Set((appliedQuery.results || []).map((r) => r.name));
@@ -82,8 +110,8 @@ export async function runTursoMigrations(
   for (const file of files) {
     if (appliedSet.has(file)) continue;
 
-    const filePath = path.join(migrationsDir, file);
-    const sql = fs.readFileSync(filePath, 'utf-8');
+    const sql = migrationsMap[file];
+    if (!sql || !sql.trim()) continue;
 
     console.log(`[Turso Migrations] Applying ${file}...`);
     try {
@@ -106,4 +134,23 @@ export async function runTursoMigrations(
   }
 
   return appliedCount;
+}
+
+let tursoMigrationsPromise: Promise<number> | null = null;
+
+/**
+ * Ensures all schema migrations are applied to Turso once per worker isolate lifecycle.
+ * Deduplicates concurrent cold start requests.
+ *
+ * @param db - TursoD1Database instance.
+ * @returns Number of applied migrations.
+ */
+export async function ensureTursoMigrations(db: TursoD1Database): Promise<number> {
+  if (!tursoMigrationsPromise) {
+    tursoMigrationsPromise = runTursoMigrations(db).catch(err => {
+      tursoMigrationsPromise = null;
+      throw err;
+    });
+  }
+  return tursoMigrationsPromise;
 }
