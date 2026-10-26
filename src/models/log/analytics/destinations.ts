@@ -28,14 +28,24 @@ export class LogDestinationAnalytics {
   ): Promise<DestinationCountResult[]> {
     let queryStr = `
       SELECT 
-        UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) as country_code,
-        MAX(COALESCE(dest_country, json_extract(dest_geoip, '$.country'), 'Unknown')) as country,
+        UPPER(CASE 
+          WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+          ELSE NULL 
+        END) as country_code,
+        MAX(CASE 
+          WHEN dest_country IS NOT NULL AND dest_country != '' THEN dest_country
+          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country')
+          ELSE 'Unknown'
+        END) as country,
         COUNT(*) as count
       FROM logs 
       WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? 
-        AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
-        AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) IS NOT NULL
-        AND COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code')) != ''
+        AND (
+          (dest_country_code IS NOT NULL AND dest_country_code != '')
+          OR
+          (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND json_extract(dest_geoip, '$.country_code') IS NOT NULL AND json_extract(dest_geoip, '$.country_code') != '')
+        )
     `;
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
@@ -71,19 +81,29 @@ export class LogDestinationAnalytics {
   ): Promise<ISPCountResult[]> {
     let queryStr = `
       SELECT 
-        COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) as name, 
+        CASE 
+          WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.isp')
+          ELSE NULL 
+        END as name, 
         COUNT(*) as count 
       FROM logs 
       WHERE profile_id = ? 
         AND timestamp >= ? 
         AND timestamp <= ? 
-        AND (dest_country_code IS NOT NULL OR dest_geoip IS NOT NULL)
-        AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) IS NOT NULL
-        AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) != ''
+        AND (
+          (dest_isp IS NOT NULL AND dest_isp != '')
+          OR
+          (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+        )
     `;
     const params: (string | number)[] = [profileId, since, until];
     if (countryCode) {
-      queryStr += " AND UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?";
+      queryStr += ` AND UPPER(CASE 
+        WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+        WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+        ELSE ''
+      END) = ?`;
       params.push(countryCode.toUpperCase());
     }
     if (accessPointId) {

@@ -48,11 +48,19 @@ export class LogTrafficAnalytics {
       params.push(status);
     }
     if (destCountry) {
-      queryStr += " AND UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?";
+      queryStr += ` AND UPPER(CASE 
+        WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+        WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+        ELSE ''
+      END) = ?`;
       params.push(destCountry.toUpperCase());
     }
     if (isp) {
-      queryStr += " AND COALESCE(dest_isp, json_extract(dest_geoip, '$.isp')) = ?";
+      queryStr += ` AND (CASE 
+        WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+        WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.isp')
+        ELSE ''
+      END) = ?`;
       params.push(isp);
     }
     queryStr += " GROUP BY action";

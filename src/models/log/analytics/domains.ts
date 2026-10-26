@@ -25,7 +25,7 @@ export class LogDomainAnalytics {
     accessPointId?: string
   ): Promise<DomainCountResult[]> {
     let queryStr =
-      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS'";
+      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action = 'PASS'";
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";
@@ -55,7 +55,7 @@ export class LogDomainAnalytics {
     accessPointId?: string
   ): Promise<DomainCountResult[]> {
     let queryStr =
-      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action IN ('BLOCK', 'REDIRECT')";
+      "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action IN ('BLOCK', 'REDIRECT')";
     const params: (string | number)[] = [profileId, since, until];
     if (accessPointId) {
       queryStr += " AND access_point_id = ?";

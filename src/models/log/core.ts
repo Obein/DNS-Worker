@@ -157,11 +157,19 @@ export class LogCoreModel {
     params.push(options.until);
 
     if (options.dest_country) {
-      whereClauses.push("COALESCE(l.dest_country_code, json_extract(l.dest_geoip, '$.country_code')) = ?");
+      whereClauses.push(`UPPER(CASE 
+        WHEN l.dest_country_code IS NOT NULL AND l.dest_country_code != '' THEN l.dest_country_code
+        WHEN l.dest_geoip IS NOT NULL AND l.dest_geoip != '' AND l.dest_geoip LIKE '{%' THEN json_extract(l.dest_geoip, '$.country_code')
+        ELSE ''
+      END) = ?`);
       params.push(options.dest_country.toUpperCase());
     }
     if (options.isp) {
-      whereClauses.push("COALESCE(l.dest_isp, json_extract(l.dest_geoip, '$.isp')) = ?");
+      whereClauses.push(`(CASE 
+        WHEN l.dest_isp IS NOT NULL AND l.dest_isp != '' THEN l.dest_isp
+        WHEN l.dest_geoip IS NOT NULL AND l.dest_geoip != '' AND l.dest_geoip LIKE '{%' THEN json_extract(l.dest_geoip, '$.isp')
+        ELSE ''
+      END) = ?`);
       params.push(options.isp);
     }
 

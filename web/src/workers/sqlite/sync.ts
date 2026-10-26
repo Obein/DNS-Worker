@@ -131,7 +131,38 @@ export function handleGetWatermark(payload: GetWatermarkPayload): SyncWatermarkR
     [payload.profileId]
   ) as unknown as SyncWatermarkRow | undefined;
 
-  return row || null;
+  // Cross-check with actual logs in local_logs to ensure watermark never falsely claims historical coverage
+  const actualBounds = db.selectObject(
+    'SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts, COUNT(*) as cnt FROM local_logs WHERE profile_id = ?;',
+    [payload.profileId]
+  ) as { min_ts: number | null; max_ts: number | null; cnt: number } | undefined;
+
+  if (!row) {
+    if (actualBounds && actualBounds.cnt > 0 && actualBounds.min_ts !== null && actualBounds.max_ts !== null) {
+      return {
+        latest_timestamp: actualBounds.max_ts,
+        earliest_timestamp: actualBounds.min_ts,
+        last_synced_at: Math.floor(Date.now() / 1000),
+        total_synced_count: actualBounds.cnt
+      };
+    }
+    return null;
+  }
+
+  // If sync_watermarks claims earliest_timestamp is earlier than the actual oldest log in local_logs,
+  // reconcile it using actualBounds.min_ts so missing historical intervals are not erroneously skipped!
+  if (actualBounds && actualBounds.cnt > 0 && actualBounds.min_ts !== null) {
+    const reconciledEarliest = Math.max(row.earliest_timestamp, actualBounds.min_ts);
+    const reconciledLatest = Math.max(row.latest_timestamp, actualBounds.max_ts ?? row.latest_timestamp);
+    return {
+      ...row,
+      earliest_timestamp: reconciledEarliest,
+      latest_timestamp: reconciledLatest,
+      total_synced_count: Math.max(row.total_synced_count || 0, actualBounds.cnt)
+    };
+  }
+
+  return row;
 }
 
 /**

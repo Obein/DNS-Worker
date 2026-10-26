@@ -235,8 +235,11 @@ export class LocalDbSyncEngine {
       }
     }
 
-    // Explicitly update watermark boundaries so we record that [start, end] was checked
-    await this.updateWatermarkBounds(profileId, start, end);
+    // If hasMore is false, the interval was completely downloaded down to start.
+    // If hasMore is true, we only reached currentBefore, so the watermark boundary
+    // should only be expanded down to currentBefore (or start if currentBefore is undefined).
+    const effectiveEarliest = hasMore && currentBefore !== undefined ? currentBefore : start;
+    await this.updateWatermarkBounds(profileId, effectiveEarliest, end);
 
     return totalInserted;
   }
@@ -244,6 +247,7 @@ export class LocalDbSyncEngine {
   /**
    * Identifies and downloads all missing time intervals between `since` and `until` from the server.
    * Compares the requested range against local SQLite sync watermarks (earliest and latest timestamps).
+   * Automatically loops through multiple passes if the dataset exceeds a single interval pass capacity.
    *
    * @param profileId - Profile identifier.
    * @param since - Start of the requested time range (seconds).
@@ -262,40 +266,57 @@ export class LocalDbSyncEngine {
     await this.bridge.init();
     if (signal?.aborted || since >= until) return 0;
 
-    const watermark = await this.getWatermark(profileId);
-    const intervals: { start: number; end: number }[] = [];
+    let totalInserted = 0;
+    let passes = 0;
+    const MAX_PASSES = 25; // Supports fetching up to 25 passes * 5,000 logs = 125,000 logs
 
-    if (!watermark || !watermark.earliest_timestamp || !watermark.latest_timestamp || watermark.latest_timestamp <= 0) {
-      intervals.push({ start: since, end: until });
-    } else {
-      const { earliest_timestamp: early, latest_timestamp: late } = watermark;
+    while (!signal?.aborted && passes < MAX_PASSES) {
+      const watermark = await this.getWatermark(profileId);
+      const intervals: { start: number; end: number }[] = [];
 
-      if (until <= early) {
-        // Entire query range is strictly earlier than local data
-        intervals.push({ start: since, end: until });
-      } else if (since >= late) {
-        // Entire query range is strictly later than local data
+      if (!watermark || !watermark.earliest_timestamp || !watermark.latest_timestamp || watermark.latest_timestamp <= 0) {
         intervals.push({ start: since, end: until });
       } else {
-        // Overlapping range: check forward and historical missing intervals
-        if (until > late) {
-          intervals.push({ start: Math.max(since, late - 60), end: until });
-        }
-        if (since < early) {
-          intervals.push({ start: since, end: Math.min(until, early + 60) });
+        const { earliest_timestamp: early, latest_timestamp: late } = watermark;
+
+        if (until <= early) {
+          // Entire query range is strictly earlier than local data
+          intervals.push({ start: since, end: until });
+        } else if (since >= late) {
+          // Entire query range is strictly later than local data
+          intervals.push({ start: since, end: until });
+        } else {
+          // Overlapping range: check forward and historical missing intervals
+          if (until > late) {
+            intervals.push({ start: Math.max(since, late - 60), end: until });
+          }
+          if (since < early) {
+            intervals.push({ start: since, end: Math.min(until, early + 60) });
+          }
         }
       }
-    }
 
-    if (intervals.length === 0) {
-      return 0;
-    }
+      if (intervals.length === 0) {
+        break;
+      }
 
-    let totalInserted = 0;
-    for (const interval of intervals) {
-      if (signal?.aborted) break;
-      const count = await this.syncInterval(profileId, interval.start, interval.end, signal, onProgress);
-      totalInserted += count;
+      let insertedInPass = 0;
+      for (const interval of intervals) {
+        if (signal?.aborted) break;
+        const count = await this.syncInterval(profileId, interval.start, interval.end, signal, onProgress);
+        insertedInPass += count;
+      }
+
+      totalInserted += insertedInPass;
+      passes++;
+
+      // If no new logs were inserted in this pass, all available server logs have been fetched
+      if (insertedInPass === 0) {
+        break;
+      }
+
+      // Yield control briefly to ensure UI remains responsive
+      await new Promise((r) => setTimeout(r, 20));
     }
 
     return totalInserted;
