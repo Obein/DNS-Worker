@@ -6,7 +6,59 @@ import { SystemSettingsModel } from "../systemSettings";
  * across resolution logs, clients, destinations, and domains.
  */
 export class LogAggregationModel {
+  private tablesEnsured = false;
+
   constructor(private readonly db: D1Database) {}
+
+  /**
+   * Automatically creates rollup tables if they do not exist yet.
+   * Self-heals environments (such as Turso on Cloudflare Workers) where build-time D1 migrations
+   * do not execute against the remote Turso database.
+   */
+  async ensureRollupTables(): Promise<void> {
+    if (this.tablesEnsured) return;
+    if (typeof this.db.exec !== 'function') return;
+    try {
+      await this.db.exec(`
+        CREATE TABLE IF NOT EXISTS log_hourly_rollups (
+            profile_id TEXT NOT NULL,
+            hour_timestamp INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (profile_id, hour_timestamp, action)
+        );
+        CREATE TABLE IF NOT EXISTS client_hourly_rollups (
+            profile_id TEXT NOT NULL,
+            hour_timestamp INTEGER NOT NULL,
+            client_ip TEXT NOT NULL,
+            geo_country TEXT NOT NULL DEFAULT '',
+            access_point_id TEXT NOT NULL DEFAULT '',
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (profile_id, hour_timestamp, client_ip, geo_country, access_point_id)
+        );
+        CREATE TABLE IF NOT EXISTS destination_hourly_rollups (
+            profile_id TEXT NOT NULL,
+            hour_timestamp INTEGER NOT NULL,
+            country_code TEXT NOT NULL,
+            country TEXT NOT NULL DEFAULT '',
+            access_point_id TEXT NOT NULL DEFAULT '',
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (profile_id, hour_timestamp, country_code, country, access_point_id)
+        );
+        CREATE TABLE IF NOT EXISTS domain_hourly_rollups (
+            profile_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            hour_timestamp INTEGER NOT NULL,
+            domain TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (profile_id, action, hour_timestamp, domain)
+        ) WITHOUT ROWID;
+      `);
+      this.tablesEnsured = true;
+    } catch (e: any) {
+      console.warn("[LogAggregationModel] ensureRollupTables notice:", e.message || e);
+    }
+  }
 
   /**
    * Retrieves the latest completed hour timestamp aggregated in log_hourly_rollups for a profile.
@@ -21,6 +73,7 @@ export class LogAggregationModel {
       ).bind(profileId).first<{ max_hour: number | null }>();
       return row?.max_hour ?? null;
     } catch {
+      await this.ensureRollupTables();
       return null;
     }
   }
@@ -38,6 +91,7 @@ export class LogAggregationModel {
       ).bind(profileId).first<{ max_hour: number | null }>();
       return row?.max_hour ?? null;
     } catch {
+      await this.ensureRollupTables();
       return null;
     }
   }
@@ -55,6 +109,7 @@ export class LogAggregationModel {
       ).bind(profileId).first<{ max_hour: number | null }>();
       return row?.max_hour ?? null;
     } catch {
+      await this.ensureRollupTables();
       return null;
     }
   }
@@ -72,6 +127,7 @@ export class LogAggregationModel {
       ).bind(profileId).first<{ max_hour: number | null }>();
       return row?.max_hour ?? null;
     } catch {
+      await this.ensureRollupTables();
       return null;
     }
   }
@@ -91,6 +147,7 @@ export class LogAggregationModel {
     untilSec?: number,
     minDomainCount = 2
   ): Promise<number> {
+    await this.ensureRollupTables();
     const now = Math.floor(Date.now() / 1000);
     const currentHourStart = Math.floor(now / 3600) * 3600;
     const effectiveUntil = untilSec !== undefined ? Math.min(untilSec, currentHourStart) : currentHourStart;

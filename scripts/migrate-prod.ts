@@ -11,6 +11,7 @@
  *   npx tsx scripts/migrate-prod.ts --d1
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parseArgs } from 'node:util';
@@ -19,8 +20,40 @@ import { createTursoClient, maskDatabaseUrl, getDatabaseService } from '../src/l
 import { runTursoMigrations } from '../src/lib/turso/migrate';
 import { formatBanner, formatDiagnostic, formatHelpMenu } from '../src/serverfull/format';
 
+/**
+ * Parses [vars] section from wrangler.toml as fallback when deploying in CI environments.
+ */
+function loadWranglerVars(rootDir: string): void {
+  const wranglerPath = path.join(rootDir, 'wrangler.toml');
+  if (!fs.existsSync(wranglerPath)) return;
+  try {
+    const content = fs.readFileSync(wranglerPath, 'utf-8');
+    let inVars = false;
+    for (const rawLine of content.split('\n')) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      if (line.startsWith('[')) {
+        inVars = line === '[vars]';
+        continue;
+      }
+      if (inVars && line.includes('=')) {
+        const [k, ...v] = line.split('=');
+        const key = k.trim();
+        let val = v.join('=').trim();
+        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+          val = val.slice(1, -1);
+        }
+        if (!(key in process.env)) {
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch {}
+}
+
 async function main(): Promise<void> {
   loadEnvFiles();
+  loadWranglerVars(getPackageRoot());
 
   const { values } = parseArgs({
     options: {
