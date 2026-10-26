@@ -26,6 +26,7 @@ async function main(): Promise<void> {
     options: {
       turso: { type: 'boolean' },
       d1: { type: 'boolean' },
+      backfill: { type: 'boolean' },
       url: { type: 'string' },
       'turso-url': { type: 'string' },
       token: { type: 'string' },
@@ -46,6 +47,7 @@ async function main(): Promise<void> {
       options: [
         { label: '--turso', desc: 'Force Turso database schema migration' },
         { label: '--d1', desc: 'Force Cloudflare D1 remote database schema migration' },
+        { label: '--backfill', desc: 'Trigger safe hourly rollups backfill from historical logs' },
         { label: '--url, --turso-url <url>', desc: 'Turso database URL (or set TURSO_DATABASE_URL)' },
         { label: '--token, --turso-token <tok>', desc: 'Turso database authorization token (or set TURSO_AUTH_TOKEN)' },
         { label: '-h, --help', desc: 'Display this help message' }
@@ -120,6 +122,22 @@ async function main(): Promise<void> {
         title: 'Turso Migration Finished',
         message: `Successfully executed schema migrations on Turso (${applied} new migration(s) applied).`
       }));
+
+      if (applied > 0 || values.backfill) {
+        try {
+          const { LogAggregationModel } = await import('../src/models/log/aggregation');
+          const aggModel = new LogAggregationModel(client as any);
+          console.log('[Turso Migrations] Running safe hourly rollups backfill...');
+          const aggregated = await aggModel.aggregateHourlyRollups();
+          if (aggregated > 0) {
+            console.log(`[Turso Migrations] Successfully backfilled ${aggregated} hourly rollup rows.`);
+          } else {
+            console.log('[Turso Migrations] Hourly rollups are already up-to-date.');
+          }
+        } catch (aggErr: any) {
+          console.warn('[Turso Migrations] Rollup backfill notice:', aggErr.message || aggErr);
+        }
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(formatDiagnostic({
