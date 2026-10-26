@@ -219,7 +219,13 @@ export async function handleProfilesCoreRequest(
         // 关闭日志时彻底清空当前配置的历史日志
         ctx.waitUntil((async () => {
           try {
-            await env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId).run();
+            await env.DB.batch([
+              env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(profileId),
+              env.DB.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ?").bind(profileId)
+            ]);
             await logModel.kemKeys.cleanupProfileOrphans(profileId);
           } catch (e: any) {
             console.error("[Profile] Failed to purge logs on retention disable:", e?.message || e);

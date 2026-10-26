@@ -1,4 +1,5 @@
 import { D1Database } from "@cloudflare/workers-types";
+import { LogAggregationModel } from "../aggregation";
 import { LogTrafficAnalytics } from "./traffic";
 import { LogDomainAnalytics } from "./domains";
 import { LogClientAnalytics } from "./clients";
@@ -34,12 +35,12 @@ export class LogAnalyticsModel {
 
   constructor(
     private readonly db: D1Database,
-    _aggregation?: unknown
+    private readonly aggregation?: LogAggregationModel
   ) {
-    this.traffic = new LogTrafficAnalytics(db);
-    this.domains = new LogDomainAnalytics(db);
-    this.clients = new LogClientAnalytics(db);
-    this.destinations = new LogDestinationAnalytics(db);
+    this.traffic = new LogTrafficAnalytics(db, aggregation);
+    this.domains = new LogDomainAnalytics(db, aggregation);
+    this.clients = new LogClientAnalytics(db, aggregation);
+    this.destinations = new LogDestinationAnalytics(db, aggregation);
   }
 
   /**
