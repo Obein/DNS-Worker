@@ -38,6 +38,7 @@
     "docs:convert-tw": "npm --prefix docs run convert-tw",
     "deploy": "npm run build && npm run db:migrate:prod && wrangler deploy",
     "deploy:skipdb": "npm run build && wrangler deploy",
+    "prebuild": "tsx scripts/generate-embedded-migrations.ts",
     "build": "npm run ui:build",
     "build:pages": "npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:* --external:node:*",
     "prepare": "npm run ui:install",
