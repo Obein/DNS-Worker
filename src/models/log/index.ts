@@ -84,7 +84,7 @@ export class LogModel {
     return this.aggregation.getLatestDestinationRollupHour(profileId);
   }
 
-  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 2): Promise<number> {
+  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 1): Promise<number> {
     return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec, minDomainCount);
   }
 
