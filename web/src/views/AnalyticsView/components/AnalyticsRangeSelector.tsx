@@ -133,18 +133,19 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
           <Tooltip
             content={
               syncing
-                ? `${t("analytics.syncing", "正在同步...")} ${Math.round((syncProgress || 0) * 100)}% (${t("analytics.stopSync", "停止同步")})`
-                : t("analytics.syncMissingIntervals", "同步当前区间缺失记录")
+                ? `${t("analytics.syncing")} ${Math.round((syncProgress || 0) * 100)}% (${t("analytics.stopSync")})`
+                : t("analytics.syncMissingIntervals")
             }
             position={Position.BOTTOM}
+            popoverClassName="analytics-sync-tooltip"
           >
             <Button
               minimal
               onClick={syncing ? onStopSync : onSync}
               aria-label={
                 syncing
-                  ? t("analytics.stopSync", "停止同步")
-                  : t("analytics.syncMissingIntervals", "同步当前区间缺失记录")
+                  ? t("analytics.stopSync")
+                  : t("analytics.syncMissingIntervals")
               }
               intent={syncing ? Intent.DANGER : Intent.NONE}
               icon={

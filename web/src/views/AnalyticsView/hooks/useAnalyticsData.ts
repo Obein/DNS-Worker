@@ -47,7 +47,7 @@ export function useAnalyticsData(
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
   const [syncProgress, setSyncProgress] = useState<number>(0);
-  const [range, setRange] = useState<TimeRange>("24h");
+  const [range, setRange] = useState<TimeRange>("1h");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [accessPointIdFilter, setAccessPointIdFilter] = useState<string | null>(null);
   const [accessPoints, setAccessPoints] = useState<AccessPoint[]>([]);
@@ -132,8 +132,8 @@ export function useAnalyticsData(
             bucketSec = 86400;
             break;
           default:
-            since = now - 86400;
-            bucketSec = 3600;
+            since = now - 3600;
+            bucketSec = 60;
             break;
         }
       }
@@ -380,8 +380,8 @@ export function useAnalyticsData(
           bucketSec = 86400;
           break;
         default:
-          since = now - 86400;
-          bucketSec = 3600;
+          since = now - 3600;
+          bucketSec = 60;
           break;
       }
     }

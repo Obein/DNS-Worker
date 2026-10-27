@@ -4,7 +4,7 @@ import { getProfileAccessPoints } from "../../../services";
 import type { AccessPoint } from "../../../services";
 
 export function useLogFilters(profileId: string) {
-  const [range, setRange] = useState<TimeRange>("24h");
+  const [range, setRange] = useState<TimeRange>("1h");
   const [customRange, setCustomRange] = useState({ start: "", end: "" });
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [accessPointIdFilter, setAccessPointIdFilter] = useState<string | null>(null);

@@ -46,8 +46,8 @@ export function processTrendData(data: AnalyticsData | null, range: TimeRange, c
       }
       break;
     default:
-      interval = 3600;
-      since = until - 24 * 3600;
+      interval = 60;
+      since = until - 60 * 60;
   }
 
   since = Math.floor(since / interval) * interval;

@@ -38,7 +38,7 @@ export function calculateTimeBoundaries(
       since = now - 2592000;
       break;
     default:
-      since = now - 86400;
+      since = now - 3600;
       break;
   }
 

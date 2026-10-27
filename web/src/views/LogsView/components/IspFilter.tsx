@@ -70,7 +70,7 @@ export const IspFilter: React.FC<IspFilterProps> = ({
           case "24h": since = nowTs - 86400; break;
           case "7d": since = nowTs - 604800; break;
           case "30d": since = nowTs - 2592000; break;
-          default: since = nowTs - 86400; break;
+          default: since = nowTs - 3600; break;
         }
         params.set("range", range);
       }

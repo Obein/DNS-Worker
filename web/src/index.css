@@ -79,3 +79,74 @@
 .bp6-portal {
   z-index: 20000 !important;
 }
+
+/* 修复 Blueprint 默认 Tooltip 反转配色问题（使亮色主题呈现白底深字，暗色主题呈现深底浅字） */
+.bp6-tooltip:not([class*="bp6-intent-"]),
+.analytics-sync-tooltip {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+.bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content,
+.analytics-sync-tooltip .bp6-popover-content {
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+.bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content .bp6-heading,
+.analytics-sync-tooltip .bp6-popover-content .bp6-heading {
+  color: #111827 !important;
+}
+.bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-fill,
+.analytics-sync-tooltip .bp6-popover-arrow-fill {
+  fill: #ffffff !important;
+}
+.bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-border,
+.analytics-sync-tooltip .bp6-popover-arrow-border {
+  fill: #e5e7eb !important;
+  fill-opacity: 1 !important;
+}
+
+.bp6-dark .bp6-tooltip:not([class*="bp6-intent-"]),
+.dark .bp6-tooltip:not([class*="bp6-intent-"]),
+.bp6-tooltip.bp6-dark:not([class*="bp6-intent-"]),
+.bp6-dark .analytics-sync-tooltip,
+.dark .analytics-sync-tooltip,
+.analytics-sync-tooltip.bp6-dark {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
+}
+.bp6-dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content,
+.dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content,
+.bp6-tooltip.bp6-dark:not([class*="bp6-intent-"]) .bp6-popover-content,
+.bp6-dark .analytics-sync-tooltip .bp6-popover-content,
+.dark .analytics-sync-tooltip .bp6-popover-content,
+.analytics-sync-tooltip.bp6-dark .bp6-popover-content {
+  background: #1e293b !important;
+  color: #f9fafb !important;
+  border: 1px solid #334155;
+  border-radius: 6px;
+}
+.bp6-dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content .bp6-heading,
+.dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-content .bp6-heading,
+.bp6-tooltip.bp6-dark:not([class*="bp6-intent-"]) .bp6-popover-content .bp6-heading,
+.bp6-dark .analytics-sync-tooltip .bp6-popover-content .bp6-heading,
+.dark .analytics-sync-tooltip .bp6-popover-content .bp6-heading,
+.analytics-sync-tooltip.bp6-dark .bp6-popover-content .bp6-heading {
+  color: #f9fafb !important;
+}
+.bp6-dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-fill,
+.dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-fill,
+.bp6-tooltip.bp6-dark:not([class*="bp6-intent-"]) .bp6-popover-arrow-fill,
+.bp6-dark .analytics-sync-tooltip .bp6-popover-arrow-fill,
+.dark .analytics-sync-tooltip .bp6-popover-arrow-fill,
+.analytics-sync-tooltip.bp6-dark .bp6-popover-arrow-fill {
+  fill: #1e293b !important;
+}
+.bp6-dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-border,
+.dark .bp6-tooltip:not([class*="bp6-intent-"]) .bp6-popover-arrow-border,
+.bp6-tooltip.bp6-dark:not([class*="bp6-intent-"]) .bp6-popover-arrow-border,
+.bp6-dark .analytics-sync-tooltip .bp6-popover-arrow-border,
+.dark .analytics-sync-tooltip .bp6-popover-arrow-border,
+.analytics-sync-tooltip.bp6-dark .bp6-popover-arrow-border {
+  fill: #334155 !important;
+  fill-opacity: 1 !important;
+}
