@@ -391,7 +391,9 @@
     "syncMissingIntervals": "Sincronizar registros faltantes para el rango seleccionado",
     "syncing": "Sincronizando...",
     "syncSuccess": "Registros locales sincronizados con éxito",
-    "syncFailed": "Error al sincronizar registros locales"
+    "syncFailed": "Error al sincronizar registros locales",
+    "syncStopped": "Sincronización detenida",
+    "stopSync": "Detener sincronización"
   },
   "logs": {
     "title": "Registro de consultas",

@@ -391,7 +391,9 @@
     "syncMissingIntervals": "Sync missing records for selected range",
     "syncing": "Syncing...",
     "syncSuccess": "Local records synchronized successfully",
-    "syncFailed": "Failed to sync local records"
+    "syncFailed": "Failed to sync local records",
+    "syncStopped": "Sync stopped",
+    "stopSync": "Stop sync"
   },
   "logs": {
     "title": "Query Logs",

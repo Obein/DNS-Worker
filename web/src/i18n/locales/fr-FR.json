@@ -391,7 +391,9 @@
     "syncMissingIntervals": "Synchroniser les enregistrements manquants pour la plage sélectionnée",
     "syncing": "Synchronisation en cours...",
     "syncSuccess": "Enregistrements locaux synchronisés avec succès",
-    "syncFailed": "Échec de la synchronisation des enregistrements locaux"
+    "syncFailed": "Échec de la synchronisation des enregistrements locaux",
+    "syncStopped": "Synchronisation arrêtée",
+    "stopSync": "Arrêter la synchronisation"
   },
   "logs": {
     "title": "Journaux de requêtes",

@@ -31,6 +31,7 @@ export interface UseAnalyticsDataReturn {
     apIdFilter?: string | null
   ) => Promise<void>;
   syncTargetRange: () => Promise<void>;
+  stopSync: () => void;
 }
 
 /**
@@ -435,7 +436,7 @@ export function useAnalyticsData(
         await new Promise((r) => setTimeout(r, 600));
       }
     } catch (err: any) {
-      if ((err as Error)?.name !== "AbortError") {
+      if ((err as Error)?.name !== "AbortError" && !signal.aborted) {
         console.error("[useAnalyticsData] Manual sync error:", err);
         toasterRef?.current?.show({
           message: t("analytics.syncFailed", "本地记录同步失败"),
@@ -444,12 +445,24 @@ export function useAnalyticsData(
         });
       }
     } finally {
-      if (!signal.aborted) {
-        setSyncing(false);
-        setSyncProgress(0);
-      }
+      setSyncing(false);
+      setSyncProgress(0);
     }
   }, [profileId, range, customRange, accessPointIdFilter, syncing, toasterRef, t]);
+
+  const stopSync = useCallback(() => {
+    if (syncAbortControllerRef.current) {
+      syncAbortControllerRef.current.abort();
+      syncAbortControllerRef.current = null;
+    }
+    setSyncing(false);
+    setSyncProgress(0);
+    toasterRef?.current?.show({
+      message: t("analytics.syncStopped", "同步已停止"),
+      intent: Intent.WARNING,
+      icon: "stop"
+    });
+  }, [toasterRef, t]);
 
   useEffect(() => {
     if (range !== "custom") {
@@ -471,6 +484,7 @@ export function useAnalyticsData(
     accessPoints,
     logRetentionDays,
     fetchData,
-    syncTargetRange
+    syncTargetRange,
+    stopSync
   };
 }

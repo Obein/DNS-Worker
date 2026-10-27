@@ -64,7 +64,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ profileId, toaster
     accessPoints,
     logRetentionDays,
     fetchData,
-    syncTargetRange
+    syncTargetRange,
+    stopSync
   } = useAnalyticsData(profileId, toasterRef);
 
   const {
@@ -129,6 +130,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ profileId, toaster
         syncing={syncing}
         syncProgress={syncProgress}
         onSync={syncTargetRange}
+        onStopSync={stopSync}
       />
 
       {/* E2EE Unlock Banner when records are encrypted and locked */}

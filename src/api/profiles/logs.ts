@@ -115,8 +115,8 @@ export async function handleProfileLogsAndAnalyticsRequest(
     let limit = parseInt(urlParams.get('limit') || '50', 10);
     if (isNaN(limit) || limit <= 0) {
       limit = 50;
-    } else if (limit > 100) {
-      limit = 100;
+    } else if (limit > 1000) {
+      limit = 1000;
     }
 
     const results = await logModel.getLogs(profileId, {

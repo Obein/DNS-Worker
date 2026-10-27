@@ -391,7 +391,9 @@
     "syncMissingIntervals": "同步目前區間缺失記錄",
     "syncing": "正在同步...",
     "syncSuccess": "本地記錄同步完成",
-    "syncFailed": "本地記錄同步失敗"
+    "syncFailed": "本地記錄同步失敗",
+    "syncStopped": "同步已停止",
+    "stopSync": "停止同步"
   },
   "logs": {
     "title": "查詢日誌",
