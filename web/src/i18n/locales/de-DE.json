@@ -33,7 +33,8 @@
     "importSuccess": "Profil erfolgreich importiert",
     "importError": "Profilimport fehlgeschlagen. Bitte überprüfen Sie das Format und versuchen Sie es später noch einmal",
     "save": "Speichern",
-    "saveSuccess": "Einstellungen gespeichert",
+    "saveSuccess": "Erfolgreich gespeichert",
+    "saveFailed": "Speichern fehlgeschlagen",
     "close": "Schließen",
     "cancel": "Abbrechen",
     "yes": "Ja",
@@ -385,7 +386,12 @@
     "pressToShowMore": "Klicken, um mehr anzuzeigen",
     "maximize": "Vergrößern",
     "minimize": "Verkleinern",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "sync": "Synchronisieren",
+    "syncMissingIntervals": "Fehlende Datensätze für ausgewählten Bereich synchronisieren",
+    "syncing": "Wird synchronisiert...",
+    "syncSuccess": "Lokale Datensätze erfolgreich synchronisiert",
+    "syncFailed": "Synchronisierung der lokalen Datensätze fehlgeschlagen"
   },
   "logs": {
     "title": "Abfrageprotokolle",

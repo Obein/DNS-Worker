@@ -33,7 +33,8 @@
     "importSuccess": "Profil importé avec succès",
     "importError": "Échec de l'importation. Veuillez vérifier le format et réessayer plus tard",
     "save": "Enregistrer",
-    "saveSuccess": "Paramètres enregistrés",
+    "saveSuccess": "Enregistré avec succès",
+    "saveFailed": "Échec de l'enregistrement",
     "close": "Fermer",
     "cancel": "Annuler",
     "yes": "Oui",
@@ -385,7 +386,12 @@
     "pressToShowMore": "Cliquer pour afficher plus",
     "maximize": "Agrandir",
     "minimize": "Réduire",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "sync": "Synchroniser",
+    "syncMissingIntervals": "Synchroniser les enregistrements manquants pour la plage sélectionnée",
+    "syncing": "Synchronisation en cours...",
+    "syncSuccess": "Enregistrements locaux synchronisés avec succès",
+    "syncFailed": "Échec de la synchronisation des enregistrements locaux"
   },
   "logs": {
     "title": "Journaux de requêtes",

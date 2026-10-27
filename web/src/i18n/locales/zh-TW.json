@@ -33,7 +33,8 @@
     "importSuccess": "配置成功匯入",
     "importError": "配置匯入失敗，請確保格式正確且稍後再試",
     "save": "儲存",
-    "saveSuccess": "設定已儲存",
+    "saveSuccess": "儲存成功",
+    "saveFailed": "儲存失敗",
     "close": "關閉",
     "cancel": "取消",
     "yes": "是",
@@ -385,7 +386,12 @@
     "pressToShowMore": "按下顯示更多",
     "maximize": "放大",
     "minimize": "縮小",
-    "loading": "載入中..."
+    "loading": "載入中...",
+    "sync": "同步",
+    "syncMissingIntervals": "同步目前區間缺失記錄",
+    "syncing": "正在同步...",
+    "syncSuccess": "本地記錄同步完成",
+    "syncFailed": "本地記錄同步失敗"
   },
   "logs": {
     "title": "查詢日誌",

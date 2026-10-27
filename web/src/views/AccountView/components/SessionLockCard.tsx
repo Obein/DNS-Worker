@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Card,
@@ -6,41 +6,72 @@ import {
   H4,
   Button,
   HTMLSelect,
-  Intent
+  Intent,
+  type OverlayToaster
 } from "@blueprintjs/core";
 import { ShieldCheck } from "lucide-react";
 import { updateMe, lockSession } from "../../../services";
 import type { UserInfo } from "../../../services";
+import { executeWithTimeout } from "../../../utils/async";
 import { SetupPinDialog } from "./SetupPinDialog";
 import { DisablePinDialog } from "./DisablePinDialog";
 
 interface SessionLockCardProps {
   user: UserInfo | null;
   onRefresh: () => void;
+  onSavingChange?: (saving: boolean) => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
-export const SessionLockCard: React.FC<SessionLockCardProps> = ({ user, onRefresh }) => {
+export const SessionLockCard: React.FC<SessionLockCardProps> = ({
+  user,
+  onRefresh,
+  onSavingChange,
+  toasterRef,
+}) => {
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [selectedTimeout, setSelectedTimeout] = useState<number>(user?.session_lock_timeout || 15);
+
+  useEffect(() => {
+    if (user?.session_lock_timeout !== undefined) {
+      setSelectedTimeout(user.session_lock_timeout);
+    }
+  }, [user?.session_lock_timeout]);
 
   // Modal / Setup state
   const [setupDialogOpen, setSetupDialogOpen] = useState(false);
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 
   const isPinEnabled = !!user?.pin_enabled;
-  const timeout = user?.session_lock_timeout || 15;
 
   const handleTimeoutChange = async (e: React.FormEvent<HTMLSelectElement>) => {
     const val = Number(e.currentTarget.value);
+    const previousTimeout = selectedTimeout;
+    setSelectedTimeout(val);
     setLoading(true);
+    onSavingChange?.(true);
     try {
-      await updateMe({ session_lock_timeout: val });
+      await executeWithTimeout(updateMe({ session_lock_timeout: val }), 10000);
+      toasterRef?.current?.show({
+        message: t("common.saveSuccess", "保存成功"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to change session lock timeout", err);
+      // Revert to original configuration on timeout or error
+      setSelectedTimeout(previousTimeout);
+      toasterRef?.current?.show({
+        message: err.message || t("common.saveFailed", "保存失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setLoading(false);
+      onSavingChange?.(false);
     }
   };
 
@@ -100,7 +131,7 @@ export const SessionLockCard: React.FC<SessionLockCardProps> = ({ user, onRefres
         <div className="flex items-center justify-between">
           <span>{t("auth.inactivityTimeout", "Inactivity Timeout")}</span>
           <HTMLSelect
-            value={timeout}
+            value={selectedTimeout}
             onChange={handleTimeoutChange}
             disabled={!isPinEnabled || loading}
             options={[

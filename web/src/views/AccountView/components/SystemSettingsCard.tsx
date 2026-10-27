@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Card, Elevation, H4, FormGroup, InputGroup, Switch, Divider, Button, Intent } from "@blueprintjs/core";
+import {
+  Card,
+  Elevation,
+  H4,
+  FormGroup,
+  InputGroup,
+  Switch,
+  Divider,
+  Button,
+  Intent,
+  type OverlayToaster
+} from "@blueprintjs/core";
 import { Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { updateSystemSettings } from "../../../services";
+import { executeWithTimeout } from "../../../utils/async";
 
 export interface SystemSettingsCardProps {
   initialSettings: Record<string, string>;
   onRefresh: () => void;
+  onSavingChange?: (saving: boolean) => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
 export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
   initialSettings,
-  onRefresh
+  onRefresh,
+  onSavingChange,
+  toasterRef,
 }) => {
   const { t } = useTranslation();
   const [sysSettings, setSysSettings] = useState<Record<string, string>>(initialSettings);
@@ -25,19 +41,35 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
 
   const handleSaveSysSettings = async () => {
     setSysLoading(true);
+    onSavingChange?.(true);
     try {
-      await updateSystemSettings({
-        turnstile_site_key: sysSettings.turnstile_site_key || "",
-        turnstile_secret_key: sysSettings.turnstile_secret_key || "",
-        turnstile_enabled_signup: sysSettings.turnstile_enabled_signup || "false",
-        turnstile_enabled_login: sysSettings.turnstile_enabled_login || "false",
+      await executeWithTimeout(
+        updateSystemSettings({
+          turnstile_site_key: sysSettings.turnstile_site_key || "",
+          turnstile_secret_key: sysSettings.turnstile_secret_key || "",
+          turnstile_enabled_signup: sysSettings.turnstile_enabled_signup || "false",
+          turnstile_enabled_login: sysSettings.turnstile_enabled_login || "false",
+        }),
+        10000
+      );
+      toasterRef?.current?.show({
+        message: t("common.saveSuccess", "保存成功"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
       });
-      alert(t("common.saveSuccess", "Settings saved"));
       onRefresh();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      // Revert to initialSettings on error or timeout
+      setSysSettings(initialSettings);
+      toasterRef?.current?.show({
+        message: e.message || t("common.saveFailed", "保存失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setSysLoading(false);
+      onSavingChange?.(false);
     }
   };
 

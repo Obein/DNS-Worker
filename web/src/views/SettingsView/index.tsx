@@ -19,6 +19,7 @@ import {
   getProfileRules,
   getProfileLists
 } from "../../services";
+import { executeWithTimeout } from "../../utils/async";
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRef, currentUser, onSavingChange }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -102,16 +103,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
       setIsEditingName(false);
       return;
     }
+    const previousName = profile?.name || "";
+    setSaving(true);
     try {
-      await renameProfile(profileId, editName);
+      await executeWithTimeout(renameProfile(profileId, editName), 10000);
       setProfile((prev) => (prev ? { ...prev, name: editName } : null));
       setIsEditingName(false);
       toasterRef?.current?.show({
-        message: t("settings.nameUpdateSuccess", "名称已更新"),
+        message: t("common.saveSuccess", "保存成功"),
         intent: Intent.SUCCESS,
+        icon: "tick",
       });
     } catch (e: any) {
       console.error(e);
+      // Revert to original profile name
+      setEditName(previousName);
+      setIsEditingName(false);
       const rawErr = e.message;
       let errMsg = rawErr;
       if (rawErr === "The profile name already exists") {
@@ -120,9 +127,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         errMsg = t("common.profileNameFormatError", "Invalid Profile Name format");
       }
       toasterRef?.current?.show({
-        message: errMsg || t("settings.nameUpdateFailed", "更新失败"),
+        message: errMsg || t("common.saveFailed", "保存失败"),
         intent: Intent.DANGER,
+        icon: "error",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -131,9 +141,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
     const currentSeq = ++saveSeqRef.current;
     setSaving(true);
     try {
-      await updateProfileSettings(profileId, settingsToSave as any);
+      await executeWithTimeout(updateProfileSettings(profileId, settingsToSave as any), 10000);
       if (currentSeq === saveSeqRef.current) {
         lastConfirmedSettingsRef.current = cloneSettings(settingsToSave);
+        toasterRef?.current?.show({
+          message: t("common.saveSuccess", "保存成功"),
+          intent: Intent.SUCCESS,
+          icon: "tick",
+        });
       }
     } catch (e) {
       console.error(e);
@@ -149,7 +164,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         }
         // 3. Toast 提示保存失败
         toasterRef?.current?.show({
-          message: t("settings.saveError", "保存失败"),
+          message: t("common.saveFailed", "保存失败"),
           intent: Intent.DANGER,
           icon: "error",
         });

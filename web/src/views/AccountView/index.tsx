@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Divider, Tag, Intent, Callout } from "@blueprintjs/core";
+import { Divider, Tag, Intent, Callout, type OverlayToaster } from "@blueprintjs/core";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
@@ -11,6 +11,7 @@ import {
   getMe,
   updateMe
 } from "../../services";
+import { executeWithTimeout } from "../../utils/async";
 import { MfaCard } from "./components/MfaCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
 import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
@@ -24,6 +25,11 @@ import { E2eeCard } from "./components/E2eeCard";
 import { USERNAME_REGEX } from "../../utils/auth";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
+export interface AccountViewProps {
+  onSavingChange?: (saving: boolean) => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
+}
+
 /**
  * AccountView serves as the primary dashboard for user settings, profile updates,
  * MFA (Passkey & TOTP) status, active login sessions, security activity logs, and administrative tools
@@ -31,7 +37,7 @@ import { useIsMobile } from "../../hooks/useIsMobile";
  *
  * @returns React elements representing the account dashboard view.
  */
-export const AccountView: React.FC = () => {
+export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toasterRef }) => {
   const [me, setMe] = useState<UserInfo | null>(null);
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,31 +102,69 @@ export const AccountView: React.FC = () => {
       return;
     }
     if (!USERNAME_REGEX.test(editUsername)) {
-      alert(t("account.formatTipUsername"));
+      toasterRef?.current?.show({
+        message: t("account.formatTipUsername"),
+        intent: Intent.WARNING,
+        icon: "warning-sign",
+      });
       return;
     }
+    const previousUsername = me?.username || "";
+    const targetUsername = editUsername;
     setUsernameLoading(true);
+    onSavingChange?.(true);
     try {
-      await updateMe({ username: editUsername });
-      setMe((prev) => (prev ? { ...prev, username: editUsername } : null));
+      await executeWithTimeout(updateMe({ username: targetUsername }), 10000);
+      setMe((prev) => (prev ? { ...prev, username: targetUsername } : null));
       setIsEditingUsername(false);
+      toasterRef?.current?.show({
+        message: t("common.saveSuccess", "保存成功"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
     } catch (e: any) {
       console.error(e);
-      alert(e.message || t("common.errorNetwork"));
+      // Revert to original username on timeout or error
+      setEditUsername(previousUsername);
+      setMe((prev) => (prev ? { ...prev, username: previousUsername } : null));
+      setIsEditingUsername(false);
+      toasterRef?.current?.show({
+        message: e.message || t("common.saveFailed", "保存失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setUsernameLoading(false);
+      onSavingChange?.(false);
     }
   };
 
   const handleUpdateTimezone = async (newTimezone: string | null) => {
+    const previousTimezone = me?.timezone ?? null;
+    setMe((prev) => (prev ? { ...prev, timezone: newTimezone } : null));
+    onSavingChange?.(true);
     try {
-      await updateMe({ timezone: newTimezone || "" });
-      setMe((prev) => (prev ? { ...prev, timezone: newTimezone } : null));
+      await executeWithTimeout(updateMe({ timezone: newTimezone || "" }), 10000);
       const { setSystemTimeZone } = await import("../../utils/date");
       setSystemTimeZone(newTimezone || "");
+      toasterRef?.current?.show({
+        message: t("common.saveSuccess", "保存成功"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
     } catch (e: any) {
       console.error(e);
-      alert(e.message || t("common.errorNetwork"));
+      // Revert to original timezone on timeout or error
+      setMe((prev) => (prev ? { ...prev, timezone: previousTimezone } : null));
+      const { setSystemTimeZone } = await import("../../utils/date");
+      setSystemTimeZone(previousTimezone || "");
+      toasterRef?.current?.show({
+        message: e.message || t("common.saveFailed", "保存失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    } finally {
+      onSavingChange?.(false);
     }
   };
 
@@ -188,7 +232,14 @@ export const AccountView: React.FC = () => {
       {me && <E2eeCard user={me} onRefresh={fetchMe} />}
 
       {/* Session Lock */}
-      {me && <SessionLockCard user={me} onRefresh={fetchMe} />}
+      {me && (
+        <SessionLockCard
+          user={me}
+          onRefresh={fetchMe}
+          onSavingChange={onSavingChange}
+          toasterRef={toasterRef}
+        />
+      )}
 
       {/* Active Sessions */}
       {me && (
@@ -217,6 +268,8 @@ export const AccountView: React.FC = () => {
               onRefresh={fetchUsers}
               registrationEnabled={sysSettings.registration_enabled !== "false"}
               onRefreshSettings={fetchSystemSettings}
+              onSavingChange={onSavingChange}
+              toasterRef={toasterRef}
             />
           </div>
 
@@ -225,6 +278,8 @@ export const AccountView: React.FC = () => {
             <SystemSettingsCard
               initialSettings={sysSettings}
               onRefresh={fetchSystemSettings}
+              onSavingChange={onSavingChange}
+              toasterRef={toasterRef}
             />
           </div>
         </>

@@ -33,7 +33,8 @@
     "importSuccess": "配置成功导入",
     "importError": "配置导入失败，请确保格式正确且稍后再试",
     "save": "保存",
-    "saveSuccess": "设置已保存",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
     "close": "关闭",
     "cancel": "取消",
     "yes": "是",
@@ -385,7 +386,12 @@
     "pressToShowMore": "按下显示更多",
     "maximize": "放大",
     "minimize": "缩小",
-    "loading": "加载中..."
+    "loading": "加载中...",
+    "sync": "同步",
+    "syncMissingIntervals": "同步当前区间缺失记录",
+    "syncing": "正在同步...",
+    "syncSuccess": "本地记录同步完成",
+    "syncFailed": "本地记录同步失败"
   },
   "logs": {
     "title": "查询日志",

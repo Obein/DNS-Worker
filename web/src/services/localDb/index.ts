@@ -106,6 +106,17 @@ export class LocalDbService {
     return this.syncEngine.syncMissingIntervals(profileId, since, until, signal, onProgress);
   }
 
+  /** Synchronizes target time interval records with chunked transfer and progress reporting */
+  async syncTargetInterval(
+    profileId: string,
+    since: number,
+    until: number,
+    signal?: AbortSignal,
+    onProgress?: (progress: number, insertedSoFar: number, totalExpected: number) => void
+  ): Promise<number> {
+    return this.syncEngine.syncTargetInterval(profileId, since, until, signal, onProgress);
+  }
+
   /** Backfills older logs from the server into local SQLite */
   async backfillLogs(
     profileId: string,

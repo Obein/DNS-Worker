@@ -245,6 +245,144 @@ export class LocalDbSyncEngine {
   }
 
   /**
+   * Synchronizes missing records for the specified target interval [since, until].
+   * Divides data transmission into segments/pages (chunked transfer), decrypts each batch,
+   * commits into local SQLite, and notifies progress after each successful batch.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param signal - Optional AbortSignal for cancellation.
+   * @param onProgress - Callback providing (progress: number, insertedSoFar: number, totalExpected: number)
+   *                     where progress is between 0.0 and 1.0.
+   * @returns Total number of newly inserted logs.
+   */
+  async syncTargetInterval(
+    profileId: string,
+    since: number,
+    until: number,
+    signal?: AbortSignal,
+    onProgress?: (progress: number, insertedSoFar: number, totalExpected: number) => void
+  ): Promise<number> {
+    await this.bridge.init();
+    if (signal?.aborted || since >= until) return 0;
+
+    // 1. Determine total expected count from server summary
+    let totalExpected = 0;
+    try {
+      const summaryRes = await profileFetch(
+        `/api/profiles/${profileId}/analytics/summary?start=${since}&end=${until}`,
+        { signal }
+      );
+      if (summaryRes.ok) {
+        const summaryData: { count: number }[] = await summaryRes.json();
+        if (Array.isArray(summaryData)) {
+          totalExpected = summaryData.reduce((acc, curr) => acc + (curr.count || 0), 0);
+        }
+      }
+    } catch (summaryErr) {
+      console.warn("[LocalDbSyncEngine] Failed to query server summary for target interval:", summaryErr);
+    }
+
+    if (totalExpected === 0) {
+      onProgress?.(1, 0, 0);
+      return 0;
+    }
+
+    // 2. Query how many logs we already have locally in this interval
+    let localCount = 0;
+    try {
+      const localAnalytics = await this.bridge.sendRequest<{ summary?: { count: number }[] }>('QUERY_ANALYTICS', {
+        profileId,
+        since,
+        until,
+        bucketSec: 3600
+      });
+      if (localAnalytics?.summary && Array.isArray(localAnalytics.summary)) {
+        localCount = localAnalytics.summary.reduce((acc: number, curr: { count: number }) => acc + (curr.count || 0), 0);
+      }
+    } catch {
+      localCount = 0;
+    }
+
+    const missingCount = Math.max(1, totalExpected - localCount);
+    if (totalExpected <= localCount) {
+      // Local SQLite already has all logs for this interval
+      onProgress?.(1, localCount, totalExpected);
+      return 0;
+    }
+
+    // 3. Segmented transfer: fetch in batches of 100 logs backwards from `until` down to `since`
+    let totalInserted = 0;
+    let currentBefore: number | undefined = undefined;
+    let hasMore = true;
+    const MAX_PAGES = 500; // Allow syncing up to 50,000 logs in one manual sync
+    let pageCount = 0;
+
+    while (hasMore && pageCount < MAX_PAGES && !signal?.aborted) {
+      let url = `/api/profiles/${profileId}/logs?start=${since}&end=${until}&limit=100`;
+      if (currentBefore !== undefined) {
+        url += `&before=${currentBefore}`;
+      }
+
+      const res = await profileFetch(url, { signal });
+      if (!res.ok) {
+        console.warn(
+          `[LocalDbSyncEngine] Failed to fetch segment for interval [${since}, ${until}] (${res.status}):`,
+          await res.text()
+        );
+        break;
+      }
+
+      const rawLogs: LogEntry[] = await res.json();
+      if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      // Decrypt any encrypted logs before inserting into local SQLite
+      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+
+      // Insert this batch into local SQLite
+      const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+        profileId,
+        logs
+      });
+
+      totalInserted += inserted;
+      pageCount++;
+
+      // Progress only advances AFTER successful segment persistence
+      const currentProgress = Math.min(0.98, Math.max(0.05, totalInserted / missingCount));
+      onProgress?.(currentProgress, totalInserted, totalExpected);
+
+      if (logs.length < 100) {
+        hasMore = false;
+      } else {
+        const oldestInBatch = Number(logs[logs.length - 1].timestamp);
+        if (
+          isNaN(oldestInBatch) ||
+          oldestInBatch <= since ||
+          (currentBefore !== undefined && oldestInBatch >= currentBefore)
+        ) {
+          hasMore = false;
+        } else {
+          currentBefore = oldestInBatch;
+        }
+      }
+
+      // Small yield for UI responsiveness
+      await new Promise((r) => setTimeout(r, 15));
+    }
+
+    const effectiveEarliest = hasMore && currentBefore !== undefined ? currentBefore : since;
+    await this.updateWatermarkBounds(profileId, effectiveEarliest, until);
+
+    onProgress?.(1, totalInserted, totalExpected);
+    return totalInserted;
+  }
+
+  /**
    * Identifies and downloads all missing time intervals between `since` and `until` from the server.
    * Compares the requested range against local SQLite sync watermarks (earliest and latest timestamps).
    * Automatically loops through multiple passes if the dataset exceeds a single interval pass capacity.

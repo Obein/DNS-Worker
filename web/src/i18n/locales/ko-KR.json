@@ -33,7 +33,8 @@
     "importSuccess": "설정을 성공적으로 가져왔습니다",
     "importError": "설정 가져오기 실패, 형식을 확인하고 나중에 다시 시도하세요",
     "save": "저장",
-    "saveSuccess": "설정이 저장되었습니다",
+    "saveSuccess": "성공적으로 저장되었습니다",
+    "saveFailed": "저장에 실패했습니다",
     "close": "닫기",
     "cancel": "취소",
     "yes": "예",
@@ -385,7 +386,12 @@
     "pressToShowMore": "클릭하여 더 보기",
     "maximize": "최대화",
     "minimize": "최소화",
-    "loading": "로딩 중..."
+    "loading": "로딩 중...",
+    "sync": "동기화",
+    "syncMissingIntervals": "선택한 기간의 누락된 기록 동기화",
+    "syncing": "동기화 중...",
+    "syncSuccess": "로컬 기록 동기화 완료",
+    "syncFailed": "로컬 기록 동기화 실패"
   },
   "logs": {
     "title": "쿼리 로그",

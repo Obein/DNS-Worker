@@ -8,9 +8,11 @@ import {
   InputGroup,
   HTMLSelect,
   Spinner,
-  Intent
+  Intent,
+  Tooltip,
+  Position
 } from "@blueprintjs/core";
-import { Calendar } from "lucide-react";
+import { Calendar, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TimeRange } from "../types";
 import type { AccessPoint } from "../../../services";
@@ -26,6 +28,9 @@ export interface AnalyticsRangeSelectorProps {
   setAccessPointIdFilter: (id: string | null) => void;
   loading: boolean;
   onApplyCustom: () => void;
+  syncing?: boolean;
+  syncProgress?: number;
+  onSync?: () => void;
 }
 
 const RANGE_PRESETS = [
@@ -46,7 +51,10 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
   accessPointIdFilter,
   setAccessPointIdFilter,
   loading,
-  onApplyCustom
+  onApplyCustom,
+  syncing,
+  syncProgress,
+  onSync
 }) => {
   const { t } = useTranslation();
   const nowStr = new Date().toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
@@ -107,7 +115,7 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
           />
         </PopoverNext>
       </ButtonGroup>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         {accessPoints.length > 0 && (
           <HTMLSelect
             value={accessPointIdFilter || ""}
@@ -119,7 +127,39 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
             minimal
           />
         )}
-        {loading && <Spinner size={16} />}
+        {onSync && (
+          <Tooltip
+            content={
+              syncing
+                ? `${t("analytics.syncing", "正在同步...")} ${Math.round((syncProgress || 0) * 100)}%`
+                : t("analytics.syncMissingIntervals", "同步当前区间缺失记录")
+            }
+            position={Position.BOTTOM}
+          >
+            <Button
+              minimal
+              disabled={syncing}
+              onClick={onSync}
+              aria-label={t("analytics.syncMissingIntervals", "同步当前区间缺失记录")}
+              icon={
+                syncing ? (
+                  <Spinner
+                    size={16}
+                    value={
+                      syncProgress !== undefined && syncProgress > 0
+                        ? Math.min(1, Math.max(0.05, syncProgress))
+                        : undefined
+                    }
+                    intent={Intent.PRIMARY}
+                  />
+                ) : (
+                  <RefreshCw size={15} />
+                )
+              }
+            />
+          </Tooltip>
+        )}
+        {loading && !syncing && <Spinner size={16} />}
       </div>
     </div>
   );
