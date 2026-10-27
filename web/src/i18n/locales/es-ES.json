@@ -391,6 +391,7 @@
     "syncMissingIntervals": "Sincronizar registros faltantes para el rango seleccionado",
     "syncing": "Sincronizando...",
     "syncSuccess": "Registros locales sincronizados con éxito",
+    "syncAlreadyUpToDate": "Los registros locales ya están actualizados",
     "syncFailed": "Error al sincronizar registros locales",
     "syncStopped": "Sincronización detenida",
     "stopSync": "Detener sincronización"

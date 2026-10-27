@@ -391,6 +391,7 @@
     "syncMissingIntervals": "선택한 기간의 누락된 기록 동기화",
     "syncing": "동기화 중...",
     "syncSuccess": "로컬 기록 동기화 완료",
+    "syncAlreadyUpToDate": "로컬 기록이 이미 최신 상태입니다",
     "syncFailed": "로컬 기록 동기화 실패",
     "syncStopped": "동기화가 중지되었습니다",
     "stopSync": "동기화 중지"

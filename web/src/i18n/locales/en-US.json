@@ -391,6 +391,7 @@
     "syncMissingIntervals": "Sync missing records for selected range",
     "syncing": "Syncing...",
     "syncSuccess": "Local records synchronized successfully",
+    "syncAlreadyUpToDate": "Local records are already up to date",
     "syncFailed": "Failed to sync local records",
     "syncStopped": "Sync stopped",
     "stopSync": "Stop sync"

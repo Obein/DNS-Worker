@@ -391,6 +391,7 @@
     "syncMissingIntervals": "選択した期間の未取得ログを同期",
     "syncing": "同期中...",
     "syncSuccess": "ローカルログの同期が完了しました",
+    "syncAlreadyUpToDate": "ローカルログは最新です",
     "syncFailed": "ローカルログの同期に失敗しました",
     "syncStopped": "同期を停止しました",
     "stopSync": "同期を停止"

@@ -24,6 +24,7 @@ export class LogTrafficAnalytics {
    * @param destCountry - Optional destination country code.
    * @param isp - Optional ISP name filter.
    * @param status - Optional action status filter (e.g. PASS, BLOCK).
+   * @param exact - Optional boolean flag to force exact count query against raw logs table directly.
    * @returns Array of action counts.
    */
   async getSummary(
@@ -34,10 +35,11 @@ export class LogTrafficAnalytics {
     accessPointId?: string,
     destCountry?: string,
     isp?: string,
-    status?: string
+    status?: string,
+    exact?: boolean
   ): Promise<ActionCountResult[]> {
-    // If granular search, device, country, isp, or status filters are applied, query raw logs directly
-    if (search || accessPointId || destCountry || isp || status || !this.aggregation) {
+    // If granular search, device, country, isp, status filters, or exact flag are applied, query raw logs directly
+    if (exact || search || accessPointId || destCountry || isp || status || !this.aggregation) {
       let queryStr =
         "SELECT action, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ?";
       const params: (string | number)[] = [profileId, since, until];

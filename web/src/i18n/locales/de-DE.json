@@ -391,6 +391,7 @@
     "syncMissingIntervals": "Fehlende Datensätze für ausgewählten Bereich synchronisieren",
     "syncing": "Wird synchronisiert...",
     "syncSuccess": "Lokale Datensätze erfolgreich synchronisiert",
+    "syncAlreadyUpToDate": "Lokale Datensätze sind bereits aktuell",
     "syncFailed": "Synchronisierung der lokalen Datensätze fehlgeschlagen",
     "syncStopped": "Synchronisierung angehalten",
     "stopSync": "Synchronisierung anhalten"

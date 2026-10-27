@@ -391,6 +391,7 @@
     "syncMissingIntervals": "Đồng bộ các bản ghi còn thiếu cho khoảng thời gian đã chọn",
     "syncing": "Đang đồng bộ...",
     "syncSuccess": "Đồng bộ bản ghi cục bộ hoàn tất",
+    "syncAlreadyUpToDate": "Bản ghi cục bộ đã là mới nhất",
     "syncFailed": "Đồng bộ bản ghi cục bộ thất bại",
     "syncStopped": "Đã dừng đồng bộ",
     "stopSync": "Dừng đồng bộ"

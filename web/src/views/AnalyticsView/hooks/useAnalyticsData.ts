@@ -54,6 +54,13 @@ export function useAnalyticsData(
   const [logRetentionDays, setLogRetentionDays] = useState<number>(30);
   const abortControllerRef = useRef<AbortController | null>(null);
   const syncAbortControllerRef = useRef<AbortController | null>(null);
+  const lastSyncInfoRef = useRef<{
+    range: TimeRange;
+    customStart?: string;
+    customEnd?: string;
+    accessPointId?: string | null;
+    completedAt: number;
+  } | null>(null);
 
   useEffect(() => {
     return () => {
@@ -339,6 +346,28 @@ export function useAnalyticsData(
 
   const syncTargetRange = useCallback(async (): Promise<void> => {
     if (syncing) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    const lastSync = lastSyncInfoRef.current;
+    const isSameRange =
+      lastSync !== null &&
+      lastSync.range === range &&
+      lastSync.accessPointId === accessPointIdFilter &&
+      (range !== "custom" ||
+        (lastSync.customStart === customRange.start &&
+          lastSync.customEnd === customRange.end));
+
+    // If interval has not changed and was recently synchronized (within 30 seconds),
+    // records are guaranteed up to date without redundant execution.
+    if (isSameRange && now - lastSync.completedAt < 30) {
+      toasterRef?.current?.show({
+        message: t("analytics.syncAlreadyUpToDate", "本地记录已是最新"),
+        intent: Intent.PRIMARY,
+        icon: "tick"
+      });
+      return;
+    }
+
     setSyncing(true);
     setSyncProgress(0.05);
 
@@ -347,7 +376,6 @@ export function useAnalyticsData(
     syncAbortControllerRef.current = controller;
     const signal = controller.signal;
 
-    const now = Math.floor(Date.now() / 1000);
     let since: number;
     let until = now;
     let bucketSec: number;
@@ -412,7 +440,7 @@ export function useAnalyticsData(
         } catch {}
       };
 
-      await localDb.syncTargetInterval(
+      const inserted = await localDb.syncTargetInterval(
         profileId,
         since,
         until,
@@ -426,14 +454,30 @@ export function useAnalyticsData(
       );
 
       if (!signal.aborted) {
-        setSyncProgress(1);
-        await refreshLocalData();
-        toasterRef?.current?.show({
-          message: t("analytics.syncSuccess", "本地记录同步完成"),
-          intent: Intent.SUCCESS,
-          icon: "tick"
-        });
-        await new Promise((r) => setTimeout(r, 600));
+        lastSyncInfoRef.current = {
+          range,
+          customStart: customRange.start,
+          customEnd: customRange.end,
+          accessPointId: accessPointIdFilter,
+          completedAt: Math.floor(Date.now() / 1000)
+        };
+
+        if (inserted === 0) {
+          toasterRef?.current?.show({
+            message: t("analytics.syncAlreadyUpToDate", "本地记录已是最新"),
+            intent: Intent.PRIMARY,
+            icon: "tick"
+          });
+        } else {
+          setSyncProgress(1);
+          await refreshLocalData();
+          toasterRef?.current?.show({
+            message: t("analytics.syncSuccess", "本地记录同步完成"),
+            intent: Intent.SUCCESS,
+            icon: "tick"
+          });
+          await new Promise((r) => setTimeout(r, 600));
+        }
       }
     } catch (err: any) {
       if ((err as Error)?.name !== "AbortError" && !signal.aborted) {

@@ -164,17 +164,20 @@ export async function handleProfileLogsAndAnalyticsRequest(
 
     const subResource = pathParts[4];
     if (subResource) {
+      const exact = urlParams.get('exact') === 'true';
       const cache = (caches as any).default;
       const subCacheKey = `analytics_sub:${profileId}:${subResource}:${urlParams.toString()}`;
-      const cached = await cacheUtils.get<any>(cache, subCacheKey);
-      if (cached) {
-        return new Response(JSON.stringify(cached), {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Cache': 'HIT',
-            'Cache-Control': 'private, no-cache'
-          }
-        });
+      if (!exact) {
+        const cached = await cacheUtils.get<any>(cache, subCacheKey);
+        if (cached) {
+          return new Response(JSON.stringify(cached), {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Cache': 'HIT',
+              'Cache-Control': 'private, no-cache'
+            }
+          });
+        }
       }
 
       let data: any = null;
@@ -183,7 +186,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
         const destCountry = urlParams.get('dest_country') || undefined;
         const isp = urlParams.get('isp') || undefined;
         const status = urlParams.get('status') || undefined;
-        data = await logModel.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
+        data = await logModel.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status, exact);
       } else if (subResource === 'trend') {
         data = await logModel.getTrend(profileId, since, until, interval, accessPointId);
       } else if (subResource === 'top_allowed') {
@@ -205,12 +208,14 @@ export async function handleProfileLogsAndAnalyticsRequest(
         return new Response("Not Found", { status: 404 });
       }
 
-      await cacheUtils.set(cache, subCacheKey, data, 300);
+      if (!exact) {
+        await cacheUtils.set(cache, subCacheKey, data, 300);
+      }
       return new Response(JSON.stringify(data), {
         headers: {
           'Content-Type': 'application/json',
           'X-Cache': 'MISS',
-          'Cache-Control': 'private, no-cache'
+          'Cache-Control': exact ? 'no-cache, no-store' : 'private, no-cache'
         }
       });
     }

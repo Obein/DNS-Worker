@@ -320,11 +320,11 @@ export class LocalDbSyncEngine {
 
     const PAGE_SIZE = 1000;
 
-    // 1. Determine total expected count from server summary
+    // 1. Determine total expected count from server summary (with exact=true for raw log accuracy)
     let totalExpected = 0;
     try {
       const summaryRes = await profileFetch(
-        `/api/profiles/${profileId}/analytics/summary?start=${since}&end=${until}`,
+        `/api/profiles/${profileId}/analytics/summary?start=${since}&end=${until}&exact=true`,
         { signal }
       );
       if (summaryRes.ok) {
@@ -340,7 +340,6 @@ export class LocalDbSyncEngine {
 
     if (totalExpected === 0) {
       this.clearCheckpoint(profileId);
-      onProgress?.(1, 0, 0);
       return 0;
     }
 
@@ -363,7 +362,6 @@ export class LocalDbSyncEngine {
     if (totalExpected <= localCount) {
       // Local SQLite already has all logs for this interval
       this.clearCheckpoint(profileId);
-      onProgress?.(1, localCount, totalExpected);
       return 0;
     }
 
