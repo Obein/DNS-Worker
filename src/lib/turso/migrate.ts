@@ -39,17 +39,27 @@ export interface TursoMigrationStats {
 }
 
 /**
- * Ensures the `_cf_d1_migrations` table exists on Turso.
+ * Ensures the `d1_migrations` and `_cf_d1_migrations` tables exist on Turso,
+ * automatically migrating and synchronizing records between both tables.
  *
  * @param db - TursoD1Database instance.
  */
 export async function ensureTursoMigrationsTable(db: TursoD1Database): Promise<void> {
   await db.exec(`
+    CREATE TABLE IF NOT EXISTS d1_migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      applied_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS _cf_d1_migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
       applied_at INTEGER NOT NULL
     );
+    INSERT OR IGNORE INTO d1_migrations (name, applied_at)
+      SELECT name, applied_at FROM _cf_d1_migrations;
+    INSERT OR IGNORE INTO _cf_d1_migrations (name, applied_at)
+      SELECT name, applied_at FROM d1_migrations;
   `);
 }
 
@@ -117,7 +127,7 @@ export async function getTursoMigrationStats(db: TursoD1Database): Promise<Turso
   try {
     await ensureTursoMigrationsTable(db);
     const appliedQuery = await db
-      .prepare('SELECT name FROM _cf_d1_migrations')
+      .prepare('SELECT name FROM d1_migrations UNION SELECT name FROM _cf_d1_migrations')
       .all<{ name: string }>();
     const appliedSet = new Set((appliedQuery.results || []).map((r) => r.name));
     const pendingFiles = files.filter((f) => !appliedSet.has(f));
@@ -184,7 +194,7 @@ export async function runTursoMigrations(
 
   const files = Object.keys(migrationsMap).sort();
 
-  const appliedQuery = await db.prepare('SELECT name FROM _cf_d1_migrations').all<{ name: string }>();
+  const appliedQuery = await db.prepare('SELECT name FROM d1_migrations UNION SELECT name FROM _cf_d1_migrations').all<{ name: string }>();
   const appliedSet = new Set((appliedQuery.results || []).map((r) => r.name));
 
   let appliedCount = 0;
@@ -197,9 +207,14 @@ export async function runTursoMigrations(
     console.log(`[Turso Migrations] Applying ${file}...`);
     try {
       await execMigrationSql(db, sql);
+      const appliedAt = Math.floor(Date.now() / 1000);
       await db
-        .prepare('INSERT INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)')
-        .bind(file, Math.floor(Date.now() / 1000))
+        .prepare('INSERT OR REPLACE INTO d1_migrations (name, applied_at) VALUES (?, ?)')
+        .bind(file, appliedAt)
+        .run();
+      await db
+        .prepare('INSERT OR REPLACE INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)')
+        .bind(file, appliedAt)
         .run();
       appliedCount++;
     } catch (err: any) {
