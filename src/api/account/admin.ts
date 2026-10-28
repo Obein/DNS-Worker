@@ -5,6 +5,12 @@ import { UserModel } from "../../models/user";
 import { ProfileModel } from "../../models/profile";
 import { SystemSettingsModel } from "../../models/systemSettings";
 import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
+import {
+  getDatabaseService,
+  isTursoConfigured,
+  getTursoMigrationStats,
+  runTursoMigrations
+} from "../../lib/turso";
 
 /**
  * Handle admin requests to /api/admin/...
@@ -67,6 +73,49 @@ export async function handleAdminRequest(
       delete body.jwt_secret;
       await systemSettings.setMany(body);
       return new Response(JSON.stringify({ success: true }));
+    }
+  }
+
+  // 数据库管理与迁移接口: /api/admin/database
+  if (pathParts[2] === 'database') {
+    const isServerfull = Boolean(
+      env.SERVERFULL_DEFAULT_PROFILE_KEY !== undefined ||
+      env.SERVERFULL_HOST !== undefined ||
+      env.SERVERFULL_DOT_DOMAIN !== undefined ||
+      env.SERVERFULL_HTTP_PORT !== undefined ||
+      env.SERVERFULL_HTTPS_PORT !== undefined ||
+      env.SERVERFULL_DB_PATH !== undefined
+    );
+    const dbService = getDatabaseService(env, isServerfull);
+    const isTurso = dbService === 'Turso' && isTursoConfigured(env);
+
+    if (request.method === 'GET') {
+      const stats = env.DB ? await getTursoMigrationStats(env.DB as any) : null;
+      return new Response(JSON.stringify({
+        databaseService: dbService,
+        isTurso,
+        configured: Boolean(env.DB),
+        migrations: stats
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (request.method === 'POST') {
+      const action = pathParts[3];
+      if (action === 'migrate') {
+        if (!env.DB) {
+          return new Response(JSON.stringify({ error: "Database is not configured" }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        const appliedCount = await runTursoMigrations(env.DB as any);
+        const stats = await getTursoMigrationStats(env.DB as any);
+        return new Response(JSON.stringify({
+          success: true,
+          appliedCount,
+          stats
+        }), { headers: { 'Content-Type': 'application/json' } });
+      }
     }
   }
 

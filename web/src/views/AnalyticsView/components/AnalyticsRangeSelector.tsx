@@ -8,9 +8,11 @@ import {
   InputGroup,
   HTMLSelect,
   Spinner,
-  Intent
+  Intent,
+  Tooltip,
+  Position
 } from "@blueprintjs/core";
-import { Calendar } from "lucide-react";
+import { Calendar, RefreshCw, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TimeRange } from "../types";
 import type { AccessPoint } from "../../../services";
@@ -26,6 +28,10 @@ export interface AnalyticsRangeSelectorProps {
   setAccessPointIdFilter: (id: string | null) => void;
   loading: boolean;
   onApplyCustom: () => void;
+  syncing?: boolean;
+  syncProgress?: number;
+  onSync?: () => void;
+  onStopSync?: () => void;
 }
 
 const RANGE_PRESETS = [
@@ -46,7 +52,11 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
   accessPointIdFilter,
   setAccessPointIdFilter,
   loading,
-  onApplyCustom
+  onApplyCustom,
+  syncing,
+  syncProgress,
+  onSync,
+  onStopSync
 }) => {
   const { t } = useTranslation();
   const nowStr = new Date().toLocaleString("sv-SE").replace(" ", "T").slice(0, 16);
@@ -107,7 +117,7 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
           />
         </PopoverNext>
       </ButtonGroup>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
         {accessPoints.length > 0 && (
           <HTMLSelect
             value={accessPointIdFilter || ""}
@@ -119,7 +129,47 @@ export const AnalyticsRangeSelector: React.FC<AnalyticsRangeSelectorProps> = ({
             minimal
           />
         )}
-        {loading && <Spinner size={16} />}
+        {onSync && (
+          <Tooltip
+            content={
+              syncing
+                ? `${t("analytics.syncing")} ${Math.round((syncProgress || 0) * 100)}% (${t("analytics.stopSync")})`
+                : t("analytics.syncMissingIntervals")
+            }
+            position={Position.BOTTOM}
+            popoverClassName="analytics-sync-tooltip"
+          >
+            <Button
+              minimal
+              onClick={syncing ? onStopSync : onSync}
+              aria-label={
+                syncing
+                  ? t("analytics.stopSync")
+                  : t("analytics.syncMissingIntervals")
+              }
+              intent={syncing ? Intent.DANGER : Intent.NONE}
+              icon={
+                syncing ? (
+                  <div className="relative flex items-center justify-center w-4 h-4">
+                    <Spinner
+                      size={16}
+                      value={
+                        syncProgress !== undefined && syncProgress > 0
+                          ? Math.min(1, Math.max(0.05, syncProgress))
+                          : undefined
+                      }
+                      intent={Intent.DANGER}
+                    />
+                    <Square size={6} className="absolute fill-current text-red-500" />
+                  </div>
+                ) : (
+                  <RefreshCw size={15} />
+                )
+              }
+            />
+          </Tooltip>
+        )}
+        {loading && !syncing && <Spinner size={16} />}
       </div>
     </div>
   );

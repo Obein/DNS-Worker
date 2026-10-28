@@ -108,16 +108,16 @@ export class LogDestinationAnalytics {
     if (cutoff > until) {
       const sinceHour = Math.floor(since / 3600) * 3600;
       let queryStr = `
-        SELECT country_code, country, SUM(count) as count
-        FROM destination_hourly_rollups
-        WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp <= ?
+        SELECT key as country_code, MAX(sub_key) as country, SUM(count) as count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'dest' AND hour_timestamp >= ? AND hour_timestamp <= ?
       `;
       const params: (string | number)[] = [profileId, sinceHour, until];
       if (accessPointId) {
         queryStr += " AND access_point_id = ?";
         params.push(accessPointId);
       }
-      queryStr += ` GROUP BY country_code ORDER BY count DESC LIMIT ${limit}`;
+      queryStr += ` GROUP BY key ORDER BY count DESC LIMIT ${limit}`;
       const { results } = await this.db
         .prepare(queryStr)
         .bind(...params)
@@ -127,7 +127,7 @@ export class LogDestinationAnalytics {
 
     // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
     const sinceHour = Math.floor(since / 3600) * 3600;
-    let rollupWhere = "profile_id = ? AND hour_timestamp >= ? AND hour_timestamp < ?";
+    let rollupWhere = "profile_id = ? AND metric_type = 'dest' AND hour_timestamp >= ? AND hour_timestamp < ?";
     const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
     if (accessPointId) {
       rollupWhere += " AND access_point_id = ?";
@@ -149,9 +149,9 @@ export class LogDestinationAnalytics {
     }
 
     const queryStr = `
-      SELECT country_code, country, SUM(count) as count FROM (
-        SELECT country_code, country, count
-        FROM destination_hourly_rollups
+      SELECT country_code, MAX(country) as country, SUM(count) as count FROM (
+        SELECT key as country_code, sub_key as country, count
+        FROM hourly_rollups
         WHERE ${rollupWhere}
         UNION ALL
         SELECT 
@@ -168,7 +168,7 @@ export class LogDestinationAnalytics {
           COUNT(*) as count
         FROM logs
         WHERE ${logWhere}
-        GROUP BY country_code, country
+        GROUP BY country_code
       ) WHERE country_code != '' GROUP BY country_code ORDER BY count DESC LIMIT ${limit}
     `;
 

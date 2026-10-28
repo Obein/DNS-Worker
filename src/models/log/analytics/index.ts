@@ -54,9 +54,10 @@ export class LogAnalyticsModel {
     accessPointId?: string,
     destCountry?: string,
     isp?: string,
-    status?: string
+    status?: string,
+    exact?: boolean
   ): Promise<ActionCountResult[]> {
-    return this.traffic.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
+    return this.traffic.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status, exact);
   }
 
   /**

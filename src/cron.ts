@@ -94,7 +94,7 @@ export async function handleScheduled(
 
         const minDomainCount = env.DOMAIN_ROLLUP_MIN_COUNT !== undefined && env.DOMAIN_ROLLUP_MIN_COUNT !== ''
           ? Number(env.DOMAIN_ROLLUP_MIN_COUNT)
-          : 2;
+          : 1;
         const aggregated = await logModel.aggregateHourlyRollups(undefined, undefined, minDomainCount);
         if (aggregated > 0) {
           console.log(`[Cron] Hourly rollup aggregation: aggregated ${aggregated} record(s).`);

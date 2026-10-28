@@ -189,6 +189,16 @@ export interface KemKeyRecord {
   expires_at: number;
 }
 
+export interface HourlyRollup {
+  profile_id: string;
+  metric_type: 'action' | 'domain' | 'client' | 'dest' | string;
+  hour_timestamp: number;
+  key: string;
+  sub_key?: string;
+  access_point_id?: string;
+  count: number;
+}
+
 export interface LogHourlyRollup {
   profile_id: string;
   hour_timestamp: number;

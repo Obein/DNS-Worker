@@ -27,7 +27,7 @@ export class LogDomainAnalytics {
     until: number,
     accessPointId?: string
   ): Promise<DomainCountResult[]> {
-    if (accessPointId || !this.aggregation) {
+    if (!this.aggregation) {
       let queryStr =
         "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action = 'PASS'";
       const params: (string | number)[] = [profileId, since, until];
@@ -48,11 +48,17 @@ export class LogDomainAnalytics {
 
     // Case 1: No rollups available or entire range is after cutoff -> query raw logs only
     if (cutoff <= since) {
+      let queryStr =
+        "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action = 'PASS'";
+      const params: (string | number)[] = [profileId, since, until];
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
       const { results } = await this.db
-        .prepare(
-          "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action = 'PASS' GROUP BY domain ORDER BY count DESC LIMIT 10"
-        )
-        .bind(profileId, since, until)
+        .prepare(queryStr)
+        .bind(...params)
         .all<DomainCountResult>();
       return results;
     }
@@ -60,33 +66,53 @@ export class LogDomainAnalytics {
     // Case 2: Entire range is within completed rollups
     if (cutoff > until) {
       const sinceHour = Math.floor(since / 3600) * 3600;
+      let queryStr =
+        "SELECT key as domain, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'domain' AND sub_key = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ?";
+      const params: (string | number)[] = [profileId, sinceHour, until];
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += " GROUP BY key ORDER BY count DESC LIMIT 10";
       const { results } = await this.db
-        .prepare(
-          "SELECT domain, SUM(count) as count FROM domain_hourly_rollups WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY domain ORDER BY count DESC LIMIT 10"
-        )
-        .bind(profileId, sinceHour, until)
+        .prepare(queryStr)
+        .bind(...params)
         .all<DomainCountResult>();
       return results;
     }
 
     // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
     const sinceHour = Math.floor(since / 3600) * 3600;
+    let rollupWhere = "profile_id = ? AND metric_type = 'domain' AND sub_key = 'PASS' AND hour_timestamp >= ? AND hour_timestamp < ?";
+    const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
+    if (accessPointId) {
+      rollupWhere += " AND access_point_id = ?";
+      rollupParams.push(accessPointId);
+    }
+
+    let logWhere = "profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS' AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'";
+    const logParams: (string | number)[] = [profileId, cutoff, until];
+    if (accessPointId) {
+      logWhere += " AND access_point_id = ?";
+      logParams.push(accessPointId);
+    }
+
     const queryStr = `
       SELECT domain, SUM(count) as count FROM (
-        SELECT domain, count
-        FROM domain_hourly_rollups
-        WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT key as domain, count
+        FROM hourly_rollups
+        WHERE ${rollupWhere}
         UNION ALL
         SELECT domain, COUNT(*) as count
         FROM logs
-        WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action = 'PASS' AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
+        WHERE ${logWhere}
         GROUP BY domain
       ) GROUP BY domain ORDER BY count DESC LIMIT 10
     `;
 
     const { results } = await this.db
       .prepare(queryStr)
-      .bind(profileId, sinceHour, cutoff, profileId, cutoff, until)
+      .bind(...rollupParams, ...logParams)
       .all<DomainCountResult>();
 
     return results;
@@ -107,7 +133,7 @@ export class LogDomainAnalytics {
     until: number,
     accessPointId?: string
   ): Promise<DomainCountResult[]> {
-    if (accessPointId || !this.aggregation) {
+    if (!this.aggregation) {
       let queryStr =
         "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action IN ('BLOCK', 'REDIRECT')";
       const params: (string | number)[] = [profileId, since, until];
@@ -128,11 +154,17 @@ export class LogDomainAnalytics {
 
     // Case 1: No rollups available or entire range is after cutoff -> query raw logs only
     if (cutoff <= since) {
+      let queryStr =
+        "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action IN ('BLOCK', 'REDIRECT')";
+      const params: (string | number)[] = [profileId, since, until];
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += " GROUP BY domain ORDER BY count DESC LIMIT 10";
       const { results } = await this.db
-        .prepare(
-          "SELECT domain, COUNT(*) as count FROM logs WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]' AND action IN ('BLOCK', 'REDIRECT') GROUP BY domain ORDER BY count DESC LIMIT 10"
-        )
-        .bind(profileId, since, until)
+        .prepare(queryStr)
+        .bind(...params)
         .all<DomainCountResult>();
       return results;
     }
@@ -140,33 +172,53 @@ export class LogDomainAnalytics {
     // Case 2: Entire range is within completed rollups
     if (cutoff > until) {
       const sinceHour = Math.floor(since / 3600) * 3600;
+      let queryStr =
+        "SELECT key as domain, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'domain' AND sub_key IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ?";
+      const params: (string | number)[] = [profileId, sinceHour, until];
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += " GROUP BY key ORDER BY count DESC LIMIT 10";
       const { results } = await this.db
-        .prepare(
-          "SELECT domain, SUM(count) as count FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY domain ORDER BY count DESC LIMIT 10"
-        )
-        .bind(profileId, sinceHour, until)
+        .prepare(queryStr)
+        .bind(...params)
         .all<DomainCountResult>();
       return results;
     }
 
     // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
     const sinceHour = Math.floor(since / 3600) * 3600;
+    let rollupWhere = "profile_id = ? AND metric_type = 'domain' AND sub_key IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp < ?";
+    const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
+    if (accessPointId) {
+      rollupWhere += " AND access_point_id = ?";
+      rollupParams.push(accessPointId);
+    }
+
+    let logWhere = "profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action IN ('BLOCK', 'REDIRECT') AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'";
+    const logParams: (string | number)[] = [profileId, cutoff, until];
+    if (accessPointId) {
+      logWhere += " AND access_point_id = ?";
+      logParams.push(accessPointId);
+    }
+
     const queryStr = `
       SELECT domain, SUM(count) as count FROM (
-        SELECT domain, count
-        FROM domain_hourly_rollups
-        WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT key as domain, count
+        FROM hourly_rollups
+        WHERE ${rollupWhere}
         UNION ALL
         SELECT domain, COUNT(*) as count
         FROM logs
-        WHERE profile_id = ? AND timestamp >= ? AND timestamp <= ? AND action IN ('BLOCK', 'REDIRECT') AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
+        WHERE ${logWhere}
         GROUP BY domain
       ) GROUP BY domain ORDER BY count DESC LIMIT 10
     `;
 
     const { results } = await this.db
       .prepare(queryStr)
-      .bind(profileId, sinceHour, cutoff, profileId, cutoff, until)
+      .bind(...rollupParams, ...logParams)
       .all<DomainCountResult>();
 
     return results;

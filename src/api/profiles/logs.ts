@@ -29,7 +29,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
     }
 
     const urlParams = new URL(request.url).searchParams;
-    const range = urlParams.get('range') || '24h';
+    const range = urlParams.get('range') || '1h';
     const before = urlParams.get('before');
     const status = urlParams.get('status');
     const search = urlParams.get('search');
@@ -73,7 +73,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
         case '24h': since -= 86400; break;
         case '7d': since -= 604800; break;
         case '30d': since -= 2592000; break;
-        default: since -= 86400; break;
+        default: since -= 3600; break;
       }
       since = Math.max(since, retentionThreshold);
     }
@@ -115,8 +115,8 @@ export async function handleProfileLogsAndAnalyticsRequest(
     let limit = parseInt(urlParams.get('limit') || '50', 10);
     if (isNaN(limit) || limit <= 0) {
       limit = 50;
-    } else if (limit > 100) {
-      limit = 100;
+    } else if (limit > 1000) {
+      limit = 1000;
     }
 
     const results = await logModel.getLogs(profileId, {
@@ -158,23 +158,26 @@ export async function handleProfileLogsAndAnalyticsRequest(
         case '24h': since = until - 86400; interval = "(timestamp/3600)*3600"; break;
         case '7d': since = until - 604800; interval = "(timestamp/86400)*86400"; break;
         case '30d': since = until - 2592000; interval = "(timestamp/86400)*86400"; break;
-        default: since = until - 86400; interval = "(timestamp/3600)*3600"; break;
+        default: since = until - 3600; interval = "(timestamp/60)*60"; break;
       }
     }
 
     const subResource = pathParts[4];
     if (subResource) {
+      const exact = urlParams.get('exact') === 'true';
       const cache = (caches as any).default;
       const subCacheKey = `analytics_sub:${profileId}:${subResource}:${urlParams.toString()}`;
-      const cached = await cacheUtils.get<any>(cache, subCacheKey);
-      if (cached) {
-        return new Response(JSON.stringify(cached), {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Cache': 'HIT',
-            'Cache-Control': 'private, no-cache'
-          }
-        });
+      if (!exact) {
+        const cached = await cacheUtils.get<any>(cache, subCacheKey);
+        if (cached) {
+          return new Response(JSON.stringify(cached), {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Cache': 'HIT',
+              'Cache-Control': 'private, no-cache'
+            }
+          });
+        }
       }
 
       let data: any = null;
@@ -183,7 +186,7 @@ export async function handleProfileLogsAndAnalyticsRequest(
         const destCountry = urlParams.get('dest_country') || undefined;
         const isp = urlParams.get('isp') || undefined;
         const status = urlParams.get('status') || undefined;
-        data = await logModel.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
+        data = await logModel.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status, exact);
       } else if (subResource === 'trend') {
         data = await logModel.getTrend(profileId, since, until, interval, accessPointId);
       } else if (subResource === 'top_allowed') {
@@ -205,12 +208,14 @@ export async function handleProfileLogsAndAnalyticsRequest(
         return new Response("Not Found", { status: 404 });
       }
 
-      await cacheUtils.set(cache, subCacheKey, data, 300);
+      if (!exact) {
+        await cacheUtils.set(cache, subCacheKey, data, 300);
+      }
       return new Response(JSON.stringify(data), {
         headers: {
           'Content-Type': 'application/json',
           'X-Cache': 'MISS',
-          'Cache-Control': 'private, no-cache'
+          'Cache-Control': exact ? 'no-cache, no-store' : 'private, no-cache'
         }
       });
     }

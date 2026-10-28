@@ -42,3 +42,40 @@ export async function updateSystemSettings(settings: Record<string, string>): Pr
   });
   if (!res.ok) throw new Error(await res.text());
 }
+
+export interface DatabaseMigrationStats {
+  completed: boolean;
+  totalAvailable: number;
+  appliedCount: number;
+  pendingCount: number;
+  lastApplied: string | null;
+  pendingFiles: string[];
+}
+
+export interface DatabaseStatusResponse {
+  databaseService: string;
+  isTurso: boolean;
+  configured: boolean;
+  migrations: DatabaseMigrationStats | null;
+}
+
+export interface RunMigrationsResponse {
+  success: boolean;
+  appliedCount: number;
+  message?: string;
+  stats?: DatabaseMigrationStats;
+}
+
+export async function getDatabaseStatus(): Promise<DatabaseStatusResponse> {
+  const res = await fetch("/api/admin/database");
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function runDatabaseMigrations(): Promise<RunMigrationsResponse> {
+  const res = await fetch("/api/admin/database/migrate", {
+    method: "POST"
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}

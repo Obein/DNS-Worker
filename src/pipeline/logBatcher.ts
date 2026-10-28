@@ -73,7 +73,7 @@ export function invalidateProfileLogKeyCache(profileId: string): void {
 const logBatchQueue: ResolutionLog[] = [];
 
 /** Maximum number of statements in a single db.batch() transaction */
-const MAX_BATCH_SIZE = 50;
+const MAX_BATCH_SIZE = 40;
 
 /** Debounce time window for micro-batch flushing (15 seconds) */
 const FLUSH_INTERVAL_MS = 15_000;
@@ -173,6 +173,12 @@ export async function flushLogBatch(env: Env, ctx?: ExecutionContext): Promise<v
 
   const logModel = new LogModel(env.DB);
   const statements: D1PreparedStatement[] = [];
+
+  // Generate atomic rollup UPSERT statements from unencrypted in-memory logs BEFORE sensitive data encryption
+  const rollupStatements = logModel.aggregation.createRollupUpsertStatements(logsToFlush);
+  if (rollupStatements.length > 0) {
+    statements.push(...rollupStatements);
+  }
 
   // Group logs by profile to batch E2EE public key lookup
   const profileIds = Array.from(new Set(logsToFlush.map((l) => l.profile_id)));

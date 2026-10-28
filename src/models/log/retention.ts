@@ -98,22 +98,7 @@ export class LogRetentionModel {
         // Purge expired rollups matching retention policy
         rollupStatements.push(
           this.db.prepare(
-            "DELETE FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL') AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM client_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM destination_hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
+            "DELETE FROM hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
           ).bind(profile.id, threshold)
         );
 

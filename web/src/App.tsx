@@ -197,8 +197,9 @@ function App() {
                 navigate={navigate}
                 handleLogout={handleLogout}
                 currentUser={currentUser}
+                isSaving={isSaving}
               >
-                <AccountView />
+                <AccountView onSavingChange={setIsSaving} toasterRef={toasterRef} />
               </MainLayout>
             }
           />

@@ -11,7 +11,8 @@ import {
   InputGroup,
   HTMLSelect,
   Tag,
-  Switch
+  Switch,
+  type OverlayToaster
 } from "@blueprintjs/core";
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,7 @@ import { formatDateTime } from "../../../utils/date";
 import { PASSWORD_REGEX, USERNAME_REGEX, hashPasswordClient } from "../../../utils/auth";
 import type { UserInfo } from "../../../services";
 import { createUser, deleteUser, updateSystemSettings } from "../../../services";
+import { executeWithTimeout } from "../../../utils/async";
 
 export interface UserManagementCardProps {
   users: UserInfo[];
@@ -26,6 +28,8 @@ export interface UserManagementCardProps {
   onRefresh: () => void;
   registrationEnabled?: boolean;
   onRefreshSettings?: () => void;
+  onSavingChange?: (saving: boolean) => void;
+  toasterRef?: React.RefObject<OverlayToaster | null>;
 }
 
 export const UserManagementCard: React.FC<UserManagementCardProps> = ({
@@ -34,6 +38,8 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
   onRefresh,
   registrationEnabled = true,
   onRefreshSettings,
+  onSavingChange,
+  toasterRef,
 }) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -50,17 +56,33 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
   }, [registrationEnabled]);
 
   const handleToggleRegistration = async (checked: boolean) => {
+    const previousState = isRegistrationEnabled;
     setIsRegistrationEnabled(checked);
     setToggleLoading(true);
+    onSavingChange?.(true);
     try {
-      await updateSystemSettings({ registration_enabled: String(checked) });
+      await executeWithTimeout(
+        updateSystemSettings({ registration_enabled: String(checked) }),
+        10000
+      );
+      toasterRef?.current?.show({
+        message: t("common.saveSuccess", "保存成功"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
       onRefreshSettings?.();
     } catch (e: any) {
       console.error(e);
-      setIsRegistrationEnabled(!checked);
-      alert(e.message || t("common.errorNetwork", "Network error"));
+      // Revert to original configuration
+      setIsRegistrationEnabled(previousState);
+      toasterRef?.current?.show({
+        message: e.message || t("common.saveFailed", "保存失败"),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setToggleLoading(false);
+      onSavingChange?.(false);
     }
   };
 

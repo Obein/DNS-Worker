@@ -179,8 +179,8 @@ export class LogCoreModel {
       queryStr += " ORDER BY l.timestamp DESC LIMIT 5000";
     } else {
       let limit = options.limit !== undefined && !isNaN(options.limit) && options.limit > 0 ? options.limit : 50;
-      if (limit > 100) {
-        limit = 100;
+      if (limit > 1000) {
+        limit = 1000;
       }
       queryStr += ` ORDER BY l.timestamp DESC LIMIT ${limit}`;
     }

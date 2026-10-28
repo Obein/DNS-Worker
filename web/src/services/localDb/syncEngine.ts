@@ -10,6 +10,15 @@ import type { LocalDbWorkerBridge } from './workerBridge';
 import { profileFetch } from '../profiles';
 import { e2ee } from '../e2ee';
 
+export interface SyncCheckpoint {
+  since: number;
+  until: number;
+  checkpointBefore: number;
+  syncedCount: number;
+  totalExpected: number;
+  updatedAt: number;
+}
+
 /**
  * Orchestrates log ingestion, pagination, decryption, and watermark maintenance.
  */
@@ -20,6 +29,48 @@ export class LocalDbSyncEngine {
 
   constructor(bridge: LocalDbWorkerBridge) {
     this.bridge = bridge;
+  }
+
+  /**
+   * Retrieves any active synchronization checkpoint for the given profile and exact time range.
+   */
+  getCheckpoint(profileId: string, since: number, until: number): SyncCheckpoint | null {
+    try {
+      const raw = localStorage.getItem(`obex_sync_checkpoint_${profileId}`);
+      if (!raw) return null;
+      const parsed: SyncCheckpoint = JSON.parse(raw);
+      if (
+        parsed &&
+        parsed.since === since &&
+        parsed.until === until &&
+        typeof parsed.checkpointBefore === "number" &&
+        parsed.checkpointBefore > since &&
+        parsed.checkpointBefore < until
+      ) {
+        return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Saves a synchronization checkpoint so sync can resume from the last committed batch cursor.
+   */
+  saveCheckpoint(profileId: string, checkpoint: SyncCheckpoint): void {
+    try {
+      localStorage.setItem(`obex_sync_checkpoint_${profileId}`, JSON.stringify(checkpoint));
+    } catch {}
+  }
+
+  /**
+   * Clears the synchronization checkpoint upon completion or invalidation.
+   */
+  clearCheckpoint(profileId: string): void {
+    try {
+      localStorage.removeItem(`obex_sync_checkpoint_${profileId}`);
+    } catch {}
   }
 
   /**
@@ -240,6 +291,185 @@ export class LocalDbSyncEngine {
     // should only be expanded down to currentBefore (or start if currentBefore is undefined).
     const effectiveEarliest = hasMore && currentBefore !== undefined ? currentBefore : start;
     await this.updateWatermarkBounds(profileId, effectiveEarliest, end);
+
+    return totalInserted;
+  }
+
+  /**
+   * Synchronizes missing records for the specified target interval [since, until].
+   * Divides data transmission into segments/pages (chunked transfer), decrypts each batch,
+   * commits into local SQLite, and notifies progress after each successful batch.
+   *
+   * @param profileId - Profile identifier.
+   * @param since - Start timestamp in seconds.
+   * @param until - End timestamp in seconds.
+   * @param signal - Optional AbortSignal for cancellation.
+   * @param onProgress - Callback providing (progress: number, insertedSoFar: number, totalExpected: number)
+   *                     where progress is between 0.0 and 1.0.
+   * @returns Total number of newly inserted logs.
+   */
+  async syncTargetInterval(
+    profileId: string,
+    since: number,
+    until: number,
+    signal?: AbortSignal,
+    onProgress?: (progress: number, insertedSoFar: number, totalExpected: number) => void
+  ): Promise<number> {
+    await this.bridge.init();
+    if (signal?.aborted || since >= until) return 0;
+
+    const PAGE_SIZE = 1000;
+
+    // 1. Determine total expected count from server summary (with exact=true for raw log accuracy)
+    let totalExpected = 0;
+    try {
+      const summaryRes = await profileFetch(
+        `/api/profiles/${profileId}/analytics/summary?start=${since}&end=${until}&exact=true`,
+        { signal }
+      );
+      if (summaryRes.ok) {
+        const summaryData: { count: number }[] = await summaryRes.json();
+        if (Array.isArray(summaryData)) {
+          totalExpected = summaryData.reduce((acc, curr) => acc + (curr.count || 0), 0);
+        }
+      }
+    } catch (summaryErr) {
+      if ((summaryErr as Error)?.name === "AbortError" || signal?.aborted) return 0;
+      console.warn("[LocalDbSyncEngine] Failed to query server summary for target interval:", summaryErr);
+    }
+
+    if (totalExpected === 0) {
+      this.clearCheckpoint(profileId);
+      return 0;
+    }
+
+    // 2. Query how many logs we already have locally in this interval
+    let localCount = 0;
+    try {
+      const localAnalytics = await this.bridge.sendRequest<{ summary?: { count: number }[] }>('QUERY_ANALYTICS', {
+        profileId,
+        since,
+        until,
+        bucketSec: 3600
+      });
+      if (localAnalytics?.summary && Array.isArray(localAnalytics.summary)) {
+        localCount = localAnalytics.summary.reduce((acc: number, curr: { count: number }) => acc + (curr.count || 0), 0);
+      }
+    } catch {
+      localCount = 0;
+    }
+
+    if (totalExpected <= localCount) {
+      // Local SQLite already has all logs for this interval
+      this.clearCheckpoint(profileId);
+      return 0;
+    }
+
+    // 3. Check for existing checkpoint (断点续传)
+    const checkpoint = this.getCheckpoint(profileId, since, until);
+    let currentBefore: number | undefined = checkpoint?.checkpointBefore;
+    let totalInserted = checkpoint?.syncedCount || localCount;
+
+    // Set initial progress reflecting already synced records
+    const initialProgress = Math.min(0.95, Math.max(0.05, totalInserted / totalExpected));
+    onProgress?.(initialProgress, totalInserted, totalExpected);
+
+    // 4. Segmented transfer: fetch in batches of 1,000 logs backwards from `until` (or checkpoint) down to `since`
+    let hasMore = true;
+    const MAX_PAGES = 500; // Allows syncing up to 500,000 logs
+    let pageCount = 0;
+
+    while (hasMore && pageCount < MAX_PAGES && !signal?.aborted) {
+      let url = `/api/profiles/${profileId}/logs?start=${since}&end=${until}&limit=${PAGE_SIZE}`;
+      if (currentBefore !== undefined) {
+        url += `&before=${currentBefore}`;
+      }
+
+      let res: Response;
+      try {
+        res = await profileFetch(url, { signal });
+      } catch (fetchErr) {
+        if ((fetchErr as Error)?.name === "AbortError" || signal?.aborted) {
+          // Transaction aborted by user; break immediately and keep checkpoint intact
+          break;
+        }
+        throw fetchErr;
+      }
+
+      if (!res.ok) {
+        console.warn(
+          `[LocalDbSyncEngine] Failed to fetch segment for interval [${since}, ${until}] (${res.status}):`,
+          await res.text()
+        );
+        break;
+      }
+
+      if (signal?.aborted) break;
+
+      const rawLogs: LogEntry[] = await res.json();
+      if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
+        hasMore = false;
+        this.clearCheckpoint(profileId);
+        break;
+      }
+
+      if (signal?.aborted) break;
+
+      // Decrypt any encrypted logs before inserting into local SQLite
+      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+
+      if (signal?.aborted) break;
+
+      // Insert this batch into local SQLite atomically
+      const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
+        profileId,
+        logs
+      });
+
+      totalInserted += inserted;
+      pageCount++;
+
+      const oldestInBatch = Number(logs[logs.length - 1].timestamp);
+
+      if (
+        isNaN(oldestInBatch) ||
+        oldestInBatch <= since ||
+        (currentBefore !== undefined && oldestInBatch >= currentBefore) ||
+        logs.length < PAGE_SIZE
+      ) {
+        hasMore = false;
+        this.clearCheckpoint(profileId);
+      } else {
+        currentBefore = oldestInBatch;
+        // Persist checkpoint after each successfully committed batch (1,000 items)
+        this.saveCheckpoint(profileId, {
+          since,
+          until,
+          checkpointBefore: oldestInBatch,
+          syncedCount: totalInserted,
+          totalExpected,
+          updatedAt: Date.now()
+        });
+      }
+
+      // Progress only advances AFTER successful segment persistence
+      const currentProgress = Math.min(0.98, Math.max(0.05, totalInserted / totalExpected));
+      onProgress?.(currentProgress, totalInserted, totalExpected);
+
+      if (signal?.aborted) break;
+
+      // Small yield for UI responsiveness
+      await new Promise((r) => setTimeout(r, 15));
+    }
+
+    if (!signal?.aborted && !hasMore) {
+      this.clearCheckpoint(profileId);
+      const effectiveEarliest = currentBefore !== undefined ? currentBefore : since;
+      await this.updateWatermarkBounds(profileId, effectiveEarliest, until);
+      onProgress?.(1, totalInserted, totalExpected);
+    } else if (currentBefore !== undefined) {
+      await this.updateWatermarkBounds(profileId, currentBefore, until);
+    }
 
     return totalInserted;
   }

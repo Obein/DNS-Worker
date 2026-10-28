@@ -167,13 +167,22 @@ export class NodeD1Database implements D1Database {
  * Runs all pending migrations from migrations/ directory.
  */
 export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
-  // Ensure migrations tracking table exists
+  // Ensure migrations tracking tables exist (supports both d1_migrations and _cf_d1_migrations)
   db.exec(`
+    CREATE TABLE IF NOT EXISTS d1_migrations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      applied_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS _cf_d1_migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
       applied_at INTEGER NOT NULL
     );
+    INSERT OR IGNORE INTO d1_migrations (name, applied_at)
+      SELECT name, applied_at FROM _cf_d1_migrations;
+    INSERT OR IGNORE INTO _cf_d1_migrations (name, applied_at)
+      SELECT name, applied_at FROM d1_migrations;
   `);
 
   if (!fs.existsSync(migrationsDir)) {
@@ -185,8 +194,9 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
     .filter((f: string) => f.endsWith('.sql'))
     .sort();
 
-  const stmtGet = db.prepare('SELECT name FROM _cf_d1_migrations WHERE name = ?');
-  const stmtInsert = db.prepare('INSERT INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)');
+  const stmtGet = db.prepare('SELECT name FROM d1_migrations WHERE name = ?');
+  const stmtInsertD1 = db.prepare('INSERT OR REPLACE INTO d1_migrations (name, applied_at) VALUES (?, ?)');
+  const stmtInsertCf = db.prepare('INSERT OR REPLACE INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)');
 
   let appliedCount = 0;
   for (const file of files) {
@@ -200,7 +210,9 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
     db.exec('BEGIN IMMEDIATE');
     try {
       db.exec(sql);
-      stmtInsert.run(file, Math.floor(Date.now() / 1000));
+      const appliedAt = Math.floor(Date.now() / 1000);
+      stmtInsertD1.run(file, appliedAt);
+      stmtInsertCf.run(file, appliedAt);
       db.exec('COMMIT');
       appliedCount++;
     } catch (err: any) {

@@ -121,7 +121,7 @@ async function runTests() {
     assert(domainRollupStmt !== undefined, "domain_hourly_rollups statement must be executed");
     assert(domainRollupStmt.query.includes("HAVING COUNT(*) >= ?"), "Query must include HAVING COUNT(*) >= ?");
 
-    const boundMinCount = domainRollupStmt.params[5];
+    const boundMinCount = domainRollupStmt.params[2];
     assert.strictEqual(boundMinCount, 2, "HAVING clause must bind minDomainCount (2)");
 
     console.log("  Passed: domain_hourly_rollups binds HAVING COUNT(*) >= 2.");

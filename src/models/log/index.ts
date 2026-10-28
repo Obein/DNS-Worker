@@ -84,7 +84,7 @@ export class LogModel {
     return this.aggregation.getLatestDestinationRollupHour(profileId);
   }
 
-  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 2): Promise<number> {
+  async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 1): Promise<number> {
     return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec, minDomainCount);
   }
 
@@ -96,9 +96,10 @@ export class LogModel {
     accessPointId?: string,
     destCountry?: string,
     isp?: string,
-    status?: string
+    status?: string,
+    exact?: boolean
   ): Promise<ActionCountResult[]> {
-    return this.analytics.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status);
+    return this.analytics.getSummary(profileId, since, until, search, accessPointId, destCountry, isp, status, exact);
   }
 
   async getTrend(
