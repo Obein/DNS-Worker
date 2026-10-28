@@ -954,7 +954,22 @@
     "enableRegistration": "Activer l'inscription des utilisateurs",
     "timezone": "Fuseau horaire",
     "timezoneAuto": "Automatique (par défaut du navigateur)",
-    "totpCode": "Code de l'authentificateur"
+    "totpCode": "Code de l'authentificateur",
+    "databaseSettings": "Base de données",
+    "databaseEngine": "Service de base de données",
+    "migrationCompleted": "Migrations à jour",
+    "migrationPending": "Migrations en attente",
+    "migrationStatus": "État du schéma",
+    "migrationCompletedDesc": "Toutes les {{total}} migrations sont appliquées. La structure de la base de données est à jour.",
+    "migrationPendingDesc": "{{applied}} sur {{total}} migrations appliquées. {{pending}} migration(s) en attente.",
+    "lastAppliedMigration": "Dernière migration appliquée",
+    "runMigration": "Exécuter les migrations",
+    "runningMigration": "Migration en cours...",
+    "migrationSuccess": "Migration de base de données réussie. {{count}} mise(s) à jour appliquée(s).",
+    "migrationFailed": "Échec de la migration de la base de données",
+    "noMigrationsApplied": "Aucune",
+    "checkMigration": "Actualiser le statut",
+    "pendingMigrationsList": "Fichiers de migration de schéma en attente :"
   },
   "intro": {
     "item1Title": "DNS Worker de protection",

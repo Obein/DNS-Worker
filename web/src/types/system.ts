@@ -10,6 +10,8 @@ export interface DnsWorkerConfig {
   isJwtSecretMissing?: boolean;
   isServerfull?: boolean;
   mode?: DeploymentMode;
+  databaseService?: string;
+  isTurso?: boolean;
 }
 
 declare global {

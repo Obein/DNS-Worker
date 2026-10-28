@@ -954,7 +954,22 @@
     "enableRegistration": "신규 사용자 가입 허용",
     "timezone": "시간대",
     "timezoneAuto": "자동 (브라우저 기본값)",
-    "totpCode": "인증 코드"
+    "totpCode": "인증 코드",
+    "databaseSettings": "데이터베이스",
+    "databaseEngine": "데이터베이스 서비스",
+    "migrationCompleted": "마이그레이션 완료",
+    "migrationPending": "대기 중인 마이그레이션",
+    "migrationStatus": "스키마 상태",
+    "migrationCompletedDesc": "총 {{total}}개의 스키마 마이그레이션이 모두 적용되어 데이터베이스가 최신 상태입니다.",
+    "migrationPendingDesc": "{{applied}} / {{total}}개의 마이그레이션 적용됨. {{pending}}개의 마이그레이션 대기 중.",
+    "lastAppliedMigration": "마지막 적용된 마이그레이션",
+    "runMigration": "마이그레이션 실행",
+    "runningMigration": "마이그레이션 중...",
+    "migrationSuccess": "데이터베이스 마이그레이션 완료. {{count}}개의 변경 사항 적용됨.",
+    "migrationFailed": "데이터베이스 마이그레이션 실패",
+    "noMigrationsApplied": "없음",
+    "checkMigration": "상태 새로고침",
+    "pendingMigrationsList": "대기 중인 스키마 마이그레이션 파일:"
   },
   "intro": {
     "item1Title": "DNS Worker 보호 DNS",

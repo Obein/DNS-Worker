@@ -954,7 +954,22 @@
     "enableRegistration": "開放新使用者註冊",
     "timezone": "時區",
     "timezoneAuto": "自動（跟隨瀏覽器預設）",
-    "totpCode": "驗證器動態口令"
+    "totpCode": "驗證器動態口令",
+    "databaseSettings": "資料庫",
+    "databaseEngine": "資料庫服務",
+    "migrationCompleted": "遷移已完成",
+    "migrationPending": "有待執行遷移",
+    "migrationStatus": "架構狀態",
+    "migrationCompletedDesc": "全部 {{total}} 項架構遷移均已套用，資料庫結構已是最新版本。",
+    "migrationPendingDesc": "已套用 {{applied}} / {{total}} 項架構遷移，目前有 {{pending}} 項遷移待執行。",
+    "lastAppliedMigration": "最近套用版本",
+    "runMigration": "執行遷移",
+    "runningMigration": "正在遷移...",
+    "migrationSuccess": "資料庫遷移成功，已套用 {{count}} 項變更",
+    "migrationFailed": "資料庫遷移失敗",
+    "noMigrationsApplied": "無",
+    "checkMigration": "重新整理狀態",
+    "pendingMigrationsList": "待套用的架構遷移檔案："
   },
   "intro": {
     "item1Title": "DNS Worker 保護性 DNS",

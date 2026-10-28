@@ -954,7 +954,22 @@
     "enableRegistration": "Benutzerregistrierung aktivieren",
     "timezone": "Zeitzone",
     "timezoneAuto": "Automatisch (Browser-Standard)",
-    "totpCode": "Authenticator-Code"
+    "totpCode": "Authenticator-Code",
+    "databaseSettings": "Datenbank",
+    "databaseEngine": "Datenbankdienst",
+    "migrationCompleted": "Migrationen aktuell",
+    "migrationPending": "Ausstehende Migrationen",
+    "migrationStatus": "Schema-Status",
+    "migrationCompletedDesc": "Alle {{total}} Schema-Migrationen wurden angewendet. Datenbankstruktur ist aktuell.",
+    "migrationPendingDesc": "{{applied}} von {{total}} Migrationen angewendet. {{pending}} Migration(en) ausstehend.",
+    "lastAppliedMigration": "Zuletzt angewendete Migration",
+    "runMigration": "Migrationen ausführen",
+    "runningMigration": "Migration läuft...",
+    "migrationSuccess": "Datenbankmigration abgeschlossen. {{count}} Update(s) angewendet.",
+    "migrationFailed": "Datenbankmigration fehlgeschlagen",
+    "noMigrationsApplied": "Keine",
+    "checkMigration": "Status aktualisieren",
+    "pendingMigrationsList": "Ausstehende Schema-Migrationsdateien:"
   },
   "intro": {
     "item1Title": "DNS Worker Schützendes DNS",

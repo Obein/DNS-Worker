@@ -954,7 +954,22 @@
     "enableRegistration": "新規ユーザー登録を許可",
     "timezone": "タイムゾーン",
     "timezoneAuto": "自動（ブラウザのデフォルト）",
-    "totpCode": "認証コード"
+    "totpCode": "認証コード",
+    "databaseSettings": "データベース",
+    "databaseEngine": "データベースサービス",
+    "migrationCompleted": "マイグレーション完了",
+    "migrationPending": "保留中のマイグレーション",
+    "migrationStatus": "スキーマ状態",
+    "migrationCompletedDesc": "全 {{total}} 件のスキーママイグレーションが適用され、データベースは最新です。",
+    "migrationPendingDesc": "{{applied}} / {{total}} 件のマイグレーションが適用済み、{{pending}} 件が保留中です。",
+    "lastAppliedMigration": "最後に適用されたマイグレーション",
+    "runMigration": "マイグレーションを実行",
+    "runningMigration": "マイグレーション中...",
+    "migrationSuccess": "データベースのマイグレーションが成功しました（{{count}} 件の変更適用）。",
+    "migrationFailed": "データベースのマイグレーションに失敗しました",
+    "noMigrationsApplied": "なし",
+    "checkMigration": "状態を更新",
+    "pendingMigrationsList": "保留中のスキーママイグレーションファイル："
   },
   "intro": {
     "item1Title": "DNS Worker 保護DNS",

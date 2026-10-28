@@ -954,7 +954,22 @@
     "enableRegistration": "Разрешить регистрацию пользователей",
     "timezone": "Часовой пояс",
     "timezoneAuto": "Авто (по умолчанию в браузере)",
-    "totpCode": "Код аутентификатора"
+    "totpCode": "Код аутентификатора",
+    "databaseSettings": "База данных",
+    "databaseEngine": "Служба базы данных",
+    "migrationCompleted": "Миграции применены",
+    "migrationPending": "Ожидающие миграции",
+    "migrationStatus": "Статус схемы",
+    "migrationCompletedDesc": "Все миграции схемы ({{total}}) применены. Структура базы данных актуальна.",
+    "migrationPendingDesc": "Применено {{applied}} из {{total}} миграций. Ожидает выполнения: {{pending}}.",
+    "lastAppliedMigration": "Последняя примененная миграция",
+    "runMigration": "Выполнить миграции",
+    "runningMigration": "Выполняется миграция...",
+    "migrationSuccess": "Миграция базы данных успешно завершена. Применено изменений: {{count}}.",
+    "migrationFailed": "Сбой миграции базы данных",
+    "noMigrationsApplied": "Нет",
+    "checkMigration": "Обновить статус",
+    "pendingMigrationsList": "Ожидающие файлы миграции схемы:"
   },
   "intro": {
     "item1Title": "Защитный DNS Worker",

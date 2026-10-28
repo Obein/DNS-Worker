@@ -954,7 +954,22 @@
     "enableRegistration": "Enable user registration",
     "timezone": "Timezone",
     "timezoneAuto": "Auto (Browser Default)",
-    "totpCode": "Authenticator Code"
+    "totpCode": "Authenticator Code",
+    "databaseSettings": "Database",
+    "databaseEngine": "Database Service",
+    "migrationCompleted": "Migrations Up to Date",
+    "migrationPending": "Migrations Pending",
+    "migrationStatus": "Schema Status",
+    "migrationCompletedDesc": "All {{total}} schema migrations applied. Database structure is up to date.",
+    "migrationPendingDesc": "{{applied}} of {{total}} migrations applied. {{pending}} migration(s) pending.",
+    "lastAppliedMigration": "Last Applied Migration",
+    "runMigration": "Run Migrations",
+    "runningMigration": "Migrating...",
+    "migrationSuccess": "Database migration completed. {{count}} update(s) applied.",
+    "migrationFailed": "Database migration failed",
+    "noMigrationsApplied": "None",
+    "checkMigration": "Refresh Status",
+    "pendingMigrationsList": "Pending schema migration files:"
   },
   "intro": {
     "item1Title": "DNS Worker Protective DNS",

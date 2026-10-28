@@ -9,7 +9,9 @@ import {
   getUsers,
   getSystemSettings,
   getMe,
-  updateMe
+  updateMe,
+  getDatabaseStatus,
+  type DatabaseStatusResponse
 } from "../../services";
 import { executeWithTimeout } from "../../utils/async";
 import { MfaCard } from "./components/MfaCard";
@@ -17,6 +19,7 @@ import { ActivityLogCard } from "./components/ActivityLogCard";
 import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
 import { UserManagementCard } from "./components/UserManagementCard";
 import { SystemSettingsCard } from "./components/SystemSettingsCard";
+import { DatabaseMigrationCard } from "./components/DatabaseMigrationCard";
 import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
@@ -51,6 +54,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
   const [usernameFocused, setUsernameFocused] = useState(false);
 
   const [sysSettings, setSysSettings] = useState<Record<string, string>>({});
+  const [dbStatus, setDbStatus] = useState<DatabaseStatusResponse | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -70,6 +74,15 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
     }
   };
 
+  const fetchDbStatus = useCallback(async () => {
+    try {
+      const status = await getDatabaseStatus();
+      setDbStatus(status);
+    } catch (e) {
+      console.error("Failed to fetch database status:", e);
+    }
+  }, []);
+
   const fetchMe = useCallback(async () => {
     try {
       const data = await getMe();
@@ -88,13 +101,14 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
       if (data.role === "admin") {
         fetchUsers();
         fetchSystemSettings();
+        fetchDbStatus();
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchDbStatus, i18n]);
 
   const handleUpdateUsername = async () => {
     if (editUsername === me?.username) {
@@ -282,6 +296,20 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
               toasterRef={toasterRef}
             />
           </div>
+
+          {/* Admin: Turso Database Management (Only shown when database service is Turso) */}
+          {dbStatus?.isTurso && (
+            <>
+              <Divider />
+              <div className="space-y-4">
+                <DatabaseMigrationCard
+                  status={dbStatus}
+                  onRefresh={fetchDbStatus}
+                  toasterRef={toasterRef}
+                />
+              </div>
+            </>
+          )}
         </>
       )}
 

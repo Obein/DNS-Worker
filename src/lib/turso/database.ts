@@ -58,25 +58,36 @@ export class TursoD1Database implements D1Database {
    * Executes a pipeline request against Turso HTTP API.
    *
    * @param requests - Array of Hrana operations to evaluate.
+   * @param timeoutMs - Optional execution timeout in milliseconds (default 20,000ms).
    * @returns Array of step results.
    */
-  async executePipeline(requests: HranaRequest[]): Promise<HranaStepResult[]> {
-    const res = await fetch(this.endpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.authToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ requests })
-    });
+  async executePipeline(requests: HranaRequest[], timeoutMs = 20000): Promise<HranaStepResult[]> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort(new Error(`[Turso D1] Pipeline request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
 
-    if (!res.ok) {
-      const errorBody = await res.text().catch(() => '');
-      throw new Error(`[Turso D1] HTTP ${res.status} ${res.statusText}: ${errorBody}`);
+    try {
+      const res = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ requests }),
+        signal: controller.signal
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.text().catch(() => '');
+        throw new Error(`[Turso D1] HTTP ${res.status} ${res.statusText}: ${errorBody}`);
+      }
+
+      const json = (await res.json()) as HranaPipelineResponse;
+      return json.results || [];
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const json = (await res.json()) as HranaPipelineResponse;
-    return json.results || [];
   }
 
   /**

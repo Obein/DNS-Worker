@@ -954,7 +954,22 @@
     "enableRegistration": "Habilitar registro de usuarios",
     "timezone": "Zona horaria",
     "timezoneAuto": "Automático (predeterminado del navegador)",
-    "totpCode": "Código de autenticador"
+    "totpCode": "Código de autenticador",
+    "databaseSettings": "Base de datos",
+    "databaseEngine": "Servicio de base de datos",
+    "migrationCompleted": "Migraciones al día",
+    "migrationPending": "Migraciones pendientes",
+    "migrationStatus": "Estado del esquema",
+    "migrationCompletedDesc": "Todas las {{total}} migraciones aplicadas. La estructura de la base de datos está actualizada.",
+    "migrationPendingDesc": "{{applied}} de {{total}} migraciones aplicadas. {{pending}} migración(es) pendiente(s).",
+    "lastAppliedMigration": "Última migración aplicada",
+    "runMigration": "Ejecutar migraciones",
+    "runningMigration": "Migrando...",
+    "migrationSuccess": "Migración de base de datos completada. {{count}} actualización(es) aplicada(s).",
+    "migrationFailed": "Error en la migración de base de datos",
+    "noMigrationsApplied": "Ninguna",
+    "checkMigration": "Actualizar estado",
+    "pendingMigrationsList": "Archivos de migración de esquema pendientes:"
   },
   "intro": {
     "item1Title": "DNS Worker de protección",
