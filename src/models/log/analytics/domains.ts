@@ -62,7 +62,7 @@ export class LogDomainAnalytics {
       const sinceHour = Math.floor(since / 3600) * 3600;
       const { results } = await this.db
         .prepare(
-          "SELECT domain, SUM(count) as count FROM domain_hourly_rollups WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY domain ORDER BY count DESC LIMIT 10"
+          "SELECT key as domain, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'domain' AND sub_key = 'PASS' AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY key ORDER BY count DESC LIMIT 10"
         )
         .bind(profileId, sinceHour, until)
         .all<DomainCountResult>();
@@ -73,9 +73,9 @@ export class LogDomainAnalytics {
     const sinceHour = Math.floor(since / 3600) * 3600;
     const queryStr = `
       SELECT domain, SUM(count) as count FROM (
-        SELECT domain, count
-        FROM domain_hourly_rollups
-        WHERE profile_id = ? AND action = 'PASS' AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT key as domain, count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'domain' AND sub_key = 'PASS' AND hour_timestamp >= ? AND hour_timestamp < ?
         UNION ALL
         SELECT domain, COUNT(*) as count
         FROM logs
@@ -142,7 +142,7 @@ export class LogDomainAnalytics {
       const sinceHour = Math.floor(since / 3600) * 3600;
       const { results } = await this.db
         .prepare(
-          "SELECT domain, SUM(count) as count FROM domain_hourly_rollups WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY domain ORDER BY count DESC LIMIT 10"
+          "SELECT key as domain, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'domain' AND sub_key IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY key ORDER BY count DESC LIMIT 10"
         )
         .bind(profileId, sinceHour, until)
         .all<DomainCountResult>();
@@ -153,9 +153,9 @@ export class LogDomainAnalytics {
     const sinceHour = Math.floor(since / 3600) * 3600;
     const queryStr = `
       SELECT domain, SUM(count) as count FROM (
-        SELECT domain, count
-        FROM domain_hourly_rollups
-        WHERE profile_id = ? AND action IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT key as domain, count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'domain' AND sub_key IN ('BLOCK', 'REDIRECT') AND hour_timestamp >= ? AND hour_timestamp < ?
         UNION ALL
         SELECT domain, COUNT(*) as count
         FROM logs

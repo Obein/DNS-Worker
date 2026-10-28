@@ -1,9 +1,10 @@
 import { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import { SystemSettingsModel } from "../systemSettings";
+import { ResolutionLog } from "../../types";
 
 /**
  * Model responsible for maintaining and computing hourly rollups
- * across resolution logs, clients, destinations, and domains.
+ * across resolution logs, clients, destinations, and domains in a unified table.
  */
 export class LogAggregationModel {
   private tablesEnsured = false;
@@ -11,7 +12,7 @@ export class LogAggregationModel {
   constructor(private readonly db: D1Database) {}
 
   /**
-   * Automatically creates rollup tables if they do not exist yet.
+   * Automatically creates the unified hourly_rollups table if it does not exist yet.
    * Self-heals environments (such as Turso on Cloudflare Workers) where build-time D1 migrations
    * do not execute against the remote Turso database.
    */
@@ -20,38 +21,22 @@ export class LogAggregationModel {
     if (typeof this.db.exec !== 'function') return;
     try {
       await this.db.exec(`
-        CREATE TABLE IF NOT EXISTS log_hourly_rollups (
+        CREATE TABLE IF NOT EXISTS hourly_rollups (
             profile_id TEXT NOT NULL,
+            metric_type TEXT NOT NULL,
             hour_timestamp INTEGER NOT NULL,
-            action TEXT NOT NULL,
-            count INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (profile_id, hour_timestamp, action)
-        );
-        CREATE TABLE IF NOT EXISTS client_hourly_rollups (
-            profile_id TEXT NOT NULL,
-            hour_timestamp INTEGER NOT NULL,
-            client_ip TEXT NOT NULL,
-            geo_country TEXT NOT NULL DEFAULT '',
+            key TEXT NOT NULL,
+            sub_key TEXT NOT NULL DEFAULT '',
             access_point_id TEXT NOT NULL DEFAULT '',
-            count INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (profile_id, hour_timestamp, client_ip, geo_country, access_point_id)
-        );
-        CREATE TABLE IF NOT EXISTS destination_hourly_rollups (
-            profile_id TEXT NOT NULL,
-            hour_timestamp INTEGER NOT NULL,
-            country_code TEXT NOT NULL,
-            country TEXT NOT NULL DEFAULT '',
-            access_point_id TEXT NOT NULL DEFAULT '',
-            count INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (profile_id, hour_timestamp, country_code, country, access_point_id)
-        );
-        CREATE TABLE IF NOT EXISTS domain_hourly_rollups (
-            profile_id TEXT NOT NULL,
-            action TEXT NOT NULL,
-            hour_timestamp INTEGER NOT NULL,
-            domain TEXT NOT NULL,
-            count INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (profile_id, action, hour_timestamp, domain)
+            count INTEGER NOT NULL DEFAULT 1,
+            PRIMARY KEY (
+                profile_id,
+                metric_type,
+                hour_timestamp,
+                key,
+                sub_key,
+                access_point_id
+            )
         ) WITHOUT ROWID;
       `);
       this.tablesEnsured = true;
@@ -61,16 +46,156 @@ export class LogAggregationModel {
   }
 
   /**
-   * Retrieves the latest completed hour timestamp aggregated in log_hourly_rollups for a profile.
+   * Generates atomic UPSERT statements for in-flight log micro-batches before sensitive data encryption.
+   * Aggregates occurrences in-memory by (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+   * to drastically reduce database write row count.
+   *
+   * @param logs - Array of raw unencrypted resolution logs.
+   * @returns Array of D1PreparedStatements to be committed atomically with log batch.
+   */
+  createRollupUpsertStatements(logs: ResolutionLog[]): D1PreparedStatement[] {
+    if (!logs || logs.length === 0) return [];
+
+    interface RollupItem {
+      profileId: string;
+      metricType: string;
+      hourTimestamp: number;
+      key: string;
+      subKey: string;
+      accessPointId: string;
+      count: number;
+    }
+
+    const map = new Map<string, RollupItem>();
+
+    for (const log of logs) {
+      if (!log.profile_id) continue;
+      const hourTs = Math.floor(log.timestamp / 3600) * 3600;
+      const apId = log.access_point_id || '';
+
+      // 1. Action metric (for traffic summary and trend)
+      if (log.action) {
+        const actionKey = `${log.profile_id}|action|${hourTs}|${log.action}||${apId}`;
+        const existing = map.get(actionKey);
+        if (existing) {
+          existing.count++;
+        } else {
+          map.set(actionKey, {
+            profileId: log.profile_id,
+            metricType: 'action',
+            hourTimestamp: hourTs,
+            key: log.action,
+            subKey: '',
+            accessPointId: apId,
+            count: 1
+          });
+        }
+      }
+
+      // 2. Domain metric (for top allowed and blocked domains)
+      if (log.domain && log.domain !== '[Encrypted]') {
+        const domainKey = `${log.profile_id}|domain|${hourTs}|${log.domain}|${log.action || ''}|${apId}`;
+        const existing = map.get(domainKey);
+        if (existing) {
+          existing.count++;
+        } else {
+          map.set(domainKey, {
+            profileId: log.profile_id,
+            metricType: 'domain',
+            hourTimestamp: hourTs,
+            key: log.domain,
+            subKey: log.action || '',
+            accessPointId: apId,
+            count: 1
+          });
+        }
+      }
+
+      // 3. Client IP & geo country metric (for client device analytics)
+      if (log.client_ip && log.client_ip !== '[Encrypted]') {
+        const geoCountry = log.geo_country || '';
+        const clientKey = `${log.profile_id}|client|${hourTs}|${log.client_ip}|${geoCountry}|${apId}`;
+        const existing = map.get(clientKey);
+        if (existing) {
+          existing.count++;
+        } else {
+          map.set(clientKey, {
+            profileId: log.profile_id,
+            metricType: 'client',
+            hourTimestamp: hourTs,
+            key: log.client_ip,
+            subKey: geoCountry,
+            accessPointId: apId,
+            count: 1
+          });
+        }
+      }
+
+      // 4. Destination country metric (for geo destination analytics)
+      let destCode = log.dest_country_code || '';
+      let destCountry = log.dest_country || '';
+      if (!destCode && log.dest_geoip && log.dest_geoip.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(log.dest_geoip);
+          destCode = parsed.country_code || '';
+          destCountry = parsed.country || '';
+        } catch {}
+      }
+      if (destCode) {
+        const codeUpper = destCode.toUpperCase();
+        const destKey = `${log.profile_id}|dest|${hourTs}|${codeUpper}|${destCountry}|${apId}`;
+        const existing = map.get(destKey);
+        if (existing) {
+          existing.count++;
+        } else {
+          map.set(destKey, {
+            profileId: log.profile_id,
+            metricType: 'dest',
+            hourTimestamp: hourTs,
+            key: codeUpper,
+            subKey: destCountry,
+            accessPointId: apId,
+            count: 1
+          });
+        }
+      }
+    }
+
+    const statements: D1PreparedStatement[] = [];
+    for (const item of map.values()) {
+      statements.push(
+        this.db.prepare(`
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO UPDATE SET count = count + excluded.count
+        `).bind(
+          item.profileId,
+          item.metricType,
+          item.hourTimestamp,
+          item.key,
+          item.subKey,
+          item.accessPointId,
+          item.count
+        )
+      );
+    }
+
+    return statements;
+  }
+
+  /**
+   * Retrieves the latest completed hour timestamp aggregated in hourly_rollups for a profile and metric.
    *
    * @param profileId - Profile identifier.
+   * @param metricType - Optional metric type ('action', 'domain', 'client', 'dest'). Defaults to 'action'.
    * @returns The latest hour timestamp, or null if no rollups exist.
    */
-  async getLatestRollupHour(profileId: string): Promise<number | null> {
+  async getLatestRollupHour(profileId: string, metricType = 'action'): Promise<number | null> {
     try {
       const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) as max_hour FROM log_hourly_rollups WHERE profile_id = ?"
-      ).bind(profileId).first<{ max_hour: number | null }>();
+        "SELECT MAX(hour_timestamp) as max_hour FROM hourly_rollups WHERE profile_id = ? AND metric_type = ?"
+      ).bind(profileId, metricType).first<{ max_hour: number | null }>();
       return row?.max_hour ?? null;
     } catch {
       await this.ensureRollupTables();
@@ -79,67 +204,29 @@ export class LogAggregationModel {
   }
 
   /**
-   * Retrieves the latest completed hour timestamp aggregated in client_hourly_rollups for a profile.
-   *
-   * @param profileId - Profile identifier.
-   * @returns The latest hour timestamp, or null if no rollups exist.
+   * Retrieves the latest completed hour timestamp aggregated in hourly_rollups for clients.
    */
   async getLatestClientRollupHour(profileId: string): Promise<number | null> {
-    try {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) as max_hour FROM client_hourly_rollups WHERE profile_id = ?"
-      ).bind(profileId).first<{ max_hour: number | null }>();
-      return row?.max_hour ?? null;
-    } catch {
-      await this.ensureRollupTables();
-      return null;
-    }
+    return this.getLatestRollupHour(profileId, 'client');
   }
 
   /**
-   * Retrieves the latest completed hour timestamp aggregated in destination_hourly_rollups for a profile.
-   *
-   * @param profileId - Profile identifier.
-   * @returns The latest hour timestamp, or null if no rollups exist.
+   * Retrieves the latest completed hour timestamp aggregated in hourly_rollups for destinations.
    */
   async getLatestDestinationRollupHour(profileId: string): Promise<number | null> {
-    try {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) as max_hour FROM destination_hourly_rollups WHERE profile_id = ?"
-      ).bind(profileId).first<{ max_hour: number | null }>();
-      return row?.max_hour ?? null;
-    } catch {
-      await this.ensureRollupTables();
-      return null;
-    }
+    return this.getLatestRollupHour(profileId, 'dest');
   }
 
   /**
-   * Retrieves the latest completed hour timestamp aggregated in domain_hourly_rollups for a profile.
-   *
-   * @param profileId - Profile identifier.
-   * @returns The latest hour timestamp, or null if no rollups exist.
+   * Retrieves the latest completed hour timestamp aggregated in hourly_rollups for domains.
    */
   async getLatestDomainRollupHour(profileId: string): Promise<number | null> {
-    try {
-      const row = await this.db.prepare(
-        "SELECT MAX(hour_timestamp) as max_hour FROM domain_hourly_rollups WHERE profile_id = ?"
-      ).bind(profileId).first<{ max_hour: number | null }>();
-      return row?.max_hour ?? null;
-    } catch {
-      await this.ensureRollupTables();
-      return null;
-    }
+    return this.getLatestRollupHour(profileId, 'domain');
   }
 
   /**
-   * Aggregates completed hours of raw logs into log_hourly_rollups, client_hourly_rollups,
-   * destination_hourly_rollups, and domain_hourly_rollups.
+   * Aggregates completed hours of raw logs into the unified hourly_rollups table.
    * Runs in the background during hourly cron maintenance (or on-demand).
-   *
-   * Uses set-based SQL queries grouped by (timestamp / 3600) * 3600 to process the entire window
-   * across all profiles in exactly 4 atomic statements in a single batch, avoiding Cloudflare Workers
-   * subrequest exhaustion and per-hour iteration timeouts.
    *
    * @param sinceSec - Optional start timestamp. If omitted, bridges from system_settings or defaults to preceding hour.
    * @param untilSec - Optional end timestamp. Defaults to start of current hour (only completed hours).
@@ -160,14 +247,10 @@ export class LogAggregationModel {
     const systemSettings = new SystemSettingsModel(this.db);
 
     if (effectiveSince === undefined) {
-      // Self-healing check: verify if any rollup table has 0 rows (e.g. recently restored or migrated).
-      // If any table is completely empty, ignore stale system_settings watermark to allow full historical backfill.
       let needsHistoricalBackfill = false;
       try {
-        const clientRow = await this.db.prepare("SELECT count(*) as cnt FROM client_hourly_rollups LIMIT 1").first<{ cnt: number }>();
-        const destRow = await this.db.prepare("SELECT count(*) as cnt FROM destination_hourly_rollups LIMIT 1").first<{ cnt: number }>();
-        const domainRow = await this.db.prepare("SELECT count(*) as cnt FROM domain_hourly_rollups LIMIT 1").first<{ cnt: number }>();
-        if ((clientRow?.cnt ?? 0) === 0 || (destRow?.cnt ?? 0) === 0 || (domainRow?.cnt ?? 0) === 0) {
+        const row = await this.db.prepare("SELECT count(*) as cnt FROM hourly_rollups LIMIT 1").first<{ cnt: number }>();
+        if ((row?.cnt ?? 0) === 0) {
           needsHistoricalBackfill = true;
         }
       } catch {
@@ -179,7 +262,6 @@ export class LogAggregationModel {
         if (lastAggregatedStr) {
           const lastHour = parseInt(lastAggregatedStr, 10);
           if (!isNaN(lastHour) && lastHour > 0) {
-            // Look back from last aggregated hour, capped at 7 days max lookback
             effectiveSince = Math.max(lastHour, effectiveUntil - (7 * 86400));
           }
         }
@@ -190,14 +272,12 @@ export class LogAggregationModel {
           const minRow = await this.db.prepare("SELECT MIN(timestamp) as min_ts FROM logs").first<{ min_ts: number | null }>();
           if (minRow?.min_ts) {
             const minHour = Math.floor(minRow.min_ts / 3600) * 3600;
-            // Cap at 30 days max lookback to prevent unbounded iteration
             effectiveSince = Math.max(minHour, effectiveUntil - (30 * 86400));
           }
         } catch {
           // Fallback
         }
         if (effectiveSince === undefined) {
-          // First run initialization fallback: look back 24 hours
           effectiveSince = Math.max(0, effectiveUntil - 86400);
         }
       }
@@ -208,53 +288,61 @@ export class LogAggregationModel {
     }
 
     try {
-      // 4 Set-based SQL aggregation statements executed atomically in a single batch
       const statements: D1PreparedStatement[] = [
-        // 1. Log action hourly rollups
+        // 1. Action rollups
         this.db.prepare(`
-          INSERT OR REPLACE INTO log_hourly_rollups (profile_id, hour_timestamp, action, count)
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
           SELECT
               profile_id,
+              'action',
               (timestamp / 3600) * 3600 AS hour_timestamp,
               action,
+              '',
+              COALESCE(access_point_id, ''),
               COUNT(*) AS count
           FROM logs
           WHERE timestamp >= ? AND timestamp < ?
-          GROUP BY profile_id, (timestamp / 3600) * 3600, action
+          GROUP BY profile_id, (timestamp / 3600) * 3600, action, COALESCE(access_point_id, '')
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO UPDATE SET count = count + excluded.count
         `).bind(effectiveSince, effectiveUntil),
 
-        // 2. Client IP & Country hourly rollups
+        // 2. Client IP & Country rollups
         this.db.prepare(`
-          INSERT OR REPLACE INTO client_hourly_rollups (profile_id, hour_timestamp, client_ip, geo_country, access_point_id, count)
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
           SELECT
               profile_id,
+              'client',
               (timestamp / 3600) * 3600 AS hour_timestamp,
               client_ip,
-              COALESCE(geo_country, '') AS geo_country,
-              COALESCE(access_point_id, '') AS access_point_id,
+              COALESCE(geo_country, ''),
+              COALESCE(access_point_id, ''),
               COUNT(*) AS count
           FROM logs
           WHERE timestamp >= ? AND timestamp < ?
             AND client_ip IS NOT NULL AND client_ip != '' AND client_ip != '[Encrypted]'
           GROUP BY profile_id, (timestamp / 3600) * 3600, client_ip, COALESCE(geo_country, ''), COALESCE(access_point_id, '')
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO UPDATE SET count = count + excluded.count
         `).bind(effectiveSince, effectiveUntil),
 
-        // 3. Destination Country hourly rollups
+        // 3. Destination Country rollups
         this.db.prepare(`
-          INSERT OR REPLACE INTO destination_hourly_rollups (profile_id, hour_timestamp, country_code, country, access_point_id, count)
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
           SELECT
               profile_id,
+              'dest',
               (timestamp / 3600) * 3600 AS hour_timestamp,
               UPPER(CASE 
                 WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
                 WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
                 ELSE ''
-              END) AS country_code,
+              END) AS key,
               MAX(CASE 
                 WHEN dest_country IS NOT NULL AND dest_country != '' THEN dest_country
                 WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country')
                 ELSE 'Unknown'
-              END) AS country,
+              END) AS sub_key,
               COALESCE(access_point_id, '') AS access_point_id,
               COUNT(*) AS count
           FROM logs
@@ -271,22 +359,28 @@ export class LogAggregationModel {
                      ELSE ''
                    END),
                    COALESCE(access_point_id, '')
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO UPDATE SET count = count + excluded.count
         `).bind(effectiveSince, effectiveUntil),
 
-        // 4. Domain hourly rollups
+        // 4. Domain rollups
         this.db.prepare(`
-          INSERT OR REPLACE INTO domain_hourly_rollups (profile_id, action, hour_timestamp, domain, count)
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
           SELECT
               profile_id,
-              action,
+              'domain',
               (timestamp / 3600) * 3600 AS hour_timestamp,
               domain,
+              action,
+              COALESCE(access_point_id, ''),
               COUNT(*) AS count
           FROM logs
           WHERE timestamp >= ? AND timestamp < ?
             AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
-          GROUP BY profile_id, action, (timestamp / 3600) * 3600, domain
+          GROUP BY profile_id, (timestamp / 3600) * 3600, domain, action, COALESCE(access_point_id, '')
           HAVING COUNT(*) >= ?
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO UPDATE SET count = count + excluded.count
         `).bind(effectiveSince, effectiveUntil, minDomainCount)
       ];
 
@@ -296,9 +390,7 @@ export class LogAggregationModel {
         totalAggregatedRows += res.meta.changes || 0;
       }
 
-      // Persist the latest completed hour timestamp in system_settings
       await systemSettings.set("last_hourly_rollup_timestamp", String(effectiveUntil));
-
       return totalAggregatedRows;
     } catch (e: any) {
       console.error("[LogAggregationModel] aggregateHourlyRollups failed:", e.message || e);

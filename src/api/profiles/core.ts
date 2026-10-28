@@ -221,10 +221,7 @@ export async function handleProfilesCoreRequest(
           try {
             await env.DB.batch([
               env.DB.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM log_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM client_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM destination_hourly_rollups WHERE profile_id = ?").bind(profileId),
-              env.DB.prepare("DELETE FROM domain_hourly_rollups WHERE profile_id = ?").bind(profileId)
+              env.DB.prepare("DELETE FROM hourly_rollups WHERE profile_id = ?").bind(profileId)
             ]);
             await logModel.kemKeys.cleanupProfileOrphans(profileId);
           } catch (e: any) {

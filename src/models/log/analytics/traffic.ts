@@ -98,7 +98,7 @@ export class LogTrafficAnalytics {
       const sinceHour = Math.floor(since / 3600) * 3600;
       const { results } = await this.db
         .prepare(
-          "SELECT action, SUM(count) as count FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY action"
+          "SELECT key as action, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'action' AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY key"
         )
         .bind(profileId, sinceHour, until)
         .all<ActionCountResult>();
@@ -111,9 +111,9 @@ export class LogTrafficAnalytics {
       .prepare(
         `
       SELECT action, SUM(count) as count FROM (
-        SELECT action, count
-        FROM log_hourly_rollups
-        WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT key as action, count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'action' AND hour_timestamp >= ? AND hour_timestamp < ?
         UNION ALL
         SELECT action, COUNT(*) as count
         FROM logs
@@ -191,7 +191,7 @@ export class LogTrafficAnalytics {
     // Case 2: Entire range is within completed rollups
     if (cutoff > until) {
       const sinceHour = Math.floor(since / 3600) * 3600;
-      const queryStr = `SELECT ${rollupInterval} as timestamp, action, SUM(count) as count FROM log_hourly_rollups WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY ${rollupInterval}, action ORDER BY timestamp ASC`;
+      const queryStr = `SELECT ${rollupInterval} as timestamp, key as action, SUM(count) as count FROM hourly_rollups WHERE profile_id = ? AND metric_type = 'action' AND hour_timestamp >= ? AND hour_timestamp <= ? GROUP BY ${rollupInterval}, key ORDER BY timestamp ASC`;
       const { results } = await this.db
         .prepare(queryStr)
         .bind(profileId, sinceHour, until)
@@ -203,9 +203,9 @@ export class LogTrafficAnalytics {
     const sinceHour = Math.floor(since / 3600) * 3600;
     const queryStr = `
       SELECT timestamp, action, SUM(count) as count FROM (
-        SELECT ${rollupInterval} as timestamp, action, count
-        FROM log_hourly_rollups
-        WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp < ?
+        SELECT ${rollupInterval} as timestamp, key as action, count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'action' AND hour_timestamp >= ? AND hour_timestamp < ?
         UNION ALL
         SELECT ${logsInterval} as timestamp, action, COUNT(*) as count
         FROM logs

@@ -68,16 +68,16 @@ export class LogClientAnalytics {
     if (cutoff > until) {
       const sinceHour = Math.floor(since / 3600) * 3600;
       let queryStr = `
-        SELECT client_ip, NULLIF(geo_country, '') as geo_country, SUM(count) as count
-        FROM client_hourly_rollups
-        WHERE profile_id = ? AND hour_timestamp >= ? AND hour_timestamp <= ?
+        SELECT key as client_ip, NULLIF(sub_key, '') as geo_country, SUM(count) as count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'client' AND hour_timestamp >= ? AND hour_timestamp <= ?
       `;
       const params: (string | number)[] = [profileId, sinceHour, until];
       if (accessPointId) {
         queryStr += " AND access_point_id = ?";
         params.push(accessPointId);
       }
-      queryStr += " GROUP BY client_ip, geo_country ORDER BY count DESC LIMIT 20";
+      queryStr += " GROUP BY key, sub_key ORDER BY count DESC LIMIT 20";
       const { results } = await this.db
         .prepare(queryStr)
         .bind(...params)
@@ -87,7 +87,7 @@ export class LogClientAnalytics {
 
     // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
     const sinceHour = Math.floor(since / 3600) * 3600;
-    let rollupWhere = "profile_id = ? AND hour_timestamp >= ? AND hour_timestamp < ?";
+    let rollupWhere = "profile_id = ? AND metric_type = 'client' AND hour_timestamp >= ? AND hour_timestamp < ?";
     const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
     if (accessPointId) {
       rollupWhere += " AND access_point_id = ?";
@@ -103,8 +103,8 @@ export class LogClientAnalytics {
 
     const queryStr = `
       SELECT client_ip, NULLIF(geo_country, '') as geo_country, SUM(count) as count FROM (
-        SELECT client_ip, geo_country, count
-        FROM client_hourly_rollups
+        SELECT key as client_ip, sub_key as geo_country, count
+        FROM hourly_rollups
         WHERE ${rollupWhere}
         UNION ALL
         SELECT client_ip, COALESCE(geo_country, '') as geo_country, COUNT(*) as count

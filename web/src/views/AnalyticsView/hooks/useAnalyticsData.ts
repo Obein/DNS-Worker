@@ -10,6 +10,7 @@ import {
   e2ee,
   type AccessPoint
 } from "../../../services";
+import { analyticsCache } from "../utils/analyticsCache";
 
 export interface UseAnalyticsDataReturn {
   data: AnalyticsData | null;
@@ -28,7 +29,8 @@ export interface UseAnalyticsDataReturn {
     selectedRange: TimeRange,
     customStart?: string,
     customEnd?: string,
-    apIdFilter?: string | null
+    apIdFilter?: string | null,
+    force?: boolean
   ) => Promise<void>;
   syncTargetRange: () => Promise<void>;
   stopSync: () => void;
@@ -97,12 +99,36 @@ export function useAnalyticsData(
       selectedRange: TimeRange,
       customStart?: string,
       customEnd?: string,
-      apIdFilter?: string | null
+      apIdFilter?: string | null,
+      force = false
     ): Promise<void> => {
       abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
       const signal = controller.signal;
+
+      const cacheKey = analyticsCache.buildKey(
+        profileId,
+        selectedRange,
+        customStart,
+        customEnd,
+        apIdFilter
+      );
+
+      if (force) {
+        analyticsCache.invalidateProfile(profileId);
+      } else {
+        // Step -1: Check L1 in-memory client cache for instant preview (0ms latency, 0 server reads)
+        const cached = analyticsCache.get(cacheKey);
+        if (cached && !signal.aborted) {
+          setData(cached.data);
+          setLoading(false);
+          // If cached data is fresh (within soft TTL), skip server network fetch entirely
+          if (!cached.isStale) {
+            return;
+          }
+        }
+      }
 
       setLoading(true);
 
@@ -250,7 +276,7 @@ export function useAnalyticsData(
           serverHasDestinations = (serverAnalytics.destinations || []).length > 0;
 
           setData((prev) => {
-            return {
+            const nextData: AnalyticsData = {
               ...serverAnalytics!,
               trend: serverAnalytics!.trend || [],
               summary: serverAnalytics!.summary || [],
@@ -267,6 +293,8 @@ export function useAnalyticsData(
                 ? serverAnalytics!.destinations
                 : (prev?.destinations && prev.destinations.length > 0 ? prev.destinations : [])
             };
+            analyticsCache.set(cacheKey, nextData, selectedRange, customEnd);
+            return nextData;
           });
         }
       } catch (e) {
@@ -296,10 +324,13 @@ export function useAnalyticsData(
 
             if (!signal.aborted) {
               setData((curr) => {
-                if (!curr) return freshLocal;
+                if (!curr) {
+                  analyticsCache.set(cacheKey, freshLocal, selectedRange, customEnd);
+                  return freshLocal;
+                }
 
                 // Keep authoritative server data when provided; substitute freshLocal for missing/encrypted fields
-                return {
+                const updated: AnalyticsData = {
                   ...curr,
                   destinations: serverHasDestinations
                     ? curr.destinations
@@ -314,6 +345,8 @@ export function useAnalyticsData(
                     ? curr.clients
                     : (freshLocal.clients.length > 0 ? freshLocal.clients : curr.clients)
                 };
+                analyticsCache.set(cacheKey, updated, selectedRange, customEnd);
+                return updated;
               });
             }
           } catch {
@@ -461,6 +494,8 @@ export function useAnalyticsData(
           accessPointId: accessPointIdFilter,
           completedAt: Math.floor(Date.now() / 1000)
         };
+
+        analyticsCache.invalidateProfile(profileId);
 
         if (inserted === 0) {
           toasterRef?.current?.show({
