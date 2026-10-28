@@ -955,7 +955,7 @@
     "timezone": "Fuseau horaire",
     "timezoneAuto": "Automatique (par défaut du navigateur)",
     "totpCode": "Code de l'authentificateur",
-    "databaseSettings": "Base de données",
+    "databaseSettings": "Base de données (Admins uniquement)",
     "databaseEngine": "Service de base de données",
     "migrationCompleted": "Migrations à jour",
     "migrationPending": "Migrations en attente",

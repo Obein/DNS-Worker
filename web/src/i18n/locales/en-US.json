@@ -955,7 +955,7 @@
     "timezone": "Timezone",
     "timezoneAuto": "Auto (Browser Default)",
     "totpCode": "Authenticator Code",
-    "databaseSettings": "Database",
+    "databaseSettings": "Database (Admin)",
     "databaseEngine": "Database Service",
     "migrationCompleted": "Migrations Up to Date",
     "migrationPending": "Migrations Pending",

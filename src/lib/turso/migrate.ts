@@ -5,6 +5,7 @@
  * and filesystem-based migrations (Node.js Serverfull mode & CLI tools).
  */
 
+import { D1Database } from '@cloudflare/workers-types';
 import { TursoD1Database } from './index';
 import { EMBEDDED_MIGRATIONS } from './embeddedMigrations';
 import { splitSqlStatements } from './sql';
@@ -39,12 +40,12 @@ export interface TursoMigrationStats {
 }
 
 /**
- * Ensures the `d1_migrations` and `_cf_d1_migrations` tables exist on Turso,
+ * Ensures the `d1_migrations` and `_cf_d1_migrations` tables exist on database,
  * automatically migrating and synchronizing records between both tables.
  *
- * @param db - TursoD1Database instance.
+ * @param db - D1Database or TursoD1Database instance.
  */
-export async function ensureTursoMigrationsTable(db: TursoD1Database): Promise<void> {
+export async function ensureTursoMigrationsTable(db: D1Database | TursoD1Database): Promise<void> {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS d1_migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,10 +68,10 @@ export async function ensureTursoMigrationsTable(db: TursoD1Database): Promise<v
  * Executes a migration SQL script statement-by-statement, tolerating idempotent schema states
  * (such as duplicate column names or tables/indexes that already exist).
  *
- * @param db - TursoD1Database instance.
+ * @param db - D1Database or TursoD1Database instance.
  * @param sql - Migration script containing one or more SQL statements.
  */
-export async function execMigrationSql(db: TursoD1Database, sql: string): Promise<void> {
+export async function execMigrationSql(db: D1Database | TursoD1Database, sql: string): Promise<void> {
   const stmts = splitSqlStatements(sql);
   if (stmts.length === 0) return;
 
@@ -79,27 +80,31 @@ export async function execMigrationSql(db: TursoD1Database, sql: string): Promis
     if (!stmt) continue;
 
     try {
-      const results = await db.executePipeline([
-        {
-          type: 'execute',
-          stmt: { sql: stmt }
-        },
-        { type: 'close' }
-      ], 60000);
+      if ('executePipeline' in db && typeof (db as any).executePipeline === 'function') {
+        const results = await (db as any).executePipeline([
+          {
+            type: 'execute',
+            stmt: { sql: stmt }
+          },
+          { type: 'close' }
+        ], 60000);
 
-      const first = results[0];
-      if (first && (first.type === 'error' || first.error)) {
-        const msg = (first.error?.message || '').toLowerCase();
-        const stmtUpper = stmt.toUpperCase();
-        const isDuplicateColumn = msg.includes('duplicate column name') && stmtUpper.startsWith('ALTER TABLE');
-        const isAlreadyExists = msg.includes('already exists') && (stmtUpper.startsWith('CREATE') || stmtUpper.startsWith('ALTER'));
+        const first = results[0];
+        if (first && (first.type === 'error' || first.error)) {
+          const msg = (first.error?.message || '').toLowerCase();
+          const stmtUpper = stmt.toUpperCase();
+          const isDuplicateColumn = msg.includes('duplicate column name') && stmtUpper.startsWith('ALTER TABLE');
+          const isAlreadyExists = msg.includes('already exists') && (stmtUpper.startsWith('CREATE') || stmtUpper.startsWith('ALTER'));
 
-        if (isDuplicateColumn || isAlreadyExists) {
-          console.warn(`[Turso Migrations] Tolerating idempotent schema state on statement ${i + 1}: ${first.error?.message}`);
-          continue;
+          if (isDuplicateColumn || isAlreadyExists) {
+            console.warn(`[Migrations] Tolerating idempotent schema state on statement ${i + 1}: ${first.error?.message}`);
+            continue;
+          }
+
+          throw new Error(`[Database D1] Exec error on statement ${i + 1}: ${first.error?.message || 'Error'}\nSQL: ${stmt}`);
         }
-
-        throw new Error(`[Turso D1] Exec error on statement ${i + 1}: ${first.error?.message || 'Error'}\nSQL: ${stmt}`);
+      } else {
+        await db.exec(stmt);
       }
     } catch (err: any) {
       const msg = (err?.message || '').toLowerCase();
@@ -108,7 +113,7 @@ export async function execMigrationSql(db: TursoD1Database, sql: string): Promis
       const isAlreadyExists = msg.includes('already exists') && (stmtUpper.startsWith('CREATE') || stmtUpper.startsWith('ALTER'));
 
       if (isDuplicateColumn || isAlreadyExists) {
-        console.warn(`[Turso Migrations] Tolerating idempotent schema state on statement ${i + 1}: ${err.message}`);
+        console.warn(`[Migrations] Tolerating idempotent schema state on statement ${i + 1}: ${err.message}`);
         continue;
       }
       throw err;
@@ -117,12 +122,12 @@ export async function execMigrationSql(db: TursoD1Database, sql: string): Promis
 }
 
 /**
- * Queries migration status from Turso.
+ * Queries migration status from database.
  *
- * @param db - TursoD1Database instance.
+ * @param db - D1Database or TursoD1Database instance.
  * @returns Object containing migration progress, applied counts, and pending files list.
  */
-export async function getTursoMigrationStats(db: TursoD1Database): Promise<TursoMigrationStats> {
+export async function getTursoMigrationStats(db: D1Database | TursoD1Database): Promise<TursoMigrationStats> {
   const files = Object.keys(EMBEDDED_MIGRATIONS).sort();
   try {
     await ensureTursoMigrationsTable(db);
@@ -160,16 +165,16 @@ export async function getTursoMigrationStats(db: TursoD1Database): Promise<Turso
 }
 
 /**
- * Runs all pending migrations against Turso.
+ * Runs all pending migrations against the database.
  * If migrationsOrDir is omitted, uses the compiled EMBEDDED_MIGRATIONS map,
  * allowing safe execution in serverless runtimes (Cloudflare Workers) without filesystem access.
  *
- * @param db - TursoD1Database instance.
+ * @param db - D1Database or TursoD1Database instance.
  * @param migrationsOrDir - Optional directory path or custom Record<string, string> migration map.
  * @returns Number of newly applied migrations.
  */
 export async function runTursoMigrations(
-  db: TursoD1Database,
+  db: D1Database | TursoD1Database,
   migrationsOrDir?: string | Record<string, string>
 ): Promise<number> {
   await ensureTursoMigrationsTable(db);
@@ -204,7 +209,7 @@ export async function runTursoMigrations(
     const sql = migrationsMap[file];
     if (!sql || !sql.trim()) continue;
 
-    console.log(`[Turso Migrations] Applying ${file}...`);
+    console.log(`[Database Migrations] Applying ${file}...`);
     try {
       await execMigrationSql(db, sql);
       const appliedAt = Math.floor(Date.now() / 1000);
@@ -218,15 +223,15 @@ export async function runTursoMigrations(
         .run();
       appliedCount++;
     } catch (err: any) {
-      console.error(`[Turso Migrations] Failed to apply ${file}:`, err.message || err);
+      console.error(`[Database Migrations] Failed to apply ${file}:`, err.message || err);
       throw err;
     }
   }
 
   if (appliedCount > 0) {
-    console.log(`[Turso Migrations] Successfully applied ${appliedCount} migration(s).`);
+    console.log(`[Database Migrations] Successfully applied ${appliedCount} migration(s).`);
   } else {
-    console.log('[Turso Migrations] Database schema is up-to-date.');
+    console.log('[Database Migrations] Database schema is up-to-date.');
   }
 
   return appliedCount;
@@ -235,13 +240,13 @@ export async function runTursoMigrations(
 let tursoMigrationsPromise: Promise<number> | null = null;
 
 /**
- * Ensures all schema migrations are applied to Turso once per worker isolate lifecycle.
+ * Ensures all schema migrations are applied to database once per worker isolate lifecycle.
  * Deduplicates concurrent execution requests.
  *
- * @param db - TursoD1Database instance.
+ * @param db - D1Database or TursoD1Database instance.
  * @returns Number of applied migrations.
  */
-export async function ensureTursoMigrations(db: TursoD1Database): Promise<number> {
+export async function ensureTursoMigrations(db: D1Database | TursoD1Database): Promise<number> {
   if (!tursoMigrationsPromise) {
     tursoMigrationsPromise = runTursoMigrations(db).finally(() => {
       tursoMigrationsPromise = null;
@@ -249,3 +254,8 @@ export async function ensureTursoMigrations(db: TursoD1Database): Promise<number
   }
   return tursoMigrationsPromise;
 }
+
+// Universal aliases for database migrations across D1, Turso, and SQLite
+export const ensureDatabaseMigrationsTable = ensureTursoMigrationsTable;
+export const getDatabaseMigrationStats = getTursoMigrationStats;
+export const runDatabaseMigrations = runTursoMigrations;

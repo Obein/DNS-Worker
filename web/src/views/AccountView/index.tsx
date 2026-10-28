@@ -297,19 +297,15 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
             />
           </div>
 
-          {/* Admin: Turso Database Management (Only shown when database service is Turso) */}
-          {dbStatus?.isTurso && (
-            <>
-              <Divider />
-              <div className="space-y-4">
-                <DatabaseMigrationCard
-                  status={dbStatus}
-                  onRefresh={fetchDbStatus}
-                  toasterRef={toasterRef}
-                />
-              </div>
-            </>
-          )}
+          {/* Admin: Database Management (Shown for all database types) */}
+          <Divider />
+          <div className="space-y-4">
+            <DatabaseMigrationCard
+              status={dbStatus}
+              onRefresh={fetchDbStatus}
+              toasterRef={toasterRef}
+            />
+          </div>
         </>
       )}
 

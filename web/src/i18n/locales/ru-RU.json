@@ -955,7 +955,7 @@
     "timezone": "Часовой пояс",
     "timezoneAuto": "Авто (по умолчанию в браузере)",
     "totpCode": "Код аутентификатора",
-    "databaseSettings": "База данных",
+    "databaseSettings": "База данных (Админ)",
     "databaseEngine": "Служба базы данных",
     "migrationCompleted": "Миграции применены",
     "migrationPending": "Ожидающие миграции",

@@ -955,7 +955,7 @@
     "timezone": "时区",
     "timezoneAuto": "自动（跟随浏览器默认）",
     "totpCode": "验证器动态口令",
-    "databaseSettings": "数据库",
+    "databaseSettings": "数据库 (管理员)",
     "databaseEngine": "数据库服务",
     "migrationCompleted": "迁移已完成",
     "migrationPending": "有待执行迁移",

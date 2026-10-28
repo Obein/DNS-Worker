@@ -955,7 +955,7 @@
     "timezone": "タイムゾーン",
     "timezoneAuto": "自動（ブラウザのデフォルト）",
     "totpCode": "認証コード",
-    "databaseSettings": "データベース",
+    "databaseSettings": "データベース (管理者限定)",
     "databaseEngine": "データベースサービス",
     "migrationCompleted": "マイグレーション完了",
     "migrationPending": "保留中のマイグレーション",

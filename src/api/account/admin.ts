@@ -90,20 +90,11 @@ export async function handleAdminRequest(
     const isTurso = dbService === 'Turso' && isTursoConfigured(env);
 
     if (request.method === 'GET') {
-      if (!isTurso) {
-        return new Response(JSON.stringify({
-          databaseService: dbService,
-          isTurso: false,
-          configured: true,
-          migrations: null
-        }), { headers: { 'Content-Type': 'application/json' } });
-      }
-
-      const stats = await getTursoMigrationStats(env.DB as any);
+      const stats = env.DB ? await getTursoMigrationStats(env.DB as any) : null;
       return new Response(JSON.stringify({
         databaseService: dbService,
-        isTurso: true,
-        configured: true,
+        isTurso,
+        configured: Boolean(env.DB),
         migrations: stats
       }), { headers: { 'Content-Type': 'application/json' } });
     }
@@ -111,8 +102,8 @@ export async function handleAdminRequest(
     if (request.method === 'POST') {
       const action = pathParts[3];
       if (action === 'migrate') {
-        if (!isTurso) {
-          return new Response(JSON.stringify({ error: "Database is not Turso" }), {
+        if (!env.DB) {
+          return new Response(JSON.stringify({ error: "Database is not configured" }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }
           });

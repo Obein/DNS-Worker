@@ -33,6 +33,13 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
   const migrations = status?.migrations;
   const isCompleted = migrations?.completed ?? false;
 
+  const formatDatabaseEngine = (service?: string) => {
+    if (service === "Turso") return "Turso (libSQL)";
+    if (service === "D1") return "Cloudflare D1";
+    if (service === "File") return "SQLite (Local File)";
+    return service || "SQLite";
+  };
+
   const handleRunMigrations = async () => {
     setMigrating(true);
     try {
@@ -69,9 +76,9 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Database size={20} className="text-gray-500" />
-          <H4 style={{ margin: 0 }}>{t("account.databaseSettings", "数据库")}</H4>
+          <H4 style={{ margin: 0 }}>{t("account.databaseSettings", "数据库 (管理员)")}</H4>
         </div>
-        {migrations && (
+        {migrations ? (
           <Tag
             large
             round
@@ -81,6 +88,10 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
             {isCompleted
               ? t("account.migrationCompleted", "迁移已完成")
               : t("account.migrationPending", "有待执行迁移")}
+          </Tag>
+        ) : (
+          <Tag large round intent={Intent.NONE}>
+            {t("common.loading", "加载中...")}
           </Tag>
         )}
       </div>
@@ -92,7 +103,9 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
               <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
                 {t("account.databaseEngine", "数据库服务")}
               </span>
-              <div className="text-sm font-medium mt-1">Turso (libSQL)</div>
+              <div className="text-sm font-medium mt-1">
+                {formatDatabaseEngine(status?.databaseService)}
+              </div>
             </div>
 
             <div>
@@ -110,15 +123,17 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
               {t("account.migrationStatus", "架构状态")}
             </span>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              {isCompleted
-                ? t("account.migrationCompletedDesc", {
-                    total: migrations?.totalAvailable || 0,
-                  })
-                : t("account.migrationPendingDesc", {
-                    applied: migrations?.appliedCount || 0,
-                    total: migrations?.totalAvailable || 0,
-                    pending: migrations?.pendingCount || 0,
-                  })}
+              {migrations
+                ? isCompleted
+                  ? t("account.migrationCompletedDesc", {
+                      total: migrations?.totalAvailable || 0,
+                    })
+                  : t("account.migrationPendingDesc", {
+                      applied: migrations?.appliedCount || 0,
+                      total: migrations?.totalAvailable || 0,
+                      pending: migrations?.pendingCount || 0,
+                    })
+                : t("common.loading", "加载中...")}
             </p>
           </div>
 

@@ -955,7 +955,7 @@
     "timezone": "時區",
     "timezoneAuto": "自動（跟隨瀏覽器預設）",
     "totpCode": "驗證器動態口令",
-    "databaseSettings": "資料庫",
+    "databaseSettings": "資料庫 (管理員)",
     "databaseEngine": "資料庫服務",
     "migrationCompleted": "遷移已完成",
     "migrationPending": "有待執行遷移",

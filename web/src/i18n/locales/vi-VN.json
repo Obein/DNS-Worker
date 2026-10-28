@@ -955,7 +955,7 @@
     "timezone": "Múi giờ",
     "timezoneAuto": "Tự động (mặc định của trình duyệt)",
     "totpCode": "Mã xác thực",
-    "databaseSettings": "Cơ sở dữ liệu",
+    "databaseSettings": "Cơ sở dữ liệu (Quản trị viên)",
     "databaseEngine": "Dịch vụ cơ sở dữ liệu",
     "migrationCompleted": "Đã hoàn thành di chuyển",
     "migrationPending": "Di chuyển đang chờ xử lý",

@@ -955,7 +955,7 @@
     "timezone": "시간대",
     "timezoneAuto": "자동 (브라우저 기본값)",
     "totpCode": "인증 코드",
-    "databaseSettings": "데이터베이스",
+    "databaseSettings": "데이터베이스 (관리자 전용)",
     "databaseEngine": "데이터베이스 서비스",
     "migrationCompleted": "마이그레이션 완료",
     "migrationPending": "대기 중인 마이그레이션",
