@@ -69,6 +69,13 @@ export async function handleScheduled(
 
     if (shouldRunCleanup) {
       lastCleanupMemoryTs = now;
+      await cacheUtils.set(cache, lastCleanupKey, now, 3600);
+      try {
+        await settingsModel.set("cron_last_cleanup_timestamp", String(now));
+      } catch (err) {
+        console.warn("[Cron] Failed to persist cleanup timestamp:", err);
+      }
+
       try {
         const userModel = new UserModel(env.DB, env);
         const { clearedProfiles, deletedUsers } = await userModel.applyInactivityPolicy(now);
@@ -91,16 +98,8 @@ export async function handleScheduled(
           ? Number(env.LOG_CLEANUP_DAILY_BUDGET)
           : 20000;
         await logModel.cleanupGlobal(maxRetentionDays, cleanupBatchLimit, cleanupDailyBudget);
-
-        const minDomainCount = env.DOMAIN_ROLLUP_MIN_COUNT !== undefined && env.DOMAIN_ROLLUP_MIN_COUNT !== ''
-          ? Number(env.DOMAIN_ROLLUP_MIN_COUNT)
-          : 1;
-        const aggregated = await logModel.aggregateHourlyRollups(undefined, undefined, minDomainCount);
-        if (aggregated > 0) {
-          console.log(`[Cron] Hourly rollup aggregation: aggregated ${aggregated} record(s).`);
-        }
       } catch (e) {
-        console.error("[Cron] Global log cleanup or hourly rollup aggregation failed:", e);
+        console.error("[Cron] Global log cleanup failed:", e);
       }
 
       try {
@@ -114,12 +113,6 @@ export async function handleScheduled(
         console.error("[Cron] Session cleanup failed:", e);
       }
 
-      await cacheUtils.set(cache, lastCleanupKey, now, 3600);
-      try {
-        await settingsModel.set("cron_last_cleanup_timestamp", String(now));
-      } catch (err) {
-        console.warn("[Cron] Failed to persist cleanup timestamp:", err);
-      }
       console.log("[Cron] Cleanup phase completed at", new Date().toISOString());
     }
 
