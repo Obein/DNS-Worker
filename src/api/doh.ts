@@ -50,7 +50,7 @@ export async function resolveProfileByKey(
   env: Env,
   ctx: ExecutionContext
 ): Promise<(ProfileWithBloom & { access_point_id?: string; access_point_name?: string }) | null> {
-  const cache = (caches as any).default;
+  const cache = typeof caches !== "undefined" ? (caches as any).default : null;
   const now = Date.now();
 
   // 1. Check L1 Memory Cache (Isolate Global) - 5 minutes
@@ -61,14 +61,16 @@ export async function resolveProfileByKey(
 
   // 2. Check L2 Cloudflare Cache API - 1 hour
   const cacheKey = `doh_key_v1:${profileKey}`;
-  try {
-    const cached = await cacheUtils.get<any>(cache, cacheKey);
-    if (cached) {
-      profileKeyMemoryMap.set(profileKey, { data: cached, ts: now });
-      return cached;
+  if (cache) {
+    try {
+      const cached = await cacheUtils.get<any>(cache, cacheKey);
+      if (cached) {
+        profileKeyMemoryMap.set(profileKey, { data: cached, ts: now });
+        return cached;
+      }
+    } catch {
+      /* ignore Cache API match error */
     }
-  } catch {
-    /* ignore Cache API match error */
   }
 
   // 3. Fallback to D1 (only executed on cache miss)
@@ -78,7 +80,9 @@ export async function resolveProfileByKey(
 
     if (profile) {
       profileKeyMemoryMap.set(profileKey, { data: profile, ts: now });
-      ctx.waitUntil(cacheUtils.set(cache, cacheKey, profile, 3600));
+      if (cache) {
+        ctx.waitUntil(cacheUtils.set(cache, cacheKey, profile, 3600));
+      }
       return profile;
     }
   } catch (e: any) {
@@ -170,7 +174,11 @@ export async function handleDoHRequest(
   let queryRaw: Uint8Array | null = null;
 
   try {
-    const profile = await resolveProfileByKey(profileKey, env, ctx);
+    let profile = await resolveProfileByKey(profileKey, env, ctx);
+    if (!profile) {
+      console.warn(`[DoH] Profile not found for key ${profileKey}. Falling back to default profile.`);
+      profile = await resolveDefaultProfile(env, ctx);
+    }
     if (!profile) {
       return new Response('Invalid Profile Key', { status: 404 });
     }
@@ -198,7 +206,9 @@ export async function handleDoHRequest(
         
         // Record active connection (used by Debug API)
         const activeDnsTtl = Number(env.ACTIVE_DNS_CACHE_TTL) || 60;
-        await cacheUtils.set(cache, `active_dns:${clientIp}`, profileId, activeDnsTtl);
+        if (cache) {
+          await cacheUtils.set(cache, `active_dns:${clientIp}`, profileId, activeDnsTtl);
+        }
 
         // Update profile activity timestamp (throttled hourly)
         const nowSec = Math.floor(Date.now() / 1000);
@@ -212,7 +222,7 @@ export async function handleDoHRequest(
 
         // 2. Check L2 Cache API (across isolates in the same datacenter)
         const lastActiveKey = `active_throttle:${profileId}`;
-        const lastActiveThrottled = await cacheUtils.get<number>(cache, lastActiveKey);
+        const lastActiveThrottled = cache ? await cacheUtils.get<number>(cache, lastActiveKey) : null;
         if (lastActiveThrottled && nowSec - lastActiveThrottled < throttleSec) {
           activeThrottleMemoryMap.set(profileId, lastActiveThrottled);
           return;
@@ -231,7 +241,9 @@ export async function handleDoHRequest(
           /* ignore DB write quota errors */
         }
         
-        await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
+        if (cache) {
+          await cacheUtils.set(cache, lastActiveKey, nowSec, throttleSec);
+        }
       } catch (e) {
         console.error(`[Background Task] Error for ${profileId}:`, e);
       }

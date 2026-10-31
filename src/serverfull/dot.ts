@@ -9,7 +9,7 @@ import { Buffer } from 'node:buffer';
 import { Env, Context, ExecutionContext } from '../types';
 import { parseDNSQueryFromRaw } from '../utils/dns';
 import { pipeline } from '../pipeline';
-import { resolveProfileByKey } from '../api/doh';
+import { resolveProfileByKey, resolveDefaultProfile } from '../api/doh';
 import { resolveUpstreamEndpoint, fetchFromUpstream } from '../pipeline/resolver/transport';
 import { DEFAULT_FAIL_OPEN_UPSTREAM } from '../constants/presets';
 import { ACCESS_KEY_REGEX } from '../utils/validator';
@@ -228,9 +228,13 @@ export class DotDnsServer {
         return;
       }
 
-      const profile = await resolveProfileByKey(sniKey, env, ctx);
+      let profile = await resolveProfileByKey(sniKey, env, ctx);
       if (!profile) {
-        // Unknown or invalid profile key, drop connection
+        // Fallback to fail-open default profile if database is unavailable or key not found
+        profile = await resolveDefaultProfile(env, ctx);
+      }
+      if (!profile) {
+        // Drop connection if fallback is impossible
         socket.destroy();
         return;
       }

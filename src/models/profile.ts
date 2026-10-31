@@ -39,7 +39,7 @@ export class ProfileModel {
       return match || null;
     } catch (e: any) {
       console.warn("[ProfileModel] findByKey query failed:", e.message || e);
-      return null;
+      throw e;
     }
   }
 

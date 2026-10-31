@@ -45,18 +45,18 @@ export const pipelineConfig = {
     }
 
     // 2. 检查 L2 Cache API
-    const cache = (caches as any).default;
+    const cache = typeof caches !== "undefined" ? (caches as any).default : null;
     const profileCacheKey = `profile_v6:${profileId}`;
     const bloomInternalUrl = cacheUtils.generateCacheUrl(`bloom-bin:${profileId}`);
     
-    let apiCached = await cacheUtils.get<any>(cache, profileCacheKey);
+    let apiCached = cache ? await cacheUtils.get<any>(cache, profileCacheKey) : null;
     let bloom: BloomFilter | undefined;
 
     if (apiCached) {
       track('load_config_l2_cache');
       if (inMem && Date.now() - inMem.ts < bloomMemTtl) {
         bloom = inMem.bloom;
-      } else {
+      } else if (cache) {
         try {
           const bloomRes = await cache.match(bloomInternalUrl);
           if (bloomRes) {
@@ -96,7 +96,15 @@ export const pipelineConfig = {
           console.warn(`[Config] Profile ${profileId} not in D1, using stale memory config.`);
           return { ...cachedConfig, bloom: inMem?.bloom };
         }
-        return null;
+        console.warn(`[Config] Profile ${profileId} not found in DB. Serving emergency fail-open fallback.`);
+        const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM;
+        const fallbackSettings: ProfileSettings = {
+          upstream: [failOpenUpstream],
+          default_policy: "ALLOW",
+          log_retention_days: 0,
+          ecs: { enabled: true, use_client_ip: true }
+        };
+        return { settings: fallbackSettings, rules: [], bloom: undefined };
       }
       
       const settings = JSON.parse(profile.settings);
@@ -122,7 +130,9 @@ export const pipelineConfig = {
       
       configCache.set(profileId, { ...config, timestamp: Date.now() });
       // 写入 L2 Cache API 配置缓存 (24 小时长效缓存，配置变更时有主动淘汰)
-      ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400, [`profile-${profileId}`]));
+      if (cache) {
+        ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400, [`profile-${profileId}`]));
+      }
       
       track('load_config_full_sync');
       return { ...config, bloom };
