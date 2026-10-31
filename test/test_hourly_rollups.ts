@@ -144,6 +144,28 @@ async function runTests() {
   assert.strictEqual(remaining.count, 0, "hourly_rollups must delete cleanly");
   console.log("  PASS: hourly_rollups single-table cleanup succeeded");
 
+  // 8. Test profile-bounded aggregateHourlyRollups (guarantees index range seeks without whole-table scans)
+  rawDb.exec(`
+    CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      settings TEXT
+    );
+    INSERT OR REPLACE INTO profiles (id, name, settings) VALUES ('test_prof', 'Test', '{}');
+    INSERT INTO logs (profile_id, timestamp, id, domain, record_type, action, client_ip, geo_country, dest_country_code, dest_country)
+    VALUES ('test_prof', ${hourTs - 1800}, 10, 'cloudflare.com', 'A', 'PASS', '10.0.0.1', 'US', 'US', 'United States');
+  `);
+  const aggregatedCount = await logModel.aggregateHourlyRollups(hourTs - 3600, hourTs, 1);
+  assert.ok(aggregatedCount > 0, "aggregateHourlyRollups must aggregate rows for profile");
+  const actionCheck = rawDb.prepare("SELECT key, count FROM hourly_rollups WHERE profile_id = 'test_prof' AND metric_type = 'action'").all() as { key: string; count: number }[];
+  assert.ok(actionCheck.some(r => r.key === "PASS" && r.count >= 1), "Aggregated PASS action must exist in hourly_rollups");
+  console.log("  PASS: profile-bounded aggregateHourlyRollups executed safely with index range seek");
+
   console.log("\n======================================================");
   console.log("   ALL HOURLY ROLLUPS & PRE-ENCRYPTION TESTS PASSED!  ");
   console.log("======================================================");

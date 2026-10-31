@@ -247,39 +247,15 @@ export class LogAggregationModel {
     const systemSettings = new SystemSettingsModel(this.db);
 
     if (effectiveSince === undefined) {
-      let needsHistoricalBackfill = false;
-      try {
-        const row = await this.db.prepare("SELECT count(*) as cnt FROM hourly_rollups LIMIT 1").first<{ cnt: number }>();
-        if ((row?.cnt ?? 0) === 0) {
-          needsHistoricalBackfill = true;
-        }
-      } catch {
-        // Table existence or query error fallback
-      }
-
-      if (!needsHistoricalBackfill) {
-        const lastAggregatedStr = await systemSettings.get("last_hourly_rollup_timestamp");
-        if (lastAggregatedStr) {
-          const lastHour = parseInt(lastAggregatedStr, 10);
-          if (!isNaN(lastHour) && lastHour > 0) {
-            effectiveSince = Math.max(lastHour, effectiveUntil - (7 * 86400));
-          }
+      const lastAggregatedStr = await systemSettings.get("last_hourly_rollup_timestamp");
+      if (lastAggregatedStr) {
+        const lastHour = parseInt(lastAggregatedStr, 10);
+        if (!isNaN(lastHour) && lastHour > 0) {
+          effectiveSince = Math.max(lastHour, effectiveUntil - 86400);
         }
       }
-
-      if (effectiveSince === undefined || needsHistoricalBackfill) {
-        try {
-          const minRow = await this.db.prepare("SELECT MIN(timestamp) as min_ts FROM logs").first<{ min_ts: number | null }>();
-          if (minRow?.min_ts) {
-            const minHour = Math.floor(minRow.min_ts / 3600) * 3600;
-            effectiveSince = Math.max(minHour, effectiveUntil - (30 * 86400));
-          }
-        } catch {
-          // Fallback
-        }
-        if (effectiveSince === undefined) {
-          effectiveSince = Math.max(0, effectiveUntil - 86400);
-        }
+      if (effectiveSince === undefined) {
+        effectiveSince = Math.max(0, effectiveUntil - 3600);
       }
     }
 
@@ -288,106 +264,120 @@ export class LogAggregationModel {
     }
 
     try {
-      const statements: D1PreparedStatement[] = [
-        // 1. Action rollups
-        this.db.prepare(`
-          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
-          SELECT
-              profile_id,
-              'action',
-              (timestamp / 3600) * 3600 AS hour_timestamp,
-              action,
-              '',
-              COALESCE(access_point_id, ''),
-              COUNT(*) AS count
-          FROM logs
-          WHERE timestamp >= ? AND timestamp < ?
-          GROUP BY profile_id, (timestamp / 3600) * 3600, action, COALESCE(access_point_id, '')
-          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
-          DO UPDATE SET count = count + excluded.count
-        `).bind(effectiveSince, effectiveUntil),
+      const { results: profiles } = await this.db.prepare(
+        "SELECT id FROM profiles"
+      ).all<{ id: string }>();
 
-        // 2. Client IP & Country rollups
-        this.db.prepare(`
-          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
-          SELECT
-              profile_id,
-              'client',
-              (timestamp / 3600) * 3600 AS hour_timestamp,
-              client_ip,
-              COALESCE(geo_country, ''),
-              COALESCE(access_point_id, ''),
-              COUNT(*) AS count
-          FROM logs
-          WHERE timestamp >= ? AND timestamp < ?
-            AND client_ip IS NOT NULL AND client_ip != '' AND client_ip != '[Encrypted]'
-          GROUP BY profile_id, (timestamp / 3600) * 3600, client_ip, COALESCE(geo_country, ''), COALESCE(access_point_id, '')
-          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
-          DO UPDATE SET count = count + excluded.count
-        `).bind(effectiveSince, effectiveUntil),
+      if (!profiles || profiles.length === 0) {
+        await systemSettings.set("last_hourly_rollup_timestamp", String(effectiveUntil));
+        return 0;
+      }
 
-        // 3. Destination Country rollups
-        this.db.prepare(`
-          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
-          SELECT
-              profile_id,
-              'dest',
-              (timestamp / 3600) * 3600 AS hour_timestamp,
-              UPPER(CASE 
-                WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
-                WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
-                ELSE ''
-              END) AS key,
-              MAX(CASE 
-                WHEN dest_country IS NOT NULL AND dest_country != '' THEN dest_country
-                WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country')
-                ELSE 'Unknown'
-              END) AS sub_key,
-              COALESCE(access_point_id, '') AS access_point_id,
-              COUNT(*) AS count
-          FROM logs
-          WHERE timestamp >= ? AND timestamp < ?
-            AND (
-              (dest_country_code IS NOT NULL AND dest_country_code != '')
-              OR
-              (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND json_extract(dest_geoip, '$.country_code') IS NOT NULL AND json_extract(dest_geoip, '$.country_code') != '')
-            )
-          GROUP BY profile_id, (timestamp / 3600) * 3600, 
-                   UPPER(CASE 
-                     WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
-                     WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
-                     ELSE ''
-                   END),
-                   COALESCE(access_point_id, '')
-          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
-          DO UPDATE SET count = count + excluded.count
-        `).bind(effectiveSince, effectiveUntil),
-
-        // 4. Domain rollups
-        this.db.prepare(`
-          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
-          SELECT
-              profile_id,
-              'domain',
-              (timestamp / 3600) * 3600 AS hour_timestamp,
-              domain,
-              action,
-              COALESCE(access_point_id, ''),
-              COUNT(*) AS count
-          FROM logs
-          WHERE timestamp >= ? AND timestamp < ?
-            AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
-          GROUP BY profile_id, (timestamp / 3600) * 3600, domain, action, COALESCE(access_point_id, '')
-          HAVING COUNT(*) >= ?
-          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
-          DO UPDATE SET count = count + excluded.count
-        `).bind(effectiveSince, effectiveUntil, minDomainCount)
-      ];
-
-      const results = await this.db.batch(statements);
       let totalAggregatedRows = 0;
-      for (const res of results) {
-        totalAggregatedRows += res.meta.changes || 0;
+
+      // Process profile-by-profile to guarantee clustered index range seeks (profile_id, timestamp)
+      // and completely eliminate whole-table full scans on logs.
+      for (const profile of profiles) {
+        const statements: D1PreparedStatement[] = [
+          // 1. Action rollups
+          this.db.prepare(`
+            INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+            SELECT
+                ?,
+                'action',
+                (timestamp / 3600) * 3600 AS hour_timestamp,
+                action,
+                '',
+                COALESCE(access_point_id, ''),
+                COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+            GROUP BY (timestamp / 3600) * 3600, action, COALESCE(access_point_id, '')
+            ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+            DO UPDATE SET count = count + excluded.count
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil),
+
+          // 2. Client IP & Country rollups
+          this.db.prepare(`
+            INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+            SELECT
+                ?,
+                'client',
+                (timestamp / 3600) * 3600 AS hour_timestamp,
+                client_ip,
+                COALESCE(geo_country, ''),
+                COALESCE(access_point_id, ''),
+                COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+              AND client_ip IS NOT NULL AND client_ip != '' AND client_ip != '[Encrypted]'
+            GROUP BY (timestamp / 3600) * 3600, client_ip, COALESCE(geo_country, ''), COALESCE(access_point_id, '')
+            ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+            DO UPDATE SET count = count + excluded.count
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil),
+
+          // 3. Destination Country rollups
+          this.db.prepare(`
+            INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+            SELECT
+                ?,
+                'dest',
+                (timestamp / 3600) * 3600 AS hour_timestamp,
+                UPPER(CASE 
+                  WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+                  WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+                  ELSE ''
+                END) AS key,
+                MAX(CASE 
+                  WHEN dest_country IS NOT NULL AND dest_country != '' THEN dest_country
+                  WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country')
+                  ELSE 'Unknown'
+                END) AS sub_key,
+                COALESCE(access_point_id, '') AS access_point_id,
+                COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+              AND (
+                (dest_country_code IS NOT NULL AND dest_country_code != '')
+                OR
+                (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND json_extract(dest_geoip, '$.country_code') IS NOT NULL AND json_extract(dest_geoip, '$.country_code') != '')
+              )
+            GROUP BY (timestamp / 3600) * 3600, 
+                     UPPER(CASE 
+                       WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+                       WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+                       ELSE ''
+                     END),
+                     COALESCE(access_point_id, '')
+            ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+            DO UPDATE SET count = count + excluded.count
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil),
+
+          // 4. Domain rollups
+          this.db.prepare(`
+            INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+            SELECT
+                ?,
+                'domain',
+                (timestamp / 3600) * 3600 AS hour_timestamp,
+                domain,
+                action,
+                COALESCE(access_point_id, ''),
+                COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+              AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
+            GROUP BY (timestamp / 3600) * 3600, domain, action, COALESCE(access_point_id, '')
+            HAVING COUNT(*) >= ?
+            ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+            DO UPDATE SET count = count + excluded.count
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil, minDomainCount)
+        ];
+
+        const results = await this.db.batch(statements);
+        for (const res of results) {
+          totalAggregatedRows += res.meta.changes || 0;
+        }
       }
 
       await systemSettings.set("last_hourly_rollup_timestamp", String(effectiveUntil));
