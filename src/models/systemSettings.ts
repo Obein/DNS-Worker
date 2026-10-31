@@ -59,7 +59,12 @@ export class SystemSettingsModel {
         await this.ensureTable();
         return {};
       }
-      throw e;
+      console.warn("[SystemSettingsModel] Failed to read all settings from DB (serving memory cache):", errorMsg);
+      const fallbackSettings: Record<string, string> = {};
+      for (const [k, v] of MEMORY_CACHE.entries()) {
+        if (v.value !== null) fallbackSettings[k] = v.value;
+      }
+      return fallbackSettings;
     }
   }
 
@@ -86,7 +91,10 @@ export class SystemSettingsModel {
         await this.ensureTable();
         return null;
       }
-      throw e;
+      console.warn(`[SystemSettingsModel] Failed to read key "${key}" from DB (using in-memory fallback):`, errorMsg);
+      // Cache null for 60s to prevent spamming blocked/failing DB on every DNS request
+      MEMORY_CACHE.set(key, { value: null, expiresAt: Date.now() + 60_000 });
+      return null;
     }
   }
 

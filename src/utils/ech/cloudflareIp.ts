@@ -1,7 +1,8 @@
 import { createCidrMatcher } from "../cidr";
+import { DEFAULT_CF_PROXY_CIDRS } from "./constants";
 
-let activeCfProxyCidrs: readonly string[] = [];
-let activeCfMatcher: ((ip: string) => boolean) | null = null;
+let activeCfProxyCidrs: readonly string[] = DEFAULT_CF_PROXY_CIDRS;
+let activeCfMatcher: ((ip: string) => boolean) | null = createCidrMatcher(DEFAULT_CF_PROXY_CIDRS);
 
 /**
  * Updates the in-memory Cloudflare CIDR list and recompiles the fast matcher.

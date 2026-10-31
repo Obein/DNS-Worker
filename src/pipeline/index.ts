@@ -1,4 +1,5 @@
-import { Context, DNSQuery, ResolutionResult } from "../types";
+import { Context, DNSQuery, ProfileSettings, ResolutionResult } from "../types";
+import { DEFAULT_FAIL_OPEN_UPSTREAM } from "../constants/presets";
 import { buildResponse } from "../utils/dns";
 import { dnsCache, pipelineCache } from "./cache";
 import { pipelineConfig } from "./config";
@@ -46,7 +47,18 @@ export const pipeline = {
 
     // 加载配置
     const config = await pipelineConfig.load(context, track);
-    if (!config) return { answer: new Uint8Array(), ttl: 0, action: "FAIL", reason: "Profile Not Found" };
+    if (!config) {
+      const failOpenUpstream = context.env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM;
+      console.warn(`[Pipeline] Config unavailable for profile ${context.profileId}. Failing open to ${failOpenUpstream}`);
+      const fallbackSettings: ProfileSettings = {
+        upstream: [failOpenUpstream],
+        default_policy: "ALLOW",
+        log_retention_days: 0,
+        ecs: { enabled: true, use_client_ip: true }
+      };
+      const final = await pipelineResolver.resolve(request, query, context, fallbackSettings, "PASS", "Fail-Open Fallback");
+      return { ...final, timings: { ...timings, ...final.timings } };
+    }
 
     // 匹配规则 (本地 + 外部)
     const matchResult = await pipelineFilter.match(request, query, context, config.settings, config.rules, config.bloom, track);

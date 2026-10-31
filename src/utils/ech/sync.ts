@@ -2,8 +2,10 @@ import { D1Database } from "@cloudflare/workers-types";
 import { parseCidr } from "../cidr";
 import { SystemSettingsModel } from "../../models/systemSettings";
 import { updateActiveCfProxyCidrs, getActiveCfProxyCidrs } from "./cloudflareIp";
+import { DEFAULT_CF_PROXY_CIDRS } from "./constants";
 
 let cachedActiveCfEchConfig: string | null = null;
+let isRangesInitialized = false;
 let loadPromise: Promise<void> | null = null;
 
 /**
@@ -48,8 +50,7 @@ export async function saveActiveCfEchConfig(db: D1Database, echBase64: string): 
  * @param db - D1Database instance.
  */
 export async function ensureCloudflareIpRangesLoaded(db: D1Database): Promise<void> {
-  const currentCidrs = getActiveCfProxyCidrs();
-  if (currentCidrs.length > 0) {
+  if (isRangesInitialized) {
     return;
   }
   if (!loadPromise && db) {
@@ -69,14 +70,22 @@ export async function ensureCloudflareIpRangesLoaded(db: D1Database): Promise<vo
           const parsed = JSON.parse(cachedCidrs);
           if (Array.isArray(parsed) && parsed.length > 0) {
             updateActiveCfProxyCidrs(parsed);
+            isRangesInitialized = true;
             return;
           }
         }
         // If not in DB, sync from official endpoints
-        await syncCloudflareIpRanges(db, true);
+        const res = await syncCloudflareIpRanges(db, true);
+        if (!res?.success && getActiveCfProxyCidrs().length === 0) {
+          updateActiveCfProxyCidrs(DEFAULT_CF_PROXY_CIDRS);
+        }
       } catch (e) {
-        console.warn("[ECH] Could not load Cloudflare IP ranges from DB:", e);
+        console.warn("[ECH] Could not load Cloudflare IP ranges from DB (using static preset):", e);
+        if (getActiveCfProxyCidrs().length === 0) {
+          updateActiveCfProxyCidrs(DEFAULT_CF_PROXY_CIDRS);
+        }
       } finally {
+        isRangesInitialized = true;
         loadPromise = null;
       }
     })();
