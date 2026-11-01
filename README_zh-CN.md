@@ -45,7 +45,7 @@ dns-worker
 # 访问控制台: http://localhost:10080
 ```
 
-#### 容器化一键部署 (Docker / Bun LTS)
+#### 容器化一键部署 (Docker，Beta)
 ```bash
 # 后台启动并直接映射 443 端口与 TLS 证书（建议通过 443 访问；满足证书时 80 端口自动重定向至 HTTPS）
 docker run -d \

@@ -45,7 +45,7 @@ dns-worker
 # 存取主控台: http://localhost:10080
 ```
 
-#### 容器化一鍵部署 (Docker / Bun LTS)
+#### 容器化一鍵部署 (Docker，Beta)
 ```bash
 # 背景啟動並直接對應 443 埠與 TLS 憑證（建議透過 443 存取；滿足憑證時 80 埠自動重新導向至 HTTPS）
 docker run -d \

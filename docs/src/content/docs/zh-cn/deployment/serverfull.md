@@ -18,6 +18,76 @@ DNS Worker 可以完全脱离 Cloudflare Workers，直接在 Linux、Windows、m
 
 ---
 
+## CLI 模式 (NPM，推荐)
+
+独立运行 DNS Worker，该模式直接运行在宿主机操作系统上，不仅具备最佳的 I/O 吞吐性能与极低内存开销，而且自带跨平台系统服务管理器，可一键完成守护进程注册、开机自启与配置管理。
+
+### 1. 全局安装与快速启动
+
+通过 npm 进行全局安装并启动：
+
+```bash
+# 全局安装 CLI
+npm install -g dns-worker
+
+# 生成标准默认 .env 配置文件模板
+dns-worker config init
+
+# 启动服务
+dns-worker
+```
+
+或者无需全局安装，直接通过 `npx` 极速试用运行：
+
+```bash
+npx dns-worker
+```
+
+启动成功后，通过浏览器访问 `http://localhost:10080`（或服务器 IP:10080）即可进入 Web 控制台进行初始化配置。
+
+### 2. 常用管理命令
+
+DNS Worker CLI 内置了完善的运维管理指令：
+
+```bash
+# 查看服务运行时状态与数据库健康度
+dns-worker status
+
+# 查看或初始化配置文件路径
+dns-worker config show
+dns-worker config init
+
+# 查看当前活跃的 ECH 密钥配置与外层 SNI 域名
+dns-worker ech
+
+# 恢复默认 .env 配置并清空数据库（出厂重置）
+dns-worker reset
+```
+
+### 3. 一键注册为常驻后台服务
+
+为保证服务器开机自启并在崩溃时自动拉起重启，可一键注册为系统后台常驻服务：
+
+- **Linux (systemd)**：
+  ```bash
+  # 一键安装为 systemd 守护进程
+  sudo dns-worker service install
+
+  # 启动并查看状态
+  sudo dns-worker service start
+  sudo dns-worker service status
+  ```
+- **Windows (计划任务)**：
+  ```powershell
+  # 以管理员身份安装计划任务服务
+  dns-worker service install
+  dns-worker service status
+  ```
+
+更多服务管理命令详见 [常驻后台服务管理](/DNS-Worker/zh-cn/deployment/service/)。
+
+---
+
 ## 配置文件路径规范
 
 DNS Worker 在独立运行时自动维护标准持久化存储目录：
@@ -39,7 +109,7 @@ dns-worker config init
 
 ---
 
-## 容器化部署 (Docker / Bun LTS 运行时)
+## 容器化部署 (Docker，Beta)
 
 DNS Worker 提供官方容器镜像构建流程，基于 **Bun LTS** (`oven/bun:1-slim`) 最小化运行基底，具备极低内存占用与毫秒级冷启动特性。
 
@@ -75,21 +145,6 @@ docker run -d \
   - `/var/lib/dns-worker`：存储 SQLite 数据库文件（`dns_worker.sqlite`）与自动持久化的 JWT 密钥
   - `/etc/dns-worker`：挂载宿主机目录以提供自定义 `.env` 配置文件
   - `/etc/ssl/dns-worker`：挂载 TLS 证书链与私钥（`fullchain.pem` 与 `privkey.pem`），系统启动时自动识别并激活 HTTPS / DoT
-
-### 打包与发布至 Docker Hub
-
-镜像在推送 Git 发版标签（`v*`）时会自动通过 GitHub Actions 构建并发布至 Docker Hub，亦可在本地通过脚本手动构建发布：
-
-```bash
-# 本地构建镜像（自动读取 package.json 版本并打标签）
-npm run docker:build
-
-# 多架构打包（linux/amd64, linux/arm64）并发布至 Docker Hub
-npm run docker:multiarch -- --push
-
-# 推送本地标签至 Docker Hub
-npm run docker:push
-```
 
 ---
 
@@ -210,5 +265,5 @@ dns-worker reset --force
 
 ## 后续步骤
 
-- [配置 Linux systemd 后台常驻服务](/DNS-Worker/deployment/service/)
-- [配置 Let's Encrypt TLS 证书以开启 HTTPS 与 DoT](/DNS-Worker/advanced/tls-certs/)
+- [配置 Linux systemd 后台常驻服务](/DNS-Worker/zh-cn/deployment/service/)
+- [配置 Let's Encrypt TLS 证书以开启 HTTPS 与 DoT](/DNS-Worker/zh-cn/advanced/tls-certs/)
