@@ -1,99 +1,70 @@
 /**
  * @file syncEngine.ts
- * @description Synchronization engine handling forward delta syncs, missing interval backfills,
- * and watermark tracking between server and local SQLite.
+ * @description Synchronization engine orchestrating incremental forward syncs, missing interval backfills,
+ * resumable target interval syncs, and watermark tracking between server and local SQLite.
  */
 
-import type { LogEntry } from '../../views/LogsView/types';
-import type { SyncWatermark } from './types';
-import type { LocalDbWorkerBridge } from './workerBridge';
-import { profileFetch } from '../profiles';
-import { e2ee } from '../e2ee';
+import type { LogEntry } from "../../views/LogsView/types";
+import type { SyncWatermark } from "./types";
+import type { LocalDbWorkerBridge } from "./workerBridge";
+import { SyncCheckpointManager, type SyncCheckpoint } from "./syncCheckpoint";
+import { SyncWatermarkManager } from "./syncWatermark";
+import { planMissingIntervals } from "./syncIntervalPlanner";
+import { SyncLogFetcher } from "./syncLogFetcher";
 
-export interface SyncCheckpoint {
-  since: number;
-  until: number;
-  checkpointBefore: number;
-  syncedCount: number;
-  totalExpected: number;
-  updatedAt: number;
-}
+export type { SyncCheckpoint } from "./syncCheckpoint";
 
 /**
- * Orchestrates log ingestion, pagination, decryption, and watermark maintenance.
+ * Orchestrates log ingestion, pagination, decryption, checkpointing, and watermark maintenance.
  */
 export class LocalDbSyncEngine {
   /** In-flight synchronization promises per profile to deduplicate concurrent requests */
   private inFlightSyncs = new Map<string, Promise<number>>();
   private readonly bridge: LocalDbWorkerBridge;
+  private readonly checkpointManager: SyncCheckpointManager;
+  private readonly watermarkManager: SyncWatermarkManager;
+  private readonly fetcher: SyncLogFetcher;
 
   constructor(bridge: LocalDbWorkerBridge) {
     this.bridge = bridge;
+    this.checkpointManager = new SyncCheckpointManager();
+    this.watermarkManager = new SyncWatermarkManager(bridge);
+    this.fetcher = new SyncLogFetcher(bridge);
   }
 
   /**
    * Retrieves any active synchronization checkpoint for the given profile and exact time range.
    */
   getCheckpoint(profileId: string, since: number, until: number): SyncCheckpoint | null {
-    try {
-      const raw = localStorage.getItem(`obex_sync_checkpoint_${profileId}`);
-      if (!raw) return null;
-      const parsed: SyncCheckpoint = JSON.parse(raw);
-      if (
-        parsed &&
-        parsed.since === since &&
-        parsed.until === until &&
-        typeof parsed.checkpointBefore === "number" &&
-        parsed.checkpointBefore > since &&
-        parsed.checkpointBefore < until
-      ) {
-        return parsed;
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return this.checkpointManager.getCheckpoint(profileId, since, until);
   }
 
   /**
    * Saves a synchronization checkpoint so sync can resume from the last committed batch cursor.
    */
   saveCheckpoint(profileId: string, checkpoint: SyncCheckpoint): void {
-    try {
-      localStorage.setItem(`obex_sync_checkpoint_${profileId}`, JSON.stringify(checkpoint));
-    } catch {}
+    this.checkpointManager.saveCheckpoint(profileId, checkpoint);
   }
 
   /**
    * Clears the synchronization checkpoint upon completion or invalidation.
    */
   clearCheckpoint(profileId: string): void {
-    try {
-      localStorage.removeItem(`obex_sync_checkpoint_${profileId}`);
-    } catch {}
+    this.checkpointManager.clearCheckpoint(profileId);
   }
 
   /**
    * Retrieves the sync watermark for a given profile.
-   *
-   * @param profileId - Profile identifier.
-   * @returns Watermark row or null.
    */
   async getWatermark(profileId: string): Promise<SyncWatermark | null> {
-    await this.bridge.init();
-    return this.bridge.sendRequest<SyncWatermark | null>('GET_WATERMARK', { profileId });
+    return this.watermarkManager.getWatermark(profileId);
   }
 
   /**
    * Updates or expands the watermark time boundaries for a profile.
-   *
-   * @param profileId - Profile identifier.
-   * @param start - Start timestamp in seconds.
-   * @param end - End timestamp in seconds.
    */
   async updateWatermarkBounds(profileId: string, start: number, end: number): Promise<void> {
-    await this.bridge.init();
-    await this.bridge.sendRequest('UPDATE_WATERMARK_BOUNDS', { profileId, start, end });
+    return this.watermarkManager.updateWatermarkBounds(profileId, start, end);
   }
 
   /**
@@ -127,7 +98,7 @@ export class LocalDbSyncEngine {
       const now = Math.floor(Date.now() / 1000);
 
       // Throttling: If watermark exists and was synced within the last 15 seconds, avoid redundant network calls
-      if (!force && watermark && watermark.last_synced_at && (now - watermark.last_synced_at < 15)) {
+      if (!force && watermark && watermark.last_synced_at && now - watermark.last_synced_at < 15) {
         return 0;
       }
 
@@ -147,7 +118,6 @@ export class LocalDbSyncEngine {
       let hasMore = true;
       let pageCount = 0;
 
-      // Pull logs in pages of 100 until reaching the watermark point or maxPages limit
       while (hasMore && pageCount < maxPages) {
         if (signal?.aborted) break;
 
@@ -156,45 +126,30 @@ export class LocalDbSyncEngine {
           url += `&before=${currentBefore}`;
         }
 
-        const res = await profileFetch(url, { signal });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch logs from server: ${await res.text()}`);
-        }
+        const { logs, inserted, oldestTimestamp } = await this.fetcher.fetchAndIngestBatch(
+          profileId,
+          url,
+          signal
+        );
 
-        const rawLogs: LogEntry[] = await res.json();
-        if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
+        if (logs.length === 0) {
           break;
         }
 
-        // Decrypt any encrypted logs before inserting into local SQLite
-        const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
-
-        // Insert this batch into local SQLite
-        const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-          profileId,
-          logs
-        });
-
         totalInserted += inserted;
         pageCount++;
-        if (onProgress) {
-          onProgress(totalInserted, totalInserted);
-        }
+        onProgress?.(totalInserted, totalInserted);
 
         if (logs.length < 100) {
           hasMore = false;
+        } else if (
+          oldestTimestamp === undefined ||
+          oldestTimestamp <= since ||
+          (currentBefore !== undefined && oldestTimestamp >= currentBefore)
+        ) {
+          hasMore = false;
         } else {
-          // Find the oldest timestamp in this batch for cursor pagination
-          const oldestInBatch = Number(logs[logs.length - 1].timestamp);
-          if (
-            isNaN(oldestInBatch) ||
-            oldestInBatch <= since ||
-            (currentBefore !== undefined && oldestInBatch >= currentBefore)
-          ) {
-            hasMore = false;
-          } else {
-            currentBefore = oldestInBatch;
-          }
+          currentBefore = oldestTimestamp;
         }
       }
 
@@ -244,51 +199,41 @@ export class LocalDbSyncEngine {
         url += `&before=${currentBefore}`;
       }
 
-      const res = await profileFetch(url, { signal });
-      if (!res.ok) {
-        console.warn(`[LocalDbSyncEngine] Failed to fetch logs for interval [${start}, ${end}] (${res.status}):`, await res.text());
-        break;
-      }
+      try {
+        const { logs, inserted, oldestTimestamp } = await this.fetcher.fetchAndIngestBatch(
+          profileId,
+          url,
+          signal
+        );
 
-      const rawLogs: LogEntry[] = await res.json();
-      if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
-        break;
-      }
+        if (logs.length === 0) {
+          break;
+        }
 
-      // Decrypt any encrypted logs before inserting into local SQLite
-      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
+        totalInserted += inserted;
+        pageCount++;
+        onProgress?.(totalInserted);
 
-      // Insert this batch into local SQLite
-      const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-        profileId,
-        logs
-      });
-
-      totalInserted += inserted;
-      pageCount++;
-      if (onProgress) {
-        onProgress(totalInserted);
-      }
-
-      if (logs.length < 100) {
-        hasMore = false;
-      } else {
-        const oldestInBatch = Number(logs[logs.length - 1].timestamp);
-        if (
-          isNaN(oldestInBatch) ||
-          oldestInBatch <= start ||
-          (currentBefore !== undefined && oldestInBatch >= currentBefore)
+        if (logs.length < 100) {
+          hasMore = false;
+        } else if (
+          oldestTimestamp === undefined ||
+          oldestTimestamp <= start ||
+          (currentBefore !== undefined && oldestTimestamp >= currentBefore)
         ) {
           hasMore = false;
         } else {
-          currentBefore = oldestInBatch;
+          currentBefore = oldestTimestamp;
         }
+      } catch (err: unknown) {
+        console.warn(
+          `[LocalDbSyncEngine] Failed to fetch logs for interval [${start}, ${end}]:`,
+          (err as Error)?.message || err
+        );
+        break;
       }
     }
 
-    // If hasMore is false, the interval was completely downloaded down to start.
-    // If hasMore is true, we only reached currentBefore, so the watermark boundary
-    // should only be expanded down to currentBefore (or start if currentBefore is undefined).
     const effectiveEarliest = hasMore && currentBefore !== undefined ? currentBefore : start;
     await this.updateWatermarkBounds(profileId, effectiveEarliest, end);
 
@@ -320,24 +265,8 @@ export class LocalDbSyncEngine {
 
     const PAGE_SIZE = 1000;
 
-    // 1. Determine total expected count from server summary (with exact=true for raw log accuracy)
-    let totalExpected = 0;
-    try {
-      const summaryRes = await profileFetch(
-        `/api/profiles/${profileId}/analytics/summary?start=${since}&end=${until}&exact=true`,
-        { signal }
-      );
-      if (summaryRes.ok) {
-        const summaryData: { count: number }[] = await summaryRes.json();
-        if (Array.isArray(summaryData)) {
-          totalExpected = summaryData.reduce((acc, curr) => acc + (curr.count || 0), 0);
-        }
-      }
-    } catch (summaryErr) {
-      if ((summaryErr as Error)?.name === "AbortError" || signal?.aborted) return 0;
-      console.warn("[LocalDbSyncEngine] Failed to query server summary for target interval:", summaryErr);
-    }
-
+    // 1. Determine total expected count from server summary
+    const totalExpected = await this.fetcher.fetchExpectedCount(profileId, since, until, signal);
     if (totalExpected === 0) {
       this.clearCheckpoint(profileId);
       return 0;
@@ -346,14 +275,20 @@ export class LocalDbSyncEngine {
     // 2. Query how many logs we already have locally in this interval
     let localCount = 0;
     try {
-      const localAnalytics = await this.bridge.sendRequest<{ summary?: { count: number }[] }>('QUERY_ANALYTICS', {
-        profileId,
-        since,
-        until,
-        bucketSec: 3600
-      });
+      const localAnalytics = await this.bridge.sendRequest<{ summary?: { count: number }[] }>(
+        "QUERY_ANALYTICS",
+        {
+          profileId,
+          since,
+          until,
+          bucketSec: 3600
+        }
+      );
       if (localAnalytics?.summary && Array.isArray(localAnalytics.summary)) {
-        localCount = localAnalytics.summary.reduce((acc: number, curr: { count: number }) => acc + (curr.count || 0), 0);
+        localCount = localAnalytics.summary.reduce(
+          (acc: number, curr: { count: number }) => acc + (curr.count || 0),
+          0
+        );
       }
     } catch {
       localCount = 0;
@@ -385,81 +320,61 @@ export class LocalDbSyncEngine {
         url += `&before=${currentBefore}`;
       }
 
-      let res: Response;
       try {
-        res = await profileFetch(url, { signal });
-      } catch (fetchErr) {
-        if ((fetchErr as Error)?.name === "AbortError" || signal?.aborted) {
-          // Transaction aborted by user; break immediately and keep checkpoint intact
+        const { logs, inserted, oldestTimestamp } = await this.fetcher.fetchAndIngestBatch(
+          profileId,
+          url,
+          signal
+        );
+
+        if (logs.length === 0) {
+          hasMore = false;
+          this.clearCheckpoint(profileId);
           break;
         }
-        throw fetchErr;
-      }
 
-      if (!res.ok) {
+        totalInserted += inserted;
+        pageCount++;
+
+        if (
+          oldestTimestamp === undefined ||
+          oldestTimestamp <= since ||
+          (currentBefore !== undefined && oldestTimestamp >= currentBefore) ||
+          logs.length < PAGE_SIZE
+        ) {
+          hasMore = false;
+          this.clearCheckpoint(profileId);
+        } else {
+          currentBefore = oldestTimestamp;
+          // Persist checkpoint after each successfully committed batch (1,000 items)
+          this.saveCheckpoint(profileId, {
+            since,
+            until,
+            checkpointBefore: oldestTimestamp,
+            syncedCount: totalInserted,
+            totalExpected,
+            updatedAt: Date.now()
+          });
+        }
+
+        // Progress only advances AFTER successful segment persistence
+        const currentProgress = Math.min(0.98, Math.max(0.05, totalInserted / totalExpected));
+        onProgress?.(currentProgress, totalInserted, totalExpected);
+
+        if (signal?.aborted) break;
+
+        // Small yield for UI responsiveness
+        await new Promise((r) => setTimeout(r, 15));
+      } catch (fetchErr: unknown) {
+        if ((fetchErr as Error)?.name === "AbortError" || signal?.aborted) {
+          break;
+        }
         console.warn(
-          `[LocalDbSyncEngine] Failed to fetch segment for interval [${since}, ${until}] (${res.status}):`,
-          await res.text()
+          `[LocalDbSyncEngine] Failed to fetch segment for interval [${since}, ${until}]:`,
+          (fetchErr as Error)?.message || fetchErr
         );
         break;
       }
-
-      if (signal?.aborted) break;
-
-      const rawLogs: LogEntry[] = await res.json();
-      if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) {
-        hasMore = false;
-        this.clearCheckpoint(profileId);
-        break;
-      }
-
-      if (signal?.aborted) break;
-
-      // Decrypt any encrypted logs before inserting into local SQLite
-      const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
-
-      if (signal?.aborted) break;
-
-      // Insert this batch into local SQLite atomically
-      const { inserted } = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-        profileId,
-        logs
-      });
-
-      totalInserted += inserted;
-      pageCount++;
-
-      const oldestInBatch = Number(logs[logs.length - 1].timestamp);
-
-      if (
-        isNaN(oldestInBatch) ||
-        oldestInBatch <= since ||
-        (currentBefore !== undefined && oldestInBatch >= currentBefore) ||
-        logs.length < PAGE_SIZE
-      ) {
-        hasMore = false;
-        this.clearCheckpoint(profileId);
-      } else {
-        currentBefore = oldestInBatch;
-        // Persist checkpoint after each successfully committed batch (1,000 items)
-        this.saveCheckpoint(profileId, {
-          since,
-          until,
-          checkpointBefore: oldestInBatch,
-          syncedCount: totalInserted,
-          totalExpected,
-          updatedAt: Date.now()
-        });
-      }
-
-      // Progress only advances AFTER successful segment persistence
-      const currentProgress = Math.min(0.98, Math.max(0.05, totalInserted / totalExpected));
-      onProgress?.(currentProgress, totalInserted, totalExpected);
-
-      if (signal?.aborted) break;
-
-      // Small yield for UI responsiveness
-      await new Promise((r) => setTimeout(r, 15));
     }
 
     if (!signal?.aborted && !hasMore) {
@@ -502,29 +417,7 @@ export class LocalDbSyncEngine {
 
     while (!signal?.aborted && passes < MAX_PASSES) {
       const watermark = await this.getWatermark(profileId);
-      const intervals: { start: number; end: number }[] = [];
-
-      if (!watermark || !watermark.earliest_timestamp || !watermark.latest_timestamp || watermark.latest_timestamp <= 0) {
-        intervals.push({ start: since, end: until });
-      } else {
-        const { earliest_timestamp: early, latest_timestamp: late } = watermark;
-
-        if (until <= early) {
-          // Entire query range is strictly earlier than local data
-          intervals.push({ start: since, end: until });
-        } else if (since >= late) {
-          // Entire query range is strictly later than local data
-          intervals.push({ start: since, end: until });
-        } else {
-          // Overlapping range: check forward and historical missing intervals
-          if (until > late) {
-            intervals.push({ start: Math.max(since, late - 60), end: until });
-          }
-          if (since < early) {
-            intervals.push({ start: since, end: Math.min(until, early + 60) });
-          }
-        }
-      }
+      const intervals = planMissingIntervals(watermark, since, until);
 
       if (intervals.length === 0) {
         break;
@@ -533,7 +426,13 @@ export class LocalDbSyncEngine {
       let insertedInPass = 0;
       for (const interval of intervals) {
         if (signal?.aborted) break;
-        const count = await this.syncInterval(profileId, interval.start, interval.end, signal, onProgress);
+        const count = await this.syncInterval(
+          profileId,
+          interval.start,
+          interval.end,
+          signal,
+          onProgress
+        );
         insertedInPass += count;
       }
 
@@ -570,22 +469,7 @@ export class LocalDbSyncEngine {
     limit: number = 50,
     signal?: AbortSignal
   ): Promise<LogEntry[]> {
-    await this.bridge.init();
-    if (signal?.aborted || before <= since) return [];
-
-    const url = `/api/profiles/${profileId}/logs?start=${since}&end=${before}&limit=${Math.min(limit, 100)}&before=${before}`;
-    const res = await profileFetch(url, { signal });
-    if (!res.ok) return [];
-
-    const rawLogs: LogEntry[] = await res.json();
-    if (!rawLogs || !Array.isArray(rawLogs) || rawLogs.length === 0) return [];
-
-    const logs = await e2ee.decryptLogsBatch(profileId, rawLogs);
-    await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-      profileId,
-      logs
-    });
-    return logs;
+    return this.fetcher.backfillLogs(profileId, before, since, limit, signal);
   }
 
   /**
@@ -596,12 +480,6 @@ export class LocalDbSyncEngine {
    * @returns Number of inserted rows.
    */
   async batchInsertLogs(profileId: string, logs: LogEntry[]): Promise<number> {
-    if (!logs || logs.length === 0) return 0;
-    await this.bridge.init();
-    const res = await this.bridge.sendRequest<{ inserted: number }>('SYNC_BATCH', {
-      profileId,
-      logs
-    });
-    return res?.inserted || 0;
+    return this.fetcher.batchInsertLogs(profileId, logs);
   }
 }
