@@ -5,9 +5,68 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { Buffer } from 'node:buffer';
 import { DatabaseSync } from 'node:sqlite';
 import { D1Database, D1PreparedStatement, D1Result, D1ExecResult, D1DatabaseSession } from '@cloudflare/workers-types';
 import { getPackageRoot } from './config';
+
+/**
+ * Normalizes input parameter values to primitive types safely bindable by SQLite and node:sqlite.
+ *
+ * SQLite natively supports: NULL, INTEGER, REAL, TEXT, and BLOB.
+ * node:sqlite accepts:
+ *   - null
+ *   - number / bigint
+ *   - string
+ *   - Buffer / Uint8Array (BLOB)
+ *
+ * In older Node.js versions (< v26.8.0) and Bun, node:sqlite rejects raw ArrayBuffer instances
+ * with "TypeError: Provided value cannot be bound to SQLite parameter (ERR_INVALID_ARG_TYPE)".
+ * It also rejects boolean and undefined values.
+ *
+ * This normalizer converts:
+ *   - undefined -> null
+ *   - boolean -> 1 or 0
+ *   - ArrayBuffer -> Buffer.from(val)
+ *   - ArrayBufferView (Uint8Array, DataView, etc.) -> Buffer.from(val.buffer, val.byteOffset, val.byteLength)
+ */
+export function toSqliteParam(val: unknown): any {
+  if (val === null || val === undefined) {
+    return null;
+  }
+  if (typeof val === 'boolean') {
+    return val ? 1 : 0;
+  }
+  if (val instanceof ArrayBuffer) {
+    return Buffer.from(val);
+  }
+  if (ArrayBuffer.isView(val)) {
+    return Buffer.from(val.buffer, val.byteOffset, val.byteLength);
+  }
+  return val;
+}
+
+/**
+ * Normalizes values returned by SQLite into standard Cloudflare D1 types.
+ *
+ * node:sqlite returns BLOB columns as Uint8Array instances. Cloudflare Workers D1
+ * returns BLOB columns as ArrayBuffer instances. Converting Uint8Array to ArrayBuffer
+ * guarantees 100% API parity with Workers D1.
+ */
+export function fromSqliteValue(val: unknown): any {
+  if (val instanceof Uint8Array) {
+    return val.buffer.slice(val.byteOffset, val.byteOffset + val.byteLength);
+  }
+  return val;
+}
+
+export function fromSqliteRow<T = unknown>(row: Record<string, any>): T {
+  const normalized: Record<string, any> = {};
+  for (const [k, v] of Object.entries(row)) {
+    normalized[k] = fromSqliteValue(v);
+  }
+  return normalized as T;
+}
 
 export class NodeD1PreparedStatement implements D1PreparedStatement {
   private params: any[] = [];
@@ -18,7 +77,7 @@ export class NodeD1PreparedStatement implements D1PreparedStatement {
   ) {}
 
   bind(...values: any[]): D1PreparedStatement {
-    this.params = values.map(v => (typeof v === 'boolean' ? (v ? 1 : 0) : v));
+    this.params = values.map(toSqliteParam);
     return this as unknown as D1PreparedStatement;
   }
 
@@ -28,9 +87,9 @@ export class NodeD1PreparedStatement implements D1PreparedStatement {
       const row = stmt.get(...this.params) as Record<string, any> | undefined;
       if (!row) return null;
       if (colName) {
-        return (row[colName] ?? null) as T;
+        return fromSqliteValue(row[colName] ?? null) as T;
       }
-      return row as T;
+      return fromSqliteRow<T>(row);
     } catch (err: any) {
       console.warn(`[SQLite D1] Query error in first(): ${err.message}\nSQL: ${this.sql}`);
       throw err;
@@ -40,9 +99,10 @@ export class NodeD1PreparedStatement implements D1PreparedStatement {
   async all<T = unknown>(): Promise<D1Result<T>> {
     try {
       const stmt = this.db.prepare(this.sql);
-      const rows = stmt.all(...this.params) as T[];
+      const rows = stmt.all(...this.params) as Record<string, any>[];
+      const normalizedRows = rows.map(r => fromSqliteRow<T>(r));
       return {
-        results: rows,
+        results: normalizedRows,
         success: true,
         meta: {
           duration: 0,
@@ -89,7 +149,7 @@ export class NodeD1PreparedStatement implements D1PreparedStatement {
     try {
       const stmt = this.db.prepare(this.sql);
       const rows = stmt.all(...this.params) as Record<string, any>[];
-      const rawRows = rows.map(r => Object.values(r));
+      const rawRows = rows.map(r => Object.values(r).map(fromSqliteValue));
       if (options?.columnNames && rows.length > 0) {
         return [Object.keys(rows[0]), ...rawRows];
       }

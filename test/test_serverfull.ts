@@ -12,6 +12,7 @@ import path from 'node:path';
 import dgram from 'node:dgram';
 import tls from 'node:tls';
 import https from 'node:https';
+import assert from 'node:assert';
 import { execSync } from 'node:child_process';
 import { initNodeGlobals } from '../src/serverfull/cache';
 import { initServerfullDb } from '../src/serverfull/db';
@@ -19,6 +20,9 @@ import { UdpDnsServer } from '../src/serverfull/udp';
 import { DotDnsServer } from '../src/serverfull/dot';
 import { HttpServer, HttpsServer } from '../src/serverfull/http';
 import { buildDNSQuery, parseDNSAnswer } from '../src/utils/dns';
+import { ListBloomModel } from '../src/models/listBloom';
+import { ProfileBloomModel } from '../src/models/profileBloom';
+import { BloomFilter } from '../src/utils/bloom';
 import { Env } from '../src/types';
 
 async function runTests() {
@@ -58,6 +62,44 @@ async function runTests() {
   // Add a custom block rule for 'ad.test.com'
   await db.prepare('INSERT INTO rules (profile_id, type, pattern, record_type) VALUES (?, ?, ?, ?)')
     .bind('prof1', 'BLOCK', 'ad.test.com', 'A').run();
+
+  // Verify ListBloomModel & ProfileBloomModel with binary BLOB chunks in SQLite D1
+  console.log('>>> [TEST] Testing ListBloomModel & ProfileBloomModel BLOB bindings...');
+  const listBloomModel = new ListBloomModel(db as any);
+  const profileBloomModel = new ProfileBloomModel(db as any);
+
+  // 1. Create a dummy list entry
+  const listRes = await db.prepare('INSERT INTO lists (profile_id, url, enabled) VALUES (?, ?, ?)')
+    .bind('prof1', 'https://test-list.local/domains.txt', 1).run();
+  const listId = Number(listRes.meta.last_row_id);
+
+  // 2. Build a test BloomFilter and save it via ListBloomModel (which binds ArrayBuffer as parameter 3)
+  const testBloom = BloomFilter.create(1000, 0.001);
+  testBloom.add('blocked-by-filter.example');
+  const bloomBuf = testBloom.toUint8Array().buffer as ArrayBuffer;
+
+  const upsertSuccess = await listBloomModel.upsertListBloom(listId, bloomBuf, now);
+  assert.strictEqual(upsertSuccess, true, 'upsertListBloom must succeed with ArrayBuffer chunk data');
+
+  const loadedBloomBuf = await listBloomModel.getListBloom(listId);
+  assert.ok(loadedBloomBuf !== null, 'getListBloom must retrieve the saved bloom filter');
+  const restoredBloom = BloomFilter.fromUint8Array(new Uint8Array(loadedBloomBuf!));
+  assert.strictEqual(restoredBloom.test('blocked-by-filter.example'), true, 'Restored bloom filter must contain added domain');
+  assert.strictEqual(restoredBloom.test('allowed.example'), false, 'Restored bloom filter must not contain unadded domain');
+
+  // 3. Test ProfileBloom staging and atomic promotion (which tests parameter re-binding)
+  const stagingSuccess = await profileBloomModel.upsertStagingBloom('prof1', bloomBuf, now);
+  assert.strictEqual(stagingSuccess, true, 'upsertStagingBloom must succeed with ArrayBuffer');
+
+  const promoteSuccess = await profileBloomModel.promoteStagingToActive('prof1', now);
+  assert.strictEqual(promoteSuccess, true, 'promoteStagingToActive must succeed');
+
+  const activeProfileBloom = await profileBloomModel.getProfileBloom('prof1');
+  assert.ok(activeProfileBloom !== null, 'getProfileBloom must retrieve promoted bloom filter');
+  assert.strictEqual(activeProfileBloom instanceof ArrayBuffer, true, 'getProfileBloom must return an ArrayBuffer for D1 parity');
+  const restoredProfileBloom = BloomFilter.fromUint8Array(new Uint8Array(activeProfileBloom!));
+  assert.strictEqual(restoredProfileBloom.test('blocked-by-filter.example'), true);
+  console.log('>>> [TEST] SUCCESS: BLOB binding and Bloom Filter operations verified on SQLite D1!');
 
   console.log('>>> [TEST] Database seeded successfully.');
 

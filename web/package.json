@@ -17,16 +17,16 @@
     "@types/qrcode": "^1.5.6",
     "@vnedyalk0v/react19-simple-maps": "^2.0.12",
     "clsx": "^2.1.1",
-    "i18next": "^26.5.11",
-    "i18next-browser-languagedetector": "^8.2.3",
-    "lucide-react": "^1.64.0",
+    "i18next": "^26.6.0",
+    "i18next-browser-languagedetector": "^8.2.4",
+    "lucide-react": "^1.66.0",
     "normalize.css": "^8.0.1",
     "plist": "^5.0.0",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-helmet-async": "^3.0.0",
-    "react-i18next": "^17.1.9",
+    "react-i18next": "^17.1.10",
     "react-is": "^19.3.1",
     "react-router-dom": "^7.18.5",
     "recharts": "^3.10.1",
@@ -52,6 +52,7 @@
   "overrides": {
     "vite": "npm:rolldown-vite@7.3.1",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "deepmerge": "^4.3.1"
   }
 }
