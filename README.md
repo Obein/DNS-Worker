@@ -45,7 +45,7 @@ dns-worker
 # Web Dashboard: http://localhost:10080
 ```
 
-#### Standalone Server via Docker (Bun LTS)
+#### Standalone Server via Docker (Beta)
 ```bash
 # Run container with HTTPS (443), DoT (853), classic DNS (53), and TLS certificates
 docker run -d \

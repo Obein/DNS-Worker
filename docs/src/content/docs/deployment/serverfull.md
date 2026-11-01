@@ -18,13 +18,83 @@ DNS Worker can run completely independent of Cloudflare Workers on your own VPS,
 
 ---
 
+## Quick Start via CLI (NPM, Recommended)
+
+Running DNS Worker via the NPM for physical servers, VPS instances, and local workstations. It runs directly on the host OS for optimal I/O throughput and minimal memory footprint, and includes a built-in cross-platform daemon service manager.
+
+### 1. Global Installation & Launch
+
+Install globally via npm and start immediately:
+
+```bash
+# Install CLI globally
+npm install -g dns-worker
+
+# Initialize standard default .env configuration file
+dns-worker config init
+
+# Start the resolver daemon
+dns-worker
+```
+
+Or run on-demand with zero permanent installation via `npx`:
+
+```bash
+npx dns-worker
+```
+
+Once running, navigate to `http://localhost:10080` (or `http://<your-server-ip>:10080`) in your web browser to access the Web Dashboard and complete initial setup.
+
+### 2. Common CLI Commands
+
+The DNS Worker CLI includes integrated tools for configuration, health inspection, and maintenance:
+
+```bash
+# View active service and database runtime status
+dns-worker status
+
+# View or inspect active configuration file paths
+dns-worker config show
+dns-worker config init
+
+# Inspect active ECH cryptographic configuration and outer SNI
+dns-worker ech
+
+# Restore default .env configuration and wipe database (factory reset)
+dns-worker reset
+```
+
+### 3. One-Click Background Service Setup
+
+To keep DNS Worker running in the background across system reboots with automatic crash recovery, register it as a system daemon:
+
+- **Linux (systemd)**:
+  ```bash
+  # Install as a systemd service
+  sudo dns-worker service install
+
+  # Start and check service status
+  sudo dns-worker service start
+  sudo dns-worker service status
+  ```
+- **Windows (Scheduled Task)**:
+  ```powershell
+  # Install as an Administrator scheduled task service
+  dns-worker service install
+  dns-worker service status
+  ```
+
+For more service management options, see [Background Service Management](/DNS-Worker/deployment/service/).
+
+---
+
 ## Directory Standards
 
 DNS Worker automatically manages standard persistent directories:
 
 - **Linux**:
-  - Configuration: `/etc/dns-worker/.env`
-  - Database: `/var/lib/dns-worker/dns_worker.sqlite`
+  - Configuration: `/etc/dns-worker/` (config file: `/etc/dns-worker/.env`)
+  - Database: `/var/lib/dns-worker/` (SQLite file: `/var/lib/dns-worker/dns_worker.sqlite`)
 - **Windows**:
   - Configuration & Data: `%ProgramData%\DNS-Worker\` (e.g. `C:\ProgramData\DNS-Worker\.env`)
 
@@ -39,7 +109,7 @@ dns-worker config init
 
 ---
 
-## Docker Deployment (Bun LTS Runtime)
+## Docker Deployment (Beta)
 
 DNS Worker provides an official containerized workflow powered by **Bun LTS** (`oven/bun:1-slim`) for minimal memory footprint and instant startup.
 
@@ -76,21 +146,6 @@ docker run -d \
   - `/etc/dns-worker`: Mount host directory to provide custom `.env` configuration file.
   - `/etc/ssl/dns-worker`: Mount host TLS certificates (`fullchain.pem` and `privkey.pem`) for automatic discovery and HTTPS activation.
 
-### Building & Publishing to Docker Hub
-
-Images can be published automatically via GitHub Actions upon pushing Git release tags (`v*`), or manually built using CLI scripts:
-
-```bash
-# Build local images with auto-tagging
-npm run docker:build
-
-# Build multi-platform images (linux/amd64, linux/arm64) and push to Docker Hub
-npm run docker:multiarch -- --push
-
-# Push existing local tags to Docker Hub
-npm run docker:push
-```
-
 ---
 
 ## Ports & Network Configuration
@@ -98,7 +153,7 @@ npm run docker:push
 Customize listening ports in `/etc/dns-worker/.env`:
 
 ```ini
-# Network interface binding (0.0.0.0 binds all interfaces, or 127.0.0.1 for local-only)
+# Bind host address (0.0.0.0 for all interfaces, 127.0.0.1 for local loopback only)
 SERVERFULL_HOST=0.0.0.0
 
 # Port configuration
@@ -107,24 +162,22 @@ SERVERFULL_DOT_PORT=853
 SERVERFULL_HTTP_PORT=10080
 SERVERFULL_HTTPS_PORT=10443
 
-# Toggle specific listeners
+# Disable specific services if desired
 SERVERFULL_DISABLE_HTTPS=false
 ```
 
 ---
 
-## Reverse Proxying HTTP & DoH (Caddy / Nginx)
+## Reverse Proxy with Caddy or Nginx (Port 10080)
 
-In production deployments, you can place a mature reverse proxy such as **Caddy** or **Nginx** in front of DNS Worker instead of exposing port `10080` (HTTP) directly or managing local certificates on port `10443` (HTTPS).
-
-The reverse proxy terminates TLS on standard port `443` (with automated Let's Encrypt / ZeroSSL certificates) and forwards traffic to `http://127.0.0.1:10080`.
+In production setups, in addition to binding port `10080` directly or using built-in HTTPS on port `10443`, **we strongly recommend placing a modern reverse proxy like Caddy or Nginx in front of DNS Worker**. The reverse proxy handles automated SSL certificate issuance and renewal on standard port `443` while forwarding requests to `http://127.0.0.1:10080`.
 
 > [!TIP]
-> When using a reverse proxy, set `SERVERFULL_DISABLE_HTTPS=true` in `.env` to disable the internal port 10443 listener and save system resources. You can also bind `SERVERFULL_HOST=127.0.0.1` so port `10080` is accessible strictly via localhost.
+> When using a reverse proxy, set `SERVERFULL_DISABLE_HTTPS=true` to save resources, and optionally set `SERVERFULL_HOST=127.0.0.1` to restrict access strictly to the local loopback.
 
-### Option 1: Caddy Configuration (Recommended)
+### Option 1: Caddy Reverse Proxy (Recommended)
 
-Caddy provides zero-configuration automated HTTPS with automatic renewal. Add this to `/etc/caddy/Caddyfile`:
+Caddy natively provisions and renews Let's Encrypt / ZeroSSL certificates automatically. Edit `/etc/caddy/Caddyfile`:
 
 ```caddy
 dns.example.com {
@@ -139,16 +192,16 @@ dns.example.com {
 ```
 
 > [!NOTE]
-> DNS Worker automatically inspects `CF-Connecting-IP`, `X-Real-IP`, and `X-Forwarded-For` (leftmost IP) on proxied HTTP requests. DNS query logs, user session lists, and security audits will accurately record the client's external IP address instead of `127.0.0.1`.
+> DNS Worker automatically recognizes and parses `CF-Connecting-IP`, `X-Real-IP`, and `X-Forwarded-For` headers. Your query logs, active sessions, and security audits will accurately record the client's genuine public IP instead of `127.0.0.1`.
 
-Reload Caddy:
+Reload Caddy to apply:
 ```bash
 sudo systemctl reload caddy
 ```
 
-### Option 2: Nginx Configuration
+### Option 2: Nginx Reverse Proxy
 
-If you use Nginx, add the following server block (e.g., `/etc/nginx/sites-available/dns-worker`):
+For Nginx, add the following server block to your site configuration (e.g. `/etc/nginx/sites-available/dns-worker`):
 
 ```nginx
 server {
@@ -165,7 +218,7 @@ server {
     ssl_certificate /etc/letsencrypt/live/dns.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/dns.example.com/privkey.pem;
 
-    # DoH and Web Dashboard reverse proxy
+    # DoH & Web Dashboard proxy
     location / {
         proxy_pass http://127.0.0.1:10080;
         proxy_http_version 1.1;
@@ -175,43 +228,39 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # WebSocket support (for live dashboard updates)
+        # WebSocket support for real-time dashboard updates
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
 }
 ```
 
-Reload Nginx:
+Test and reload Nginx:
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
 ```
-
-> [!NOTE]
-> **Client IP Forwarding**: Forwarding `X-Real-IP` and `X-Forwarded-For` is essential so that DNS Worker correctly records real client IPs, evaluates rate limits, and resolves geographic coordinates in query logs.
 
 ---
 
 ## Maintenance & Factory Reset
 
-If you need to restore the system to its initial state, use the `reset` command:
+To restore the system to its initial pristine state, use the `reset` command:
 
 ```bash
-# Interactive reset (requires secondary confirmation)
+# Interactive reset (prompts for confirmation)
 dns-worker reset
 
-# Automated / non-interactive reset
+# Automated non-interactive reset (force)
 dns-worker reset --force
 ```
 
 This operation will:
-1. Restore the `.env` configuration file to the built-in default template.
-2. Completely clear the SQLite database and reapply all migrations from scratch.
+1. Revert `/etc/dns-worker/.env` to the default configuration template.
+2. Clear the SQLite database and re-apply all migrations from scratch.
 
 ---
 
 ## Next Steps
 
-- [Configure systemd background daemon](/DNS-Worker/deployment/service/)
-- [Configure Let's Encrypt certificates for HTTPS & DoT](/DNS-Worker/advanced/tls-certs/)
-
+- [Configure Linux systemd Background Service](/DNS-Worker/deployment/service/)
+- [Configure Let's Encrypt TLS Certificates for HTTPS & DoT](/DNS-Worker/advanced/tls-certs/)
