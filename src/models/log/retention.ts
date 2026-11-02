@@ -95,12 +95,18 @@ export class LogRetentionModel {
         const effectiveDays = Math.min(days, maxRetentionDays);
         const threshold = Math.floor(Date.now() / 1000 - effectiveDays * 24 * 3600);
 
-        // Purge expired rollups matching retention policy
-        rollupStatements.push(
-          this.db.prepare(
-            "DELETE FROM hourly_rollups WHERE profile_id = ? AND hour_timestamp < ?"
-          ).bind(profile.id, threshold)
-        );
+        // Purge expired rollups matching retention policy across all metric types.
+        // Specifying metric_type allows SQLite to utilize the composite primary key
+        // (profile_id, metric_type, hour_timestamp) for instant index range seeks,
+        // avoiding profile-wide table scans.
+        const METRIC_TYPES = ['action', 'client', 'dest', 'domain'] as const;
+        for (const metric of METRIC_TYPES) {
+          rollupStatements.push(
+            this.db.prepare(
+              "DELETE FROM hourly_rollups WHERE profile_id = ? AND metric_type = ? AND hour_timestamp < ?"
+            ).bind(profile.id, metric, threshold)
+          );
+        }
 
         // Delete bounded number of rows per profile per hourly cron run if budget remains
         if (canDeleteLogs && effectiveBatchLimit > 0) {

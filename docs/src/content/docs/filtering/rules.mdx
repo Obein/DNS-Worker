@@ -94,28 +94,24 @@ DNS Worker provides instant visibility into intercepted threats and permitted re
 
 ---
 
-## 4. Match Engine Architecture: Bloom Filters & Trie
+## 4. Match Engine Architecture: Bloom Filter
 
-To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps), DNS Worker uses a **Dual-Layer Bloom Filter** architecture:
+To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps), DNS Worker uses a **high-performance, single-layer Bloom filter architecture**:
 
 ```mermaid
 flowchart TD
     REQ["Incoming Query (e.g. adserver.tracker.com)"]
-    BLOOM["Bloom Filter Fast Check<br/>(Compact Bitset in RAM / KV)"]
-    TRIE["Exact Trie Verification Check<br/>(Prevents false positive blocks)"]
-    PASS1["ALLOWED"]
-    BLOCK["BLOCKED"]
-    PASS2["ALLOWED (Collision Resolved)"]
+    BLOOM["Bloom Filter Fast Evaluation<br/>(Compact Bitset with Subdomain Hierarchy Strip)"]
+    PASS["ALLOWED (Clean)"]
+    BLOCK["BLOCKED (Matched)"]
 
     REQ --> BLOOM
-    BLOOM -->|"Negative (Clean)"| PASS1
-    BLOOM -->|"Positive (Possible Match)"| TRIE
-    TRIE -->|"Confirmed in Blocklist"| BLOCK
-    TRIE -->|"Hash Collision (False Alarm)"| PASS2
+    BLOOM -->|"Negative (Clean)"| PASS
+    BLOOM -->|"Positive (Matched)"| BLOCK
 ```
 
-1. **Bloom Filter Layer**: Queries are hashed across a compact bitset. Over 99% of non-blocked domains are instantly validated in $O(1)$ time without database I/O.
-2. **Exact Verification Layer**: If the Bloom filter detects a possible match, the query is checked against an exact memory Trie to eliminate false positives.
+1. **Ultra-Lean Single Layer**: Subscribed external blocklists are compiled directly into a compact binary Bloom filter bitset during background sync, completely eliminating the need to store or search heavy raw domain tables or in-memory prefix trees (Tries).
+2. **$O(1)$ Hierarchical Subdomain Check**: Queries evaluate the fully qualified domain and its stripped parent domains (e.g. `ad.tracker.com` $\to$ `tracker.com`) in microseconds, delivering minimal latency (`&lt; 0.1ms`) with an extremely low false-positive rate (default 0.01%).
 
 ---
 
