@@ -94,28 +94,24 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 
 ---
 
-## 4. 匹配引擎架构：布隆过滤器与前缀树 (Trie)
+## 4. 匹配引擎架构：布隆过滤器 (Bloom Filter)
 
-为在资源受限的环境（如 512MB 内存的 VPS 或 128MB 限制的 Cloudflare Workers 边缘节点）中实现超低延迟的大规模规则匹配，DNS Worker 采用了**双层布隆过滤器架构**：
+为在资源受限的环境（如 512MB 内存的 VPS 或 128MB 限制的 Cloudflare Workers 边缘节点）中实现超低延迟的大规模规则匹配，DNS Worker 采用了**高性能纯布隆过滤器匹配架构**：
 
 ```mermaid
 flowchart TD
     REQ["收到查询请求 (例如 adserver.tracker.com)"]
-    BLOOM["布隆过滤器快速初筛 (Bloom Filter)<br/>(紧凑位图 Bitset)"]
-    TRIE["精确前缀树校验 (Trie Check)<br/>(100% 消除误判，验证真实黑名单)"]
-    PASS1["放行通过"]
-    BLOCK["拦截阻断"]
-    PASS2["放行通过 (排除碰撞)"]
+    BLOOM["布隆过滤器极速匹配 (Bloom Filter)<br/>(支持精确域名与泛子域名逐级检测)"]
+    PASS["放行通过 (Clean)"]
+    BLOCK["拦截阻断 (Block)"]
 
     REQ --> BLOOM
-    BLOOM -->|"未命中 (Clean)"| PASS1
-    BLOOM -->|"疑似命中 (Match)"| TRIE
-    TRIE -->|"确认在黑名单"| BLOCK
-    TRIE -->|"哈希碰撞误报"| PASS2
+    BLOOM -->|"未命中"| PASS
+    BLOOM -->|"命中黑名单"| BLOCK
 ```
 
-1. **第一层：布隆过滤器初筛**：将查询域名在位图中进行极速哈希比对。超过 99% 的合法域名无需访问数据库，可在 $O(1)$ 时间内极速放行。
-2. **第二层：前缀树精确校验**：当布隆过滤器报告可能匹配时，快速检索内存前缀树（Trie）以彻底剔除哈希碰撞，确保 0 误杀率。
+1. **单层极致轻量**：外部订阅规则在下载同步时，直接编译并压缩为紧凑的二进制布隆过滤器位图（Bitset），完全摒弃了消耗大量内存的明文域名表与前缀树（Trie）。
+2. **$O(1)$ 极速子域递进检测**：查询进入后，引擎在微秒级时间内比对当前域名及逐级剥离的父级域名（如 `ad.tracker.com` $\to$ `tracker.com`），兼顾极低延迟（`&lt; 0.1ms`）与极低误判率（默认误判率仅 0.01%）。
 
 ---
 

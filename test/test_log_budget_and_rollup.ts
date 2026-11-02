@@ -64,13 +64,13 @@ async function runTests() {
       assert.strictEqual(limitParam, 300, "perProfileLimit should be 300 (900 / 3)");
     }
 
-    const domainRollupDeletes = executedQueries.filter(q => q.query.includes("DELETE FROM domain_hourly_rollups"));
-    assert.strictEqual(domainRollupDeletes.length, 3, "Should generate domain rollup delete for each profile");
-    for (const stmt of domainRollupDeletes) {
-      assert(stmt.query.includes("action IN ('PASS', 'BLOCK', 'REDIRECT', 'FAIL')"), "Must use action IN to enable primary key B-Tree range scan");
+    const rollupDeletes = executedQueries.filter(q => q.query.includes("DELETE FROM hourly_rollups"));
+    assert.strictEqual(rollupDeletes.length, 12, "Should generate 4 metric type delete statements for each of the 3 profiles");
+    for (const stmt of rollupDeletes) {
+      assert(stmt.query.includes("metric_type = ?"), "Must bind metric_type to enable composite primary key B-Tree range scan");
     }
 
-    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile, domain rollups indexed.");
+    console.log("  Passed: batchLimit 900 correctly distributed to 300 per profile, hourly_rollups indexed deletions generated.");
   }
 
   // 2. Test LogAggregationModel.aggregateHourlyRollups with minDomainCount
@@ -81,6 +81,12 @@ async function runTests() {
     const mockDb: any = {
       prepare(query: string) {
         return {
+          async all() {
+            if (query.includes("FROM profiles")) {
+              return { results: [{ id: "p1" }] };
+            }
+            return { results: [] };
+          },
           bind(...args: any[]) {
             return {
               query,
@@ -117,14 +123,14 @@ async function runTests() {
     // Run aggregation for 1 hour with minDomainCount = 2
     await aggModel.aggregateHourlyRollups(1000000, 1003600, 2);
 
-    const domainRollupStmt = executedQueries.find(q => q.query.includes("INSERT OR REPLACE INTO domain_hourly_rollups"));
-    assert(domainRollupStmt !== undefined, "domain_hourly_rollups statement must be executed");
+    const domainRollupStmt = executedQueries.find(q => q.query.includes("INSERT INTO hourly_rollups") && q.query.includes("'domain'"));
+    assert(domainRollupStmt !== undefined, "domain hourly_rollups statement must be executed");
     assert(domainRollupStmt.query.includes("HAVING COUNT(*) >= ?"), "Query must include HAVING COUNT(*) >= ?");
 
-    const boundMinCount = domainRollupStmt.params[2];
+    const boundMinCount = domainRollupStmt.params[4];
     assert.strictEqual(boundMinCount, 2, "HAVING clause must bind minDomainCount (2)");
 
-    console.log("  Passed: domain_hourly_rollups binds HAVING COUNT(*) >= 2.");
+    console.log("  Passed: hourly_rollups domain metric binds HAVING COUNT(*) >= 2.");
   }
 
   // 3. Test LogCoreModel.cleanup maxRows default
@@ -218,7 +224,7 @@ async function runTests() {
     assert.strictEqual(logDeleteStmts.length, 0, "When daily budget is exhausted, NO DELETE FROM logs statements should be executed");
 
     // But rollups should still be cleaned up
-    const rollupDeleteStmts = executedQueries.filter(q => q.query.includes("_hourly_rollups"));
+    const rollupDeleteStmts = executedQueries.filter(q => q.query.includes("hourly_rollups"));
     assert(rollupDeleteStmts.length > 0, "Rollup cleanups should still run");
 
     console.log("  Passed: Log deletions skipped when daily budget is exhausted.");
