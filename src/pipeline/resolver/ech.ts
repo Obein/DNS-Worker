@@ -57,6 +57,13 @@ export async function processBestEffortEch(
       ? settings.best_effort_ech
       : Boolean(settings.best_effort_ech?.enabled);
 
+  const isServerEchEnabled =
+    context.env.SERVERFULL_ECH_ENABLED !== undefined
+      ? (context.env.SERVERFULL_ECH_ENABLED === true || context.env.SERVERFULL_ECH_ENABLED === "true" || context.env.SERVERFULL_ECH_ENABLED === "1")
+      : true;
+
+  const isEchActive = echEnabled && isServerEchEnabled;
+
   let answer = initialAnswer;
   let parsedAnswers = initialParsedAnswers;
   let effectiveReason = initialReason;
@@ -67,37 +74,45 @@ export async function processBestEffortEch(
     const isDdrQuery = queryLower.startsWith("_dns.") || Boolean(serverDomain && (queryLower === `_dns.${serverDomain}` || queryLower.endsWith(`._dns.${serverDomain}`)));
     const isServerDomainQuery = Boolean(serverDomain && (queryLower === serverDomain || queryLower.endsWith(`.${serverDomain}`)));
 
-    if (isDdrQuery || isServerDomainQuery) {
-      const frontingDomain =
-        context.env.SERVERFULL_ECH_FRONTING_DOMAIN ||
-        (typeof settings.best_effort_ech === "object" && settings.best_effort_ech?.fronting_domain) ||
-        DEFAULT_ECH_FRONTING_DOMAIN;
-      const echConfigBase64 = context.env.SERVERFULL_ECH_CONFIG || buildCloudflareEchConfig(frontingDomain);
-      const httpsPort = context.env.SERVERFULL_HTTPS_PORT || context.env.HTTPS_PORT || 10443;
+    // 1. Discovery of Designated Resolvers (RFC 9460 Section 8 DDR)
+    if (isDdrQuery) {
+      const targetType = query.type === "HTTPS" || query.type === "TYPE65" ? "HTTPS" : "SVCB";
       const dotPort = context.env.SERVERFULL_DOT_PORT || context.env.DOT_PORT || 853;
+      const customEch = context.env.SERVERFULL_ECH_CONFIG?.trim();
 
-      if (isDdrQuery) {
-        // RFC 9460 Section 8: Discovery of Designated Resolvers (DDR) for DoQ (853), DoT (853), and DoH3 with ECH
-        const targetType = query.type === "HTTPS" || query.type === "TYPE65" ? "HTTPS" : "SVCB";
-        const ddrSvcb = `1 . alpn=doq,dot port=${dotPort} ech=${echConfigBase64}`;
-        answer = buildResponse(query.raw, targetType, ddrSvcb, 300, 0);
-        parsedAnswers = parseDNSAnswer(answer);
-        effectiveReason = "DDR SVCB (DoQ/DoT/H3/ECH)";
-        return { answer, parsedAnswers, effectiveReason };
+      // Only advertise ECH in DDR if ECH is active AND a dedicated server ECH config is configured
+      let ddrSvcb = `1 . alpn=doq,dot port=${dotPort}`;
+      if (isEchActive && customEch) {
+        ddrSvcb += ` ech=${customEch}`;
       }
 
-      if (isServerDomainQuery) {
-        // RFC 9460 HTTPS Service Binding: Advertises HTTP/3 (alpn=h3,h2), port, and ECH
+      answer = buildResponse(query.raw, targetType, ddrSvcb, 300, 0);
+      parsedAnswers = parseDNSAnswer(answer);
+      effectiveReason = isEchActive && customEch ? "DDR SVCB (DoQ/DoT/ECH)" : "DDR SVCB (DoQ/DoT)";
+      return { answer, parsedAnswers, effectiveReason };
+    }
+
+    // 2. Server Base Domain (SERVERFULL_DOT_DOMAIN):
+    // Only synthesize an authoritative server HTTPS record if custom server ECH is explicitly configured.
+    // Never synthesize fake Cloudflare ECH for self-hosted server domains, which would cause
+    // ERR_ECH_FALLBACK_CERTIFICATE_INVALID in client browsers accessing the web dashboard.
+    if (isServerDomainQuery) {
+      const customEch = context.env.SERVERFULL_ECH_CONFIG?.trim();
+      if (isEchActive && customEch) {
         const targetType = query.type === "SVCB" || query.type === "TYPE64" ? "SVCB" : "HTTPS";
-        const serverHttps = `1 . alpn=h3,h2 port=${httpsPort} ech=${echConfigBase64}`;
+        const httpsPort = context.env.SERVERFULL_HTTPS_PORT || context.env.HTTPS_PORT || 10443;
+        const serverHttps = `1 . alpn=h3,h2 port=${httpsPort} ech=${customEch}`;
         answer = buildResponse(query.raw, targetType, serverHttps, 300, 0);
         parsedAnswers = parseDNSAnswer(answer);
         effectiveReason = "Server HTTPS (H3/ECH)";
         return { answer, parsedAnswers, effectiveReason };
       }
+      // If ECH is not active or no custom ECH is configured, bypass synthetic interception
+      // and allow standard resolution (or Cloudflare ECH rewrite if the domain resolves to Cloudflare IPs).
     }
 
-    if (echEnabled) {
+    // 3. Best-Effort ECH Rewrite for Cloudflare-fronted domains
+    if (isEchActive) {
       await ensureCloudflareIpRangesLoaded(context.env.DB);
       const existingIpv4s: string[] = [];
       const existingIpv6s: string[] = [];
@@ -145,9 +160,9 @@ export async function processBestEffortEch(
 
     if (isCf) {
       const frontingDomain =
-        typeof settings.best_effort_ech === "object" && settings.best_effort_ech?.fronting_domain
-          ? settings.best_effort_ech.fronting_domain
-          : DEFAULT_ECH_FRONTING_DOMAIN;
+        context.env.SERVERFULL_ECH_FRONTING_DOMAIN ||
+        (typeof settings.best_effort_ech === "object" && settings.best_effort_ech?.fronting_domain) ||
+        DEFAULT_ECH_FRONTING_DOMAIN;
 
       const echConfigBase64 = buildCloudflareEchConfig(frontingDomain, existingEch);
       const targetType =
