@@ -40,6 +40,7 @@ export function encodeHttpsRDataFromParams(options: {
   priority?: number;
   target?: string;
   alpn?: string[];
+  port?: number;
   ipv4hints?: string[];
   ipv6hints?: string[];
   echBase64?: string;
@@ -48,6 +49,7 @@ export function encodeHttpsRDataFromParams(options: {
     priority = 1,
     target = ".",
     alpn = ["h3", "h2"],
+    port,
     ipv4hints = [],
     ipv6hints = [],
     echBase64 = null
@@ -85,6 +87,13 @@ export function encodeHttpsRDataFromParams(options: {
     bytes.push(0x00, 0x01); // Key 1
     bytes.push((alpnVal.length >> 8) & 0xff, alpnVal.length & 0xff);
     bytes.push(...alpnVal);
+  }
+
+  // Key 3: port (uint16)
+  if (port !== undefined && port > 0) {
+    bytes.push(0x00, 0x03); // Key 3
+    bytes.push(0x00, 0x02); // Length 2
+    bytes.push((port >> 8) & 0xff, port & 0xff);
   }
 
   // Key 4: ipv4hint
@@ -151,6 +160,7 @@ export function encodeHttpsRDataFromString(value: string): number[] {
   const target = tokens[1] || ".";
 
   let alpn: string[] | undefined;
+  let port: number | undefined;
   let ipv4hints: string[] | undefined;
   let echBase64: string | undefined;
   let ipv6hints: string[] | undefined;
@@ -163,6 +173,8 @@ export function encodeHttpsRDataFromString(value: string): number[] {
     const v = token.substring(eqIdx + 1);
     if (k === "alpn") {
       alpn = v.split(",");
+    } else if (k === "port") {
+      port = parseInt(v, 10) || undefined;
     } else if (k === "ipv4hint") {
       ipv4hints = v.split(",");
     } else if (k === "ech") {
@@ -176,6 +188,7 @@ export function encodeHttpsRDataFromString(value: string): number[] {
     priority,
     target,
     alpn,
+    port,
     ipv4hints,
     ipv6hints,
     echBase64

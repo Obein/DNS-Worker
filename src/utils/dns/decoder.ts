@@ -296,6 +296,9 @@ export function parseDNSAnswer(
               pCurr += aLen + 1;
             }
             params.push(`alpn=${alpns.join(",")}`);
+          } else if (key === 3 && valLen === 2) { // port (RFC 9460)
+            const port = (raw[curr] << 8) | raw[curr + 1];
+            params.push(`port=${port}`);
           } else if (key === 4) { // ipv4hint
             const ips: string[] = [];
             for (let k = 0; k + 4 <= valLen; k += 4) {

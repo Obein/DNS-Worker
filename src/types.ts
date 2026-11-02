@@ -41,6 +41,11 @@ export interface Env {
   SERVERFULL_DOT_DOMAIN?: string;
   SERVERFULL_DB_PATH?: string;
   DOT_DOMAIN?: string;
+  SERVERFULL_ECH_ENABLED?: string | boolean;
+  SERVERFULL_ECH_CONFIG?: string;
+  SERVERFULL_ECH_FRONTING_DOMAIN?: string;
+  SERVERFULL_HTTPS_PORT?: string | number;
+  SERVERFULL_DOT_PORT?: string | number;
   TRUSTED_PROXIES?: string;
   TURSO_DATABASE_URL?: string;
   TURSO_URL?: string;
