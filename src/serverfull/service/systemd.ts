@@ -28,6 +28,7 @@ export const SYSTEMD_SERVICE_PATH = `/etc/systemd/system/${SERVICE_FILE_NAME}`;
  */
 export function generateSystemdUnit(details: ServiceExecDetails): string {
   const { execCmd, workDir, user } = details;
+  const safeUser = /^[a-zA-Z0-9._-]+$/.test(user) ? user : 'root';
 
   return `[Unit]
 Description=DNS Worker Serverfull Service (UDP DNS, DoT & Web Dashboard)
@@ -35,7 +36,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=${user}
+User=${safeUser}
 WorkingDirectory=${workDir}
 ExecStart=${execCmd}
 Restart=always
@@ -88,6 +89,18 @@ export async function handleLinuxSystemd(action: ServiceAction | string, targetU
         process.exit(1);
       }
 
+      if (targetUser && !/^[a-zA-Z0-9._-]+$/.test(targetUser)) {
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Invalid Username',
+          message: `The provided username "${targetUser}" contains illegal characters.`,
+          solutions: [
+            'Usernames must only contain alphanumeric characters, dots, underscores, or hyphens (/^[a-zA-Z0-9._-]+$/).'
+          ]
+        }));
+        process.exit(1);
+      }
+
       const details = getServiceExecDetails(targetUser);
       const unitContent = generateSystemdUnit(details);
 
@@ -107,12 +120,14 @@ export async function handleLinuxSystemd(action: ServiceAction | string, targetU
           }
           writeDefaultConfigFile(configFile, false);
           if (details.user && details.user !== 'root') {
-            try {
-              execSync(`chown -R ${details.user} ${dataDir}`);
-            } catch {}
-            try {
-              execSync(`chown -R ${details.user} ${configDir}`);
-            } catch {}
+            if (/^[a-zA-Z0-9._-]+$/.test(details.user)) {
+              try {
+                execSync(`chown -R ${details.user} "${dataDir}"`);
+              } catch {}
+              try {
+                execSync(`chown -R ${details.user} "${configDir}"`);
+              } catch {}
+            }
           }
         } catch {}
 
