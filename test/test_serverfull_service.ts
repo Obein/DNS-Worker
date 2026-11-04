@@ -46,7 +46,7 @@ import {
   getCertbotDiagnosticOptions
 } from '../src/serverfull/cert';
 import { resolveUpstreamEndpoint } from '../src/pipeline/resolver/transport';
-import { buildCloudflareEchConfig } from '../src/utils/ech';
+import { buildCloudflareEchConfig, setActiveCfEchConfig, getActiveCfEchConfig } from '../src/utils/ech';
 
 function runServiceUnitTests(): void {
   console.log('>>> [TEST] Starting Modular Service Provider Unit Tests (SRP)...');
@@ -301,6 +301,15 @@ function runServiceUnitTests(): void {
   const generatedEch = buildCloudflareEchConfig('test.cloudflare-ech.com');
   if (!generatedEch || typeof generatedEch !== 'string') {
     throw new Error('buildCloudflareEchConfig failed to generate base64 string');
+  }
+  // Verify dynamic active ECH fallback integration
+  setActiveCfEchConfig('AEX+DQBBawAgACAUjjcEHSf2wlThCqPLx//d+m3qlWUe3nwuQaUVaVwQBgAEAAEAAQASY2xvdWRmbGFyZS1lY2guY29tAAA=');
+  if (getActiveCfEchConfig() === null) {
+    throw new Error('getActiveCfEchConfig should return the active ECH string');
+  }
+  const dynamicGenerated = buildCloudflareEchConfig('fronting.dynamic.com');
+  if (!dynamicGenerated || typeof dynamicGenerated !== 'string') {
+    throw new Error('buildCloudflareEchConfig with active ECH fallback failed');
   }
   const quicEp = resolveUpstreamEndpoint('quic://dns.quad9.net');
   if (quicEp.diagMethod !== 'DoQ' || !quicEp.diagTarget.includes('quic://')) {
