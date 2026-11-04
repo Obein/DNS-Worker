@@ -10,6 +10,7 @@ import { applyEcs } from "./ecs";
 import { processBestEffortEch } from "./ech";
 import { handleBlockOrRedirect } from "./block";
 import { recordSuccessAndCache, recordFailure } from "./observability";
+import { getDefaultUpstreamUrl } from "../../constants/presets";
 
 export * from "./types";
 export * from "./transport";
@@ -50,7 +51,7 @@ export const pipelineResolver = {
     reason?: string
   ): Promise<ResolutionResult> {
     const rawUpstreamUrl =
-      settings.upstream[0] || "https://security.cloudflare-dns.com/dns-query";
+      settings.upstream[0] || getDefaultUpstreamUrl(context.env);
 
     if (!isSafeUrl(rawUpstreamUrl)) {
       return {

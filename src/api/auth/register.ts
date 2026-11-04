@@ -17,6 +17,7 @@ import { generateRecoveryKey, hashRecoveryKey } from "../../lib/totp";
 import { cacheUtils } from "../../utils/cache";
 import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
 import { verifyTurnstile } from "./utils";
+import { getDefaultUpstreamUrl } from "../../constants/presets";
 
 /**
  * Handle user registration requests (signup)
@@ -103,12 +104,13 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
     const profileModel = new ProfileModel(env.DB);
     const defaultProfileId = generateId(6);
     const defaultRetentionDays = role === 'admin' ? 7 : 1;
+    const defaultUpstream = getDefaultUpstreamUrl(env);
     await profileModel.create({
       id: defaultProfileId,
       owner_id: userId,
       name: "Default",
       settings: {
-        upstream: ["https://security.cloudflare-dns.com/dns-query"],
+        upstream: [defaultUpstream],
         ecs: { enabled: true, use_client_ip: true },
         log_retention_days: defaultRetentionDays,
         skip_log_on_pass: false,

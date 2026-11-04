@@ -4,9 +4,9 @@ import { getPresetEchFrontingDomains } from '../utils/ech/constants';
 import { fetchGeoIP } from '../utils/geoip';
 import { isPublicInternetIP } from '../utils/validator';
 import {
-  DEFAULT_PRESET_UPSTREAMS,
-  DEFAULT_PRESET_EXTERNAL_FILTERS,
-  DEFAULT_SUBSTITUTE_DOMAIN
+  DEFAULT_SUBSTITUTE_DOMAIN,
+  getPresetUpstreams,
+  getPresetExternalFilters
 } from '../constants/presets';
 
 /**
@@ -134,32 +134,12 @@ export async function handleSystemRequest(request: Request, env: Env): Promise<R
   }
 
   if (url.pathname === '/api/presets/upstreams') {
-    let upstreams = DEFAULT_PRESET_UPSTREAMS;
-    if (env.PRESET_UPSTREAMS) {
-      try {
-        const parsed = JSON.parse(env.PRESET_UPSTREAMS);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          upstreams = parsed;
-        }
-      } catch (e) {
-        console.warn("[System API] Failed to parse PRESET_UPSTREAMS from env:", e);
-      }
-    }
+    const upstreams = getPresetUpstreams(env);
     return new Response(JSON.stringify(upstreams), { headers: { 'Content-Type': 'application/json' } });
   }
 
   if (url.pathname === '/api/presets/filters') {
-    let filters = DEFAULT_PRESET_EXTERNAL_FILTERS;
-    if (env.PRESET_EXTERNAL_FILTERS) {
-      try {
-        const parsed = JSON.parse(env.PRESET_EXTERNAL_FILTERS);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          filters = parsed;
-        }
-      } catch (e) {
-        console.warn("[System API] Failed to parse PRESET_EXTERNAL_FILTERS from env:", e);
-      }
-    }
+    const filters = getPresetExternalFilters(env);
     return new Response(JSON.stringify(filters), { headers: { 'Content-Type': 'application/json' } });
   }
 
