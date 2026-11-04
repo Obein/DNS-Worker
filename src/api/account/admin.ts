@@ -13,6 +13,18 @@ import {
 } from "../../lib/turso";
 
 /**
+ * Allowlist of system setting keys that can be updated via administrative REST APIs.
+ * Prevents key namespace pollution and blocks attempts to overwrite internal timestamps or runtime secrets.
+ */
+const ALLOWED_ADMIN_SETTINGS_KEYS = new Set<string>([
+  'turnstile_site_key',
+  'turnstile_secret_key',
+  'turnstile_enabled_signup',
+  'turnstile_enabled_login',
+  'registration_enabled'
+]);
+
+/**
  * Handle admin requests to /api/admin/...
  */
 export async function handleAdminRequest(
@@ -68,10 +80,24 @@ export async function handleAdminRequest(
       return new Response(JSON.stringify(settings), { headers: { 'Content-Type': 'application/json' } });
     }
     if (request.method === 'PATCH') {
-      const body = await request.json() as Record<string, string>;
-      // 禁止修改/覆盖敏感的 jwt_secret
-      delete body.jwt_secret;
-      await systemSettings.setMany(body);
+      let body: Record<string, unknown> = {};
+      try {
+        body = await request.json() as Record<string, unknown>;
+      } catch {
+        return new Response("Invalid JSON payload", { status: 400 });
+      }
+
+      const filteredSettings: Record<string, string> = {};
+      for (const [key, value] of Object.entries(body)) {
+        if (ALLOWED_ADMIN_SETTINGS_KEYS.has(key) && typeof value === 'string') {
+          // Bound setting value length to prevent unbounded storage usage
+          filteredSettings[key] = value.slice(0, 1024);
+        }
+      }
+
+      if (Object.keys(filteredSettings).length > 0) {
+        await systemSettings.setMany(filteredSettings);
+      }
       return new Response(JSON.stringify({ success: true }));
     }
   }
