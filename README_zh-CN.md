@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
   <h1>DNS Worker</h1>
-  <p>隐私优先 Protective DNS 解析器 & DoH / DoT 服务端</p>
+  <p>隐私优先 Protective DNS 解析器 & DoH / DoT 服务端 & 广告拦截器</p>
   <p>保护您的互联网第一跳</p>
   <p align="center">
     <a href="README.md">English</a> | 中文 (简体) | <a href="README_zh-TW.md">中文 (正體)</a>
