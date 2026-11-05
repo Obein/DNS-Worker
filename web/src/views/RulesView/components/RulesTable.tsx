@@ -105,14 +105,7 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlo
       headerClassName: "w-1/4",
       cellClassName: "font-mono font-bold",
       render: (rule: Rule): React.ReactNode => (
-        <div className="flex items-center gap-2">
-          <span>{rule.pattern}</span>
-          {(rule.include_subdomains === true || rule.include_subdomains === 1) && (
-            <Tag minimal round intent={Intent.PRIMARY} className="text-[10px] px-1.5 font-sans font-normal">
-              {t("rules.subdomainsBadge", "+子域名")}
-            </Tag>
-          )}
-        </div>
+        <span>{rule.pattern}</span>
       ),
     },
     {

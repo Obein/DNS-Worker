@@ -1,5 +1,5 @@
 import React from "react";
-import { Dialog, DialogBody, DialogFooter, FormGroup, HTMLSelect, InputGroup, Button, Intent, Switch } from "@blueprintjs/core";
+import { Dialog, DialogBody, DialogFooter, FormGroup, HTMLSelect, InputGroup, Button, Intent } from "@blueprintjs/core";
 import { Globe, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {  Rule  } from "../types";
@@ -52,16 +52,8 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({
               </FormGroup>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
-              <Switch
-                checked={!!editRule.include_subdomains}
-                onChange={(e) => setEditRule({ ...editRule, include_subdomains: e.currentTarget.checked })}
-                label={t("rules.includeSubdomains", "Include Subdomains")}
-                className="mb-0 font-medium text-sm"
-              />
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {t("rules.includeSubdomainsDesc")}
-              </span>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {t("rules.wildcardDisclaimer")}
             </div>
 
             {editRule.type === "REDIRECT" && (

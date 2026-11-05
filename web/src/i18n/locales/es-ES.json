@@ -360,7 +360,8 @@
     "close": "Cerrar",
     "includeSubdomains": "Incluir subdominios",
     "includeSubdomainsDesc": "P. ej., example.com también coincidirá con *.example.com; desactivado por defecto (solo coincidencia exacta)",
-    "subdomainsBadge": "+Subdominios"
+    "subdomainsBadge": "+Subdominios",
+    "wildcardDisclaimer": "Para hacer coincidir subdominios, use el comodín *.example.com; example.com no coincidirá con subdominios."
   },
   "analytics": {
     "customRange": "Periodo personalizado",

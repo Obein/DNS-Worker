@@ -360,7 +360,8 @@
     "close": "Закрыть",
     "includeSubdomains": "Включать поддомены",
     "includeSubdomainsDesc": "Напр., example.com также совпадает с *.example.com; по умолчанию выключено (только точное совпадение)",
-    "subdomainsBadge": "+Поддомены"
+    "subdomainsBadge": "+Поддомены",
+    "wildcardDisclaimer": "Для соответствия поддоменам используйте подстановочный знак *.example.com; example.com не будет соответствовать поддоменам."
   },
   "analytics": {
     "customRange": "Произвольный период",

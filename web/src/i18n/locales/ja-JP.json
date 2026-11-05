@@ -360,7 +360,8 @@
     "close": "閉じる",
     "includeSubdomains": "サブドメインも含める",
     "includeSubdomainsDesc": "例: example.com の場合に *.example.com も一致します（デフォルトはオフ、完全一致のみ）",
-    "subdomainsBadge": "+サブドメイン"
+    "subdomainsBadge": "+サブドメイン",
+    "wildcardDisclaimer": "サブドメインを一致させるには、ワイルドカード *.example.com を使用してください。example.com はサブドメインに一致しません。"
   },
   "analytics": {
     "customRange": "カスタム期間",

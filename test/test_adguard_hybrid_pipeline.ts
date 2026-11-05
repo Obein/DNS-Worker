@@ -44,6 +44,18 @@ async function runPipelineTests(): Promise<void> {
   };
   assert.strictEqual(DNSFilter.isMatch("adguard-syntax.com", adguardSyntaxRule), true);
   assert.strictEqual(DNSFilter.isMatch("sub.adguard-syntax.com", adguardSyntaxRule), true);
+
+  // Wildcard syntax: *.wildcard.com
+  const wildcardRule: Rule = {
+    id: 4,
+    profile_id: "p1",
+    type: "BLOCK",
+    pattern: "*.wildcard.com"
+  };
+  assert.strictEqual(DNSFilter.isMatch("wildcard.com", wildcardRule), true);
+  assert.strictEqual(DNSFilter.isMatch("sub.wildcard.com", wildcardRule), true);
+  assert.strictEqual(DNSFilter.isMatch("deep.sub.wildcard.com", wildcardRule), true);
+  assert.strictEqual(DNSFilter.isMatch("notwildcard.com", wildcardRule), false);
   console.log("   ✓ Custom rule exact vs subdomain matching verified.");
 
   // 2. Dual-State Bloom Filter (|| vs exact)

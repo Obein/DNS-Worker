@@ -61,7 +61,7 @@ Navigate to **Rules** (自定义规则) to configure instant manual overrides on
 - **Allowlist (白名单)**: Domains that bypass all blocking rules (e.g., corporate subdomains or false positives).
 - **Blocklist (黑名单)**: Explicitly banned domains that take immediate precedence over external lists.
 - **DNS Rewrites (重写 / 重定向)**: Maps custom domains to specific IP addresses or local services (e.g., intranet services or SafeSearch enforcement like `forcesafesearch.google.com`).
-- **Configurable Subdomain Matching**: Explicitly select whether a custom rule matches its subdomains (default off, matching the exact domain only; previously all rules unconditionally wildcarded subdomains).
+- **Subdomain Matching Policy**: Replaced standalone toggle with wildcard patterns. To match subdomains, use the wildcard `*.example.com`; `example.com` will only match the exact domain.
 - **Supported Syntax**:
   - Plain domains: `ad.example.com`
   - Subdomain wildcards: `*.tracking.company.com` or `||adservice.google.com^`

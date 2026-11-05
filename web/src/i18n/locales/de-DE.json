@@ -360,7 +360,8 @@
     "close": "Schließen",
     "includeSubdomains": "Subdomains einschließen",
     "includeSubdomainsDesc": "Z.B. entspricht example.com auch *.example.com; standardmäßig deaktiviert (nur exakte Übereinstimmung)",
-    "subdomainsBadge": "+Subdomains"
+    "subdomainsBadge": "+Subdomains",
+    "wildcardDisclaimer": "Verwenden Sie zum Abgleichen von Subdomains den Platzhalter *.example.com; example.com gleicht keine Subdomains ab."
   },
   "analytics": {
     "customRange": "Benutzerdefinierter Zeitraum",

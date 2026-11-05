@@ -360,7 +360,8 @@
     "close": "Fermer",
     "includeSubdomains": "Inclure les sous-domaines",
     "includeSubdomainsDesc": "Ex. : example.com correspondra aussi à *.example.com ; désactivé par défaut (correspondance exacte uniquement)",
-    "subdomainsBadge": "+Sous-domaines"
+    "subdomainsBadge": "+Sous-domaines",
+    "wildcardDisclaimer": "Pour faire correspondre les sous-domaines, utilisez le caractère générique *.example.com ; example.com ne correspondra pas aux sous-domaines."
   },
   "analytics": {
     "customRange": "Période personnalisée",

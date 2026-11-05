@@ -360,7 +360,8 @@
     "close": "关闭",
     "includeSubdomains": "同时匹配子域名",
     "includeSubdomainsDesc": "例如 example.com 同时匹配 *.example.com；默认关闭，仅精确匹配",
-    "subdomainsBadge": "+子域名"
+    "subdomainsBadge": "+子域名",
+    "wildcardDisclaimer": "若要匹配子域名，需使用通配符 *.example.com ，example.com 不会匹配子域名。"
   },
   "analytics": {
     "customRange": "自定义时间范围",

@@ -20,7 +20,7 @@ export class DNSFilter {
     patternOrRule: string | Rule,
     explicitIncludeSubdomains?: boolean
   ): boolean {
-    const d = domain.toLowerCase();
+    const d = domain.toLowerCase().replace(/\.$/, "");
     let p: string;
     let matchSubdomains = false;
 
@@ -30,6 +30,9 @@ export class DNSFilter {
     } else {
       p = (patternOrRule.pattern || "").toLowerCase().trim();
       matchSubdomains = Boolean(patternOrRule.include_subdomains);
+    }
+    if (!p.endsWith("^")) {
+      p = p.replace(/\.$/, "");
     }
 
     // 1. 如果显式勾选了“匹配子域名”

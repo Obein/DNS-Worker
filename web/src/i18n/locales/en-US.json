@@ -360,7 +360,8 @@
     "close": "Close",
     "includeSubdomains": "Match subdomains",
     "includeSubdomainsDesc": "E.g., example.com also matches *.example.com; off by default (exact match only)",
-    "subdomainsBadge": "+Subdomains"
+    "subdomainsBadge": "+Subdomains",
+    "wildcardDisclaimer": "To match subdomains, use the wildcard *.example.com; example.com will not match subdomains."
   },
   "analytics": {
     "customRange": "Custom Range",

@@ -360,7 +360,8 @@
     "close": "Đóng",
     "includeSubdomains": "Bao gồm tên miền phụ",
     "includeSubdomainsDesc": "Ví dụ: example.com cũng khớp với *.example.com; mặc định tắt (chỉ khớp chính xác)",
-    "subdomainsBadge": "+Tên miền phụ"
+    "subdomainsBadge": "+Tên miền phụ",
+    "wildcardDisclaimer": "Để khớp với các miền phụ, hãy sử dụng ký tự đại diện *.example.com; example.com sẽ không khớp với các miền phụ."
   },
   "analytics": {
     "customRange": "Khoảng thời gian tùy chỉnh",

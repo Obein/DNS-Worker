@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Elevation, HTMLSelect, InputGroup, Button, Intent, FormGroup, Switch } from "@blueprintjs/core";
+import { Card, Elevation, HTMLSelect, InputGroup, Button, Intent, FormGroup } from "@blueprintjs/core";
 import { Plus, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -66,18 +66,6 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
               </Button>
             </FormGroup>
           )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
-          <Switch
-            checked={!!newRule.include_subdomains}
-            onChange={(e) => setNewRule({ ...newRule, include_subdomains: e.currentTarget.checked })}
-            label={t("rules.includeSubdomains", "同时匹配子域名")}
-            className="mb-0 font-medium text-sm"
-          />
-          <span className="text-xs text-gray-400 dark:text-gray-500">
-            ({t("rules.includeSubdomainsDesc", "例如 example.com 同时拦截 *.example.com；默认关闭，仅精确匹配")})
-          </span>
         </div>
 
         {newRule.type === "REDIRECT" && (

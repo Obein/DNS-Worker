@@ -155,7 +155,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       await addProfileRule(profileId, {
         ...newRule,
         pattern: trimmedPattern,
-        include_subdomains: newRule.include_subdomains ? 1 : 0,
+        include_subdomains: 0,
       });
       toasterRef?.current?.show({
         message: t("rules.addSuccess", "Rule added successfully"),
@@ -204,7 +204,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       await updateProfileRule(profileId, {
         ...editRule,
         pattern: trimmedPattern,
-        include_subdomains: editRule.include_subdomains ? 1 : 0,
+        include_subdomains: 0,
       } as Rule);
       toasterRef?.current?.show({
         message: t("rules.updateSuccess", "Rule updated successfully"),
@@ -324,6 +324,15 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
           )}
         </div>
       </div>
+
+      <Callout intent={Intent.PRIMARY} icon="info-sign" className="mb-6">
+        <p>
+          {t(
+            "rules.wildcardDisclaimer",
+            "若要匹配子域名，需使用通配符 *.example.com ，example.com 不会匹配子域名。"
+          )}
+        </p>
+      </Callout>
 
       <AddRuleCard newRule={newRule} setNewRule={setNewRule} addRule={addRule} loading={isAdding} />
 

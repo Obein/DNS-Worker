@@ -360,7 +360,8 @@
     "close": "닫기",
     "includeSubdomains": "서브도메인 포함",
     "includeSubdomainsDesc": "예: example.com일 때 *.example.com도 일치합니다 (기본값 꺼짐, 정확한 일치만)",
-    "subdomainsBadge": "+서브도메인"
+    "subdomainsBadge": "+서브도메인",
+    "wildcardDisclaimer": "서브도메인을 매칭하려면 와일드카드 *.example.com 을 사용해야 합니다. example.com 은 서브도메인과 매칭되지 않습니다."
   },
   "analytics": {
     "customRange": "사용자 지정 범위",
