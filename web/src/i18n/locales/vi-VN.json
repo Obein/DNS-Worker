@@ -478,7 +478,7 @@
   "filtering": {
     "title": "Danh sách chặn bên ngoài",
     "subtitle": "Đăng ký danh sách chặn tên miền do bên thứ ba duy trì (như AdGuard, v.v.).",
-    "formatDisclaimer": "Hệ thống này chỉ hỗ trợ một số định dạng danh sách AdGuard giới hạn và danh sách tên miền thuần túy. Chỉ hỗ trợ các quy tắc chặn cơ bản (ví dụ: ||example.com^), sẽ bỏ qua danh sách trắng \"@@\", hiện chưa hỗ trợ các quy tắc viết lại \"$\" và quy tắc rút gọn \"*\". Hệ thống sẽ tự động khớp tất cả các tên miền phụ của tên miền.",
+    "formatDisclaimer": "Hỗ trợ các quy tắc định dạng AdGuard tiêu chuẩn (bao gồm quy tắc tên miền ||, ngoại lệ danh sách trắng @@, quy tắc $dnsrewrite và mẫu regex) cùng danh sách hosts/tên miền. Chỉ các quy tắc có tiền tố || mới tự động chặn tất cả các miền phụ.",
     "syncAll": "Đồng bộ tất cả danh sách",
     "urlPlaceholder": "Nhập URL danh sách chặn...",
     "addSubscription": "Thêm đăng ký",

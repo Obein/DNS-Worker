@@ -478,7 +478,7 @@
   "filtering": {
     "title": "외부 차단 리스트",
     "subtitle": "타사에서 유지 관리하는 도메인 차단 목록(예: AdGuard 등)을 구독합니다.",
-    "formatDisclaimer": "본 시스템은 일부 AdGuard 형식 목록 및 순수 도메인 목록만 지원합니다. 기본적인 차단 규칙(예: ||example.com^)만 지원되며, \"@@\" 백리스트, \"$\" 재작성 규칙 및 \"*\" 와일드카드 규칙은 현재 무시됩니다. 하위 도메인은 자동으로 일치합니다.",
+    "formatDisclaimer": "표준 AdGuard 형식 규칙(|| 도메인 규칙, @@ 화이트리스트 예외, $dnsrewrite 재작성, 정규식 패턴 포함) 및 hosts/도메인 목록을 지원합니다. || 접두사가 있는 규칙만 모든 하위 도메인을 자동으로 차단합니다.",
     "syncAll": "모든 목록 동기화",
     "urlPlaceholder": "차단 리스트 URL 입력...",
     "addSubscription": "구독 추가",

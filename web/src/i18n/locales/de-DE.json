@@ -478,7 +478,7 @@
   "filtering": {
     "title": "Externe Blockierlisten",
     "subtitle": "Abonnieren Sie von Drittanbietern gepflegte Domain-Sperrlisten (wie AdGuard usw.).",
-    "formatDisclaimer": "Dieses System unterstützt nur grundlegende AdGuard-Formate und reine Domain-Listen. Nur grundlegende Blockierungsregeln (z. B. ||example.com^) werden unterstützt; \"@@\"-Ausnahmen, \"$\"-Umschreibungen und \"*\"-Wildcards werden ignoriert. Subdomains werden automatisch zugeordnet.",
+    "formatDisclaimer": "Unterstützt standardmäßige AdGuard-Regeln (einschließlich || Domain-Regeln, @@ Whitelist-Ausnahmen, $dnsrewrite-Regeln und Regex-Muster) sowie Hosts-/Domainlisten. Nur Regeln mit dem Präfix || blockieren automatisch alle Subdomains.",
     "syncAll": "Alle Listen synchronisieren",
     "urlPlaceholder": "Listen-URL eingeben...",
     "addSubscription": "Abonnement hinzufügen",

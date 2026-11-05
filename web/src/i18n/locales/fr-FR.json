@@ -478,7 +478,7 @@
   "filtering": {
     "title": "Listes de blocage externes",
     "subtitle": "Abonnez-vous à des listes de blocage de domaines gérées par des tiers (comme AdGuard, etc.).",
-    "formatDisclaimer": "Ce système ne prend en charge que les formats de liste AdGuard basiques et les listes de domaines simples. Seules les règles de blocage de base (ex. ||example.com^) sont prises en compte ; les exceptions \"@@\", les règles de réécriture \"$\" et les jokers \"*\" sont ignorés. Les sous-domaines sont associés automatiquement.",
+    "formatDisclaimer": "Prend en charge les règles au format AdGuard standard (y compris les règles de domaine ||, exceptions de liste blanche @@, règles $dnsrewrite et motifs regex) et les listes d'hôtes/domaines. Seules les règles avec le préfixe || bloquent automatiquement tous les sous-domaines.",
     "syncAll": "Synchroniser toutes les listes",
     "urlPlaceholder": "Saisir l'URL de la liste...",
     "addSubscription": "Ajouter un abonnement",

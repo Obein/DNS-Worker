@@ -46,7 +46,9 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 4. 點選 **Save & Sync**（儲存並同步）。DNS Worker 會解析規則並生成緊湊布隆過濾器快取：
    - **域名總數**：顯示解析出的有效去重規則數（通常達數十萬條）。
    - **同步狀態**：顯示 `Normal`（正常同步）、`Outdated`（需更新）或 `Missing`（同步失敗）。
-   - **自動排程**：系統後臺 Cron 任務會定期自動抓取最新規則，無需人工維護。
+   - **全量串行同步**：手動點選「同步所有清單」時，系統採用串行佇列更新，並在清單之間保持 1 秒間隔，防範 CPU 激增與鎖爭用。
+   - **單個清單獨立同步**：在「清單詳情」對話方塊中支援單獨手動同步特定清單，更新後自動重構合併當前設定規則。
+   - **自動排程**：系統後臺 Cron 任務會定期自動抓取最新規則，每次觸發採用時間分片更新單個清單，分攤邊緣計算負載。
 
 ---
 
@@ -59,6 +61,7 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 - **Allowlist (白名單)**：直接放行的信任域名，優先於外部規則（用於解除誤殺或保障公司業務通道）。
 - **Blocklist (黑名單)**：明確禁止解析的惡意或廣告域名，攔截優先順序最高。
 - **DNS Rewrites (重寫 / 重定向)**：將特定域名解析至指定 IP 地址或內網主機（例如區域網自建服務，或強制開啟 SafeSearch 如 `forcesafesearch.google.com`）。
+- **子域名匹配自主宣告**：現已取消過去的「一律強制萬用字元子域名」策略，支援在新增規則時顯式勾選是否匹配子域名（預設關閉僅匹配當前域名，按需開啟 `*.domain.com` 覆蓋）。
 - **支援匹配語法**：
   - 精確域名：`ad.example.com`
   - 子域名萬用字元：`*.tracking.company.com` 或 `||adservice.google.com^`
@@ -94,30 +97,56 @@ DNS Worker 在最底層的 DNS 解析階段即可攔截網路威脅——在建�
 
 ---
 
-## 4. 匹配引擎架構：布隆過濾器 (Bloom Filter)
+## 4. 匹配引擎架構：分層混合架構 (Tiered Hybrid Architecture)
 
-為在資源受限的環境（如 512MB 記憶體的 VPS 或 128MB 限制的 Cloudflare Workers 邊緣節點）中實現超低延遲的大規模規則匹配，DNS Worker 採用了**高效能純布隆過濾器匹配架構**：
+為在資源受限的環境（如 512MB 記憶體的 VPS 或 128MB 限制的 Cloudflare Workers 邊緣節點）中實現超低延遲的大規模規則匹配，同時完整相容主流 AdGuardHome 過濾語法，DNS Worker 採用了**分層混合匹配架構**：
 
 ```mermaid
 flowchart TD
-    REQ["收到查詢請求 (例如 adserver.tracker.com)"]
-    BLOOM["布隆過濾器極速匹配 (Bloom Filter)<br/>(支援精確域名與泛子域名逐級檢測)"]
-    PASS["放行通過 (Clean)"]
-    BLOCK["攔截阻斷 (Block)"]
+    REQ["收到查詢請求 (例如 sub.adserver.tracker.com)"]
+    L1["階段 1: 自定義規則 (Local Rules)<br/>(白名單 / 重定向 / 黑名單，可選匹配子域)"]
+    L2["階段 2: AdGuard 白名單例外 (@@)<br/>(記憶體雜湊集合 O(1) 匹配 + 標籤逐級回溯)"]
+    L3["階段 3: AdGuard DNS 重寫 ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
+    L4["階段 4: 雙態前綴布隆過濾器 (Bloom Filter)<br/>(|| 泛子域與精確域名黑名單 ~90%)"]
+    L5["階段 5: 正則與複雜萬用字元池 (Regex Pool)<br/>(頂級域名索引加速，MAX_REGEX_RULES 上限保護)"]
+    PASS["放行通過 (Clean / Whitelist)"]
+    BLOCK["攔截阻斷 (Block / Rewrite)"]
 
-    REQ --> BLOOM
-    BLOOM -->|"未命中"| PASS
-    BLOOM -->|"命中黑名單"| BLOCK
+    REQ --> L1
+    L1 -->|命中白名單| PASS
+    L1 -->|命中黑名單/重定向| BLOCK
+    L1 -->|未命中| L2
+
+    L2 -->|命中白名單例外| PASS
+    L2 -->|未命中| L3
+
+    L3 -->|命中重寫規則| BLOCK
+    L3 -->|未命中| L4
+
+    L4 -->|命中布隆黑名單| BLOCK
+    L4 -->|未命中| L5
+
+    L5 -->|命中複雜正則| BLOCK
+    L5 -->|未命中| PASS
 ```
 
-1. **單層極致輕量**：外部訂閱規則在下載同步時，直接編譯並壓縮為緊湊的二進位制布隆過濾器點陣圖（Bitset），完全摒棄了消耗大量記憶體的明文域名表與字首樹（Trie）。
-2. **$O(1)$ 極速子域遞進檢測**：查詢進入後，引擎在微秒級時間內比對當前域名及逐級剝離的父級域名（如 `ad.tracker.com` $\to$ `tracker.com`），兼顧極低延遲（`&lt; 0.1ms`）與極低誤判率（預設誤判率僅 0.01%）。
+1. **分級高效短路**：
+   - **階段 1：本地自定義規則**：優先順序最高。支援單域名精確匹配與自定義子域名匹配。
+   - **階段 2：AdGuard 白名單例外（`@@`）**：採用記憶體雜湊集合（Hash Set，`Set<string>`）維護，先以 $O(1)$ 查表，再進行父級標籤逐級回溯（Parent Walk）。命中即刻放行，徹底消除布隆過濾器的假陽性誤判風險。
+   - **階段 3：AdGuard DNS 重寫（`$dnsrewrite`）**：支援將域名即時合成為指定 IPv4、IPv6、CNAME 或阻斷狀態（NXDOMAIN / REFUSED）。
+   - **階段 4：雙態前綴布隆過濾器**：海量靜態黑名單的主力防線。透過字首區分單域名黑名單與帶 `||` 的泛子域黑名單，在微秒級時間內完成匹配，杜絕單域名規則誤殺子域名。
+   - **階段 5：正則與複雜萬用字元池**：對 `/regex/` 及複雜萬用字元建立頂級域名（Apex Domain）倒排索引，大幅收窄正則評估範圍，單配置預設上限為 1000 條。
 
 ---
 
 ## 5. 過濾環境變數速查
 
 在 `.env`（Serverfull 模式）或 `wrangler.toml`（Serverless 模式）中配置以下過濾引數：
+
+### `MAX_REGEX_RULES`
+- **支援模式**：Serverless & Serverfull
+- **預設值**：`1000`
+- **說明**：單個 Profile 允許合併的最大 AdGuard 正則表達式和複雜萬用字元規則上限。超額規則將被安全丟棄並記錄警告日誌，嚴防複雜正則拖慢 DNS 整體查詢效能。
 
 ### `PRESET_EXTERNAL_FILTERS`
 - **支援模式**：Serverless & Serverfull
