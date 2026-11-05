@@ -137,7 +137,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     if (!url) return;
     setSyncing(true);
     try {
-      await addCustomProfileList(profileId, url);
+      const result = await addCustomProfileList(profileId, url);
       toasterRef?.current?.show({
         message: t("filtering.addSuccess"),
         intent: Intent.SUCCESS,
@@ -146,21 +146,38 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
       setNewUrl("");
 
       toasterRef?.current?.show({
-        message: t("filtering.syncTaskStarted"),
+        message: t("filtering.singleSyncStarted", "列表同步任务已开始"),
         intent: Intent.PRIMARY,
         icon: "cloud-download",
       });
-      
-      const completed = await waitForSyncCompletion(lists);
-      if (completed) {
-        toasterRef?.current?.show({
-          message: t("filtering.syncCheckComplete"),
-          intent: Intent.SUCCESS,
-          icon: "tick",
-        });
+
+      let targetId = result?.id;
+      if (!targetId) {
+        const fresh = await getProfileLists(profileId);
+        const created = fresh.find((l) => l.url.trim().toLowerCase() === url.trim().toLowerCase());
+        targetId = created?.id;
+        setLists(fresh);
+      }
+
+      if (targetId) {
+        const completed = await waitForSingleSyncCompletion(targetId, 0);
+        if (completed) {
+          toasterRef?.current?.show({
+            message: t("filtering.syncCheckComplete"),
+            intent: Intent.SUCCESS,
+            icon: "tick",
+          });
+        }
+      } else {
+        await fetchData();
       }
     } catch (e) {
       console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setSyncing(false);
     }

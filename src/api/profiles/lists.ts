@@ -227,11 +227,16 @@ export async function handleProfileListsRequest(
       return new Response("Invalid list URL. Private networks and localhosts are not allowed.", { status: 400 });
     }
     
-    await listModel.addList(profileId, listUrl);
-    // 只触发新添加列表的同步 (syncNextListForProfile 会挑选未同步的最旧列表，即此新列表)
-    ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-    ctx.waitUntil(pipeline.clearCache(profileId, true, env));
-    return new Response(null, { status: 201 });
+    const insertResult = await listModel.addList(profileId, listUrl);
+    const listId = insertResult.id;
+    // 仅针对新添加的单条列表执行同步与规则重构合并，避免拉取和重刷所有列表
+    if (listId) {
+      ctx.waitUntil(syncSingleListForProfile(profileId, listId, env, ctx));
+    }
+    return new Response(JSON.stringify({ success: true, id: listId }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   if (request.method === 'DELETE') {

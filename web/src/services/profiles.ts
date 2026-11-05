@@ -106,13 +106,18 @@ export async function toggleProfileList(profileId: string, listId: number, enabl
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function addCustomProfileList(profileId: string, url: string): Promise<void> {
+export async function addCustomProfileList(profileId: string, url: string): Promise<{ id?: number }> {
   const res = await profileFetch(`/api/profiles/${profileId}/lists`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url })
   });
   if (!res.ok) throw new Error(await res.text());
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function deleteCustomProfileList(profileId: string, listId: number): Promise<void> {
