@@ -531,7 +531,9 @@
     "checkAllowAction": "それでも許可する",
     "checkAllowed": "例外を追加しました - このドメインは解決されるようになりました",
     "allowRuleAdded": "{{domain}} の例外を追加しました",
-    "listDetails": "リスト詳細"
+    "listDetails": "リスト詳細",
+    "syncSingle": "このリストを同期",
+    "singleSyncStarted": "リストの同期タスクを開始しました"
   },
   "settings": {
     "title": "動作設定",

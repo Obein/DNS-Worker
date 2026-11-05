@@ -531,7 +531,9 @@
     "checkAllowAction": "Vẫn cho phép",
     "checkAllowed": "Đã thêm ngoại lệ - tên miền này giờ đã phân giải được",
     "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}",
-    "listDetails": "Chi tiết danh sách"
+    "listDetails": "Chi tiết danh sách",
+    "syncSingle": "Đồng bộ danh sách này",
+    "singleSyncStarted": "Tác vụ đồng bộ danh sách đã bắt đầu"
   },
   "settings": {
     "title": "Cài đặt cấu hình",

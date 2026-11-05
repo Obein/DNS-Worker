@@ -531,7 +531,9 @@
     "checkAllowAction": "Permitir de todos modos",
     "checkAllowed": "Excepción añadida - este dominio ahora se resuelve",
     "allowRuleAdded": "Excepción añadida para {{domain}}",
-    "listDetails": "Detalles de la lista"
+    "listDetails": "Detalles de la lista",
+    "syncSingle": "Sincronizar esta lista",
+    "singleSyncStarted": "Sincronización de lista iniciada"
   },
   "settings": {
     "title": "Ajustes de perfil",

@@ -131,6 +131,13 @@ export async function syncProfileLists(profileId: string): Promise<void> {
   if (!res.ok) throw new Error(await res.text());
 }
 
+export async function syncSingleProfileList(profileId: string, listId: number): Promise<void> {
+  const res = await profileFetch(`/api/profiles/${profileId}/lists/${listId}/sync`, {
+    method: "POST"
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
 export async function getProfileRules(profileId: string): Promise<Rule[]> {
   const res = await profileFetch(`/api/profiles/${profileId}/rules`);
   if (!res.ok) throw new Error("Failed to fetch rules");

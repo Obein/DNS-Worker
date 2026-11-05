@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag } from "@blueprintjs/core";
-import { Copy, ExternalLink, Trash2, Search, ShieldOff } from "lucide-react";
+import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { checkDomainAgainstList, type ListCheckResult } from "../../../services";
@@ -16,6 +16,8 @@ export interface ListDetailsDialogProps {
   onToggleEnabled: (id: number, enabled: boolean) => Promise<void>;
   /** Adds an ALLOW rule so this domain resolves even while the list blocks it. */
   onAllowDomain: (domain: string) => Promise<void>;
+  /** Triggers manual sync for this single list */
+  onSyncSingle?: (id: number) => Promise<void>;
 }
 
 export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
@@ -26,6 +28,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   onDelete,
   onToggleEnabled,
   onAllowDomain,
+  onSyncSingle,
 }) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -35,6 +38,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   const [allowing, setAllowing] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [syncingSingle, setSyncingSingle] = useState(false);
   /** Monotonic id of the newest check, so stale responses can be discarded. */
   const checkToken = useRef(0);
 
@@ -104,6 +108,16 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setAllowing(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!selectedList || !onSyncSingle) return;
+    setSyncingSingle(true);
+    try {
+      await onSyncSingle(selectedList.id);
+    } finally {
+      setSyncingSingle(false);
     }
   };
 
@@ -257,7 +271,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between">
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
         <Button
           icon={<Trash2 size={14} />}
           intent={Intent.DANGER}
@@ -272,7 +286,19 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
             onDelete(id);
           }}
         />
-        <Button onClick={() => { reset(); onClose(); }} text={t("rules.close", "Close")} />
+        <div className="flex gap-2">
+          {onSyncSingle && (
+            <Button
+              icon={<RefreshCw size={14} className={syncingSingle ? "animate-spin" : ""} />}
+              intent={Intent.PRIMARY}
+              loading={syncingSingle}
+              disabled={syncingSingle}
+              text={t("filtering.syncSingle", "同步此列表")}
+              onClick={() => void handleSync()}
+            />
+          )}
+          <Button onClick={() => { reset(); onClose(); }} text={t("rules.close", "Close")} />
+        </div>
       </div>
     </Dialog>
   );

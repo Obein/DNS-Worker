@@ -531,7 +531,9 @@
     "checkAllowAction": "Allow anyway",
     "checkAllowed": "Exception added - this domain now resolves",
     "allowRuleAdded": "Exception added for {{domain}}",
-    "listDetails": "List Details"
+    "listDetails": "List Details",
+    "syncSingle": "Sync this list",
+    "singleSyncStarted": "List sync task started"
   },
   "settings": {
     "title": "Settings",

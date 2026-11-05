@@ -531,7 +531,9 @@
     "checkAllowAction": "Autoriser quand même",
     "checkAllowed": "Exception ajoutée - ce domaine se résout désormais",
     "allowRuleAdded": "Exception ajoutée pour {{domain}}",
-    "listDetails": "Détails de la liste"
+    "listDetails": "Détails de la liste",
+    "syncSingle": "Synchroniser cette liste",
+    "singleSyncStarted": "Synchronisation de la liste démarrée"
   },
   "settings": {
     "title": "Paramètres du profil",

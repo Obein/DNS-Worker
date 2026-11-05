@@ -1,7 +1,7 @@
 import { Env, User, ExecutionContext } from "../../types";
 import { ListModel } from "../../models/list";
 import { ProfileModel } from "../../models/profile";
-import { syncNextListForProfile, syncAllListsForProfile, rebuildProfileBloom } from "../../utils/sync";
+import { syncNextListForProfile, syncAllListsForProfile, syncSingleListForProfile, rebuildProfileBloom } from "../../utils/sync";
 import { isSafeUrl } from "../../utils/validator";
 import { pipeline } from "../../pipeline";
 import { ListBloomModel } from "../../models/listBloom";
@@ -138,6 +138,22 @@ export async function handleProfileListsRequest(
       // 触发所有列表的同步
       ctx.waitUntil(syncAllListsForProfile(profileId, env, ctx));
       return new Response(JSON.stringify({ message: "Sync started" }), { status: 202 });
+    }
+
+    if (pathParts.length >= 6 && pathParts[5] === 'sync') {
+      const listId = Number(pathParts[4]);
+      if (!Number.isInteger(listId) || listId <= 0) {
+        return new Response("Invalid list id", { status: 400 });
+      }
+
+      const list = await listModel.getListById(listId, profileId);
+      if (!list) return new Response("List Not Found", { status: 404 });
+
+      ctx.waitUntil(syncSingleListForProfile(profileId, listId, env, ctx));
+      return new Response(JSON.stringify({ message: "List sync started", id: listId }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const body = await request.json() as any;

@@ -10,7 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
-import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, toggleProfileList, addProfileRule } from "../../services";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, addProfileRule } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -79,6 +79,57 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     
     await fetchData();
     return false;
+  };
+
+  const waitForSingleSyncCompletion = async (listId: number, oldSyncTime?: number | null) => {
+    let attempts = 0;
+    const maxAttempts = 15; // 30 seconds max
+    while (attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const data = await getProfileLists(profileId);
+        const newLists = data as FilterList[];
+        const current = newLists.find((l) => l.id === listId);
+        if (current && (current.last_synced_at ?? 0) !== (oldSyncTime ?? 0)) {
+          setLists(newLists);
+          setSelectedList(current);
+          return true;
+        }
+      } catch (e) {
+        // Ignore fetch errors during polling
+      }
+      attempts++;
+    }
+    await fetchData();
+    return false;
+  };
+
+  const handleSyncSingleList = async (listId: number) => {
+    try {
+      const oldList = lists.find((l) => l.id === listId);
+      const oldSyncTime = oldList?.last_synced_at;
+      await syncSingleProfileList(profileId, listId);
+      toasterRef?.current?.show({
+        message: t("filtering.singleSyncStarted", "列表同步任务已开始"),
+        intent: Intent.PRIMARY,
+        icon: "cloud-download",
+      });
+      const completed = await waitForSingleSyncCompletion(listId, oldSyncTime);
+      if (completed) {
+        toasterRef?.current?.show({
+          message: t("filtering.syncCheckComplete"),
+          intent: Intent.SUCCESS,
+          icon: "tick",
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    }
   };
 
   const addList = async (urlToAdd?: string) => {
@@ -262,6 +313,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         onDelete={deleteList}
         onToggleEnabled={setListEnabled}
         onAllowDomain={allowDomain}
+        onSyncSingle={handleSyncSingleList}
       />
     </div>
   );

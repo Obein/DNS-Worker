@@ -150,9 +150,13 @@ export async function syncAllListsForProfile(
       return;
     }
 
-    // 依次同步所有列表
-    for (const list of activeLists) {
+    // 依次串行同步所有列表，并在每个列表处理完成后相隔 1 秒，防范 CPU 激增与锁争用
+    for (let i = 0; i < activeLists.length; i++) {
+      const list = activeLists[i];
       await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+      if (i < activeLists.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     }
 
     // 【熔断器】先更新主表时间，以防合并过程中崩溃导致无限重试
@@ -179,6 +183,53 @@ export async function syncAllListsForProfile(
     console.error(`[Sync] Critical failure in manual sync for Profile ${profileId}:`, e);
     // 防止单点故障永久阻塞
     await profileModel.updateListUpdatedAt(profileId, now);
+  }
+}
+
+/**
+ * 【单个列表手动同步专用】针对指定 listId 进行单独同步并触发 Profile 布隆过滤器与 AdGuard 规则重构。
+ */
+export async function syncSingleListForProfile(
+  profileId: string,
+  listId: number,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
+  const listModel = new ListModel(env.DB);
+  const listBloomModel = new ListBloomModel(env.DB);
+  const profileBloomModel = new ProfileBloomModel(env.DB);
+  const profileModel = new ProfileModel(env.DB);
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    const list = await listModel.getListById(listId, profileId);
+    if (!list) {
+      console.error(`[Sync] List ${listId} not found in profile ${profileId}`);
+      return;
+    }
+
+    // 1. 单独同步该列表
+    await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+
+    // 2. 若列表处于启用状态，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
+    if (list.enabled) {
+      await profileModel.updateListUpdatedAt(profileId, now);
+      await combineAndPromote(
+        profileId,
+        listModel,
+        listBloomModel,
+        profileBloomModel,
+        profileModel,
+        ctx,
+        now,
+        Number(env.MAX_SYNC_DOMAINS) || 1000000,
+        Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
+        env
+      );
+    }
+    console.log(`[Sync] Profile ${profileId}: single list #${listId} sync complete.`);
+  } catch (e) {
+    console.error(`[Sync] Critical failure in single list sync for Profile ${profileId}, list ${listId}:`, e);
   }
 }
 

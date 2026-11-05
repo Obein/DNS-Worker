@@ -531,7 +531,9 @@
     "checkAllowAction": "仍然允许",
     "checkAllowed": "已添加例外 - 该域名现在可以解析",
     "allowRuleAdded": "已为 {{domain}} 添加例外",
-    "listDetails": "列表详情"
+    "listDetails": "列表详情",
+    "syncSingle": "同步此列表",
+    "singleSyncStarted": "列表同步任务已开始"
   },
   "settings": {
     "title": "配置设置",

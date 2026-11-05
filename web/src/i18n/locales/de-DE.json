@@ -531,7 +531,9 @@
     "checkAllowAction": "Trotzdem zulassen",
     "checkAllowed": "Ausnahme hinzugefügt - diese Domain wird jetzt aufgelöst",
     "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt",
-    "listDetails": "Listen-Details"
+    "listDetails": "Listen-Details",
+    "syncSingle": "Diese Liste synchronisieren",
+    "singleSyncStarted": "Listensynchronisierung gestartet"
   },
   "settings": {
     "title": "Profileinstellungen",

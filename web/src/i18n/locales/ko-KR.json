@@ -531,7 +531,9 @@
     "checkAllowAction": "그래도 허용",
     "checkAllowed": "예외가 추가되었습니다 - 이제 이 도메인이 확인됩니다",
     "allowRuleAdded": "{{domain}}에 대한 예외가 추가되었습니다",
-    "listDetails": "목록 세부정보"
+    "listDetails": "목록 세부정보",
+    "syncSingle": "이 목록 동기화",
+    "singleSyncStarted": "목록 동기화 작업이 시작되었습니다"
   },
   "settings": {
     "title": "구성 설정",
