@@ -515,7 +515,7 @@
     "deleteError": "列表删除失败",
     "addSuccess": "列表添加成功",
     "addError": "列表添加失败",
-    "listEnabled": "列表已启用",
+    "listEnabled": "启用列表",
     "listEnabledHint": "禁用后将停止使用此列表进行过滤，但不会删除该列表，其订阅和同步历史会保留。",
     "listEnabledToast": "已启用列表 - 正在重建过滤器",
     "listDisabledToast": "已禁用列表 - 正在重建过滤器",

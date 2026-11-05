@@ -515,7 +515,7 @@
     "deleteError": "清單刪除失敗",
     "addSuccess": "清單新增成功",
     "addError": "清單新增失敗",
-    "listEnabled": "清單已啟用",
+    "listEnabled": "啟用清單",
     "listEnabledHint": "停用後將停止使用此清單進行過濾，但不會刪除該清單，其訂閱與同步紀錄會保留。",
     "listEnabledToast": "已啟用清單 - 正在重建過濾器",
     "listDisabledToast": "已停用清單 - 正在重建過濾器",
