@@ -476,7 +476,7 @@
     "scrollToTop": "Ir arriba"
   },
   "filtering": {
-    "title": "Listas de bloqueo externas",
+    "title": "Listas externas",
     "subtitle": "Suscríbete a listas de bloqueo de dominios mantenidas por terceros (como AdGuard Home, etc.).",
     "formatDisclaimer": "Admite listas en formato AdGuard Home o listas de dominios puros. De forma predeterminada, el sistema no coincide automáticamente con subdominios (solo las reglas con el prefijo || bloquean todos los subdominios).",
     "syncAll": "Sincronizar todas las listas",

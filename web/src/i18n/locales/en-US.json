@@ -476,7 +476,7 @@
     "scrollToTop": "Top"
   },
   "filtering": {
-    "title": "External Filters",
+    "title": "External Lists",
     "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard Home).",
     "formatDisclaimer": "Supports AdGuard Home format lists or plain domain lists. By default, the system does not automatically match subdomains (only rules with the || prefix block all subdomains).",
     "syncAll": "Sync All Lists",

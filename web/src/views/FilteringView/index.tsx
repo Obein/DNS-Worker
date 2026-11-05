@@ -288,7 +288,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
               />
             </ButtonGroup>
           ) : (
-            <h1 className="bp6-heading">{t("rules.title")}</h1>
+            <h1 className="bp6-heading">{t("filtering.title")}</h1>
           )}
           <p className="bp6-text-muted mt-2!">{t("filtering.subtitle")}</p>
         </div>

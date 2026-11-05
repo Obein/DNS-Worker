@@ -56,11 +56,11 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({
               <Switch
                 checked={!!editRule.include_subdomains}
                 onChange={(e) => setEditRule({ ...editRule, include_subdomains: e.currentTarget.checked })}
-                label={t("rules.includeSubdomains", "同时匹配子域名")}
+                label={t("rules.includeSubdomains", "Include Subdomains")}
                 className="mb-0 font-medium text-sm"
               />
               <span className="text-xs text-gray-400 dark:text-gray-500">
-                ({t("rules.includeSubdomainsDesc", "例如 example.com 同时拦截 *.example.com；默认关闭，仅精确匹配")})
+                {t("rules.includeSubdomainsDesc")}
               </span>
             </div>
 
