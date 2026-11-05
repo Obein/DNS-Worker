@@ -29,7 +29,7 @@ function runAdGuardParserTests(): void {
 
   // 3. Whitelist Exceptions (@@)
   console.log("3. Testing whitelist exceptions (@@)...");
-  const subExc = parseAdGuardLine("@@||safe.example.com^");
+  const subExc = parseAdGuardLine("@@||safe\\.example\\.com^");
   assert.strictEqual(subExc?.kind, AdGuardRuleKind.EXCEPTION);
   assert.strictEqual(subExc?.domain, "safe.example.com");
   assert.strictEqual(subExc?.includeSubdomains, true);
