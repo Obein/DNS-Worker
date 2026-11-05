@@ -1,0 +1,74 @@
+name: Publish Canary to Docker Hub
+
+# ==============================================================================
+# GitHub Actions Workflow: Publish Canary Docker Image on push to `dev`
+# Target Repository: https://hub.docker.com/repository/docker/hugokoo/dns-worker/
+# Tags:
+# - hugokoo/dns-worker:canary
+# - hugokoo/dns-worker:<baseVer>-canary.<shortSha>
+# ==============================================================================
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish_docker_canary:
+    name: Build and Publish Canary to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+
+      - name: Determine and sync canary package version
+        id: meta
+        run: |
+          BASE_VER=$(node -p "require('./package.json').version.split('-')[0]")
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          CANARY_VER="${BASE_VER}-canary.${SHORT_SHA}"
+
+          echo "Syncing package.json version to canary: $CANARY_VER"
+          npm version "$CANARY_VER" --no-git-tag-version --allow-same-version
+
+          echo "canary_ver=$CANARY_VER" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME || 'hugokoo' }}
+          password: ${{ secrets.DOCKERHUB_TOKEN || secrets.DOCKER_TOKEN }}
+
+      - name: Build and push Multi-Arch Canary Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            hugokoo/dns-worker:canary
+            hugokoo/dns-worker:${{ steps.meta.outputs.canary_ver }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

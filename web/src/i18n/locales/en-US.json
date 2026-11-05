@@ -357,7 +357,11 @@
     "no": "No",
     "saveChanges": "Save Changes",
     "delete": "Delete",
-    "close": "Close"
+    "close": "Close",
+    "includeSubdomains": "Match subdomains",
+    "includeSubdomainsDesc": "E.g., example.com also matches *.example.com; off by default (exact match only)",
+    "subdomainsBadge": "+Subdomains",
+    "wildcardDisclaimer": "To match subdomains, use the wildcard *.example.com; example.com will not match subdomains."
   },
   "analytics": {
     "customRange": "Custom Range",
@@ -473,9 +477,9 @@
     "scrollToTop": "Top"
   },
   "filtering": {
-    "title": "External Filters",
-    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard).",
-    "formatDisclaimer": "This system only supports a limited set of AdGuard format lists and plain domain lists. Only basic blocking rules (e.g., ||example.com^) are supported, and \"@@\" whitelist rules will be bypassed. \"$\" rewrite rules and \"*\" wildcard/omit rules are temporarily not supported. The system will automatically match all subdomains of the domains.",
+    "title": "External Lists",
+    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard Home).",
+    "formatDisclaimer": "Supports AdGuard Home format lists or plain domain lists. By default, the system does not automatically match subdomains (only rules with the || prefix block all subdomains).",
     "syncAll": "Sync All Lists",
     "urlPlaceholder": "Enter list URL...",
     "addSubscription": "Add List",
@@ -523,12 +527,15 @@
     "checkViaParent": "(matched a parent domain)",
     "checkNotSynced": "This list has not finished syncing yet, so there is nothing to check against.",
     "checkListDisabled": "This list is currently disabled, so it is not filtering anything right now.",
-    "checkProbabilisticRate": "Filters are probabilistic: roughly 1 match in {{odds}} is a false positive. Adding an exception also covers every subdomain of it.",
-    "checkProbabilistic": "Filters are probabilistic, so a small share of matches are false positives. Adding an exception also covers every subdomain of it.",
     "checkAllowAction": "Allow anyway",
     "checkAllowed": "Exception added - this domain now resolves",
     "allowRuleAdded": "Exception added for {{domain}}",
-    "listDetails": "List Details"
+    "listDetails": "List Details",
+    "syncSingle": "Sync this list",
+    "singleSyncStarted": "List sync task started",
+    "checkWhitelisted": "Allowed by this list",
+    "checkWhitelistedDesc": "Matched an exception rule (@@) in this list, allowing it even if matched by blocking rules.",
+    "checkViaPattern": "(matched a pattern rule)"
   },
   "settings": {
     "title": "Settings",

@@ -357,7 +357,11 @@
     "no": "No",
     "saveChanges": "Guardar cambios",
     "delete": "Eliminar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "includeSubdomains": "Incluir subdominios",
+    "includeSubdomainsDesc": "P. ej., example.com también coincidirá con *.example.com; desactivado por defecto (solo coincidencia exacta)",
+    "subdomainsBadge": "+Subdominios",
+    "wildcardDisclaimer": "Para hacer coincidir subdominios, use el comodín *.example.com; example.com no coincidirá con subdominios."
   },
   "analytics": {
     "customRange": "Periodo personalizado",
@@ -473,9 +477,9 @@
     "scrollToTop": "Ir arriba"
   },
   "filtering": {
-    "title": "Listas de bloqueo externas",
-    "subtitle": "Suscríbete a listas de bloqueo de dominios mantenidas por terceros (como AdGuard, etc.).",
-    "formatDisclaimer": "Este sistema solo admite formatos limitados de listas AdGuard y listas de dominios puros. Solo se admiten reglas de bloqueo básicas (p. ej., ||example.com^); se ignorarán las exclusiones \"@@\", las reglas de reescritura \"$\" y los comodines \"*\". Los subdominios se asocian de forma automática.",
+    "title": "Listas externas",
+    "subtitle": "Suscríbete a listas de bloqueo de dominios mantenidas por terceros (como AdGuard Home, etc.).",
+    "formatDisclaimer": "Admite listas en formato AdGuard Home o listas de dominios puros. De forma predeterminada, el sistema no coincide automáticamente con subdominios (solo las reglas con el prefijo || bloquean todos los subdominios).",
     "syncAll": "Sincronizar todas las listas",
     "urlPlaceholder": "Introduce la URL de la lista...",
     "addSubscription": "Añadir suscripción",
@@ -523,12 +527,15 @@
     "checkViaParent": "(coincide con un dominio superior)",
     "checkNotSynced": "Esta lista aún no ha terminado de sincronizarse, así que no hay nada que comprobar.",
     "checkListDisabled": "Esta lista está actualmente desactivada, por lo que no está filtrando nada ahora mismo.",
-    "checkProbabilisticRate": "Los filtros son probabilísticos: aproximadamente 1 de cada {{odds}} coincidencias es un falso positivo. Añadir una excepción también cubre todos sus subdominios.",
-    "checkProbabilistic": "Los filtros son probabilísticos, por lo que una pequeña parte de las coincidencias son falsos positivos. Añadir una excepción también cubre todos sus subdominios.",
     "checkAllowAction": "Permitir de todos modos",
     "checkAllowed": "Excepción añadida - este dominio ahora se resuelve",
     "allowRuleAdded": "Excepción añadida para {{domain}}",
-    "listDetails": "Detalles de la lista"
+    "listDetails": "Detalles de la lista",
+    "syncSingle": "Sincronizar esta lista",
+    "singleSyncStarted": "Sincronización de lista iniciada",
+    "checkWhitelisted": "Permitido por esta lista",
+    "checkWhitelistedDesc": "Coincidió con una regla de excepción (@@) en esta lista, permitiéndola con prioridad sobre bloqueos.",
+    "checkViaPattern": "(coincidió con una regla de patrón)"
   },
   "settings": {
     "title": "Ajustes de perfil",

@@ -130,13 +130,15 @@ Normalizes heterogeneous network payloads into standard binary DNS messages:
 
 ### 2. Filtering & Bloom Engine Layer
 
-Arbitrates whether a domain query is permitted or blocked:
+Arbitrates whether a domain query is permitted, rewritten, or blocked:
 
-- **Three-Tier Cascade Pipeline**:
-  1. **Whitelist Bypass**: Checks user-defined allowlists; matches bypass further inspection immediately.
-  2. **Exact & Wildcard Rules**: Evaluates domain tree hash maps in sub-microseconds.
-  3. **Partitioned Bloom Filters**: Compresses massive blocklists (hundreds of thousands of domains) into partitioned bitsets (256KB-1MB per chunk) using MurmurHash3, maintaining zero false negatives and a false positive rate under 0.1%, reducing memory footprint by over 90%.
-- **Rule Sync Pipeline (`src/utils/sync/`)**: Periodically downloads blocklist sources, cleans formatting, performs Punycode conversion and deduplication, writing compressed chunks directly to the database.
+- **Five-Tier Cascade Hybrid Pipeline**:
+  1. **Tier 1: Local Custom Rules**: Evaluates user-defined allowlists, redirects, and blocklists with configurable exact-domain or subdomain matching.
+  2. **Tier 2: AdGuard Whitelist Exceptions (`@@`)**: Evaluates exceptions in memory via $O(1)$ hash sets with hierarchical parent-walk fallback, ensuring external blocklist false positives are bypassed immediately with zero false positive risk.
+  3. **Tier 3: AdGuard DNS Rewrites (`$dnsrewrite`)**: Evaluates synthetic DNS responses (A, AAAA, CNAME, NXDOMAIN, REFUSED) for targeted domain overrides.
+  4. **Tier 4: Dual-State Prefix-Encoded Bloom Filter**: Evaluates massive external blocklists (millions of domains) in sub-microseconds. Distinguishes exact domain entries from wildcard domain entries with the `||` prefix, eliminating false subdomain blocks.
+  5. **Tier 5: Regex & Complex Pattern Pool**: Evaluates complex wildcards and regular expressions (`/regex/`) using an apex-domain index to prevent linear scanning penalties, bounded by `MAX_REGEX_RULES=1000`.
+- **Rule Sync Pipeline (`src/utils/sync/`)**: Downloads blocklist sources, cleans formatting, performs Punycode conversion, and compiles dual-state Bloom bitsets and AdGuard payload rules into the database. Supports serial staggered full sync with 1-second pacing delays and on-demand single-list synchronization.
 
 ### 3. Core Resolver & Upstream Router Layer
 

@@ -9,9 +9,22 @@ export class ListModel {
     return results;
   }
 
-  async addList(profileId: string, url: string): Promise<boolean> {
+  async addList(profileId: string, url: string): Promise<{ success: boolean; id?: number }> {
     const result = await this.db.prepare("INSERT INTO lists (profile_id, url) VALUES (?, ?)").bind(profileId, url).run();
-    return result.success;
+    const lastRowId = result.meta?.last_row_id;
+    if (lastRowId && typeof lastRowId === 'number' && lastRowId > 0) {
+      return { success: result.success, id: lastRowId };
+    }
+    const inserted = await this.getListByUrl(url, profileId);
+    return { success: result.success, id: inserted?.id };
+  }
+
+  /** Fetches a list belonging to a profile by URL, or null when absent. */
+  async getListByUrl(url: string, profileId: string): Promise<List | null> {
+    return await this.db
+      .prepare("SELECT * FROM lists WHERE url = ? AND profile_id = ? ORDER BY id DESC LIMIT 1")
+      .bind(url, profileId)
+      .first<List | null>();
   }
 
   /**

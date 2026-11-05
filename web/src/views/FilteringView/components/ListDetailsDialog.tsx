@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag } from "@blueprintjs/core";
-import { Copy, ExternalLink, Trash2, Search, ShieldOff } from "lucide-react";
+import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag, PopoverNext } from "@blueprintjs/core";
+import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
 import { checkDomainAgainstList, type ListCheckResult } from "../../../services";
@@ -16,6 +16,8 @@ export interface ListDetailsDialogProps {
   onToggleEnabled: (id: number, enabled: boolean) => Promise<void>;
   /** Adds an ALLOW rule so this domain resolves even while the list blocks it. */
   onAllowDomain: (domain: string) => Promise<void>;
+  /** Triggers manual sync for this single list */
+  onSyncSingle?: (id: number) => Promise<void>;
 }
 
 export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
@@ -26,6 +28,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   onDelete,
   onToggleEnabled,
   onAllowDomain,
+  onSyncSingle,
 }) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -35,6 +38,8 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   const [allowing, setAllowing] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [syncingSingle, setSyncingSingle] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   /** Monotonic id of the newest check, so stale responses can be discarded. */
   const checkToken = useRef(0);
 
@@ -49,6 +54,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
     setResult(null);
     setError(null);
     setAllowed(false);
+    setDeleteConfirmOpen(false);
   };
 
   const runCheck = async () => {
@@ -107,6 +113,16 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
     }
   };
 
+  const handleSync = async () => {
+    if (!selectedList || !onSyncSingle) return;
+    setSyncingSingle(true);
+    try {
+      await onSyncSingle(selectedList.id);
+    } finally {
+      setSyncingSingle(false);
+    }
+  };
+
   return (
     <Dialog
       isOpen={selectedList !== null}
@@ -148,9 +164,10 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <InputGroup
               fill
+              className="flex-1 min-w-0"
               placeholder="example.com"
               value={query}
               disabled={checking}
@@ -164,6 +181,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
               onKeyDown={(e) => { if (e.key === "Enter") void runCheck(); }}
             />
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<Search size={14} />}
               text={t("filtering.check", "Check")}
               loading={checking}
@@ -200,18 +218,11 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
                       <>
                         {" "}
                         <Tag minimal className="font-mono">{result.matchedEntry}</Tag>{" "}
-                        {t("filtering.checkViaParent", "(matched a parent domain)")}
+                        {result.matchedEntry.includes("*") || result.matchedEntry.startsWith("/")
+                          ? t("filtering.checkViaPattern", "(匹配到通配规则)")
+                          : t("filtering.checkViaParent", "(matched a parent domain)")}
                       </>
                     )}
-                  </div>
-                  <div className="opacity-75">
-                    {result.falsePositiveRate
-                      ? t("filtering.checkProbabilisticRate", {
-                          defaultValue:
-                            "Filters are probabilistic: roughly 1 match in {{odds}} is a false positive. Adding an exception also covers every subdomain of it.",
-                          odds: Math.round(1 / result.falsePositiveRate).toLocaleString(),
-                        })
-                      : t("filtering.checkProbabilistic", "Filters are probabilistic, so a small share of matches are false positives. Adding an exception also covers every subdomain of it.")}
                   </div>
                   {allowed ? (
                     <Tag intent={Intent.SUCCESS} minimal>
@@ -228,6 +239,21 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
                     />
                   )}
                 </div>
+              ) : result.whitelisted ? (
+                <div className="space-y-1">
+                  <div className="font-medium text-emerald-700 dark:text-emerald-400">
+                    {t("filtering.checkWhitelisted", "被该列表放行")}
+                    {result.matchedEntry && (
+                      <>
+                        {" "}
+                        <Tag minimal intent={Intent.SUCCESS} className="font-mono">{result.matchedEntry}</Tag>
+                      </>
+                    )}
+                  </div>
+                  <div className="opacity-75">
+                    {t("filtering.checkWhitelistedDesc", "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。")}
+                  </div>
+                </div>
               ) : (
                 t("filtering.checkNotBlocked", "Not blocked by this list")
               )}
@@ -235,20 +261,22 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
           )}
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-xs opacity-50">
+        <div className="flex justify-between items-center gap-3">
+          <span className="text-xs opacity-50 truncate min-w-0">
             {t("filtering.tableLastSync")}:{" "}
             {selectedList?.last_synced_at
               ? formatDateTime(new Date(selectedList.last_synced_at * 1000))
               : "-"}
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<Copy size={14} />}
               text={t("setup.copyUrl", "Copy link")}
               onClick={() => { if (selectedList) onCopy(selectedList.url); }}
             />
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<ExternalLink size={14} />}
               text={t("setup.learnMore", "Open link")}
               onClick={() => { if (selectedList) window.open(selectedList.url, "_blank"); }}
@@ -257,22 +285,60 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
         </div>
       </div>
 
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between">
-        <Button
-          icon={<Trash2 size={14} />}
-          intent={Intent.DANGER}
-          text={t("rules.delete", "Delete")}
-          onClick={() => {
-            if (!selectedList) return;
-            // Deleting clears selectedList upstream, which closes the dialog by
-            // prop without ever running onClose - so reset here, or the next
-            // list opens showing the deleted list's verdict.
-            const id = selectedList.id;
-            reset();
-            onDelete(id);
-          }}
-        />
-        <Button onClick={() => { reset(); onClose(); }} text={t("rules.close", "Close")} />
+      <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+        <PopoverNext
+          isOpen={deleteConfirmOpen}
+          onInteraction={setDeleteConfirmOpen}
+          placement="top-start"
+          portalClassName="z-20000"
+          content={
+            <div className="p-3 space-y-3 max-w-xs">
+              <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
+                {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  small
+                  variant="minimal"
+                  text={t("common.cancel", "Cancel")}
+                  onClick={() => setDeleteConfirmOpen(false)}
+                />
+                <Button
+                  small
+                  intent={Intent.DANGER}
+                  text={t("common.confirm", "Confirm")}
+                  onClick={() => {
+                    if (!selectedList) return;
+                    const id = selectedList.id;
+                    setDeleteConfirmOpen(false);
+                    reset();
+                    onDelete(id);
+                  }}
+                />
+              </div>
+            </div>
+          }
+        >
+          <Button
+            icon={<Trash2 size={14} />}
+            intent={Intent.DANGER}
+            text={t("rules.delete", "Delete")}
+            onClick={() => setDeleteConfirmOpen(true)}
+          />
+        </PopoverNext>
+        <div className="flex gap-2">
+          {onSyncSingle && (
+            <Button
+              icon={<RefreshCw size={14} className={syncingSingle ? "animate-spin" : ""} />}
+              intent={Intent.PRIMARY}
+              loading={syncingSingle}
+              disabled={syncingSingle}
+              text={t("filtering.syncSingle", "同步此列表")}
+              onClick={() => void handleSync()}
+            />
+          )}
+          <Button onClick={() => { reset(); onClose(); }} text={t("rules.close", "Close")} />
+        </div>
       </div>
     </Dialog>
   );

@@ -61,7 +61,16 @@ export const pipeline = {
     }
 
     // 匹配规则 (本地 + 外部)
-    const matchResult = await pipelineFilter.match(request, query, context, config.settings, config.rules, config.bloom, track);
+    const matchResult = await pipelineFilter.match(
+      request,
+      query,
+      context,
+      config.settings,
+      config.rules,
+      config.bloom,
+      track,
+      config.adguard
+    );
     if (matchResult) return { ...matchResult, timings: { ...timings, ...matchResult.timings } };
 
     // 默认策略 & 最终解析

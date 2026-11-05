@@ -357,7 +357,11 @@
     "no": "Non",
     "saveChanges": "Enregistrer les modifications",
     "delete": "Supprimer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "includeSubdomains": "Inclure les sous-domaines",
+    "includeSubdomainsDesc": "Ex. : example.com correspondra aussi à *.example.com ; désactivé par défaut (correspondance exacte uniquement)",
+    "subdomainsBadge": "+Sous-domaines",
+    "wildcardDisclaimer": "Pour faire correspondre les sous-domaines, utilisez le caractère générique *.example.com ; example.com ne correspondra pas aux sous-domaines."
   },
   "analytics": {
     "customRange": "Période personnalisée",
@@ -473,9 +477,9 @@
     "scrollToTop": "Haut de page"
   },
   "filtering": {
-    "title": "Listes de blocage externes",
-    "subtitle": "Abonnez-vous à des listes de blocage de domaines gérées par des tiers (comme AdGuard, etc.).",
-    "formatDisclaimer": "Ce système ne prend en charge que les formats de liste AdGuard basiques et les listes de domaines simples. Seules les règles de blocage de base (ex. ||example.com^) sont prises en compte ; les exceptions \"@@\", les règles de réécriture \"$\" et les jokers \"*\" sont ignorés. Les sous-domaines sont associés automatiquement.",
+    "title": "Listes externes",
+    "subtitle": "Abonnez-vous à des listes de blocage de domaines gérées par des tiers (comme AdGuard Home, etc.).",
+    "formatDisclaimer": "Prend en charge les listes au format AdGuard Home ou les listes de domaines purs. Par défaut, le système ne fait pas correspondre automatiquement les sous-domaines (seules les règles avec le préfixe || bloquent tous les sous-domaines).",
     "syncAll": "Synchroniser toutes les listes",
     "urlPlaceholder": "Saisir l'URL de la liste...",
     "addSubscription": "Ajouter un abonnement",
@@ -523,12 +527,15 @@
     "checkViaParent": "(correspond à un domaine parent)",
     "checkNotSynced": "Cette liste n'a pas encore terminé sa synchronisation, il n'y a donc rien à vérifier.",
     "checkListDisabled": "Cette liste est actuellement désactivée, elle ne filtre donc rien pour le moment.",
-    "checkProbabilisticRate": "Les filtres sont probabilistes : environ 1 correspondance sur {{odds}} est un faux positif. Ajouter une exception couvre aussi tous ses sous-domaines.",
-    "checkProbabilistic": "Les filtres sont probabilistes, une petite part des correspondances sont donc des faux positifs. Ajouter une exception couvre aussi tous ses sous-domaines.",
     "checkAllowAction": "Autoriser quand même",
     "checkAllowed": "Exception ajoutée - ce domaine se résout désormais",
     "allowRuleAdded": "Exception ajoutée pour {{domain}}",
-    "listDetails": "Détails de la liste"
+    "listDetails": "Détails de la liste",
+    "syncSingle": "Synchroniser cette liste",
+    "singleSyncStarted": "Synchronisation de la liste démarrée",
+    "checkWhitelisted": "Autorisé par cette liste",
+    "checkWhitelistedDesc": "Correspond à une règle d'exception (@@) dans cette liste, l'autorisant en priorité face aux blocages.",
+    "checkViaPattern": "(correspond à une règle de motif)"
   },
   "settings": {
     "title": "Paramètres du profil",

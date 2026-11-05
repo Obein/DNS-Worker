@@ -31,6 +31,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   const [newRule, setNewRule] = useState<{
     type: Rule["type"];
     pattern: string;
+    include_subdomains?: boolean;
     v_a: string;
     v_aaaa: string;
     v_txt: string;
@@ -38,6 +39,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   }>({
     type: "BLOCK",
     pattern: "",
+    include_subdomains: false,
     v_a: "",
     v_aaaa: "",
     v_txt: "",
@@ -73,6 +75,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
     setNewRule({
       type: "REDIRECT",
       pattern: window.location.hostname,
+      include_subdomains: false,
       v_a: "",
       v_aaaa: "",
       v_txt: "",
@@ -88,6 +91,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       setNewRule({
         type: prefill.type,
         pattern: prefill.domain,
+        include_subdomains: false,
         v_a: prefill.recordType === "A" ? "0.0.0.0" : "",
         v_aaaa: prefill.recordType === "AAAA" ? "::" : "",
         v_txt: prefill.recordType === "TXT" ? "Pre-filled" : "",
@@ -148,7 +152,11 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
     }
     setIsAdding(true);
     try {
-      await addProfileRule(profileId, { ...newRule, pattern: trimmedPattern });
+      await addProfileRule(profileId, {
+        ...newRule,
+        pattern: trimmedPattern,
+        include_subdomains: 0,
+      });
       toasterRef?.current?.show({
         message: t("rules.addSuccess", "Rule added successfully"),
         intent: Intent.SUCCESS,
@@ -156,6 +164,7 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
       setNewRule({
         type: "BLOCK",
         pattern: "",
+        include_subdomains: false,
         v_a: "",
         v_aaaa: "",
         v_txt: "",
@@ -192,7 +201,11 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
     }
     setIsSaving(true);
     try {
-      await updateProfileRule(profileId, { ...editRule, pattern: trimmedPattern } as Rule);
+      await updateProfileRule(profileId, {
+        ...editRule,
+        pattern: trimmedPattern,
+        include_subdomains: 0,
+      } as Rule);
       toasterRef?.current?.show({
         message: t("rules.updateSuccess", "Rule updated successfully"),
         intent: Intent.SUCCESS,
@@ -214,7 +227,10 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
   };
 
   const startEdit = (rule: Rule) => {
-    setEditRule({ ...rule });
+    setEditRule({
+      ...rule,
+      include_subdomains: rule.include_subdomains === 1 || rule.include_subdomains === true,
+    });
   };
 
   const deleteRule = async (id: number) => {
@@ -308,6 +324,15 @@ export const RulesView: React.FC<RulesViewProps> = ({ profileId, prefill, onPref
           )}
         </div>
       </div>
+
+      <Callout intent={Intent.PRIMARY} icon="info-sign" className="mb-6">
+        <p>
+          {t(
+            "rules.wildcardDisclaimer",
+            "若要匹配子域名，需使用通配符 *.example.com ，example.com 不会匹配子域名。"
+          )}
+        </p>
+      </Callout>
 
       <AddRuleCard newRule={newRule} setNewRule={setNewRule} addRule={addRule} loading={isAdding} />
 

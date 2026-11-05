@@ -127,6 +127,10 @@ DATABASE_SERVICE = "Turso"
 TURSO_DATABASE_URL = "https://dns-worker-db-yourorg.turso.io"
 ```
 
+:::note[No D1 Binding Required]
+When `DATABASE_SERVICE = "Turso"`, the `[[d1_databases]]` section in `wrangler.toml` is **no longer forcibly required** and can be safely commented out or deleted, preventing Cloudflare API static verification errors on accounts without D1 enabled. Local and production migration scripts (`npm run db:migrate:dev` / `npm run db:migrate:prod`) automatically detect this and skip D1 operations.
+:::
+
 Store your Auth Token as an encrypted secret:
 ```bash
 npx wrangler secret put TURSO_AUTH_TOKEN
@@ -148,8 +152,8 @@ sudo systemctl restart dns-worker
 dns-worker start
 ```
 
-:::tip[Automatic Schema Migrations]
-Unlike D1, Turso mode **does not require manual migration execution**. DNS Worker includes an automated, idempotent migration runner that inspects the remote database schema on startup or upon the first incoming request, seamlessly creating and upgrading missing tables.
+:::tip[Automatic Schema Migrations & Single Source of Truth (SSOT)]
+The project treats `migrations/*.sql` as the Single Source of Truth (SSOT). On standalone Node.js environments, the migration runner dynamically discovers and executes SQL files directly from the filesystem. On Cloudflare Workers, pre-build hooks automatically compile them into embedded modules. In either environment, idempotent migrations execute automatically without manual SQL execution.
 :::
 
 #### 4. Self-Hosted sqld Alternative

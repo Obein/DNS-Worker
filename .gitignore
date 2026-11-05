@@ -14,3 +14,7 @@ dev-dist
 temp_*
 .astro
 .vite-cache
+
+# Auto-generated embedded migrations (Source of truth: migrations/*.sql)
+src/lib/turso/embeddedMigrations.ts
+

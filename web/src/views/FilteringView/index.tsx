@@ -10,7 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
-import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, toggleProfileList, addProfileRule } from "../../services";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, addProfileRule } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -81,26 +81,40 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     return false;
   };
 
-  const addList = async (urlToAdd?: string) => {
-    const url = urlToAdd || newUrl;
-    if (!url) return;
-    setSyncing(true);
-    try {
-      await addCustomProfileList(profileId, url);
-      toasterRef?.current?.show({
-        message: t("filtering.addSuccess"),
-        intent: Intent.SUCCESS,
-        icon: "tick",
-      });
-      setNewUrl("");
+  const waitForSingleSyncCompletion = async (listId: number, oldSyncTime?: number | null) => {
+    let attempts = 0;
+    const maxAttempts = 15; // 30 seconds max
+    while (attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      try {
+        const data = await getProfileLists(profileId);
+        const newLists = data as FilterList[];
+        const current = newLists.find((l) => l.id === listId);
+        if (current && (current.last_synced_at ?? 0) !== (oldSyncTime ?? 0)) {
+          setLists(newLists);
+          setSelectedList(current);
+          return true;
+        }
+      } catch (e) {
+        // Ignore fetch errors during polling
+      }
+      attempts++;
+    }
+    await fetchData();
+    return false;
+  };
 
+  const handleSyncSingleList = async (listId: number) => {
+    try {
+      const oldList = lists.find((l) => l.id === listId);
+      const oldSyncTime = oldList?.last_synced_at;
+      await syncSingleProfileList(profileId, listId);
       toasterRef?.current?.show({
-        message: t("filtering.syncTaskStarted"),
+        message: t("filtering.singleSyncStarted", "列表同步任务已开始"),
         intent: Intent.PRIMARY,
         icon: "cloud-download",
       });
-      
-      const completed = await waitForSyncCompletion(lists);
+      const completed = await waitForSingleSyncCompletion(listId, oldSyncTime);
       if (completed) {
         toasterRef?.current?.show({
           message: t("filtering.syncCheckComplete"),
@@ -110,6 +124,60 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
       }
     } catch (e) {
       console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    }
+  };
+
+  const addList = async (urlToAdd?: string) => {
+    const url = urlToAdd || newUrl;
+    if (!url) return;
+    setSyncing(true);
+    try {
+      const result = await addCustomProfileList(profileId, url);
+      toasterRef?.current?.show({
+        message: t("filtering.addSuccess"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      setNewUrl("");
+
+      toasterRef?.current?.show({
+        message: t("filtering.singleSyncStarted", "列表同步任务已开始"),
+        intent: Intent.PRIMARY,
+        icon: "cloud-download",
+      });
+
+      let targetId = result?.id;
+      if (!targetId) {
+        const fresh = await getProfileLists(profileId);
+        const created = fresh.find((l) => l.url.trim().toLowerCase() === url.trim().toLowerCase());
+        targetId = created?.id;
+        setLists(fresh);
+      }
+
+      if (targetId) {
+        const completed = await waitForSingleSyncCompletion(targetId, 0);
+        if (completed) {
+          toasterRef?.current?.show({
+            message: t("filtering.syncCheckComplete"),
+            intent: Intent.SUCCESS,
+            icon: "tick",
+          });
+        }
+      } else {
+        await fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
     } finally {
       setSyncing(false);
     }
@@ -220,7 +288,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
               />
             </ButtonGroup>
           ) : (
-            <h1 className="bp6-heading">{t("rules.title")}</h1>
+            <h1 className="bp6-heading">{t("filtering.title")}</h1>
           )}
           <p className="bp6-text-muted mt-2!">{t("filtering.subtitle")}</p>
         </div>
@@ -237,8 +305,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
       <Callout intent={Intent.WARNING} icon="info-sign" className="mb-6">
         <p>
           {t(
-            "filtering.formatDisclaimer",
-            "本系统只支持有限的 AdGuard 格式列表和纯域名列表。仅支持基础的拦截规则（如 ||example.com^），会绕过 \"@@\" 白名单，暂不支持 \"$\" 重写规则以及 \"*\" 省略规则。系统会自动匹配域名的所有子域名。"
+            "filtering.formatDisclaimer"
           )}
         </p>
       </Callout>
@@ -262,6 +329,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         onDelete={deleteList}
         onToggleEnabled={setListEnabled}
         onAllowDomain={allowDomain}
+        onSyncSingle={handleSyncSingleList}
       />
     </div>
   );

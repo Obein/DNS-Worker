@@ -16,6 +16,7 @@ import type { GlobalProfileSettings, Rule } from "../../services";
 interface ExportedRule {
   type: string;
   pattern: string;
+  include_subdomains?: boolean | number;
   v_a?: string | null;
   v_aaaa?: string | null;
   v_cname?: string | null;
@@ -157,6 +158,7 @@ export const useImportProfile = (onRefresh?: () => void) => {
             validRules.push({
               type: rule.type,
               pattern: rule.pattern.trim(),
+              include_subdomains: rule.include_subdomains ? 1 : 0,
               v_a: rule.v_a || undefined,
               v_aaaa: rule.v_aaaa || undefined,
               v_cname: rule.v_cname || undefined,

@@ -104,7 +104,9 @@ export const RulesTable: React.FC<RulesTableProps> = ({ rules, startEdit, getBlo
       header: t("rules.tablePattern"),
       headerClassName: "w-1/4",
       cellClassName: "font-mono font-bold",
-      render: (rule: Rule): React.ReactNode => rule.pattern,
+      render: (rule: Rule): React.ReactNode => (
+        <span>{rule.pattern}</span>
+      ),
     },
     {
       key: "details",

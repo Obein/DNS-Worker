@@ -3,6 +3,8 @@ import { BloomFilter } from "../bloom";
 import { fetchListContent } from "../listFetcher";
 import { ListModel } from "../../models/list";
 import { ListBloomModel } from "../../models/listBloom";
+import { AdguardRulesModel } from "../../models/adguardRules";
+import { AdGuardRuleKind, AdGuardPayload, ParsedAdGuardRule } from "../../lib/adguard";
 
 const MAX_LIST_BYTES = 5 * 1024 * 1024;
 
@@ -26,28 +28,64 @@ export async function syncSingleList(
   const maxListDomains = Number(env.MAX_LIST_DOMAINS) || 500000;
   const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
   const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
+  const maxRegexRules = Number(env.MAX_REGEX_RULES) || 1000;
 
   // 协作式调度参数：降低单次持续计算量，适度平摊 CPU 峰值
   const yieldBatchSize = Number(env.SYNC_YIELD_BATCH_SIZE) || 5000;
   const yieldSleepMs = Number(env.SYNC_YIELD_SLEEP_MS) || 10;
 
-  // 创建对应的列表布隆过滤器
+  // 创建对应的列表布隆过滤器与扩展规则载荷
   const listBloom = BloomFilter.create(maxDomains, falsePositiveRate);
+  const adguardPayload: AdGuardPayload = {
+    exceptions: [],
+    rewrites: {},
+    patterns: []
+  };
+
   let count = 0;
   let domainsSinceYield = 0;
 
-  // 流式下载并按行解析域名，直接往布隆过滤器里塞
+  // 流式下载并按行解析规则，分流分类存储
   const { error: fetchError } = await fetchListContent(
     list.url,
     MAX_LIST_BYTES,
     timeoutMs,
-    (domain: string) => {
+    (rule: ParsedAdGuardRule) => {
       if (count < maxListDomains) {
-        listBloom.add(domain);
-        count++;
+        if (rule.kind === AdGuardRuleKind.BLOOM_DOMAIN && rule.domain) {
+          listBloom.add(rule.domain);
+          if (rule.includeSubdomains) {
+            listBloom.add(`||${rule.domain}`);
+          }
+          count++;
+        } else if (rule.kind === AdGuardRuleKind.EXCEPTION && rule.domain) {
+          adguardPayload.exceptions.push({
+            domain: rule.domain,
+            includeSubdomains: Boolean(rule.includeSubdomains),
+            raw: rule.raw
+          });
+          count++;
+        } else if (rule.kind === AdGuardRuleKind.DNS_REWRITE && rule.domain && rule.rewrite) {
+          adguardPayload.rewrites[rule.domain] = {
+            ...rule.rewrite,
+            includeSubdomains: Boolean(rule.includeSubdomains),
+            raw: rule.raw
+          };
+          count++;
+        } else if (rule.kind === AdGuardRuleKind.COMPLEX_PATTERN && rule.patternRegex) {
+          if (adguardPayload.patterns.length < maxRegexRules) {
+            adguardPayload.patterns.push({
+              pattern: rule.patternRegex,
+              apexIndex: rule.apexIndex,
+              raw: rule.raw
+            });
+            count++;
+          }
+        }
+
         domainsSinceYield++;
 
-        // 协作式调度：每处理 yieldBatchSize 个域名让出事件循环，注入喘息延迟平摊 CPU 负载
+        // 协作式调度：每处理 yieldBatchSize 个规则让出事件循环，注入喘息延迟平摊 CPU 负载
         if (domainsSinceYield >= yieldBatchSize) {
           domainsSinceYield = 0;
           return new Promise<void>((resolve) => setTimeout(resolve, yieldSleepMs));
@@ -59,10 +97,16 @@ export async function syncSingleList(
   let syncError: string | null = fetchError;
 
   if (!fetchError) {
-    // 写入列表级布隆过滤器到数据库
-    await listBloomModel.upsertListBloom(list.id, listBloom.toUint8Array().buffer as ArrayBuffer, now);
+    // 写入列表级布隆过滤器和扩展规则到数据库
+    const saveOps: Promise<any>[] = [
+      listBloomModel.upsertListBloom(list.id, listBloom.toUint8Array().buffer as ArrayBuffer, now)
+    ];
+    if (env?.DB) {
+      saveOps.push(new AdguardRulesModel(env.DB).upsertListRules(list.id, adguardPayload, now));
+    }
+    await Promise.all(saveOps);
     console.log(
-      `[Sync] Profile ${profileId}: successfully updated list #${list.id} with ${count} domains.`
+      `[Sync] Profile ${profileId}: successfully updated list #${list.id} with ${count} rules.`
     );
   } else {
     // 拉取失败：跳过，并沿用原有列表缓存，记录错误原因，保持启用状态

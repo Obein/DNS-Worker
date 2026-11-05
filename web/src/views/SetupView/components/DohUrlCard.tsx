@@ -63,7 +63,7 @@ export const DohUrlCard: React.FC<DohUrlCardProps> = ({
             text={t("setup.copyUrl")}
             fill={isMobile}
             onClick={() => copyToClipboard(dohUrl)}
-            className="shrink-0"
+            className="shrink-0 whitespace-nowrap min-w-fit w-auto"
           />
         </div>
       </SectionCard>

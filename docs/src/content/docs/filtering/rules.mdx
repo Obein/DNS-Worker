@@ -46,7 +46,9 @@ Navigate to **Filters** (规则订阅) in the Web Dashboard to inspect and manag
 4. Click **Save & Sync**. DNS Worker parses the rules into optimized memory buffers and updates subscription metadata:
    - **Domain Count**: Displays total parsed unique domain rules (e.g. 100,000+).
    - **Status Badges**: Shows `Normal` (synchronized), `Outdated` (sync pending), or `Missing` (download failed).
-   - **Automated Sync**: Background cron jobs automatically refresh subscriptions on a scheduled cadence.
+   - **Staggered Full Sync**: Manual "Sync All" runs sequentially with a 1-second delay between lists to prevent CPU bursts and database locking.
+   - **Individual List Sync**: Manually trigger synchronization for a specific subscription from its "List Details" dialog, automatically recombining profile rules upon completion.
+   - **Automated Cron Sharding**: Background cron workers shard rule downloads across scheduled intervals (one list per minute), distributing edge resource consumption.
 
 ---
 
@@ -59,6 +61,7 @@ Navigate to **Rules** (自定义规则) to configure instant manual overrides on
 - **Allowlist (白名单)**: Domains that bypass all blocking rules (e.g., corporate subdomains or false positives).
 - **Blocklist (黑名单)**: Explicitly banned domains that take immediate precedence over external lists.
 - **DNS Rewrites (重写 / 重定向)**: Maps custom domains to specific IP addresses or local services (e.g., intranet services or SafeSearch enforcement like `forcesafesearch.google.com`).
+- **Subdomain Matching Policy**: Replaced standalone toggle with wildcard patterns. To match subdomains, use the wildcard `*.example.com`; `example.com` will only match the exact domain.
 - **Supported Syntax**:
   - Plain domains: `ad.example.com`
   - Subdomain wildcards: `*.tracking.company.com` or `||adservice.google.com^`
@@ -94,30 +97,56 @@ DNS Worker provides instant visibility into intercepted threats and permitted re
 
 ---
 
-## 4. Match Engine Architecture: Bloom Filter
+## 4. Match Engine Architecture: Tiered Hybrid Architecture
 
-To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps), DNS Worker uses a **high-performance, single-layer Bloom filter architecture**:
+To maintain high throughput on lightweight environments (such as VPS instances with 512MB RAM or Cloudflare Workers edge nodes with 128MB memory caps) while natively supporting full AdGuard Home filtering rules, DNS Worker uses a **high-performance tiered hybrid architecture**:
 
 ```mermaid
 flowchart TD
-    REQ["Incoming Query (e.g. adserver.tracker.com)"]
-    BLOOM["Bloom Filter Fast Evaluation<br/>(Compact Bitset with Subdomain Hierarchy Strip)"]
-    PASS["ALLOWED (Clean)"]
-    BLOCK["BLOCKED (Matched)"]
+    REQ["Incoming Query (e.g. sub.adserver.tracker.com)"]
+    L1["Tier 1: Local Custom Rules<br/>(Allow / Redirect / Block with configurable subdomain matching)"]
+    L2["Tier 2: AdGuard Whitelist Exceptions (@@)<br/>(In-memory Hash Set O(1) Lookup + Parent-Walk Fallback)"]
+    L3["Tier 3: AdGuard DNS Rewrites ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
+    L4["Tier 4: Dual-State Prefix-Encoded Bloom Filter<br/>(|| Wildcards & Exact Domain Blocklists ~90%)"]
+    L5["Tier 5: Regex & Complex Pattern Pool<br/>(Apex Domain Indexing, MAX_REGEX_RULES Bounded)"]
+    PASS["ALLOWED (Clean / Whitelist)"]
+    BLOCK["BLOCKED (Intercepted / Rewritten)"]
 
-    REQ --> BLOOM
-    BLOOM -->|"Negative (Clean)"| PASS
-    BLOOM -->|"Positive (Matched)"| BLOCK
+    REQ --> L1
+    L1 -->|Whitelist Hit| PASS
+    L1 -->|Blacklist/Redirect Hit| BLOCK
+    L1 -->|No Match| L2
+
+    L2 -->|Exception Hit| PASS
+    L2 -->|No Match| L3
+
+    L3 -->|Rewrite Hit| BLOCK
+    L3 -->|No Match| L4
+
+    L4 -->|Bloom Hit| BLOCK
+    L4 -->|No Match| L5
+
+    L5 -->|Regex Hit| BLOCK
+    L5 -->|No Match| PASS
 ```
 
-1. **Ultra-Lean Single Layer**: Subscribed external blocklists are compiled directly into a compact binary Bloom filter bitset during background sync, completely eliminating the need to store or search heavy raw domain tables or in-memory prefix trees (Tries).
-2. **$O(1)$ Hierarchical Subdomain Check**: Queries evaluate the fully qualified domain and its stripped parent domains (e.g. `ad.tracker.com` $\to$ `tracker.com`) in microseconds, delivering minimal latency (`&lt; 0.1ms`) with an extremely low false-positive rate (default 0.01%).
+1. **Short-Circuit Cascade Evaluation**:
+   - **Tier 1: Local Custom Rules**: Highest priority. Evaluates user-defined rules with configurable exact-domain or subdomain matching.
+   - **Tier 2: AdGuard Whitelist Exceptions (`@@`)**: Maintained as an in-memory hash set (`Set<string>`) with $O(1)$ direct lookup followed by parent-domain label traversal. Matches short-circuit directly to `PASS`, entirely eliminating false-positive risks from downstream Bloom filters.
+   - **Tier 3: AdGuard DNS Rewrites (`$dnsrewrite`)**: Synthesizes custom DNS answers (A, AAAA, CNAME) or custom status codes (NXDOMAIN, REFUSED).
+   - **Tier 4: Dual-State Prefix-Encoded Bloom Filter**: The primary defense line for millions of static blocklist entries. Distinguishes exact domain entries from wildcard domain entries with the `||` prefix, executing in microseconds and preventing single-domain rules from incorrectly intercepting subdomains.
+   - **Tier 5: Regex & Complex Pattern Pool**: Evaluates `/regex/` and complex wildcards with inverted apex-domain indices, narrowing regex evaluation scope. Bounded by a default cap of 1,000 patterns per profile.
 
 ---
 
 ## 5. Filtering Environment Variables Reference
 
 Configure these variables in `.env` (Serverfull) or `wrangler.toml` (Cloudflare Workers).
+
+### `MAX_REGEX_RULES`
+- **Supported in**: Serverless & Serverfull
+- **Default**: `1000`
+- **Description**: Maximum number of merged AdGuard regular expression and complex wildcard rules permitted per profile. Excess patterns are safely discarded with warning logs to preserve sub-millisecond DNS lookup performance.
 
 ### `PRESET_EXTERNAL_FILTERS`
 - **Supported in**: Serverless & Serverfull

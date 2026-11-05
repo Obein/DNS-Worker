@@ -25,13 +25,20 @@ binding = "ASSETS"
 # Force the Worker to run first for all incoming requests (API, DoH, SPA rewriting)
 run_worker_first = true
 
-# D1 Database for Profiles, Rules and Logs (Default database backend for Serverless mode)
-# Note: If DATABASE_SERVICE is set to "Turso", the Worker will connect to Turso (libSQL over HTTP) instead of D1.
-# 注意：若在 [vars] 中设置 DATABASE_SERVICE = "Turso"，Worker 将使用 Turso 远程数据库替代 D1。
+# ==============================================================================
+# Cloudflare D1 Database Binding / Cloudflare D1 数据库绑定
+# ==============================================================================
+# D1 Database binding is ONLY required when DATABASE_SERVICE is set to "D1".
+# If you choose Turso (DATABASE_SERVICE = "Turso"), Cloudflare D1 is NOT needed.
+# You can safely comment out or delete the entire [[d1_databases]] block below.
+# 仅当 DATABASE_SERVICE = "D1" 时需要关联此配置项。
+# 若在 [vars] 中设置 DATABASE_SERVICE = "Turso"，Worker 运行时将通过 HTTP (Hrana 协议)
+# 直连远程 Turso 数据库，无需在 Cloudflare 上创建或绑定任何 D1 数据库，可直接将下方 [[d1_databases]] 整段注释或删除。
 [[d1_databases]]
 binding = "DB"
 database_name = "dns_worker_db"
-# This field must be filled with your database ID; otherwise the deployment will fail.
+# Only need to provide your actual D1 `database_id` when using D1; no configuration is required if you choose Turso.
+# 仅在使用 D1 时需要填写您的真实 D1 database_id；选择 Turso 时无需配置。
 database_id = "13d8c24f-064a-40d6-8b10-fa70bb3f79ab"
 
 [triggers]
@@ -207,6 +214,10 @@ PRESET_EXTERNAL_FILTERS = """
   {
     "label": "filtering.presetStevenBlack",
     "url": "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+  },
+  {
+    "label": "anti-AD AdGuard Home List",
+    "url": "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt"
   }
 ]
 """

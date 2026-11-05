@@ -1,16 +1,16 @@
 import { isSafeUrlWithDnsCheck } from "./validator";
-import { parseLine } from "./parser";
+import { parseAdGuardLine, AdGuardRuleKind, ParsedAdGuardRule } from "../lib/adguard";
 
 /** 单个列表的拉取结果 */
 export interface FetchListResult {
-  /** 成功解析并由回调接收的域名总数 */
+  /** 成功解析并由回调接收的有效规则总数 */
   count: number;
   /** 错误信息；成功时为 null */
   error: string | null;
 }
 
 /** 回调函数：支持同步返回 void（绝大多数场景），仅在出让 CPU 时返回 Promise */
-export type DomainConsumer = (domain: string) => void | Promise<void>;
+export type DomainConsumer = (rule: ParsedAdGuardRule) => void | Promise<void>;
 
 /**
  * 流式拉取单个订阅列表并逐行解析域名。
@@ -144,9 +144,9 @@ export async function fetchListContent(
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          const domain = parseLine(line);
-          if (domain) {
-            const res = onDomain(domain);
+          const rule = parseAdGuardLine(line);
+          if (rule && rule.kind !== AdGuardRuleKind.COMMENT && rule.kind !== AdGuardRuleKind.UNSUPPORTED) {
+            const res = onDomain(rule);
             if (res instanceof Promise) {
               await res;
             }
@@ -158,9 +158,9 @@ export async function fetchListContent(
 
     // 处理流完结后残留的尾行数据
     if (buffer) {
-      const domain = parseLine(buffer);
-      if (domain) {
-        const res = onDomain(domain);
+      const rule = parseAdGuardLine(buffer);
+      if (rule && rule.kind !== AdGuardRuleKind.COMMENT && rule.kind !== AdGuardRuleKind.UNSUPPORTED) {
+        const res = onDomain(rule);
         if (res instanceof Promise) {
           await res;
         }

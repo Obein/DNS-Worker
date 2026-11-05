@@ -357,7 +357,11 @@
     "no": "否",
     "saveChanges": "保存更改",
     "delete": "删除",
-    "close": "关闭"
+    "close": "关闭",
+    "includeSubdomains": "同时匹配子域名",
+    "includeSubdomainsDesc": "例如 example.com 同时匹配 *.example.com；默认关闭，仅精确匹配",
+    "subdomainsBadge": "+子域名",
+    "wildcardDisclaimer": "若要匹配子域名，需使用通配符 *.example.com ，example.com 不会匹配子域名。"
   },
   "analytics": {
     "customRange": "自定义时间范围",
@@ -473,9 +477,9 @@
     "scrollToTop": "至顶"
   },
   "filtering": {
-    "title": "外部拦截列表",
-    "subtitle": "订阅第三方维护的域名屏蔽清单 (如 AdGuard 等)。",
-    "formatDisclaimer": "本系统只支持有限的 AdGuard 格式列表和纯域名列表。仅支持基础的拦截规则（如 ||example.com^），会绕过 \"@@\" 白名单，暂不支持 \"$\" 重写规则以及 \"*\" 省略规则。系统会自动匹配域名的所有子域名。",
+    "title": "外部列表",
+    "subtitle": "订阅第三方维护的域名屏蔽清单 (如 AdGuard Home 等)。",
+    "formatDisclaimer": "本系统支持 AdGuard Home 格式列表或纯域名列表。系统默认不会自动匹配子域名（仅包含 || 前缀的规则会拦截其所有子域名）。",
     "syncAll": "同步所有列表",
     "urlPlaceholder": "输入拦截列表 URL...",
     "addSubscription": "添加订阅",
@@ -511,7 +515,7 @@
     "deleteError": "列表删除失败",
     "addSuccess": "列表添加成功",
     "addError": "列表添加失败",
-    "listEnabled": "列表已启用",
+    "listEnabled": "启用列表",
     "listEnabledHint": "禁用后将停止使用此列表进行过滤，但不会删除该列表，其订阅和同步历史会保留。",
     "listEnabledToast": "已启用列表 - 正在重建过滤器",
     "listDisabledToast": "已禁用列表 - 正在重建过滤器",
@@ -523,12 +527,15 @@
     "checkViaParent": "（匹配到上级域名）",
     "checkNotSynced": "此列表尚未完成同步，因此暂无可供检查的内容。",
     "checkListDisabled": "此列表当前已禁用，因此现在不会过滤任何内容。",
-    "checkProbabilisticRate": "过滤器基于概率：大约每 {{odds}} 次匹配中有 1 次为误判。添加例外规则也会覆盖其所有子域名。",
-    "checkProbabilistic": "过滤器基于概率，因此少部分匹配属于误判。添加例外规则也会覆盖其所有子域名。",
     "checkAllowAction": "仍然允许",
     "checkAllowed": "已添加例外 - 该域名现在可以解析",
     "allowRuleAdded": "已为 {{domain}} 添加例外",
-    "listDetails": "列表详情"
+    "listDetails": "列表详情",
+    "syncSingle": "同步此列表",
+    "singleSyncStarted": "列表同步任务已开始",
+    "checkWhitelisted": "被该列表放行",
+    "checkWhitelistedDesc": "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。",
+    "checkViaPattern": "(匹配到通配规则)"
   },
   "settings": {
     "title": "配置设置",

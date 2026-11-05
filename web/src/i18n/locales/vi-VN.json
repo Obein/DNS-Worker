@@ -357,7 +357,11 @@
     "no": "Không",
     "saveChanges": "Lưu thay đổi",
     "delete": "Xóa",
-    "close": "Đóng"
+    "close": "Đóng",
+    "includeSubdomains": "Bao gồm tên miền phụ",
+    "includeSubdomainsDesc": "Ví dụ: example.com cũng khớp với *.example.com; mặc định tắt (chỉ khớp chính xác)",
+    "subdomainsBadge": "+Tên miền phụ",
+    "wildcardDisclaimer": "Để khớp với các miền phụ, hãy sử dụng ký tự đại diện *.example.com; example.com sẽ không khớp với các miền phụ."
   },
   "analytics": {
     "customRange": "Khoảng thời gian tùy chỉnh",
@@ -473,9 +477,9 @@
     "scrollToTop": "Lên đầu"
   },
   "filtering": {
-    "title": "Danh sách chặn bên ngoài",
-    "subtitle": "Đăng ký danh sách chặn tên miền do bên thứ ba duy trì (như AdGuard, v.v.).",
-    "formatDisclaimer": "Hệ thống này chỉ hỗ trợ một số định dạng danh sách AdGuard giới hạn và danh sách tên miền thuần túy. Chỉ hỗ trợ các quy tắc chặn cơ bản (ví dụ: ||example.com^), sẽ bỏ qua danh sách trắng \"@@\", hiện chưa hỗ trợ các quy tắc viết lại \"$\" và quy tắc rút gọn \"*\". Hệ thống sẽ tự động khớp tất cả các tên miền phụ của tên miền.",
+    "title": "Danh sách bên ngoài",
+    "subtitle": "Đăng ký danh sách chặn tên miền do bên thứ ba duy trì (như AdGuard Home, v.v.).",
+    "formatDisclaimer": "Hỗ trợ danh sách định dạng AdGuard Home hoặc danh sách tên miền thuần túy. Theo mặc định, hệ thống không tự động khớp các miền phụ (chỉ các quy tắc có tiền tố || mới chặn tất cả các miền phụ).",
     "syncAll": "Đồng bộ tất cả danh sách",
     "urlPlaceholder": "Nhập URL danh sách chặn...",
     "addSubscription": "Thêm đăng ký",
@@ -523,12 +527,15 @@
     "checkViaParent": "(khớp với tên miền cha)",
     "checkNotSynced": "Danh sách này chưa đồng bộ xong, nên chưa có gì để kiểm tra.",
     "checkListDisabled": "Danh sách này hiện đang tắt, nên không lọc gì vào lúc này.",
-    "checkProbabilisticRate": "Bộ lọc mang tính xác suất: khoảng 1 trong {{odds}} lượt khớp là dương tính giả. Thêm ngoại lệ cũng áp dụng cho mọi tên miền con của nó.",
-    "checkProbabilistic": "Bộ lọc mang tính xác suất, nên một phần nhỏ các lượt khớp là dương tính giả. Thêm ngoại lệ cũng áp dụng cho mọi tên miền con của nó.",
     "checkAllowAction": "Vẫn cho phép",
     "checkAllowed": "Đã thêm ngoại lệ - tên miền này giờ đã phân giải được",
     "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}",
-    "listDetails": "Chi tiết danh sách"
+    "listDetails": "Chi tiết danh sách",
+    "syncSingle": "Đồng bộ danh sách này",
+    "singleSyncStarted": "Tác vụ đồng bộ danh sách đã bắt đầu",
+    "checkWhitelisted": "Được cho phép bởi danh sách này",
+    "checkWhitelistedDesc": "Khớp với quy tắc ngoại lệ (@@) trong danh sách này, được ưu tiên cho phép.",
+    "checkViaPattern": "(khớp quy tắc mẫu)"
   },
   "settings": {
     "title": "Cài đặt cấu hình",

@@ -357,7 +357,11 @@
     "no": "아니요",
     "saveChanges": "변경 사항 저장",
     "delete": "삭제",
-    "close": "닫기"
+    "close": "닫기",
+    "includeSubdomains": "서브도메인 포함",
+    "includeSubdomainsDesc": "예: example.com일 때 *.example.com도 일치합니다 (기본값 꺼짐, 정확한 일치만)",
+    "subdomainsBadge": "+서브도메인",
+    "wildcardDisclaimer": "서브도메인을 매칭하려면 와일드카드 *.example.com 을 사용해야 합니다. example.com 은 서브도메인과 매칭되지 않습니다."
   },
   "analytics": {
     "customRange": "사용자 지정 범위",
@@ -473,9 +477,9 @@
     "scrollToTop": "맨 위로"
   },
   "filtering": {
-    "title": "외부 차단 리스트",
-    "subtitle": "타사에서 유지 관리하는 도메인 차단 목록(예: AdGuard 등)을 구독합니다.",
-    "formatDisclaimer": "본 시스템은 일부 AdGuard 형식 목록 및 순수 도메인 목록만 지원합니다. 기본적인 차단 규칙(예: ||example.com^)만 지원되며, \"@@\" 백리스트, \"$\" 재작성 규칙 및 \"*\" 와일드카드 규칙은 현재 무시됩니다. 하위 도메인은 자동으로 일치합니다.",
+    "title": "외부 리스트",
+    "subtitle": "타사에서 유지 관리하는 도메인 차단 목록(예: AdGuard Home 등)을 구독합니다。",
+    "formatDisclaimer": "이 시스템은 AdGuard Home 형식 목록 또는 순수 도메인 목록을 지원합니다. 시스템은 기본적으로 하위 도메인을 자동으로 일치시키지 않습니다(|| 접두사가 포함된 규칙만 모든 하위 도메인을 차단함).",
     "syncAll": "모든 목록 동기화",
     "urlPlaceholder": "차단 리스트 URL 입력...",
     "addSubscription": "구독 추가",
@@ -523,12 +527,15 @@
     "checkViaParent": "(상위 도메인에서 일치)",
     "checkNotSynced": "이 목록은 아직 동기화가 끝나지 않아 확인할 것이 없습니다.",
     "checkListDisabled": "이 목록은 현재 비활성화되어 있어 지금은 아무것도 필터링하지 않습니다.",
-    "checkProbabilisticRate": "필터는 확률적입니다: 약 {{odds}}건 중 1건이 오탐입니다. 예외를 추가하면 모든 하위 도메인도 함께 적용됩니다.",
-    "checkProbabilistic": "필터는 확률적이므로 일부 일치는 오탐입니다. 예외를 추가하면 모든 하위 도메인도 함께 적용됩니다.",
     "checkAllowAction": "그래도 허용",
     "checkAllowed": "예외가 추가되었습니다 - 이제 이 도메인이 확인됩니다",
     "allowRuleAdded": "{{domain}}에 대한 예외가 추가되었습니다",
-    "listDetails": "목록 세부정보"
+    "listDetails": "목록 세부정보",
+    "syncSingle": "이 목록 동기화",
+    "singleSyncStarted": "목록 동기화 작업이 시작되었습니다",
+    "checkWhitelisted": "이 리스트에 의해 허용됨",
+    "checkWhitelistedDesc": "이 리스트의 예외 규칙 (@@) 에 일치하여 다른 차단 규칙보다 우선 허용됩니다.",
+    "checkViaPattern": "(패턴 규칙 일치)"
   },
   "settings": {
     "title": "구성 설정",

@@ -127,6 +127,10 @@ DATABASE_SERVICE = "Turso"
 TURSO_DATABASE_URL = "https://dns-worker-db-yourorg.turso.io"
 ```
 
+:::note[无需关联 D1 数据库]
+当 `DATABASE_SERVICE = "Turso"` 时，`wrangler.toml` 中的 `[[d1_databases]]` 配置块**不再强制关联**，可安全注释或完全删除，避免未开通 D1 的 Cloudflare 账号在部署时遭遇静态数据库校验失败。本地与生产迁移脚本（`npm run db:migrate:dev` / `npm run db:migrate:prod`）亦会自动感知并跳过 D1 流程。
+:::
+
 将 Auth Token 注入为加密密钥（Secret）：
 ```bash
 npx wrangler secret put TURSO_AUTH_TOKEN
@@ -148,8 +152,8 @@ sudo systemctl restart dns-worker
 dns-worker start
 ```
 
-:::tip[全自动数据迁移]
-与 D1 不同，Turso 模式**无需手动执行 SQL 迁移文件**。DNS Worker 内部封装了基于 Hrana 管道协议的幂等迁移引擎，在服务初次启动或边缘节点初次处理请求时，会自动检测并依次安全应用数据库表结构升级。
+:::tip[全自动数据迁移与单一事实来源 (SSOT)]
+项目以 `migrations/*.sql` 作为唯一的数据库表结构事实来源（SSOT）。在独立主机（Node.js / VPS）环境下，迁移引擎直接动态读取磁盘上的 SQL 迁移脚本；在 Cloudflare Workers 边缘环境下，构建与开发生命周期脚本会自动将 SQL 编译为内嵌迁移模块。无论是 VPS 启动还是边缘节点首次处理请求，系统均会自动检测并幂等应用最新的数据库表结构升级。
 :::
 
 #### 4. 私有化部署自建 sqld 方案

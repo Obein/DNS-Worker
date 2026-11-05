@@ -357,7 +357,11 @@
     "no": "否",
     "saveChanges": "儲存變更",
     "delete": "刪除",
-    "close": "關閉"
+    "close": "關閉",
+    "includeSubdomains": "同時匹配子網域",
+    "includeSubdomainsDesc": "例如 example.com 同時匹配 *.example.com；預設關閉，僅精確匹配",
+    "subdomainsBadge": "+子網域",
+    "wildcardDisclaimer": "若要比對子網域，需使用萬用字元 *.example.com ，example.com 不會比對子網域。"
   },
   "analytics": {
     "customRange": "自訂時間範圍",
@@ -473,9 +477,9 @@
     "scrollToTop": "至頂"
   },
   "filtering": {
-    "title": "外部攔截清單",
-    "subtitle": "訂閱第三方維護的域名屏蔽清單 (如 AdGuard 等)。",
-    "formatDisclaimer": "本系統只支援有限的 AdGuard 格式列表和純域名列表。僅支援基礎的攔截規則（如 ||example.com^），會繞過 \"@@\" 白名單，暫不支援 \"$\" 重寫規則以及 \"*\" 省略規則。系統會自動匹配域名的所有子域名。",
+    "title": "外部清單",
+    "subtitle": "訂閱第三方維護的域名屏蔽清單 (如 AdGuard Home 等)。",
+    "formatDisclaimer": "本系統支援 AdGuard Home 格式列表或純域名列表。系統預設不會自動匹配子域名（僅包含 || 前綴的規則會攔截其所有子域名）。",
     "syncAll": "同步所有清单",
     "urlPlaceholder": "輸入攔截清單 URL...",
     "addSubscription": "添加訂閱",
@@ -511,7 +515,7 @@
     "deleteError": "清單刪除失敗",
     "addSuccess": "清單新增成功",
     "addError": "清單新增失敗",
-    "listEnabled": "清單已啟用",
+    "listEnabled": "啟用清單",
     "listEnabledHint": "停用後將停止使用此清單進行過濾，但不會刪除該清單，其訂閱與同步紀錄會保留。",
     "listEnabledToast": "已啟用清單 - 正在重建過濾器",
     "listDisabledToast": "已停用清單 - 正在重建過濾器",
@@ -523,12 +527,15 @@
     "checkViaParent": "（比對到上層網域）",
     "checkNotSynced": "此清單尚未完成同步，因此暫無可供檢查的內容。",
     "checkListDisabled": "此清單目前已停用，因此現在不會過濾任何內容。",
-    "checkProbabilisticRate": "過濾器屬於機率性：大約每 {{odds}} 次比對中有 1 次為誤判。新增例外規則也會涵蓋其所有子網域。",
-    "checkProbabilistic": "過濾器屬於機率性，因此少部分比對屬於誤判。新增例外規則也會涵蓋其所有子網域。",
     "checkAllowAction": "仍然允許",
     "checkAllowed": "已新增例外 - 該網域現在可以解析",
     "allowRuleAdded": "已為 {{domain}} 新增例外",
-    "listDetails": "清單詳情"
+    "listDetails": "清單詳情",
+    "syncSingle": "同步此清單",
+    "singleSyncStarted": "清單同步任務已開始",
+    "checkWhitelisted": "被該清單放行",
+    "checkWhitelistedDesc": "命中該訂閱清單中的白名單/例外規則 (@@)，即使被其他黑名單規則命中也會優先放行。",
+    "checkViaPattern": "(比對到萬用字元規則)"
   },
   "settings": {
     "title": "配置設定",

@@ -65,6 +65,7 @@ export async function getProfileLists(profileId: string): Promise<FilterList[]> 
 export interface ListCheckResult {
   domain: string;
   blocked: boolean;
+  whitelisted?: boolean;
   /** The entry that matched: the domain itself, or a parent when a wildcard higher up matched. */
   matchedEntry?: string | null;
   /** False when the list has not finished syncing, so no filter exists yet. */
@@ -106,13 +107,18 @@ export async function toggleProfileList(profileId: string, listId: number, enabl
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function addCustomProfileList(profileId: string, url: string): Promise<void> {
+export async function addCustomProfileList(profileId: string, url: string): Promise<{ id?: number }> {
   const res = await profileFetch(`/api/profiles/${profileId}/lists`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url })
   });
   if (!res.ok) throw new Error(await res.text());
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function deleteCustomProfileList(profileId: string, listId: number): Promise<void> {
@@ -126,6 +132,13 @@ export async function deleteCustomProfileList(profileId: string, listId: number)
 
 export async function syncProfileLists(profileId: string): Promise<void> {
   const res = await profileFetch(`/api/profiles/${profileId}/lists/sync`, {
+    method: "POST"
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
+export async function syncSingleProfileList(profileId: string, listId: number): Promise<void> {
+  const res = await profileFetch(`/api/profiles/${profileId}/lists/${listId}/sync`, {
     method: "POST"
   });
   if (!res.ok) throw new Error(await res.text());

@@ -111,7 +111,7 @@ async function runTests() {
       mockUrl,
       1024 * 1024,
       10000,
-      (domain: string) => {
+      (rule) => {
         parsedCount++;
         // Synchronous return for 99% of domains, yield on 500th domain
         if (parsedCount === 500) {

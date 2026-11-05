@@ -1,0 +1,54 @@
+name: Publish Alpha to npm
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish_alpha:
+    name: Build and Publish Alpha to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 'lts/*'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Determine and sync alpha package version
+        run: |
+          # Extract base semver (e.g. 1.1.1 from 1.1.1 or 1.1.1-alpha)
+          BASE_VER=$(node -p "require('./package.json').version.split('-')[0]")
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          ALPHA_VER="${BASE_VER}-alpha.${SHORT_SHA}"
+
+          echo "Syncing package.json version to alpha: $ALPHA_VER"
+          npm version "$ALPHA_VER" --no-git-tag-version --allow-same-version
+
+          echo "ALPHA_VERSION=$ALPHA_VER" >> $GITHUB_ENV
+
+      - name: Build Web Dashboard and Serverfull bundle
+        run: npm run build:serverfull
+
+      - name: Publish alpha package to npm
+        run: |
+          npm publish --access public --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

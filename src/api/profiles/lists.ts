@@ -1,11 +1,13 @@
 import { Env, User, ExecutionContext } from "../../types";
 import { ListModel } from "../../models/list";
 import { ProfileModel } from "../../models/profile";
-import { syncNextListForProfile, syncAllListsForProfile, rebuildProfileBloom } from "../../utils/sync";
+import { syncNextListForProfile, syncAllListsForProfile, syncSingleListForProfile, rebuildProfileBloom } from "../../utils/sync";
 import { isSafeUrl } from "../../utils/validator";
 import { pipeline } from "../../pipeline";
 import { ListBloomModel } from "../../models/listBloom";
 import { BloomFilter } from "../../utils/bloom";
+import { AdguardRulesModel } from "../../models/adguardRules";
+import { AdGuardProfileEngine } from "../../lib/adguard";
 
 /**
  * Handle filter lists requests to /api/profiles/:id/lists
@@ -46,44 +48,88 @@ export async function handleProfileListsRequest(
       if (!list) return new Response("List Not Found", { status: 404 });
 
       const buffer = await new ListBloomModel(env.DB).getListBloom(listId);
-      if (!buffer) {
+      const adguardRulesModel = env.DB ? new AdguardRulesModel(env.DB) : null;
+      const adguardPayload = adguardRulesModel ? await adguardRulesModel.getListRules(listId) : null;
+
+      if (!buffer && !adguardPayload) {
         return new Response(JSON.stringify({ domain, blocked: false, synced: false }), {
           headers: { 'Content-Type': 'application/json' }
         });
       }
 
-      let bloom: BloomFilter;
-      try {
-        bloom = BloomFilter.fromUint8Array(new Uint8Array(buffer));
-      } catch (err) {
-        console.error(`[Lists] Failed to deserialize bloom filter for list #${listId}:`, err);
-        return new Response(JSON.stringify({ domain, blocked: false, synced: false, error: "Corrupted filter" }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+      const adguardEngine = adguardPayload ? new AdGuardProfileEngine(adguardPayload) : null;
+
+      // ── 阶段 1：AdGuard 白名单例外 (@@) ──────────────────────────────────────
+      const exceptionMatch = adguardEngine?.findException(domain);
+      if (exceptionMatch) {
+        return new Response(JSON.stringify({
+          domain,
+          blocked: false,
+          whitelisted: true,
+          matchedEntry: exceptionMatch,
+          falsePositiveRate: 0,
+          enabled: !!list.enabled,
+          synced: true
+        }), { headers: { 'Content-Type': 'application/json' } });
       }
 
-      let candidate: string = domain;
+      // ── 阶段 2：Bloom 过滤器双态前缀检查 ────────────────────────────────────
+      let bloom: BloomFilter | null = null;
+      if (buffer) {
+        try {
+          bloom = BloomFilter.fromUint8Array(new Uint8Array(buffer));
+        } catch (err) {
+          console.error(`[Lists] Failed to deserialize bloom filter for list #${listId}:`, err);
+        }
+      }
+
+      let currentDomain = domain;
+      let isSelf = true;
       let matched: string | null = null;
-      while (candidate) {
-        if (bloom.test(candidate)) { matched = candidate; break; }
-        const dot = candidate.indexOf('.');
-        if (dot === -1) break;
-        candidate = candidate.slice(dot + 1);
+      if (bloom) {
+        while (currentDomain) {
+          if (isSelf) {
+            // 精确自身测试：匹配单域名黑名单 或 带有 || 的自身
+            if (bloom.test(currentDomain) || bloom.test(`||${currentDomain}`)) {
+              matched = currentDomain;
+              break;
+            }
+            isSelf = false;
+          } else {
+            // 父级子域测试：仅当父域名是以 || 前缀注册时才拦截子域！
+            if (bloom.test(`||${currentDomain}`)) {
+              matched = currentDomain;
+              break;
+            }
+          }
+          const firstDot = currentDomain.indexOf('.');
+          if (firstDot === -1) break;
+          currentDomain = currentDomain.substring(firstDot + 1);
+        }
+      }
+
+      // ── 阶段 3：AdGuard 正则与复杂通配符池 (Regex / Wildcard Pool) ───────────
+      if (!matched && adguardEngine) {
+        const patternMatch = adguardEngine.findPattern(domain);
+        if (patternMatch) {
+          matched = patternMatch.raw || patternMatch.pattern || domain;
+        }
+      }
+
+      // ── 阶段 4：AdGuard DNS 重写规则 ($dnsrewrite) ───────────────────────────
+      if (!matched && adguardEngine) {
+        const rewriteMatch = adguardEngine.findRewrite(domain);
+        if (rewriteMatch) {
+          matched = rewriteMatch.raw || `${domain}$dnsrewrite=${rewriteMatch.action.value || rewriteMatch.action.type}`;
+        }
       }
 
       return new Response(JSON.stringify({
         domain,
         blocked: matched !== null,
-        // The entry that matched: equal to `domain` on an exact hit, or the
-        // parent domain when the block comes from a wildcard higher up.
+        whitelisted: false,
         matchedEntry: matched,
-        // A positive is a bloom hit, not proof of membership. The parent walk
-        // tests one suffix per label, so the effective false-positive rate is
-        // roughly the configured rate times the number of labels tested.
-        falsePositiveRate: Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
-        // A disabled list still has a stored bloom, so say so rather than
-        // implying the domain is currently being filtered.
+        falsePositiveRate: matched && bloom ? (Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001) : 0,
         enabled: !!list.enabled,
         synced: true
       }), { headers: { 'Content-Type': 'application/json' } });
@@ -138,6 +184,22 @@ export async function handleProfileListsRequest(
       // 触发所有列表的同步
       ctx.waitUntil(syncAllListsForProfile(profileId, env, ctx));
       return new Response(JSON.stringify({ message: "Sync started" }), { status: 202 });
+    }
+
+    if (pathParts.length >= 6 && pathParts[5] === 'sync') {
+      const listId = Number(pathParts[4]);
+      if (!Number.isInteger(listId) || listId <= 0) {
+        return new Response("Invalid list id", { status: 400 });
+      }
+
+      const list = await listModel.getListById(listId, profileId);
+      if (!list) return new Response("List Not Found", { status: 404 });
+
+      ctx.waitUntil(syncSingleListForProfile(profileId, listId, env, ctx));
+      return new Response(JSON.stringify({ message: "List sync started", id: listId }), {
+        status: 202,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const body = await request.json() as any;
@@ -211,11 +273,16 @@ export async function handleProfileListsRequest(
       return new Response("Invalid list URL. Private networks and localhosts are not allowed.", { status: 400 });
     }
     
-    await listModel.addList(profileId, listUrl);
-    // 只触发新添加列表的同步 (syncNextListForProfile 会挑选未同步的最旧列表，即此新列表)
-    ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
-    ctx.waitUntil(pipeline.clearCache(profileId, true, env));
-    return new Response(null, { status: 201 });
+    const insertResult = await listModel.addList(profileId, listUrl);
+    const listId = insertResult.id;
+    // 仅针对新添加的单条列表执行同步与规则重构合并，避免拉取和重刷所有列表
+    if (listId) {
+      ctx.waitUntil(syncSingleListForProfile(profileId, listId, env, ctx));
+    }
+    return new Response(JSON.stringify({ success: true, id: listId }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   if (request.method === 'DELETE') {

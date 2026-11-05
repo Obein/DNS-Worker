@@ -357,7 +357,11 @@
     "no": "いいえ",
     "saveChanges": "変更を保存",
     "delete": "削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "includeSubdomains": "サブドメインも含める",
+    "includeSubdomainsDesc": "例: example.com の場合に *.example.com も一致します（デフォルトはオフ、完全一致のみ）",
+    "subdomainsBadge": "+サブドメイン",
+    "wildcardDisclaimer": "サブドメインを一致させるには、ワイルドカード *.example.com を使用してください。example.com はサブドメインに一致しません。"
   },
   "analytics": {
     "customRange": "カスタム期間",
@@ -473,9 +477,9 @@
     "scrollToTop": "トップへ"
   },
   "filtering": {
-    "title": "外部ブロックリスト",
-    "subtitle": "サードパーティが管理するドメインブロックリスト（AdGuardなど）を購読します。",
-    "formatDisclaimer": "本システムは、一部の AdGuard 形式およびプレーンテキストのドメインリストのみ対応しています。基本的なブロックルール（例: ||example.com^）のみサポートされ、「@@」によるホワイトリスト、 「$」による書き換えルール、 「*」によるワイルドカードルールは現在無視されます。サブドメインは自動的にマッチングされます。",
+    "title": "外部リスト",
+    "subtitle": "サードパーティが管理するドメインブロックリスト（AdGuard Homeなど）を購読します。",
+    "formatDisclaimer": "本システムは AdGuard Home 形式のリストまたは純粋なドメインリストに対応しています。システムはデフォルトでサブドメインを自動一致しません（|| プレフィックスを含むルールのみがすべてのサブドメインをブロックします）。",
     "syncAll": "すべてのリストを同期",
     "urlPlaceholder": "ブロックリストの URL を入力してください...",
     "addSubscription": "購読を追加",
@@ -523,12 +527,15 @@
     "checkViaParent": "(上位ドメインで一致)",
     "checkNotSynced": "このリストはまだ同期が完了していないため、確認できるものがありません。",
     "checkListDisabled": "このリストは現在無効になっているため、現時点では何もフィルタリングしていません。",
-    "checkProbabilisticRate": "フィルターは確率的です: 約{{odds}}件に1件が誤検知です。例外を追加すると、そのすべてのサブドメインもカバーされます。",
-    "checkProbabilistic": "フィルターは確率的であるため、一致の一部は誤検知です。例外を追加すると、そのすべてのサブドメインもカバーされます。",
     "checkAllowAction": "それでも許可する",
     "checkAllowed": "例外を追加しました - このドメインは解決されるようになりました",
     "allowRuleAdded": "{{domain}} の例外を追加しました",
-    "listDetails": "リスト詳細"
+    "listDetails": "リスト詳細",
+    "syncSingle": "このリストを同期",
+    "singleSyncStarted": "リストの同期タスクを開始しました",
+    "checkWhitelisted": "このリストで許可されています",
+    "checkWhitelistedDesc": "このリストの例外ルール (@@) に一致したため、他のブロックルールより優先して許可されます。",
+    "checkViaPattern": "(パターンルールに一致)"
   },
   "settings": {
     "title": "動作設定",

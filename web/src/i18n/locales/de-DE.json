@@ -357,7 +357,11 @@
     "no": "Nein",
     "saveChanges": "Änderungen speichern",
     "delete": "Löschen",
-    "close": "Schließen"
+    "close": "Schließen",
+    "includeSubdomains": "Subdomains einschließen",
+    "includeSubdomainsDesc": "Z.B. entspricht example.com auch *.example.com; standardmäßig deaktiviert (nur exakte Übereinstimmung)",
+    "subdomainsBadge": "+Subdomains",
+    "wildcardDisclaimer": "Verwenden Sie zum Abgleichen von Subdomains den Platzhalter *.example.com; example.com gleicht keine Subdomains ab."
   },
   "analytics": {
     "customRange": "Benutzerdefinierter Zeitraum",
@@ -473,9 +477,9 @@
     "scrollToTop": "Nach oben"
   },
   "filtering": {
-    "title": "Externe Blockierlisten",
-    "subtitle": "Abonnieren Sie von Drittanbietern gepflegte Domain-Sperrlisten (wie AdGuard usw.).",
-    "formatDisclaimer": "Dieses System unterstützt nur grundlegende AdGuard-Formate und reine Domain-Listen. Nur grundlegende Blockierungsregeln (z. B. ||example.com^) werden unterstützt; \"@@\"-Ausnahmen, \"$\"-Umschreibungen und \"*\"-Wildcards werden ignoriert. Subdomains werden automatisch zugeordnet.",
+    "title": "Externe Listen",
+    "subtitle": "Abonnieren Sie von Drittanbietern gepflegte Domain-Sperrlisten (wie AdGuard Home usw.).",
+    "formatDisclaimer": "Unterstützt Listen im AdGuard Home-Format oder reine Domainlisten. Das System gleicht Subdomains standardmäßig nicht automatisch ab (nur Regeln mit dem Präfix || blockieren alle Subdomains).",
     "syncAll": "Alle Listen synchronisieren",
     "urlPlaceholder": "Listen-URL eingeben...",
     "addSubscription": "Abonnement hinzufügen",
@@ -523,12 +527,15 @@
     "checkViaParent": "(Treffer über eine übergeordnete Domain)",
     "checkNotSynced": "Diese Liste ist noch nicht fertig synchronisiert, es gibt daher nichts zu prüfen.",
     "checkListDisabled": "Diese Liste ist derzeit deaktiviert und filtert daher gerade nichts.",
-    "checkProbabilisticRate": "Filter sind probabilistisch: etwa 1 von {{odds}} Treffern ist ein Fehlalarm. Eine Ausnahme deckt auch alle Subdomains ab.",
-    "checkProbabilistic": "Filter sind probabilistisch, ein kleiner Teil der Treffer ist daher ein Fehlalarm. Eine Ausnahme deckt auch alle Subdomains ab.",
     "checkAllowAction": "Trotzdem zulassen",
     "checkAllowed": "Ausnahme hinzugefügt - diese Domain wird jetzt aufgelöst",
     "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt",
-    "listDetails": "Listen-Details"
+    "listDetails": "Listen-Details",
+    "syncSingle": "Diese Liste synchronisieren",
+    "singleSyncStarted": "Listensynchronisierung gestartet",
+    "checkWhitelisted": "Von dieser Liste erlaubt",
+    "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
+    "checkViaPattern": "(entspricht einer Musterregel)"
   },
   "settings": {
     "title": "Profileinstellungen",

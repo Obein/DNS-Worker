@@ -52,6 +52,10 @@ export const EditRuleDialog: React.FC<EditRuleDialogProps> = ({
               </FormGroup>
             </div>
 
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {t("rules.wildcardDisclaimer")}
+            </div>
+
             {editRule.type === "REDIRECT" && (
               <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2 mb-4 text-blue-600 dark:text-blue-400">
