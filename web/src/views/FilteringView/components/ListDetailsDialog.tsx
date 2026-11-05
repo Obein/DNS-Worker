@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag } from "@blueprintjs/core";
+import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag, PopoverNext } from "@blueprintjs/core";
 import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
@@ -39,6 +39,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   const [allowed, setAllowed] = useState(false);
   const [toggling, setToggling] = useState(false);
   const [syncingSingle, setSyncingSingle] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   /** Monotonic id of the newest check, so stale responses can be discarded. */
   const checkToken = useRef(0);
 
@@ -53,6 +54,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
     setResult(null);
     setError(null);
     setAllowed(false);
+    setDeleteConfirmOpen(false);
   };
 
   const runCheck = async () => {
@@ -162,9 +164,10 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <InputGroup
               fill
+              className="flex-1 min-w-0"
               placeholder="example.com"
               value={query}
               disabled={checking}
@@ -178,6 +181,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
               onKeyDown={(e) => { if (e.key === "Enter") void runCheck(); }}
             />
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<Search size={14} />}
               text={t("filtering.check", "Check")}
               loading={checking}
@@ -272,20 +276,46 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
       </div>
 
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-        <Button
-          icon={<Trash2 size={14} />}
-          intent={Intent.DANGER}
-          text={t("rules.delete", "Delete")}
-          onClick={() => {
-            if (!selectedList) return;
-            // Deleting clears selectedList upstream, which closes the dialog by
-            // prop without ever running onClose - so reset here, or the next
-            // list opens showing the deleted list's verdict.
-            const id = selectedList.id;
-            reset();
-            onDelete(id);
-          }}
-        />
+        <PopoverNext
+          isOpen={deleteConfirmOpen}
+          onInteraction={setDeleteConfirmOpen}
+          placement="top-start"
+          portalClassName="z-20000"
+          content={
+            <div className="p-3 space-y-3 max-w-xs">
+              <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
+                {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  small
+                  variant="minimal"
+                  text={t("common.cancel", "Cancel")}
+                  onClick={() => setDeleteConfirmOpen(false)}
+                />
+                <Button
+                  small
+                  intent={Intent.DANGER}
+                  text={t("common.confirm", "Confirm")}
+                  onClick={() => {
+                    if (!selectedList) return;
+                    const id = selectedList.id;
+                    setDeleteConfirmOpen(false);
+                    reset();
+                    onDelete(id);
+                  }}
+                />
+              </div>
+            </div>
+          }
+        >
+          <Button
+            icon={<Trash2 size={14} />}
+            intent={Intent.DANGER}
+            text={t("rules.delete", "Delete")}
+            onClick={() => setDeleteConfirmOpen(true)}
+          />
+        </PopoverNext>
         <div className="flex gap-2">
           {onSyncSingle && (
             <Button
