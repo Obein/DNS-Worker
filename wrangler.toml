@@ -214,6 +214,10 @@ PRESET_EXTERNAL_FILTERS = """
   {
     "label": "filtering.presetStevenBlack",
     "url": "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+  },
+  {
+    "label": "anti-AD AdGuard Home List",
+    "url": "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-easylist.txt"
   }
 ]
 """
