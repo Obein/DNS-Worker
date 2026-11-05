@@ -534,7 +534,10 @@
     "allowRuleAdded": "Excepción añadida para {{domain}}",
     "listDetails": "Detalles de la lista",
     "syncSingle": "Sincronizar esta lista",
-    "singleSyncStarted": "Sincronización de lista iniciada"
+    "singleSyncStarted": "Sincronización de lista iniciada",
+    "checkWhitelisted": "Permitido por esta lista",
+    "checkWhitelistedDesc": "Coincidió con una regla de excepción (@@) en esta lista, permitiéndola con prioridad sobre bloqueos.",
+    "checkViaPattern": "(coincidió con una regla de patrón)"
   },
   "settings": {
     "title": "Ajustes de perfil",

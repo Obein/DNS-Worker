@@ -534,7 +534,10 @@
     "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt",
     "listDetails": "Listen-Details",
     "syncSingle": "Diese Liste synchronisieren",
-    "singleSyncStarted": "Listensynchronisierung gestartet"
+    "singleSyncStarted": "Listensynchronisierung gestartet",
+    "checkWhitelisted": "Von dieser Liste erlaubt",
+    "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
+    "checkViaPattern": "(entspricht einer Musterregel)"
   },
   "settings": {
     "title": "Profileinstellungen",

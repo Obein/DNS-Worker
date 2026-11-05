@@ -534,7 +534,10 @@
     "allowRuleAdded": "已为 {{domain}} 添加例外",
     "listDetails": "列表详情",
     "syncSingle": "同步此列表",
-    "singleSyncStarted": "列表同步任务已开始"
+    "singleSyncStarted": "列表同步任务已开始",
+    "checkWhitelisted": "被该列表放行",
+    "checkWhitelistedDesc": "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。",
+    "checkViaPattern": "(匹配到通配规则)"
   },
   "settings": {
     "title": "配置设置",

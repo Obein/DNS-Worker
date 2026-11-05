@@ -534,7 +534,10 @@
     "allowRuleAdded": "{{domain}} の例外を追加しました",
     "listDetails": "リスト詳細",
     "syncSingle": "このリストを同期",
-    "singleSyncStarted": "リストの同期タスクを開始しました"
+    "singleSyncStarted": "リストの同期タスクを開始しました",
+    "checkWhitelisted": "このリストで許可されています",
+    "checkWhitelistedDesc": "このリストの例外ルール (@@) に一致したため、他のブロックルールより優先して許可されます。",
+    "checkViaPattern": "(パターンルールに一致)"
   },
   "settings": {
     "title": "動作設定",

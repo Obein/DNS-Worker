@@ -164,6 +164,45 @@ async function runPipelineTests(): Promise<void> {
   assert.strictEqual(resPatternMiss, null);
   console.log("   ✓ AdGuard regex pattern evaluation passed.");
 
+  // 6. AdGuard Detail Inspection (findException, findPattern, findRewrite)
+  console.log("6. Testing AdGuard detail inspection methods (findException, findPattern, findRewrite)...");
+  const inspectionPayload: AdGuardPayload = {
+    exceptions: [
+      { domain: "microsoft.com", includeSubdomains: true, raw: "@@||microsoft.com^" }
+    ],
+    rewrites: {
+      "router.local": { type: "A", value: "192.168.1.1", includeSubdomains: true, raw: "||router.local^$dnsrewrite=192.168.1.1" }
+    },
+    patterns: [
+      { pattern: "^(?:.*\\.)?gostats\\..*$", raw: "||gostats.*^" },
+      { pattern: "^(?:.*\\.)?.*\\-analytics.*\\.huami\\.com$", apexIndex: "huami.com", raw: "||*-analytics*.huami.com^" }
+    ]
+  };
+  const inspectEngine = new AdGuardProfileEngine(inspectionPayload);
+
+  // Exception inspection
+  assert.strictEqual(inspectEngine.findException("microsoft.com"), "@@||microsoft.com^");
+  assert.strictEqual(inspectEngine.findException("sub.microsoft.com"), "@@||microsoft.com^");
+  assert.strictEqual(inspectEngine.findException("other.com"), null);
+
+  // Pattern inspection
+  const gostatsHit = inspectEngine.findPattern("gostats.net");
+  assert.ok(gostatsHit !== null && gostatsHit.matched);
+  assert.strictEqual(gostatsHit.raw, "||gostats.*^");
+
+  const huamiHit = inspectEngine.findPattern("2-analytics-1.huami.com");
+  assert.ok(huamiHit !== null && huamiHit.matched);
+  assert.strictEqual(huamiHit.raw, "||*-analytics*.huami.com^");
+
+  const huamiMiss = inspectEngine.findPattern("other.huami.com");
+  assert.strictEqual(huamiMiss, null);
+
+  // Rewrite inspection
+  const rewriteHit = inspectEngine.findRewrite("sub.router.local");
+  assert.ok(rewriteHit !== null);
+  assert.strictEqual(rewriteHit.raw, "||router.local^$dnsrewrite=192.168.1.1");
+  console.log("   ✓ AdGuard detail inspection methods verified successfully.");
+
   console.log("\n======================================================");
   console.log("   ALL ADGUARD HYBRID PIPELINE TESTS PASSED!          ");
   console.log("======================================================\n");

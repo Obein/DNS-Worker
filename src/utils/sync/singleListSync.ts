@@ -61,20 +61,23 @@ export async function syncSingleList(
         } else if (rule.kind === AdGuardRuleKind.EXCEPTION && rule.domain) {
           adguardPayload.exceptions.push({
             domain: rule.domain,
-            includeSubdomains: Boolean(rule.includeSubdomains)
+            includeSubdomains: Boolean(rule.includeSubdomains),
+            raw: rule.raw
           });
           count++;
         } else if (rule.kind === AdGuardRuleKind.DNS_REWRITE && rule.domain && rule.rewrite) {
           adguardPayload.rewrites[rule.domain] = {
             ...rule.rewrite,
-            includeSubdomains: Boolean(rule.includeSubdomains)
+            includeSubdomains: Boolean(rule.includeSubdomains),
+            raw: rule.raw
           };
           count++;
         } else if (rule.kind === AdGuardRuleKind.COMPLEX_PATTERN && rule.patternRegex) {
           if (adguardPayload.patterns.length < maxRegexRules) {
             adguardPayload.patterns.push({
               pattern: rule.patternRegex,
-              apexIndex: rule.apexIndex
+              apexIndex: rule.apexIndex,
+              raw: rule.raw
             });
             count++;
           }

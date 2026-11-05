@@ -41,12 +41,14 @@ export interface AdGuardPayload {
   exceptions: Array<{
     domain: string;
     includeSubdomains: boolean;
+    raw?: string;
   }>;
   /** DNS rewrite rules mapped by domain */
-  rewrites: Record<string, RewriteAction & { includeSubdomains: boolean }>;
+  rewrites: Record<string, RewriteAction & { includeSubdomains: boolean; raw?: string }>;
   /** Compiled regex and wildcard patterns */
   patterns: Array<{
     pattern: string;
     apexIndex?: string;
+    raw?: string;
   }>;
 }

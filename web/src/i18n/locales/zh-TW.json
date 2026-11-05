@@ -534,7 +534,10 @@
     "allowRuleAdded": "已為 {{domain}} 新增例外",
     "listDetails": "清單詳情",
     "syncSingle": "同步此清單",
-    "singleSyncStarted": "清單同步任務已開始"
+    "singleSyncStarted": "清單同步任務已開始",
+    "checkWhitelisted": "被該清單放行",
+    "checkWhitelistedDesc": "命中該訂閱清單中的白名單/例外規則 (@@)，即使被其他黑名單規則命中也會優先放行。",
+    "checkViaPattern": "(比對到萬用字元規則)"
   },
   "settings": {
     "title": "配置設定",

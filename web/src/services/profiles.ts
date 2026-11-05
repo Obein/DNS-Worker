@@ -65,6 +65,7 @@ export async function getProfileLists(profileId: string): Promise<FilterList[]> 
 export interface ListCheckResult {
   domain: string;
   blocked: boolean;
+  whitelisted?: boolean;
   /** The entry that matched: the domain itself, or a parent when a wildcard higher up matched. */
   matchedEntry?: string | null;
   /** False when the list has not finished syncing, so no filter exists yet. */

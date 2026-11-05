@@ -534,7 +534,10 @@
     "allowRuleAdded": "Exception added for {{domain}}",
     "listDetails": "List Details",
     "syncSingle": "Sync this list",
-    "singleSyncStarted": "List sync task started"
+    "singleSyncStarted": "List sync task started",
+    "checkWhitelisted": "Allowed by this list",
+    "checkWhitelistedDesc": "Matched an exception rule (@@) in this list, allowing it even if matched by blocking rules.",
+    "checkViaPattern": "(matched a pattern rule)"
   },
   "settings": {
     "title": "Settings",

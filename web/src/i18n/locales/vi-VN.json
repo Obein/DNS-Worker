@@ -534,7 +534,10 @@
     "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}",
     "listDetails": "Chi tiết danh sách",
     "syncSingle": "Đồng bộ danh sách này",
-    "singleSyncStarted": "Tác vụ đồng bộ danh sách đã bắt đầu"
+    "singleSyncStarted": "Tác vụ đồng bộ danh sách đã bắt đầu",
+    "checkWhitelisted": "Được cho phép bởi danh sách này",
+    "checkWhitelistedDesc": "Khớp với quy tắc ngoại lệ (@@) trong danh sách này, được ưu tiên cho phép.",
+    "checkViaPattern": "(khớp quy tắc mẫu)"
   },
   "settings": {
     "title": "Cài đặt cấu hình",

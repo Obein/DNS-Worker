@@ -218,7 +218,9 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
                       <>
                         {" "}
                         <Tag minimal className="font-mono">{result.matchedEntry}</Tag>{" "}
-                        {t("filtering.checkViaParent", "(matched a parent domain)")}
+                        {result.matchedEntry.includes("*") || result.matchedEntry.startsWith("/")
+                          ? t("filtering.checkViaPattern", "(匹配到通配规则)")
+                          : t("filtering.checkViaParent", "(matched a parent domain)")}
                       </>
                     )}
                   </div>
@@ -245,6 +247,21 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
                       onClick={() => void handleAllow()}
                     />
                   )}
+                </div>
+              ) : result.whitelisted ? (
+                <div className="space-y-1">
+                  <div className="font-medium text-emerald-700 dark:text-emerald-400">
+                    {t("filtering.checkWhitelisted", "被该列表放行")}
+                    {result.matchedEntry && (
+                      <>
+                        {" "}
+                        <Tag minimal intent={Intent.SUCCESS} className="font-mono">{result.matchedEntry}</Tag>
+                      </>
+                    )}
+                  </div>
+                  <div className="opacity-75">
+                    {t("filtering.checkWhitelistedDesc", "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。")}
+                  </div>
                 </div>
               ) : (
                 t("filtering.checkNotBlocked", "Not blocked by this list")

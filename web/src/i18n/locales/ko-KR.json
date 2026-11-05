@@ -534,7 +534,10 @@
     "allowRuleAdded": "{{domain}}에 대한 예외가 추가되었습니다",
     "listDetails": "목록 세부정보",
     "syncSingle": "이 목록 동기화",
-    "singleSyncStarted": "목록 동기화 작업이 시작되었습니다"
+    "singleSyncStarted": "목록 동기화 작업이 시작되었습니다",
+    "checkWhitelisted": "이 리스트에 의해 허용됨",
+    "checkWhitelistedDesc": "이 리스트의 예외 규칙 (@@) 에 일치하여 다른 차단 규칙보다 우선 허용됩니다.",
+    "checkViaPattern": "(패턴 규칙 일치)"
   },
   "settings": {
     "title": "구성 설정",
