@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "外部拦截列表",
-    "subtitle": "订阅第三方维护的域名屏蔽清单 (如 AdGuard 等)。",
-    "formatDisclaimer": "本系统支持标准 AdGuard 格式规则（包含 || 域名规则、@@ 白名单例外、$dnsrewrite 重写及正则通配符）与纯域名列表。仅带 || 前缀的规则会自动拦截其所有子域名。",
+    "subtitle": "订阅第三方维护的域名屏蔽清单 (如 AdGuardHome 等)。",
+    "formatDisclaimer": "本系统支持 AdGuardHome 格式列表或纯域名列表。系统默认不会自动匹配子域名（仅包含 || 前缀的规则会拦截其所有子域名）。",
     "syncAll": "同步所有列表",
     "urlPlaceholder": "输入拦截列表 URL...",
     "addSubscription": "添加订阅",

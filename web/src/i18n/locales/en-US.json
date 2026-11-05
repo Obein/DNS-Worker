@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "External Filters",
-    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard).",
-    "formatDisclaimer": "Supports standard AdGuard format rules (including || domain rules, @@ whitelist exceptions, $dnsrewrite rules, and regex patterns) and hosts/domain lists. Only rules with the || prefix automatically block all subdomains.",
+    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuardHome).",
+    "formatDisclaimer": "Supports AdGuardHome format lists or plain domain lists. By default, the system does not automatically match subdomains (only rules with the || prefix block all subdomains).",
     "syncAll": "Sync All Lists",
     "urlPlaceholder": "Enter list URL...",
     "addSubscription": "Add List",

@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "Listas de bloqueo externas",
-    "subtitle": "Suscríbete a listas de bloqueo de dominios mantenidas por terceros (como AdGuard, etc.).",
-    "formatDisclaimer": "Admite reglas en formato AdGuard estándar (incluidas reglas de dominio ||, excepciones de lista blanca @@, reglas $dnsrewrite y patrones regex) y listas de hosts/dominios. Solo las reglas con prefijo || bloquean automáticamente todos los subdominios.",
+    "subtitle": "Suscríbete a listas de bloqueo de dominios mantenidas por terceros (como AdGuardHome, etc.).",
+    "formatDisclaimer": "Admite listas en formato AdGuardHome o listas de dominios puros. De forma predeterminada, el sistema no coincide automáticamente con subdominios (solo las reglas con el prefijo || bloquean todos los subdominios).",
     "syncAll": "Sincronizar todas las listas",
     "urlPlaceholder": "Introduce la URL de la lista...",
     "addSubscription": "Añadir suscripción",
