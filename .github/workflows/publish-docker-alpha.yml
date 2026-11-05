@@ -1,13 +1,11 @@
 name: Publish Alpha to Docker Hub
 
 # ==============================================================================
-# GitHub Actions Workflow: Publish Alpha & Canary Docker Image on push to `dev`
+# GitHub Actions Workflow: Publish Alpha Docker Image on push to `main`
 # Target Repository: https://hub.docker.com/repository/docker/hugokoo/dns-worker/
 # Tags:
 # - hugokoo/dns-worker:alpha
-# - hugokoo/dns-worker:canary
 # - hugokoo/dns-worker:<baseVer>-alpha.<shortSha>
-# - hugokoo/dns-worker:<baseVer>-canary.<shortSha>
 # ==============================================================================
 
 permissions:
@@ -16,7 +14,7 @@ permissions:
 on:
   push:
     branches:
-      - dev
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -44,13 +42,11 @@ jobs:
           BASE_VER=$(node -p "require('./package.json').version.split('-')[0]")
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           ALPHA_VER="${BASE_VER}-alpha.${SHORT_SHA}"
-          CANARY_VER="${BASE_VER}-canary.${SHORT_SHA}"
 
           echo "Syncing package.json version to alpha: $ALPHA_VER"
           npm version "$ALPHA_VER" --no-git-tag-version --allow-same-version
 
           echo "alpha_ver=$ALPHA_VER" >> $GITHUB_OUTPUT
-          echo "canary_ver=$CANARY_VER" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -73,8 +69,6 @@ jobs:
           push: true
           tags: |
             hugokoo/dns-worker:alpha
-            hugokoo/dns-worker:canary
             hugokoo/dns-worker:${{ steps.meta.outputs.alpha_ver }}
-            hugokoo/dns-worker:${{ steps.meta.outputs.canary_ver }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

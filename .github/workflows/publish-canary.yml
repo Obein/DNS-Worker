@@ -50,6 +50,5 @@ jobs:
       - name: Publish canary package to npm
         run: |
           npm publish --access public --tag canary
-          npm dist-tag add "dns-worker@${{ env.CANARY_VERSION }}" alpha || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
