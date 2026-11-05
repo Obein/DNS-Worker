@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "Listes de blocage externes",
-    "subtitle": "Abonnez-vous à des listes de blocage de domaines gérées par des tiers (comme AdGuardHome, etc.).",
-    "formatDisclaimer": "Prend en charge les listes au format AdGuardHome ou les listes de domaines purs. Par défaut, le système ne fait pas correspondre automatiquement les sous-domaines (seules les règles avec le préfixe || bloquent tous les sous-domaines).",
+    "subtitle": "Abonnez-vous à des listes de blocage de domaines gérées par des tiers (comme AdGuard Home, etc.).",
+    "formatDisclaimer": "Prend en charge les listes au format AdGuard Home ou les listes de domaines purs. Par défaut, le système ne fait pas correspondre automatiquement les sous-domaines (seules les règles avec le préfixe || bloquent tous les sous-domaines).",
     "syncAll": "Synchroniser toutes les listes",
     "urlPlaceholder": "Saisir l'URL de la liste...",
     "addSubscription": "Ajouter un abonnement",

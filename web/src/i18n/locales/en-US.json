@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "External Filters",
-    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuardHome).",
-    "formatDisclaimer": "Supports AdGuardHome format lists or plain domain lists. By default, the system does not automatically match subdomains (only rules with the || prefix block all subdomains).",
+    "subtitle": "Subscribe to third-party blocklists (e.g., AdGuard Home).",
+    "formatDisclaimer": "Supports AdGuard Home format lists or plain domain lists. By default, the system does not automatically match subdomains (only rules with the || prefix block all subdomains).",
     "syncAll": "Sync All Lists",
     "urlPlaceholder": "Enter list URL...",
     "addSubscription": "Add List",

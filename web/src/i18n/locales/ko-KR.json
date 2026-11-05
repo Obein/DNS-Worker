@@ -477,8 +477,8 @@
   },
   "filtering": {
     "title": "외부 차단 리스트",
-    "subtitle": "타사에서 유지 관리하는 도메인 차단 목록(예: AdGuardHome 등)을 구독합니다。",
-    "formatDisclaimer": "이 시스템은 AdGuardHome 형식 목록 또는 순수 도메인 목록을 지원합니다. 시스템은 기본적으로 하위 도메인을 자동으로 일치시키지 않습니다(|| 접두사가 포함된 규칙만 모든 하위 도메인을 차단함).",
+    "subtitle": "타사에서 유지 관리하는 도메인 차단 목록(예: AdGuard Home 등)을 구독합니다。",
+    "formatDisclaimer": "이 시스템은 AdGuard Home 형식 목록 또는 순수 도메인 목록을 지원합니다. 시스템은 기본적으로 하위 도메인을 자동으로 일치시키지 않습니다(|| 접두사가 포함된 규칙만 모든 하위 도메인을 차단함).",
     "syncAll": "모든 목록 동기화",
     "urlPlaceholder": "차단 리스트 URL 입력...",
     "addSubscription": "구독 추가",

@@ -69,7 +69,7 @@ docker run -d \
 - 🗄️ **Multi-Database Engines**: Easily switch between `D1`, `Turso`, and `File` backends via the `DATABASE_SERVICE` environment variable, eliminating D1 free-tier quota limits.
 - 🛡️ **Post-Quantum Zero-Knowledge E2EE**: NIST FIPS 203 **P256-MLKEM768** hybrid lattice cryptography + Hardware Passkeys (WebAuthn).
 - 🚀 **Local-First Architecture**: Embedded in-browser WebAssembly SQLite + OPFS for instant 0ms log analytics and charting.
-- 🛡️ **Tiered Hybrid Protection & Ad Blocking**: Native compatibility with AdGuardHome syntax (`@@` whitelist hash set exceptions, `$dnsrewrite`, regex pool), dual-state prefix-encoded Bloom filter for millions of blocklist entries, configurable subdomain matching per rule, on-demand single-list sync, and staggered anti-burst pacing.
+- 🛡️ **Tiered Hybrid Protection & Ad Blocking**: Native compatibility with AdGuard Home syntax (`@@` whitelist hash set exceptions, `$dnsrewrite`, regex pool), dual-state prefix-encoded Bloom filter for millions of blocklist entries, configurable subdomain matching per rule, on-demand single-list sync, and staggered anti-burst pacing.
 
 ---
 
