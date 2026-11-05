@@ -1,4 +1,5 @@
 import { DEFAULT_ECH_FRONTING_DOMAIN, CLOUDFLARE_DEFAULT_ECH_BASE64 } from "./constants";
+import { getActiveCfEchConfig } from "./sync";
 
 /**
  * Rebuilds an existing RFC draft-13 ECHConfigList by replacing its public_name (outer SNI)
@@ -119,6 +120,6 @@ export function buildCloudflareEchConfig(
   publicName: string = DEFAULT_ECH_FRONTING_DOMAIN,
   sourceEchBase64?: string
 ): string {
-  const base = sourceEchBase64 || CLOUDFLARE_DEFAULT_ECH_BASE64;
+  const base = sourceEchBase64 || getActiveCfEchConfig() || CLOUDFLARE_DEFAULT_ECH_BASE64;
   return rebuildEchWithFronting(base, publicName);
 }

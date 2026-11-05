@@ -52,3 +52,73 @@ export const DEFAULT_SUBSTITUTE_DOMAIN = 'www.okx.com';
  * Built-in default fail-open upstream address.
  */
 export const DEFAULT_FAIL_OPEN_UPSTREAM = 'https://freedns.controld.com/no-ads-malware-typo';
+
+/**
+ * Resolves configured preset upstreams from environment variables or falls back to built-in presets.
+ *
+ * @param env - Worker or Serverfull environment bindings.
+ * @returns Array of preset upstream objects.
+ */
+export function getPresetUpstreams(env?: { PRESET_UPSTREAMS?: string }): PresetUpstream[] {
+  if (env?.PRESET_UPSTREAMS) {
+    try {
+      const parsed = JSON.parse(env.PRESET_UPSTREAMS);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+          .filter((item: unknown): item is PresetUpstream =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as Record<string, unknown>).url === 'string'
+          )
+          .map((item) => ({
+            label: typeof item.label === 'string' ? item.label : item.url,
+            url: item.url
+          }));
+      }
+    } catch (e) {
+      console.warn('[Presets] Failed to parse PRESET_UPSTREAMS from env:', e);
+    }
+  }
+  return [...DEFAULT_PRESET_UPSTREAMS];
+}
+
+/**
+ * Resolves the primary default upstream URL from environment PRESET_UPSTREAMS or built-in presets.
+ * Used as initial upstream for newly created user profiles and default registration profiles.
+ *
+ * @param env - Worker or Serverfull environment bindings.
+ * @returns Primary default upstream URL string.
+ */
+export function getDefaultUpstreamUrl(env?: { PRESET_UPSTREAMS?: string }): string {
+  const upstreams = getPresetUpstreams(env);
+  return upstreams[0]?.url || DEFAULT_PRESET_UPSTREAMS[0].url;
+}
+
+/**
+ * Resolves configured preset external filters from environment variables or falls back to built-in presets.
+ *
+ * @param env - Worker or Serverfull environment bindings.
+ * @returns Array of preset external filter objects.
+ */
+export function getPresetExternalFilters(env?: { PRESET_EXTERNAL_FILTERS?: string }): PresetFilter[] {
+  if (env?.PRESET_EXTERNAL_FILTERS) {
+    try {
+      const parsed = JSON.parse(env.PRESET_EXTERNAL_FILTERS);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+          .filter((item: unknown): item is PresetFilter =>
+            typeof item === 'object' &&
+            item !== null &&
+            typeof (item as Record<string, unknown>).url === 'string'
+          )
+          .map((item) => ({
+            label: typeof item.label === 'string' ? item.label : item.url,
+            url: item.url
+          }));
+      }
+    } catch (e) {
+      console.warn('[Presets] Failed to parse PRESET_EXTERNAL_FILTERS from env:', e);
+    }
+  }
+  return [...DEFAULT_PRESET_EXTERNAL_FILTERS];
+}

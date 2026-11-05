@@ -7,6 +7,7 @@ import { buildDNSQuery, parseDNSAnswer } from "../../utils/dns";
 import { resolveClientGeoCountry } from "../../utils/geoip";
 import { pipeline } from "../../pipeline";
 import { PROFILE_NAME_REGEX } from "../../utils/validator";
+import { getDefaultUpstreamUrl } from "../../constants/presets";
 
 /**
  * Handle requests to /api/profiles (without specific profile ID)
@@ -55,8 +56,9 @@ export async function handleProfilesCoreCollectionRequest(
       : Math.min(1, normalUserMaxRetention);
 
     const defaultRetentionDays = user?.role === 'admin' ? adminDefaultRetention : normalUserDefaultRetention;
+    const defaultUpstream = getDefaultUpstreamUrl(env);
     const defaultSettings: ProfileSettings = {
-      upstream: ["https://security.cloudflare-dns.com/dns-query"],
+      upstream: [defaultUpstream],
       ecs: { enabled: true, use_client_ip: true },
       log_retention_days: defaultRetentionDays,
       skip_log_on_pass: false,
