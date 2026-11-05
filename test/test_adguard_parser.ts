@@ -57,7 +57,7 @@ function runAdGuardParserTests(): void {
   assert.strictEqual(aaaaRewrite?.rewrite?.type, "AAAA");
   assert.strictEqual(aaaaRewrite?.rewrite?.value, "2001:db8::1");
 
-  const nxRewrite = parseAdGuardLine("||telemetry.windows.com^$dnsrewrite=NXDOMAIN");
+  const nxRewrite = parseAdGuardLine("||telemetry\\.windows\\.com^$dnsrewrite=NXDOMAIN");
   assert.strictEqual(nxRewrite?.rewrite?.type, "NXDOMAIN");
 
   const cnameRewrite = parseAdGuardLine("|duck.com^$dnsrewrite=duckduckgo.com");
