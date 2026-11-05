@@ -122,13 +122,72 @@ export async function execMigrationSql(db: D1Database | TursoD1Database, sql: st
 }
 
 /**
+ * Resolves the available migrations map.
+ * In Node.js environments (CLI, tests, Serverfull), prioritizes dynamically reading from
+ * the local filesystem (migrations/ directory) so migrations/*.sql is the absolute Single Source of Truth.
+ * In serverless environments (Cloudflare Workers) without filesystem access, falls back to EMBEDDED_MIGRATIONS.
+ */
+export async function resolveMigrationsMap(
+  migrationsOrDir?: string | Record<string, string>
+): Promise<Record<string, string>> {
+  if (typeof migrationsOrDir === 'object' && migrationsOrDir !== null) {
+    return migrationsOrDir;
+  }
+
+  const { fs: fsMod, path: pathMod } = await getFs();
+
+  if (typeof migrationsOrDir === 'string') {
+    if (fsMod && pathMod && fsMod.existsSync(migrationsOrDir)) {
+      const files = fsMod
+        .readdirSync(migrationsOrDir)
+        .filter((f: string) => f.endsWith('.sql'))
+        .sort();
+      const map: Record<string, string> = {};
+      for (const file of files) {
+        map[file] = fsMod.readFileSync(pathMod.join(migrationsOrDir, file), 'utf-8');
+      }
+      return map;
+    }
+  }
+
+  // Dynamic filesystem read in Node.js runtime when migrationsOrDir is omitted
+  if (fsMod && pathMod) {
+    try {
+      const defaultDir = pathMod.join(process.cwd(), 'migrations');
+      if (fsMod.existsSync(defaultDir)) {
+        const files = fsMod
+          .readdirSync(defaultDir)
+          .filter((f: string) => f.endsWith('.sql'))
+          .sort();
+        if (files.length > 0) {
+          const map: Record<string, string> = {};
+          for (const file of files) {
+            map[file] = fsMod.readFileSync(pathMod.join(defaultDir, file), 'utf-8');
+          }
+          return map;
+        }
+      }
+    } catch {
+      // Fall through to EMBEDDED_MIGRATIONS
+    }
+  }
+
+  return EMBEDDED_MIGRATIONS;
+}
+
+/**
  * Queries migration status from database.
  *
  * @param db - D1Database or TursoD1Database instance.
+ * @param migrationsOrDir - Optional directory path or custom Record<string, string> migration map.
  * @returns Object containing migration progress, applied counts, and pending files list.
  */
-export async function getTursoMigrationStats(db: D1Database | TursoD1Database): Promise<TursoMigrationStats> {
-  const files = Object.keys(EMBEDDED_MIGRATIONS).sort();
+export async function getTursoMigrationStats(
+  db: D1Database | TursoD1Database,
+  migrationsOrDir?: string | Record<string, string>
+): Promise<TursoMigrationStats> {
+  const migrationsMap = await resolveMigrationsMap(migrationsOrDir);
+  const files = Object.keys(migrationsMap).sort();
   try {
     await ensureTursoMigrationsTable(db);
     const appliedQuery = await db
@@ -179,24 +238,7 @@ export async function runTursoMigrations(
 ): Promise<number> {
   await ensureTursoMigrationsTable(db);
 
-  let migrationsMap: Record<string, string> = EMBEDDED_MIGRATIONS;
-
-  if (typeof migrationsOrDir === 'object' && migrationsOrDir !== null) {
-    migrationsMap = migrationsOrDir;
-  } else if (typeof migrationsOrDir === 'string') {
-    const { fs: fsMod, path: pathMod } = await getFs();
-    if (fsMod && pathMod && fsMod.existsSync(migrationsOrDir)) {
-      const files = fsMod
-        .readdirSync(migrationsOrDir)
-        .filter((f: string) => f.endsWith('.sql'))
-        .sort();
-      migrationsMap = {};
-      for (const file of files) {
-        migrationsMap[file] = fsMod.readFileSync(pathMod.join(migrationsOrDir, file), 'utf-8');
-      }
-    }
-  }
-
+  const migrationsMap = await resolveMigrationsMap(migrationsOrDir);
   const files = Object.keys(migrationsMap).sort();
 
   const appliedQuery = await db.prepare('SELECT name FROM d1_migrations UNION SELECT name FROM _cf_d1_migrations').all<{ name: string }>();
