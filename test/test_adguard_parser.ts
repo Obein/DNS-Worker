@@ -34,7 +34,7 @@ function runAdGuardParserTests(): void {
   assert.strictEqual(subExc?.domain, "safe.example.com");
   assert.strictEqual(subExc?.includeSubdomains, true);
 
-  const exactExc = parseAdGuardLine("@@|exact.example.com^");
+  const exactExc = parseAdGuardLine("@@|exact\\.example\\.com^");
   assert.strictEqual(exactExc?.kind, AdGuardRuleKind.EXCEPTION);
   assert.strictEqual(exactExc?.domain, "exact.example.com");
   assert.strictEqual(exactExc?.includeSubdomains, false);
