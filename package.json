@@ -46,7 +46,7 @@
     "prepare": "npm run db:generate-migrations && npm run ui:install",
     "postinstall": "npm run db:generate-migrations",
     "db:setup": "wrangler d1 create dns_worker_db",
-    "db:migrate:dev": "wrangler d1 migrations apply dns_worker_db --local",
+    "db:migrate:dev": "tsx scripts/migrate-dev.ts",
     "db:migrate:prod": "tsx scripts/migrate-prod.ts",
     "db:status": "wrangler d1 execute dns_worker_db --local --command='SELECT name FROM sqlite_master WHERE type=\"table\"'",
     "pretest": "npm run db:generate-migrations",

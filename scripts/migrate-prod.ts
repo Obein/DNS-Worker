@@ -51,6 +51,24 @@ function loadWranglerVars(rootDir: string): void {
   } catch {}
 }
 
+/**
+ * Checks whether [[d1_databases]] binding is actively configured (uncommented) in wrangler.toml.
+ */
+function isD1BoundInWrangler(rootDir: string): boolean {
+  const wranglerPath = path.join(rootDir, 'wrangler.toml');
+  if (!fs.existsSync(wranglerPath)) return false;
+  try {
+    const content = fs.readFileSync(wranglerPath, 'utf-8');
+    for (const rawLine of content.split('\n')) {
+      const line = rawLine.trim();
+      if (!line.startsWith('#') && line.startsWith('[[d1_databases]]')) {
+        return true;
+      }
+    }
+  } catch {}
+  return false;
+}
+
 async function main(): Promise<void> {
   loadEnvFiles();
   loadWranglerVars(getPackageRoot());
@@ -106,19 +124,31 @@ async function main(): Promise<void> {
   const tursoToken = (values['turso-token'] || values.token || process.env.TURSO_AUTH_TOKEN || '').trim();
   const hasTursoCreds = Boolean(tursoUrl && tursoToken);
 
+  const rootDir = getPackageRoot();
+  const d1Bound = isD1BoundInWrangler(rootDir);
+  const activeService = getDatabaseService(process.env, false);
+
   let runTurso = false;
   let runD1 = false;
 
   if (explicitTurso) {
     runTurso = true;
+    runD1 = false;
   } else if (explicitD1) {
     runD1 = true;
+    runTurso = false;
   } else {
-    // Default: Apply to all connected databases
-    runTurso = hasTursoCreds;
-    runD1 = true; // D1 is standard Cloudflare binding in wrangler.toml
+    // If active database service is Turso, only migrate Turso - never force D1
+    if (activeService === 'Turso') {
+      runTurso = true;
+      runD1 = false;
+    } else {
+      // DATABASE_SERVICE is D1: migrate D1 if bound in wrangler.toml
+      runD1 = d1Bound;
+      runTurso = false;
+    }
 
-    if (tursoUrl && !tursoToken) {
+    if (runTurso && tursoUrl && !tursoToken) {
       console.log(formatDiagnostic({
         level: 'warning',
         title: 'Turso Migration - Runtime Secret Detected',
@@ -202,29 +232,37 @@ async function main(): Promise<void> {
 
   // 2. CLOUDFLARE D1 MIGRATION BRANCH
   if (runD1) {
-    console.log(formatBanner({
-      title: 'Applying Database Migrations to Cloudflare D1',
-      borderChar: '=',
-      bullet: '• ',
-      items: [
-        { label: 'Database Service', value: 'Cloudflare D1 (Remote)' },
-        { label: 'Database Name', value: 'dns_worker_db' }
-      ]
-    }));
-
-    const result = spawnSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dns_worker_db', '--remote'], {
-      input: 'y\n',
-      stdio: ['pipe', 'inherit', 'inherit'],
-      shell: true
-    });
-
-    if (result.status !== 0) {
-      console.error(formatDiagnostic({
-        level: 'error',
-        title: 'Cloudflare D1 Migration Failed',
-        message: `wrangler d1 migrations exited with status code ${result.status}`
+    if (!d1Bound) {
+      console.log(formatDiagnostic({
+        level: 'info',
+        title: 'Cloudflare D1 Migration Skipped',
+        message: 'No active [[d1_databases]] binding found in wrangler.toml. Skipping D1 remote migration.'
       }));
-      process.exit(result.status || 1);
+    } else {
+      console.log(formatBanner({
+        title: 'Applying Database Migrations to Cloudflare D1',
+        borderChar: '=',
+        bullet: '• ',
+        items: [
+          { label: 'Database Service', value: 'Cloudflare D1 (Remote)' },
+          { label: 'Database Name', value: 'dns_worker_db' }
+        ]
+      }));
+
+      const result = spawnSync('npx', ['wrangler', 'd1', 'migrations', 'apply', 'dns_worker_db', '--remote'], {
+        input: 'y\n',
+        stdio: ['pipe', 'inherit', 'inherit'],
+        shell: true
+      });
+
+      if (result.status !== 0) {
+        console.error(formatDiagnostic({
+          level: 'error',
+          title: 'Cloudflare D1 Migration Failed',
+          message: `wrangler d1 migrations exited with status code ${result.status}`
+        }));
+        process.exit(result.status || 1);
+      }
     }
   }
 }
