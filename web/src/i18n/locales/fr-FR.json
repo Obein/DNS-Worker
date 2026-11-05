@@ -527,8 +527,6 @@
     "checkViaParent": "(correspond à un domaine parent)",
     "checkNotSynced": "Cette liste n'a pas encore terminé sa synchronisation, il n'y a donc rien à vérifier.",
     "checkListDisabled": "Cette liste est actuellement désactivée, elle ne filtre donc rien pour le moment.",
-    "checkProbabilisticRate": "Les filtres sont probabilistes : environ 1 correspondance sur {{odds}} est un faux positif. Ajouter une exception couvre aussi tous ses sous-domaines.",
-    "checkProbabilistic": "Les filtres sont probabilistes, une petite part des correspondances sont donc des faux positifs. Ajouter une exception couvre aussi tous ses sous-domaines.",
     "checkAllowAction": "Autoriser quand même",
     "checkAllowed": "Exception ajoutée - ce domaine se résout désormais",
     "allowRuleAdded": "Exception ajoutée pour {{domain}}",

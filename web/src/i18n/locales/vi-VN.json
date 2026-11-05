@@ -527,8 +527,6 @@
     "checkViaParent": "(khớp với tên miền cha)",
     "checkNotSynced": "Danh sách này chưa đồng bộ xong, nên chưa có gì để kiểm tra.",
     "checkListDisabled": "Danh sách này hiện đang tắt, nên không lọc gì vào lúc này.",
-    "checkProbabilisticRate": "Bộ lọc mang tính xác suất: khoảng 1 trong {{odds}} lượt khớp là dương tính giả. Thêm ngoại lệ cũng áp dụng cho mọi tên miền con của nó.",
-    "checkProbabilistic": "Bộ lọc mang tính xác suất, nên một phần nhỏ các lượt khớp là dương tính giả. Thêm ngoại lệ cũng áp dụng cho mọi tên miền con của nó.",
     "checkAllowAction": "Vẫn cho phép",
     "checkAllowed": "Đã thêm ngoại lệ - tên miền này giờ đã phân giải được",
     "allowRuleAdded": "Đã thêm ngoại lệ cho {{domain}}",

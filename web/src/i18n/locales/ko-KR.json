@@ -527,8 +527,6 @@
     "checkViaParent": "(상위 도메인에서 일치)",
     "checkNotSynced": "이 목록은 아직 동기화가 끝나지 않아 확인할 것이 없습니다.",
     "checkListDisabled": "이 목록은 현재 비활성화되어 있어 지금은 아무것도 필터링하지 않습니다.",
-    "checkProbabilisticRate": "필터는 확률적입니다: 약 {{odds}}건 중 1건이 오탐입니다. 예외를 추가하면 모든 하위 도메인도 함께 적용됩니다.",
-    "checkProbabilistic": "필터는 확률적이므로 일부 일치는 오탐입니다. 예외를 추가하면 모든 하위 도메인도 함께 적용됩니다.",
     "checkAllowAction": "그래도 허용",
     "checkAllowed": "예외가 추가되었습니다 - 이제 이 도메인이 확인됩니다",
     "allowRuleAdded": "{{domain}}에 대한 예외가 추가되었습니다",

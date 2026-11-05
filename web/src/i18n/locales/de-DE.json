@@ -527,8 +527,6 @@
     "checkViaParent": "(Treffer über eine übergeordnete Domain)",
     "checkNotSynced": "Diese Liste ist noch nicht fertig synchronisiert, es gibt daher nichts zu prüfen.",
     "checkListDisabled": "Diese Liste ist derzeit deaktiviert und filtert daher gerade nichts.",
-    "checkProbabilisticRate": "Filter sind probabilistisch: etwa 1 von {{odds}} Treffern ist ein Fehlalarm. Eine Ausnahme deckt auch alle Subdomains ab.",
-    "checkProbabilistic": "Filter sind probabilistisch, ein kleiner Teil der Treffer ist daher ein Fehlalarm. Eine Ausnahme deckt auch alle Subdomains ab.",
     "checkAllowAction": "Trotzdem zulassen",
     "checkAllowed": "Ausnahme hinzugefügt - diese Domain wird jetzt aufgelöst",
     "allowRuleAdded": "Ausnahme für {{domain}} hinzugefügt",

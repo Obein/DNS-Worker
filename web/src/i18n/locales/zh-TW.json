@@ -527,8 +527,6 @@
     "checkViaParent": "（比對到上層網域）",
     "checkNotSynced": "此清單尚未完成同步，因此暫無可供檢查的內容。",
     "checkListDisabled": "此清單目前已停用，因此現在不會過濾任何內容。",
-    "checkProbabilisticRate": "過濾器屬於機率性：大約每 {{odds}} 次比對中有 1 次為誤判。新增例外規則也會涵蓋其所有子網域。",
-    "checkProbabilistic": "過濾器屬於機率性，因此少部分比對屬於誤判。新增例外規則也會涵蓋其所有子網域。",
     "checkAllowAction": "仍然允許",
     "checkAllowed": "已新增例外 - 該網域現在可以解析",
     "allowRuleAdded": "已為 {{domain}} 新增例外",

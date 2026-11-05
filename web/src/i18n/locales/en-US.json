@@ -527,8 +527,6 @@
     "checkViaParent": "(matched a parent domain)",
     "checkNotSynced": "This list has not finished syncing yet, so there is nothing to check against.",
     "checkListDisabled": "This list is currently disabled, so it is not filtering anything right now.",
-    "checkProbabilisticRate": "Filters are probabilistic: roughly 1 match in {{odds}} is a false positive. Adding an exception also covers every subdomain of it.",
-    "checkProbabilistic": "Filters are probabilistic, so a small share of matches are false positives. Adding an exception also covers every subdomain of it.",
     "checkAllowAction": "Allow anyway",
     "checkAllowed": "Exception added - this domain now resolves",
     "allowRuleAdded": "Exception added for {{domain}}",

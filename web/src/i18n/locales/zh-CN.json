@@ -527,8 +527,6 @@
     "checkViaParent": "（匹配到上级域名）",
     "checkNotSynced": "此列表尚未完成同步，因此暂无可供检查的内容。",
     "checkListDisabled": "此列表当前已禁用，因此现在不会过滤任何内容。",
-    "checkProbabilisticRate": "过滤器基于概率：大约每 {{odds}} 次匹配中有 1 次为误判。添加例外规则也会覆盖其所有子域名。",
-    "checkProbabilistic": "过滤器基于概率，因此少部分匹配属于误判。添加例外规则也会覆盖其所有子域名。",
     "checkAllowAction": "仍然允许",
     "checkAllowed": "已添加例外 - 该域名现在可以解析",
     "allowRuleAdded": "已为 {{domain}} 添加例外",

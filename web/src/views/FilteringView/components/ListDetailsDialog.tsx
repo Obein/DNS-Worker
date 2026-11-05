@@ -224,15 +224,6 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
                       </>
                     )}
                   </div>
-                  <div className="opacity-75">
-                    {result.falsePositiveRate
-                      ? t("filtering.checkProbabilisticRate", {
-                          defaultValue:
-                            "Filters are probabilistic: roughly 1 match in {{odds}} is a false positive. Adding an exception also covers every subdomain of it.",
-                          odds: Math.round(1 / result.falsePositiveRate).toLocaleString(),
-                        })
-                      : t("filtering.checkProbabilistic", "Filters are probabilistic, so a small share of matches are false positives. Adding an exception also covers every subdomain of it.")}
-                  </div>
                   {allowed ? (
                     <Tag intent={Intent.SUCCESS} minimal>
                       {t("filtering.checkAllowed", "Exception added - this domain now resolves")}
@@ -270,20 +261,22 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
           )}
         </div>
 
-        <div className="flex justify-between items-center">
-          <span className="text-xs opacity-50">
+        <div className="flex justify-between items-center gap-3">
+          <span className="text-xs opacity-50 truncate min-w-0">
             {t("filtering.tableLastSync")}:{" "}
             {selectedList?.last_synced_at
               ? formatDateTime(new Date(selectedList.last_synced_at * 1000))
               : "-"}
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<Copy size={14} />}
               text={t("setup.copyUrl", "Copy link")}
               onClick={() => { if (selectedList) onCopy(selectedList.url); }}
             />
             <Button
+              className="shrink-0 whitespace-nowrap min-w-fit w-auto"
               icon={<ExternalLink size={14} />}
               text={t("setup.learnMore", "Open link")}
               onClick={() => { if (selectedList) window.open(selectedList.url, "_blank"); }}
