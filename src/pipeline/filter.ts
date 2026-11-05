@@ -1,8 +1,13 @@
+/**
+ * @file filter.ts
+ * @description Multi-tier DNS filtering pipeline combining local custom rules,
+ * AdGuard exceptions, DNS rewrites, dual-state Bloom filter, and complex regex patterns.
+ */
+
 import { Context, DNSQuery, ResolutionResult, ProfileSettings, Rule } from "../types";
 import { DNSFilter } from "../lib/filtering";
 import { BloomFilter } from "../utils/bloom";
-import { cacheUtils } from "../utils/cache";
-import { buildResponse } from "../utils/dns";
+import { AdGuardProfileEngine } from "../lib/adguard";
 import { pipelineResolver } from "./resolver";
 
 export const pipelineFilter = {
@@ -13,18 +18,20 @@ export const pipelineFilter = {
     settings: ProfileSettings,
     rules: Rule[],
     bloom: BloomFilter | undefined,
-    track: (name: string) => void
+    track: (name: string) => void,
+    adguard?: AdGuardProfileEngine
   ): Promise<ResolutionResult | null> {
     const domainLower = query.name.toLowerCase();
 
-    // 本地白名单
+    // ── 阶段 1：本地自定义规则 (Local Rules) ──────────────────────────────────
+    // 1.1 本地白名单
     const whitelist = rules.filter(r => r.type === 'ALLOW');
     if (DNSFilter.findMatch(query.name, whitelist)) {
       track('local_rules');
       return pipelineResolver.resolve(request, query, context, settings, "PASS", "Whitelist");
     }
 
-    // 本地重定向
+    // 1.2 本地重定向
     const redirections = rules.filter(r => r.type === 'REDIRECT');
     const redirectRule = DNSFilter.findMatch(query.name, redirections);
     if (redirectRule) {
@@ -56,7 +63,7 @@ export const pipelineFilter = {
       }
     }
 
-    // 本地黑名单
+    // 1.3 本地黑名单
     const blacklist = rules.filter(r => r.type === 'BLOCK');
     const blockRule = DNSFilter.findMatch(query.name, blacklist);
     if (blockRule) {
@@ -65,19 +72,64 @@ export const pipelineFilter = {
     }
     track('local_rules');
 
-    // 外部列表过滤 (精确匹配 + 子域名匹配)
+    // ── 阶段 2：AdGuard 白名单例外 (@@) ──────────────────────────────────────
+    if (adguard?.testException(domainLower)) {
+      track('adguard_whitelist');
+      return pipelineResolver.resolve(request, query, context, settings, "PASS", "AdGuard Whitelist Exception");
+    }
+
+    // ── 阶段 3：AdGuard DNS 重写 ($dnsrewrite) ──────────────────────────────
+    const rewrite = adguard?.matchRewrite(domainLower);
+    if (rewrite) {
+      track('adguard_rewrite');
+      if (rewrite.type === 'A' || rewrite.type === 'AAAA') {
+        if (query.type === rewrite.type || query.type === 'HTTPS' || query.type === 'SVCB') {
+          return pipelineResolver.block(request, query, context, settings, "REDIRECT", "AdGuard DNS Rewrite", rewrite.value, rewrite.type);
+        }
+        // 反向类型无记录时返回 NODATA / 空阻断
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (NoData)");
+      }
+      if (rewrite.type === 'CNAME') {
+        return pipelineResolver.block(request, query, context, settings, "REDIRECT", "AdGuard DNS Rewrite", rewrite.value, "CNAME");
+      }
+      if (rewrite.type === 'NXDOMAIN') {
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (NXDOMAIN)");
+      }
+      if (rewrite.type === 'REFUSED') {
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (REFUSED)");
+      }
+    }
+
+    // ── 阶段 4：Bloom 过滤器双态前缀防线 (海量静态黑名单 ~90%) ────────────────
     if (bloom) {
       let currentDomain = domainLower;
+      let isSelf = true;
       while (currentDomain) {
-        if (bloom.test(currentDomain)) {
-          track('bloom_check');
-          return pipelineResolver.block(request, query, context, settings, "BLOCK", `External List: ${currentDomain}`);
+        if (isSelf) {
+          // 精确自身测试：匹配单域名黑名单 或 带有 || 的自身
+          if (bloom.test(currentDomain) || bloom.test(`||${currentDomain}`)) {
+            track('bloom_check');
+            return pipelineResolver.block(request, query, context, settings, "BLOCK", `External List: ${currentDomain}`);
+          }
+          isSelf = false;
+        } else {
+          // 父级子域测试：仅当父域名是以 || 前缀注册时才拦截子域！
+          if (bloom.test(`||${currentDomain}`)) {
+            track('bloom_check');
+            return pipelineResolver.block(request, query, context, settings, "BLOCK", `External List: ||${currentDomain}`);
+          }
         }
         const firstDot = currentDomain.indexOf('.');
         if (firstDot === -1) break;
         currentDomain = currentDomain.substring(firstDot + 1);
       }
       track('bloom_check');
+    }
+
+    // ── 阶段 5：AdGuard 正则与复杂通配符池 (Regex / Wildcard Pool) ───────────
+    if (adguard?.matchPattern(domainLower)) {
+      track('adguard_pattern');
+      return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard Complex Pattern");
     }
 
     return null;

@@ -14,10 +14,11 @@ export class RuleModel {
   async addRule(profileId: string, rule: Partial<Rule>): Promise<boolean> {
     const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
     const createdAt = rule.created_at ?? Math.floor(Date.now() / 1000);
+    const includeSubdomains = rule.include_subdomains ? 1 : 0;
     const result = await this.db.prepare(
-      "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at, include_subdomains) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
-      .bind(profileId, rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null, createdAt)
+      .bind(profileId, rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null, createdAt, includeSubdomains)
       .run();
     return result.success;
   }
@@ -36,8 +37,9 @@ export class RuleModel {
     const statements = rules.map(rule => {
       const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
       const createdAt = rule.created_at ?? now;
+      const includeSubdomains = rule.include_subdomains ? 1 : 0;
       return this.db.prepare(
-        "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO rules (profile_id, type, pattern, v_a, v_aaaa, v_txt, v_cname, created_at, include_subdomains) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       ).bind(
         profileId,
         rule.type,
@@ -46,7 +48,8 @@ export class RuleModel {
         rule.v_aaaa || null,
         rule.v_txt || null,
         rule.v_cname || null,
-        createdAt
+        createdAt,
+        includeSubdomains
       );
     });
 
@@ -63,10 +66,11 @@ export class RuleModel {
 
   async updateRule(id: number, profileId: string, rule: Partial<Rule>): Promise<boolean> {
     const normalizedPattern = rule.pattern ? rule.pattern.trim().toLowerCase() : "";
+    const includeSubdomains = rule.include_subdomains ? 1 : 0;
     const result = await this.db.prepare(
-      "UPDATE rules SET type = ?, pattern = ?, v_a = ?, v_aaaa = ?, v_txt = ?, v_cname = ? WHERE id = ? AND profile_id = ?"
+      "UPDATE rules SET type = ?, pattern = ?, v_a = ?, v_aaaa = ?, v_txt = ?, v_cname = ?, include_subdomains = ? WHERE id = ? AND profile_id = ?"
     )
-      .bind(rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null, id, profileId)
+      .bind(rule.type, normalizedPattern, rule.v_a || null, rule.v_aaaa || null, rule.v_txt || null, rule.v_cname || null, includeSubdomains, id, profileId)
       .run();
     return result.success;
   }

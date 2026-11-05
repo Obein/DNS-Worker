@@ -357,7 +357,10 @@
     "no": "いいえ",
     "saveChanges": "変更を保存",
     "delete": "削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "includeSubdomains": "サブドメインも含める",
+    "includeSubdomainsDesc": "例: example.com の場合に *.example.com も一致します（デフォルトはオフ、完全一致のみ）",
+    "subdomainsBadge": "+サブドメイン"
   },
   "analytics": {
     "customRange": "カスタム期間",

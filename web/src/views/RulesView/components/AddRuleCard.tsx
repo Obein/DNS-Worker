@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, Elevation, HTMLSelect, InputGroup, Button, Intent, FormGroup } from "@blueprintjs/core";
+import { Card, Elevation, HTMLSelect, InputGroup, Button, Intent, FormGroup, Switch } from "@blueprintjs/core";
 import { Plus, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -7,6 +7,7 @@ export interface AddRuleCardProps {
   newRule: {
     type: string;
     pattern: string;
+    include_subdomains?: boolean;
     v_a: string;
     v_aaaa: string;
     v_txt: string;
@@ -22,10 +23,10 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
 
   return (
     <Card elevation={Elevation.ONE} className="mb-8 p-6">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-col lg:flex-row justify-between gap-4 items-start lg:items-end">
           <div className="w-full lg:w-48">
-            <FormGroup label={t("rules.action")} labelFor="rule-type">
+            <FormGroup label={t("rules.action")} labelFor="rule-type" className="mb-0">
               <HTMLSelect
                 id="rule-type"
                 fill
@@ -40,8 +41,8 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
               />
             </FormGroup>
           </div>
-          <div className="flex-1 w-full lg:w-48">
-            <FormGroup label={t("rules.pattern")} labelFor="rule-pattern">
+          <div className="flex-1 w-full">
+            <FormGroup label={t("rules.pattern")} labelFor="rule-pattern" className="mb-0">
               <InputGroup
                 id="rule-pattern"
                 size="large"
@@ -52,7 +53,7 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
             </FormGroup>
           </div>
           {newRule.type !== "REDIRECT" && (
-            <FormGroup label="" labelFor="">
+            <FormGroup label="" labelFor="" className="mb-0">
               <Button
                 intent={Intent.PRIMARY}
                 size="large"
@@ -65,6 +66,18 @@ export const AddRuleCard: React.FC<AddRuleCardProps> = ({ newRule, setNewRule, a
               </Button>
             </FormGroup>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
+          <Switch
+            checked={!!newRule.include_subdomains}
+            onChange={(e) => setNewRule({ ...newRule, include_subdomains: e.currentTarget.checked })}
+            label={t("rules.includeSubdomains", "同时匹配子域名")}
+            className="mb-0 font-medium text-sm"
+          />
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            ({t("rules.includeSubdomainsDesc", "例如 example.com 同时拦截 *.example.com；默认关闭，仅精确匹配")})
+          </span>
         </div>
 
         {newRule.type === "REDIRECT" && (

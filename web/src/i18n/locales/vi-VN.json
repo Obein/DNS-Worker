@@ -357,7 +357,10 @@
     "no": "Không",
     "saveChanges": "Lưu thay đổi",
     "delete": "Xóa",
-    "close": "Đóng"
+    "close": "Đóng",
+    "includeSubdomains": "Bao gồm tên miền phụ",
+    "includeSubdomainsDesc": "Ví dụ: example.com cũng khớp với *.example.com; mặc định tắt (chỉ khớp chính xác)",
+    "subdomainsBadge": "+Tên miền phụ"
   },
   "analytics": {
     "customRange": "Khoảng thời gian tùy chỉnh",

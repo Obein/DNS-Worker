@@ -1,11 +1,13 @@
 import { Env, ProfileSettings, Rule } from "../types";
 import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
+import { AdGuardProfileEngine, AdGuardPayload } from "../lib/adguard";
 
 export interface ConfigCacheEntry {
   settings: ProfileSettings;
   rules: Rule[];
   timestamp: number;
+  adguard?: AdGuardPayload | null;
 }
 
 /**
@@ -38,6 +40,9 @@ export const bloomMemoryMap = new SizeCappedMap<string, { bloom: BloomFilter; ts
 
 // 基础配置体积较小，允许缓存 200 个 Profile
 export const configCache = new SizeCappedMap<string, ConfigCacheEntry>(200);
+
+// AdGuard 扩展规则引擎内存缓存 (L1 内存缓存，限制最多 20 个 Profile)
+export const adguardMemoryMap = new SizeCappedMap<string, { engine: AdGuardProfileEngine; ts: number }>(20);
 
 // DNS 缓存限制最多 500 条记录，防止遭受海量随机子域名查询（DNS Tunnel / Random Query Attack）时导致 Isolate 内存耗尽
 export const dnsCache = new SizeCappedMap<string, any>(500);
@@ -109,6 +114,7 @@ export const pipelineCache = {
 
     // 清理 L1 (内存)
     configCache.delete(profileId);
+    adguardMemoryMap.delete(profileId);
     if (clearBloom) {
       bloomMemoryMap.delete(profileId);
     }

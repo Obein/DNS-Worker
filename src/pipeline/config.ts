@@ -2,13 +2,20 @@ import { Context, ProfileSettings, Rule } from "../types";
 import { ProfileModel } from "../models/profile";
 import { RuleModel } from "../models/rule";
 import { ProfileBloomModel } from "../models/profileBloom";
+import { AdguardRulesModel } from "../models/adguardRules";
 import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
-import { configCache, bloomMemoryMap } from "./cache";
+import { configCache, bloomMemoryMap, adguardMemoryMap } from "./cache";
 import { DEFAULT_FAIL_OPEN_UPSTREAM } from "../constants/presets";
+import { AdGuardProfileEngine, AdGuardPayload } from "../lib/adguard";
 
 export const pipelineConfig = {
-  async load(context: Context, track: (name: string) => void): Promise<{ settings: ProfileSettings; rules: Rule[]; bloom?: BloomFilter } | null> {
+  async load(context: Context, track: (name: string) => void): Promise<{
+    settings: ProfileSettings;
+    rules: Rule[];
+    bloom?: BloomFilter;
+    adguard?: AdGuardProfileEngine;
+  } | null> {
     const { profileId, env, ctx } = context;
 
     // Fast-path: Default profile for unauthenticated access points or emergency fail-open
@@ -20,20 +27,15 @@ export const pipelineConfig = {
         log_retention_days: 0,
         ecs: { enabled: true, use_client_ip: true }
       };
-      return { settings: defaultSettings, rules: [], bloom: undefined };
+      return { settings: defaultSettings, rules: [], bloom: undefined, adguard: undefined };
     }
 
     // 1. 检查 L1 Memory (Isolate Global)
     const inMem = bloomMemoryMap.get(profileId);
+    const inMemAdguard = adguardMemoryMap.get(profileId);
     const cachedConfig = configCache.get(profileId);
     
     const bloomMemTtl = Number(env.BLOOM_MEM_TTL) || 600000;
-    // Per-isolate memory TTL for profile config (default 5 minutes).
-    // The Cache-Tag purge clears the L2 Cache API entry in every colo, but not
-    // the in-memory copy held by other isolates, so this TTL bounds how long a
-    // settings change can take to apply everywhere. Only a finite positive
-    // value is accepted: a negative one would disable L1 hits entirely and
-    // Infinity would stop the entry from ever expiring.
     const configuredMemTtl = Number(env.CONFIG_MEM_TTL) || 300000;
     const configMemTtl = Number.isFinite(configuredMemTtl) && configuredMemTtl > 0
       ? configuredMemTtl
@@ -41,16 +43,18 @@ export const pipelineConfig = {
     if (cachedConfig && (Date.now() - (cachedConfig.timestamp || 0) < configMemTtl)) {
       track('load_config_l1_mem');
       const validBloom = (inMem && Date.now() - inMem.ts < bloomMemTtl) ? inMem.bloom : undefined;
-      return { ...cachedConfig, bloom: validBloom };
+      const validAdguard = inMemAdguard ? inMemAdguard.engine : (cachedConfig.adguard ? new AdGuardProfileEngine(cachedConfig.adguard) : undefined);
+      return { ...cachedConfig, bloom: validBloom, adguard: validAdguard };
     }
 
     // 2. 检查 L2 Cache API
     const cache = typeof caches !== "undefined" ? (caches as any).default : null;
-    const profileCacheKey = `profile_v6:${profileId}`;
+    const profileCacheKey = `profile_v7:${profileId}`;
     const bloomInternalUrl = cacheUtils.generateCacheUrl(`bloom-bin:${profileId}`);
     
     let apiCached = cache ? await cacheUtils.get<any>(cache, profileCacheKey) : null;
     let bloom: BloomFilter | undefined;
+    let adguardEngine: AdGuardProfileEngine | undefined;
 
     if (apiCached) {
       track('load_config_l2_cache');
@@ -69,10 +73,16 @@ export const pipelineConfig = {
           // Non-critical bloom cache read error
         }
       }
+
+      if (inMemAdguard) {
+        adguardEngine = inMemAdguard.engine;
+      } else if (apiCached.adguard) {
+        adguardEngine = new AdGuardProfileEngine(apiCached.adguard);
+        adguardMemoryMap.set(profileId, { engine: adguardEngine, ts: Date.now() });
+      }
       
-      // 关键修复：无论布隆过滤器是否存在，apiCached 本身都是有效的配置，绝对不能穿透回 D1！
       configCache.set(profileId, { ...apiCached, timestamp: Date.now() });
-      return { ...apiCached, bloom };
+      return { ...apiCached, bloom, adguard: adguardEngine };
     }
 
     // 3. 回退到 D1 (带 Fail-Open 降级保护)
@@ -80,21 +90,26 @@ export const pipelineConfig = {
       const profileModel = new ProfileModel(env.DB);
       const ruleModel = new RuleModel(env.DB);
       const bloomModel = new ProfileBloomModel(env.DB);
+      const adguardModel = new AdguardRulesModel(env.DB);
 
-      // 并发从 D1 读取配置、规则及布隆过滤器，消除串行网络往返等待
-      const [profile, rules, buffer] = await Promise.all([
+      // 并发从 D1 读取配置、规则、布隆过滤器及 AdGuard 扩展规则
+      const [profile, rules, buffer, adguardPayload] = await Promise.all([
         profileModel.getById(profileId),
         ruleModel.getRules(profileId),
         bloomModel.getProfileBloom(profileId).catch((e) => {
           console.error("[Config] D1 Bloom loading failed:", e);
           return null;
         }),
+        adguardModel.getProfileRules(profileId).catch((e) => {
+          console.error("[Config] D1 AdGuard rules loading failed:", e);
+          return null;
+        })
       ]);
 
       if (!profile) {
         if (cachedConfig) {
           console.warn(`[Config] Profile ${profileId} not in D1, using stale memory config.`);
-          return { ...cachedConfig, bloom: inMem?.bloom };
+          return { ...cachedConfig, bloom: inMem?.bloom, adguard: inMemAdguard?.engine };
         }
         console.warn(`[Config] Profile ${profileId} not found in DB. Serving emergency fail-open fallback.`);
         const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM;
@@ -104,7 +119,7 @@ export const pipelineConfig = {
           log_retention_days: 0,
           ecs: { enabled: true, use_client_ip: true }
         };
-        return { settings: fallbackSettings, rules: [], bloom: undefined };
+        return { settings: fallbackSettings, rules: [], bloom: undefined, adguard: undefined };
       }
       
       const settings = JSON.parse(profile.settings);
@@ -115,7 +130,6 @@ export const pipelineConfig = {
         const uint8 = new Uint8Array(buffer);
         bloom = BloomFilter.fromUint8Array(uint8);
 
-        // 写入 L2 Cache API 供下次使用 (7 天长效缓存，列表变更时有主动淘汰)
         ctx.waitUntil(cache.put(bloomInternalUrl, new Response(uint8, {
           headers: { 
             'Content-Type': 'application/octet-stream',
@@ -125,28 +139,31 @@ export const pipelineConfig = {
         })));
       }
 
-      const config = { settings, rules };
+      if (adguardPayload) {
+        adguardEngine = new AdGuardProfileEngine(adguardPayload);
+        adguardMemoryMap.set(profileId, { engine: adguardEngine, ts: Date.now() });
+      }
+
+      const config = { settings, rules, adguard: adguardPayload };
       if (bloom) bloomMemoryMap.set(profileId, { bloom, ts: Date.now() });
       
       configCache.set(profileId, { ...config, timestamp: Date.now() });
-      // 写入 L2 Cache API 配置缓存 (24 小时长效缓存，配置变更时有主动淘汰)
       if (cache) {
         ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400, [`profile-${profileId}`]));
       }
       
       track('load_config_full_sync');
-      return { ...config, bloom };
+      return { ...config, bloom, adguard: adguardEngine };
     } catch (e: any) {
       console.warn(`[Config] D1 profile fetch failed for ${profileId}:`, e?.message || e);
       
       // 容灾模式 1: Stale-While-Error (使用过期的 L1 缓存)
       if (cachedConfig) {
         console.warn(`[Config] Serving stale config from memory for profile ${profileId}`);
-        return { ...cachedConfig, bloom: inMem?.bloom };
+        return { ...cachedConfig, bloom: inMem?.bloom, adguard: inMemAdguard?.engine };
       }
 
       // 容灾模式 2: Emergency Safe Default Fallback
-      // 当 D1 读额度耗尽且无缓存时，使用内置安全上游兜底，保证 DNS 绝不报 500 断网
       console.warn(`[Config] Serving emergency fail-open safe fallback for profile ${profileId}`);
       const failOpenUpstream = env.FAIL_OPEN_UPSTREAM || DEFAULT_FAIL_OPEN_UPSTREAM;
       const fallbackSettings: ProfileSettings = {
@@ -155,7 +172,7 @@ export const pipelineConfig = {
         log_retention_days: 0,
         ecs: { enabled: true, use_client_ip: true }
       };
-      return { settings: fallbackSettings, rules: [], bloom: undefined };
+      return { settings: fallbackSettings, rules: [], bloom: undefined, adguard: undefined };
     }
   }
 };

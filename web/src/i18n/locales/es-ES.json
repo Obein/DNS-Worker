@@ -357,7 +357,10 @@
     "no": "No",
     "saveChanges": "Guardar cambios",
     "delete": "Eliminar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "includeSubdomains": "Incluir subdominios",
+    "includeSubdomainsDesc": "P. ej., example.com también coincidirá con *.example.com; desactivado por defecto (solo coincidencia exacta)",
+    "subdomainsBadge": "+Subdominios"
   },
   "analytics": {
     "customRange": "Periodo personalizado",

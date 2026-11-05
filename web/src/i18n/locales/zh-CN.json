@@ -357,7 +357,10 @@
     "no": "否",
     "saveChanges": "保存更改",
     "delete": "删除",
-    "close": "关闭"
+    "close": "关闭",
+    "includeSubdomains": "同时匹配子域名",
+    "includeSubdomainsDesc": "例如 example.com 同时匹配 *.example.com；默认关闭，仅精确匹配",
+    "subdomainsBadge": "+子域名"
   },
   "analytics": {
     "customRange": "自定义时间范围",

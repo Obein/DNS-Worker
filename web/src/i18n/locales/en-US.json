@@ -357,7 +357,10 @@
     "no": "No",
     "saveChanges": "Save Changes",
     "delete": "Delete",
-    "close": "Close"
+    "close": "Close",
+    "includeSubdomains": "Match subdomains",
+    "includeSubdomainsDesc": "E.g., example.com also matches *.example.com; off by default (exact match only)",
+    "subdomainsBadge": "+Subdomains"
   },
   "analytics": {
     "customRange": "Custom Range",

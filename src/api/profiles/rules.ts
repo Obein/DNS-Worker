@@ -47,6 +47,7 @@ export async function handleProfileRulesRequest(
           v_txt: r.v_txt || null,
           v_cname: r.v_cname || null,
           created_at: typeof r.created_at === 'number' ? r.created_at : undefined,
+          include_subdomains: Boolean(r.include_subdomains),
         });
       }
 
@@ -82,6 +83,7 @@ export async function handleProfileRulesRequest(
     if (existing) {
       return new Response("Rule for this domain already exists", { status: 400 });
     }
+    rule.include_subdomains = Boolean(rule.include_subdomains);
     await ruleModel.addRule(profileId, rule);
     ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(null, { status: 201 });
@@ -97,6 +99,7 @@ export async function handleProfileRulesRequest(
     if (existing) {
       return new Response("Rule for this domain already exists", { status: 400 });
     }
+    rule.include_subdomains = Boolean(rule.include_subdomains);
     await ruleModel.updateRule(rule.id, profileId, rule);
     ctx.waitUntil(pipeline.clearCache(profileId, false, env));
     return new Response(null, { status: 200 });

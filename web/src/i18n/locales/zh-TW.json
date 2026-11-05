@@ -357,7 +357,10 @@
     "no": "否",
     "saveChanges": "儲存變更",
     "delete": "刪除",
-    "close": "關閉"
+    "close": "關閉",
+    "includeSubdomains": "同時匹配子網域",
+    "includeSubdomainsDesc": "例如 example.com 同時匹配 *.example.com；預設關閉，僅精確匹配",
+    "subdomainsBadge": "+子網域"
   },
   "analytics": {
     "customRange": "自訂時間範圍",

@@ -5,12 +5,14 @@ import { ProfileModel } from "../../models/profile";
 import { ListModel } from "../../models/list";
 import { ProfileBloomModel } from "../../models/profileBloom";
 import { ListBloomModel } from "../../models/listBloom";
+import { AdguardRulesModel } from "../../models/adguardRules";
+import { AdGuardPayload } from "../../lib/adguard/types";
 
 /**
- * 汇总并合并所有已启用列表的 Bloom Filter，并将其原子更新为 Profile 的 active Bloom。
+ * 汇总并合并所有已启用列表的 Bloom Filter 与 AdGuard 扩展规则，并原子更新为 Profile 的 active 状态。
  * 
- * 性能优化：不再一次性通过 JOIN 从 D1 加载所有列表的所有 Chunks，
- * 而是依次（分步）单独加载每个列表的完整 Bloom Filter，并在内存中进行按位或合并。
+ * 性能优化：依次单独加载每个列表的 Bloom Filter 在内存中进行按位或合并，
+ * 并将所有 AdGuard 扩展规则（例外、重写、正则池）汇总存入 profile_adguard_rules。
  */
 export async function combineAndPromote(
   profileId: string,
@@ -26,26 +28,64 @@ export async function combineAndPromote(
 ): Promise<void> {
   const lists = await listModel.getLists(profileId);
   const activeLists = lists.filter((l) => !!l.enabled);
+  const adguardRulesModel = env?.DB ? new AdguardRulesModel(env.DB) : null;
 
   if (activeLists.length === 0) {
-    // 若没有已同步的列表，清空 profile_blooms
-    await profileBloomModel.clearProfileBlooms(profileId);
+    // 若没有已同步的列表，清空 profile_blooms 与 profile_adguard_rules
+    await Promise.all([
+      profileBloomModel.clearProfileBlooms(profileId),
+      adguardRulesModel?.clearProfileRules(profileId)
+    ]);
   } else {
-    // 重建并按位或 (OR) 合并所有列表级布隆过滤器
+    // 重建并按位或 (OR) 合并所有列表级布隆过滤器，并汇总 AdGuard 规则
     const merged = BloomFilter.create(maxDomains, falsePositiveRate);
     let hasMergedAny = false;
 
+    const mergedAdguard: AdGuardPayload = {
+      exceptions: [],
+      rewrites: {},
+      patterns: []
+    };
+    const maxRegexRules = Number(env?.MAX_REGEX_RULES) || 1000;
+    const seenExceptions = new Set<string>();
+
     for (const list of activeLists) {
       try {
-        // 单个列表的 Bloom Filter 反序列化，内存开销上限恒定为 ~2.4MB
+        // 1. Bloom Filter 单列表合并
         const buf = await listBloomModel.getListBloom(list.id);
         if (buf) {
           const filter = BloomFilter.fromUint8Array(new Uint8Array(buf));
           merged.merge(filter);
           hasMergedAny = true;
         }
+
+        // 2. AdGuard 扩展规则合并
+        if (adguardRulesModel) {
+          const listRules = await adguardRulesModel.getListRules(list.id);
+          if (listRules) {
+            if (Array.isArray(listRules.exceptions)) {
+              for (const exc of listRules.exceptions) {
+                const key = `${exc.domain}:${exc.includeSubdomains ? 1 : 0}`;
+                if (!seenExceptions.has(key)) {
+                  seenExceptions.add(key);
+                  mergedAdguard.exceptions.push(exc);
+                }
+              }
+            }
+            if (listRules.rewrites && typeof listRules.rewrites === "object") {
+              Object.assign(mergedAdguard.rewrites, listRules.rewrites);
+            }
+            if (Array.isArray(listRules.patterns)) {
+              for (const pat of listRules.patterns) {
+                if (mergedAdguard.patterns.length < maxRegexRules) {
+                  mergedAdguard.patterns.push(pat);
+                }
+              }
+            }
+          }
+        }
       } catch (err) {
-        console.error(`[Sync] Failed to load/merge list bloom for list #${list.id}:`, err);
+        console.error(`[Sync] Failed to load/merge rules for list #${list.id}:`, err);
       }
     }
 
@@ -54,6 +94,10 @@ export async function combineAndPromote(
       await profileBloomModel.upsertProfileBloom(profileId, binary.buffer as ArrayBuffer, now);
     } else {
       await profileBloomModel.clearProfileBlooms(profileId);
+    }
+
+    if (adguardRulesModel) {
+      await adguardRulesModel.upsertProfileRules(profileId, mergedAdguard, now);
     }
   }
 

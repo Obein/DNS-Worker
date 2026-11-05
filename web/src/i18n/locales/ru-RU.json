@@ -357,7 +357,10 @@
     "no": "Нет",
     "saveChanges": "Сохранить изменения",
     "delete": "Удалить",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "includeSubdomains": "Включать поддомены",
+    "includeSubdomainsDesc": "Напр., example.com также совпадает с *.example.com; по умолчанию выключено (только точное совпадение)",
+    "subdomainsBadge": "+Поддомены"
   },
   "analytics": {
     "customRange": "Произвольный период",

@@ -126,6 +126,7 @@ export interface Rule {
   v_txt?: string;
   v_cname?: string;
   created_at?: number;
+  include_subdomains?: boolean | number;
 }
 
 export interface List {

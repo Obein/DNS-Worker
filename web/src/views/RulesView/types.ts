@@ -4,6 +4,7 @@ export interface Rule {
   id: number;
   type: "ALLOW" | "BLOCK" | "REDIRECT";
   pattern: string;
+  include_subdomains?: boolean | number;
   v_a?: string;
   v_aaaa?: string;
   v_txt?: string;
