@@ -135,27 +135,27 @@ async function runPipelineTests(): Promise<void> {
   assert.ok(resExempted !== null);
   assert.notStrictEqual(resExempted?.action, "BLOCK");
   assert.strictEqual(resExempted?.action, "PASS");
-  assert.strictEqual(resExempted?.reason, "AdGuard Whitelist Exception");
-  console.log("   ✓ AdGuard whitelist exception successfully overrides Bloom block.");
+  assert.strictEqual(resExempted?.reason, "External List: Exception");
+  console.log("   ✓ External list whitelist exception successfully overrides Bloom block.");
 
-  // 4. AdGuard DNS Rewrite ($dnsrewrite)
-  console.log("4. Testing AdGuard DNS rewrites ($dnsrewrite)...");
+  // 4. External List DNS Rewrite ($dnsrewrite)
+  console.log("4. Testing External List DNS rewrites ($dnsrewrite)...");
   const queryRewrite: DNSQuery = { name: "sub.router.local", type: "A", raw: new Uint8Array() };
   const resRewrite = await pipelineFilter.match(
     dummyRequest, queryRewrite, mockContext, mockSettings, [], bloom, () => {}, engine
   );
   assert.strictEqual(resRewrite?.action, "REDIRECT");
-  assert.strictEqual(resRewrite?.reason, "AdGuard DNS Rewrite");
-  console.log("   ✓ AdGuard DNS rewrite synthesized properly.");
+  assert.strictEqual(resRewrite?.reason, "External List: DNS Rewrite");
+  console.log("   ✓ External List DNS rewrite synthesized properly.");
 
-  // 5. AdGuard Complex Regex Pattern
-  console.log("5. Testing AdGuard complex regex pattern matching...");
+  // 5. External List Complex Regex Pattern
+  console.log("5. Testing External List complex regex pattern matching...");
   const queryPatternHit: DNSQuery = { name: "ad123.track.com", type: "A", raw: new Uint8Array() };
   const resPatternHit = await pipelineFilter.match(
     dummyRequest, queryPatternHit, mockContext, mockSettings, [], bloom, () => {}, engine
   );
   assert.strictEqual(resPatternHit?.action, "BLOCK");
-  assert.strictEqual(resPatternHit?.reason, "AdGuard Complex Pattern");
+  assert.strictEqual(resPatternHit?.reason, "External List: Pattern");
 
   const queryPatternMiss: DNSQuery = { name: "good.track.com", type: "A", raw: new Uint8Array() };
   const resPatternMiss = await pipelineFilter.match(

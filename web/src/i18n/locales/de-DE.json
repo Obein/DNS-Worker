@@ -986,7 +986,7 @@
     "item3Title": "Globales Edge-Netzwerk",
     "item3Desc": "Nutzt das riesige Edge-Netzwerk von Cloudflare für extrem schnelle Auflösung und minimale Latenzzeiten.",
     "item4Title": "Granulare Filterung",
-    "item4Desc": "Volle Unterstützung für Sperr- und Zulassungslisten, AdGuard-Regeln sowie benutzerdefinierte DNS-Eintrags-Umleitungen.",
+    "item4Desc": "Volle Unterstützung für Sperr- und Zulassungslisten, externe Listenregeln sowie benutzerdefinierte DNS-Eintrags-Umleitungen.",
     "item5Title": "Echtzeit-Statistiken",
     "item5Desc": "Visualisieren Sie den Netzwerkstatus durch detaillierte Abfrageprotokolle und ein umfassendes Dashboard.",
     "item6Title": "Moderne UI & Darkmode",

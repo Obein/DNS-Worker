@@ -986,7 +986,7 @@
     "item3Title": "全球边缘网络",
     "item3Desc": "依托 Cloudflare 庞大的边缘网络，获得极速解析与极低延迟体验。",
     "item4Title": "精细化过滤",
-    "item4Desc": "全面支持黑白名单、AdGuard 规则以及自定义 DNS 记录重定向。",
+    "item4Desc": "全面支持黑白名单、外部列表规则以及自定义 DNS 记录重定向。",
     "item5Title": "实时统计分析",
     "item5Desc": "通过详细的查询日志和综合统计仪表盘，直观展现网络健康状况。",
     "item6Title": "现代 UI 与暗黑模式",

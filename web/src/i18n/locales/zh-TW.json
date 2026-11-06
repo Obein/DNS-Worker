@@ -986,7 +986,7 @@
     "item3Title": "全球邊緣網路",
     "item3Desc": "依托 Cloudflare 龐大的邊缘網路，獲得極速解析與極低延遲體驗。",
     "item4Title": "精細化過濾",
-    "item4Desc": "全面支援黑白名單、AdGuard 規則以及自訂 DNS 記錄重新導向。",
+    "item4Desc": "全面支援黑白名單、外部列表規則以及自訂 DNS 記錄重新導向。",
     "item5Title": "即時統計分析",
     "item5Desc": "透過詳細的查詢日誌和綜合統計儀表盤，直观展現網路健康狀況。",
     "item6Title": "現代 UI 與暗黑模式",

@@ -105,8 +105,8 @@ To maintain high throughput on lightweight environments (such as VPS instances w
 flowchart TD
     REQ["Incoming Query (e.g. sub.adserver.tracker.com)"]
     L1["Tier 1: Local Custom Rules<br/>(Allow / Redirect / Block with configurable subdomain matching)"]
-    L2["Tier 2: AdGuard Whitelist Exceptions (@@)<br/>(In-memory Hash Set O(1) Lookup + Parent-Walk Fallback)"]
-    L3["Tier 3: AdGuard DNS Rewrites ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
+    L2["Tier 2: External List Exceptions (@@)<br/>(In-memory Hash Set O(1) Lookup + Parent-Walk Fallback)"]
+    L3["Tier 3: External List DNS Rewrites ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
     L4["Tier 4: Dual-State Prefix-Encoded Bloom Filter<br/>(|| Wildcards & Exact Domain Blocklists ~90%)"]
     L5["Tier 5: Regex & Complex Pattern Pool<br/>(Apex Domain Indexing, MAX_REGEX_RULES Bounded)"]
     PASS["ALLOWED (Clean / Whitelist)"]
@@ -132,8 +132,8 @@ flowchart TD
 
 1. **Short-Circuit Cascade Evaluation**:
    - **Tier 1: Local Custom Rules**: Highest priority. Evaluates user-defined rules with configurable exact-domain or subdomain matching.
-   - **Tier 2: AdGuard Whitelist Exceptions (`@@`)**: Maintained as an in-memory hash set (`Set<string>`) with $O(1)$ direct lookup followed by parent-domain label traversal. Matches short-circuit directly to `PASS`, entirely eliminating false-positive risks from downstream Bloom filters.
-   - **Tier 3: AdGuard DNS Rewrites (`$dnsrewrite`)**: Synthesizes custom DNS answers (A, AAAA, CNAME) or custom status codes (NXDOMAIN, REFUSED).
+   - **Tier 2: External List Exceptions (`@@`)**: Maintained as an in-memory hash set (`Set<string>`) with $O(1)$ direct lookup followed by parent-domain label traversal. Matches short-circuit directly to `PASS`, entirely eliminating false-positive risks from downstream Bloom filters.
+   - **Tier 3: External List DNS Rewrites (`$dnsrewrite`)**: Synthesizes custom DNS answers (A, AAAA, CNAME) or custom status codes (NXDOMAIN, REFUSED).
    - **Tier 4: Dual-State Prefix-Encoded Bloom Filter**: The primary defense line for millions of static blocklist entries. Distinguishes exact domain entries from wildcard domain entries with the `||` prefix, executing in microseconds and preventing single-domain rules from incorrectly intercepting subdomains.
    - **Tier 5: Regex & Complex Pattern Pool**: Evaluates `/regex/` and complex wildcards with inverted apex-domain indices, narrowing regex evaluation scope. Bounded by a default cap of 1,000 patterns per profile.
 

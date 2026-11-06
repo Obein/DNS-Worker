@@ -72,31 +72,31 @@ export const pipelineFilter = {
     }
     track('local_rules');
 
-    // ── 阶段 2：AdGuard 白名单例外 (@@) ──────────────────────────────────────
+    // ── 阶段 2：外部列表白名单例外 (@@) ────────────────────────────────────
     if (adguard?.testException(domainLower)) {
       track('adguard_whitelist');
-      return pipelineResolver.resolve(request, query, context, settings, "PASS", "AdGuard Whitelist Exception");
+      return pipelineResolver.resolve(request, query, context, settings, "PASS", "External List: Exception");
     }
 
-    // ── 阶段 3：AdGuard DNS 重写 ($dnsrewrite) ──────────────────────────────
+    // ── 阶段 3：外部列表 DNS 重写 ($dnsrewrite) ────────────────────────────
     const rewrite = adguard?.matchRewrite(domainLower);
     if (rewrite) {
       track('adguard_rewrite');
       if (rewrite.type === 'A' || rewrite.type === 'AAAA') {
         if (query.type === rewrite.type || query.type === 'HTTPS' || query.type === 'SVCB') {
-          return pipelineResolver.block(request, query, context, settings, "REDIRECT", "AdGuard DNS Rewrite", rewrite.value, rewrite.type);
+          return pipelineResolver.block(request, query, context, settings, "REDIRECT", "External List: DNS Rewrite", rewrite.value, rewrite.type);
         }
         // 反向类型无记录时返回 NODATA / 空阻断
-        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (NoData)");
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "External List: DNS Rewrite (NoData)");
       }
       if (rewrite.type === 'CNAME') {
-        return pipelineResolver.block(request, query, context, settings, "REDIRECT", "AdGuard DNS Rewrite", rewrite.value, "CNAME");
+        return pipelineResolver.block(request, query, context, settings, "REDIRECT", "External List: DNS Rewrite", rewrite.value, "CNAME");
       }
       if (rewrite.type === 'NXDOMAIN') {
-        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (NXDOMAIN)");
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "External List: DNS Rewrite (NXDOMAIN)");
       }
       if (rewrite.type === 'REFUSED') {
-        return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard DNS Rewrite (REFUSED)");
+        return pipelineResolver.block(request, query, context, settings, "BLOCK", "External List: DNS Rewrite (REFUSED)");
       }
     }
 
@@ -126,10 +126,10 @@ export const pipelineFilter = {
       track('bloom_check');
     }
 
-    // ── 阶段 5：AdGuard 正则与复杂通配符池 (Regex / Wildcard Pool) ───────────
+    // ── 阶段 5：外部列表正则与复杂通配符池 (Regex / Wildcard Pool) ─────────
     if (adguard?.matchPattern(domainLower)) {
       track('adguard_pattern');
-      return pipelineResolver.block(request, query, context, settings, "BLOCK", "AdGuard Complex Pattern");
+      return pipelineResolver.block(request, query, context, settings, "BLOCK", "External List: Pattern");
     }
 
     return null;

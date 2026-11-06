@@ -986,7 +986,7 @@
     "item3Title": "Red Edge global",
     "item3Desc": "Aprovecha la enorme red edge de Cloudflare para obtener una resolución ultrarrápida y latencias mínimas.",
     "item4Title": "Filtrado granular",
-    "item4Desc": "Soporte completo para listas de bloqueo y de exclusión, reglas AdGuard y redirección personalizada de registros DNS.",
+    "item4Desc": "Soporte completo para listas de bloqueo y de exclusión, reglas de listas externas y redirección personalizada de registros DNS.",
     "item5Title": "Estadísticas en tiempo real",
     "item5Desc": "Visualiza el estado de la red mediante registros de consultas detallados y un panel de control completo.",
     "item6Title": "UI moderna y modo oscuro",

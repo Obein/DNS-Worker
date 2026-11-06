@@ -986,7 +986,7 @@
     "item3Title": "Mạng lưới biên toàn cầu",
     "item3Desc": "Dựa trên mạng lưới biên rộng lớn của Cloudflare để có tốc độ phân giải cực nhanh và độ trễ cực thấp.",
     "item4Title": "Lọc tinh vi",
-    "item4Desc": "Hỗ trợ đầy đủ danh sách đen/trắng, quy tắc AdGuard và chuyển hướng bản ghi DNS tùy chỉnh.",
+    "item4Desc": "Hỗ trợ đầy đủ danh sách đen/trắng, quy tắc danh sách bên ngoài và chuyển hướng bản ghi DNS tùy chỉnh.",
     "item5Title": "Thống kê và phân tích thời gian thực",
     "item5Desc": "Hiển thị trực quan tình trạng sức khỏe của mạng thông qua nhật ký truy vấn chi tiết và bảng điều khiển thống kê tổng hợp.",
     "item6Title": "Giao diện hiện đại & Chế độ tối",
