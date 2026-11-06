@@ -24,6 +24,7 @@ export interface Env {
   TURNSTILE_SECRET_KEY?: string;
   MAX_SYNC_DOMAINS?: string | number;
   MAX_LIST_DOMAINS?: string | number;
+  MAX_LIST_BYTES?: string | number;
   MAX_LOG_RETENTION_DAYS?: string | number;
   DEFAULT_LOG_RETENTION_DAYS?: string | number;
   ADMIN_USER_MAX_LOG_RETENTION_DAYS?: string | number;

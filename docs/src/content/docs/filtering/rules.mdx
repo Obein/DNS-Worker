@@ -160,10 +160,10 @@ Configure these variables in `.env` (Serverfull) or `wrangler.toml` (Cloudflare 
 - **Default (`.env.serverfull`)**: `0.0001`
 - **Description**: Configures bitset size calculation for Bloom filters. The lower threshold (0.0001) minimizes false positives and eliminates CPU spikes during rule evaluation.
 
-### `MAX_SYNC_DOMAINS` & `MAX_LIST_DOMAINS`
+### `MAX_SYNC_DOMAINS`, `MAX_LIST_DOMAINS` & `MAX_LIST_BYTES`
 - **Supported in**: Serverless & Serverfull
-- **Defaults**: `MAX_SYNC_DOMAINS=1000000` (1 million total) & `MAX_LIST_DOMAINS=500000` (500k per list).
-- **Description**: Safety boundaries to prevent unbounded memory allocation during external filter fetching.
+- **Defaults**: `MAX_SYNC_DOMAINS=1000000` (1 million total), `MAX_LIST_DOMAINS=500000` (500k per list), & `MAX_LIST_BYTES=20971520` (20 MB per list).
+- **Description**: Safety boundaries to prevent unbounded memory allocation and excessive network downloads during external filter fetching. If a list exceeds `MAX_LIST_BYTES`, it is safely parsed up to the limit and marked with a truncation warning in sync status.
 
 ### `BLOOM_MEM_TTL` & `SYNC_TIMEOUT_MS`
 - **Defaults**: `BLOOM_MEM_TTL=600000` (10 minutes in-memory cache) & `SYNC_TIMEOUT_MS=30000` (30s download timeout).

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import assert from "node:assert";
 import { cacheUtils } from "../src/utils/cache";
-import { pipelineCache } from "../src/pipeline/cache";
+import { pipelineCache, PROFILE_CACHE_KEY_PREFIX } from "../src/pipeline/cache";
 import type { Env } from "../src/types";
 
 // Mock Cache API
@@ -89,7 +89,8 @@ async function runTests() {
     defaultMockCache.deleted.length = 0;
     await pipelineCache.clear(profileId);
     assert.strictEqual(purgeCalls.length, 0, "No global purge fetch should be made when env is omitted");
-    assert(defaultMockCache.deleted.some(u => u.includes(profileId)), "Local cache should be deleted");
+    assert(defaultMockCache.deleted.some(u => u.includes(encodeURIComponent(`${PROFILE_CACHE_KEY_PREFIX}:${profileId}`))), "Local cache should delete active profile versioned key");
+    assert(defaultMockCache.deleted.some(u => u.includes(encodeURIComponent(`bloom-bin:${profileId}`))), "Local cache should delete bloom-bin key");
 
     // 2.2 Test pipelineCache.clear with env and clearBloom = true
     console.log("3. Testing pipelineCache.clear(profileId, true, env)...");

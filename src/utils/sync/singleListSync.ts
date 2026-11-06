@@ -6,7 +6,7 @@ import { ListBloomModel } from "../../models/listBloom";
 import { AdguardRulesModel } from "../../models/adguardRules";
 import { AdGuardRuleKind, AdGuardPayload, ParsedAdGuardRule } from "../../lib/adguard";
 
-const MAX_LIST_BYTES = 5 * 1024 * 1024;
+const DEFAULT_MAX_LIST_BYTES = 20 * 1024 * 1024; // 20 MB default limit (streaming line parsing has low memory footprint)
 
 /**
  * 同步单个订阅列表的通用业务逻辑。
@@ -27,6 +27,7 @@ export async function syncSingleList(
   const timeoutMs = Number(env.SYNC_TIMEOUT_MS) || 90000;
   const maxListDomains = Number(env.MAX_LIST_DOMAINS) || 500000;
   const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
+  const maxListBytes = Number(env.MAX_LIST_BYTES) || DEFAULT_MAX_LIST_BYTES;
   const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
   const maxRegexRules = Number(env.MAX_REGEX_RULES) || 1000;
 
@@ -46,9 +47,9 @@ export async function syncSingleList(
   let domainsSinceYield = 0;
 
   // 流式下载并按行解析规则，分流分类存储
-  const { error: fetchError } = await fetchListContent(
+  const { error: fetchError, truncated } = await fetchListContent(
     list.url,
-    MAX_LIST_BYTES,
+    maxListBytes,
     timeoutMs,
     (rule: ParsedAdGuardRule) => {
       if (count < maxListDomains) {
@@ -97,6 +98,12 @@ export async function syncSingleList(
   let syncError: string | null = fetchError;
 
   if (!fetchError) {
+    if (truncated) {
+      syncError = `List truncated at ${(maxListBytes / 1024 / 1024).toFixed(0)} MB: Maximum list size reached. Excess rules were omitted.`;
+      console.warn(
+        `[Sync] Profile ${profileId}: list #${list.id} truncated at ${(maxListBytes / 1024 / 1024).toFixed(0)} MB with ${count} rules. Warning: ${syncError}`
+      );
+    }
     // 写入列表级布隆过滤器和扩展规则到数据库
     const saveOps: Promise<any>[] = [
       listBloomModel.upsertListBloom(list.id, listBloom.toUint8Array().buffer as ArrayBuffer, now)
@@ -105,9 +112,11 @@ export async function syncSingleList(
       saveOps.push(new AdguardRulesModel(env.DB).upsertListRules(list.id, adguardPayload, now));
     }
     await Promise.all(saveOps);
-    console.log(
-      `[Sync] Profile ${profileId}: successfully updated list #${list.id} with ${count} rules.`
-    );
+    if (!truncated) {
+      console.log(
+        `[Sync] Profile ${profileId}: successfully updated list #${list.id} with ${count} rules.`
+      );
+    }
   } else {
     // 拉取失败：跳过，并沿用原有列表缓存，记录错误原因，保持启用状态
     console.warn(

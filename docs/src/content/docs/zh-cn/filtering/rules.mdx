@@ -159,10 +159,10 @@ flowchart TD
 - **默认值**：`0.0001`（万分之一）
 - **说明**：布隆过滤器的误报率设计阈值。极低的万分之一阈值在最小化内存开销的同时彻底压低了二次验证频率。
 
-### `MAX_SYNC_DOMAINS` & `MAX_LIST_DOMAINS`
+### `MAX_SYNC_DOMAINS`、`MAX_LIST_DOMAINS` & `MAX_LIST_BYTES`
 - **支持模式**：Serverless & Serverfull
-- **默认值**：`MAX_SYNC_DOMAINS=1000000`（总计 100 万条上限），`MAX_LIST_DOMAINS=500000`（单列表 50 万条上限）。
-- **说明**：安全保护边界，防止抓取过大规则源时发生内存溢出。
+- **默认值**：`MAX_SYNC_DOMAINS=1000000`（总计 100 万条上限），`MAX_LIST_DOMAINS=500000`（单列表 50 万条上限），`MAX_LIST_BYTES=20971520`（单列表 20 MB 上限）。
+- **说明**：安全保护边界，防止抓取过大规则源时发生无节制内存占用与大流量耗尽。若外部列表超出 `MAX_LIST_BYTES`，系统将安全截断至上限并于列表同步状态明确标注警告，杜绝静默丢失。
 
 ### `BLOOM_MEM_TTL` & `SYNC_TIMEOUT_MS`
 - **默认值**：`BLOOM_MEM_TTL=600000`（内存缓存 10 分钟），`SYNC_TIMEOUT_MS=30000`（规则下载超时 30 秒）。
