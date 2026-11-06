@@ -43,10 +43,11 @@ const TRANSIENT_HTTP_STATUSES = new Set([
   526, // Cloudflare: Invalid SSL Certificate
 ]);
 
-/** 默认请求头：携带规范的 User-Agent 与 Accept，规避上游防爬虫/限流误杀 */
+/** 默认请求头：携带规范的 User-Agent、Accept 与 Accept-Encoding，启用压缩并规避上游防爬虫/限流误杀 */
 const DEFAULT_FETCH_HEADERS: HeadersInit = {
   "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
   Accept: "text/plain, text/*, */*",
+  "Accept-Encoding": "gzip, deflate, br",
 };
 
 const MAX_RETRIES = 2; // 最多重试 2 次（共 3 次请求）
@@ -111,6 +112,7 @@ export async function fetchListContent(
         const requestHeaders: Record<string, string> = {
           "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
           Accept: "text/plain, text/*, */*",
+          "Accept-Encoding": "gzip, deflate, br",
         };
         // 协商缓存：若已有 ETag 或 Last-Modified，附带条件请求头
         if (options?.etag) {
@@ -239,12 +241,18 @@ export async function fetchListContent(
           const chunkText = decoder.decode(value, { stream: true });
           buffer += chunkText;
 
-          // 快速切分出完整行
-          const lines = buffer.split("\n");
-          // 最后一个元素若没有换行符则为未完结的行碎片，留到下一次迭代拼接
-          buffer = lines.pop() || "";
+          // 指针式行扫描：使用 indexOf 遍历换行符，避免为整个缓冲区分配中间数组与大量字符串对象
+          let lineStart = 0;
+          let newlineIdx: number;
+          while ((newlineIdx = buffer.indexOf("\n", lineStart)) !== -1) {
+            let lineEnd = newlineIdx;
+            // 剥除 Windows CRLF 换行符的 '\r'
+            if (lineEnd > lineStart && buffer.charCodeAt(lineEnd - 1) === 13) {
+              lineEnd--;
+            }
+            const line = buffer.slice(lineStart, lineEnd);
+            lineStart = newlineIdx + 1;
 
-          for (const line of lines) {
             const rule = parseAdGuardLine(line);
             if (rule && rule.kind !== AdGuardRuleKind.COMMENT && rule.kind !== AdGuardRuleKind.UNSUPPORTED) {
               const res = onDomain(rule);
@@ -254,12 +262,19 @@ export async function fetchListContent(
               count++;
             }
           }
+
+          // 仅在当前 chunk 扫描完毕后，对 buffer 进行一次性截取，保留未完结的行碎片
+          buffer = lineStart > 0 ? buffer.slice(lineStart) : buffer;
         }
       }
 
       // 处理流完结后残留的尾行数据
       if (buffer) {
-        const rule = parseAdGuardLine(buffer);
+        let line = buffer;
+        if (line.charCodeAt(line.length - 1) === 13) {
+          line = line.slice(0, -1);
+        }
+        const rule = parseAdGuardLine(line);
         if (rule && rule.kind !== AdGuardRuleKind.COMMENT && rule.kind !== AdGuardRuleKind.UNSUPPORTED) {
           const res = onDomain(rule);
           if (res instanceof Promise) {
