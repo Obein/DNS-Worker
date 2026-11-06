@@ -5,8 +5,7 @@
   "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
   "main": "./dist/serverfull.mjs",
   "bin": {
-    "dns-worker": "./dist/serverfull.mjs",
-    "obexdns": "./dist/serverfull.mjs"
+    "dns-worker": "./dist/serverfull.mjs"
   },
   "files": [
     "dist/",

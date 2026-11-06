@@ -9,7 +9,7 @@ import { isSafeUrl } from "../src/utils/validator";
 
 async function runTestSuite(): Promise<void> {
   console.log("================================================================");
-  console.log("   ObexDNS FAIL_OPEN_UPSTREAM Multi-Protocol Verification Test   ");
+  console.log("   DNS Worker FAIL_OPEN_UPSTREAM Multi-Protocol Verification Test   ");
   console.log("================================================================\n");
 
   // Mock standard DNS query wire packet for example.com A record

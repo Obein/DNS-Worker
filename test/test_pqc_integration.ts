@@ -1,6 +1,6 @@
 /**
  * @file test_pqc_integration.ts
- * @description End-to-end integration test for ObexDNS P256-MLKEM768 Post-Quantum E2EE with hourly KEM.
+ * @description End-to-end integration test for DNS Worker P256-MLKEM768 Post-Quantum E2EE with hourly KEM.
  */
 
 import { ml_kem768_p256 } from "@noble/post-quantum/hybrid.js";
@@ -99,7 +99,7 @@ async function decryptLogWithDek(dek: CryptoKey, encryptedPayloadStr: string): P
 
 async function runTestSuite(): Promise<void> {
   console.log("================================================================");
-  console.log("   ObexDNS PQC E2EE (P256-MLKEM768 + Hourly KEM) Integration Test");
+  console.log("   DNS Worker PQC E2EE (P256-MLKEM768 + Hourly KEM) Integration Test");
   console.log("================================================================\n");
 
   // Step 1: User Account Key Generation (Client side)

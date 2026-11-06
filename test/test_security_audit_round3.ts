@@ -226,7 +226,7 @@ async function testDnsRebindingAndCsprng(): Promise<void> {
 
 async function runAllTests(): Promise<void> {
   console.log("================================================================");
-  console.log("       ObexDNS Security Audit Round 3 Verification Suite        ");
+  console.log("       DNS Worker Security Audit Round 3 Verification Suite        ");
   console.log("================================================================\n");
 
   await testSafeUrlSSRFVectors();

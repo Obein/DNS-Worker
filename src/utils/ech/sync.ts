@@ -143,11 +143,11 @@ export async function syncCloudflareIpRanges(
   try {
     const [v4Res, v6Res, echRes] = await Promise.all([
       fetch("https://www.cloudflare.com/ips-v4", {
-        headers: { "User-Agent": "Obex-DNS/1.0" },
+        headers: { "User-Agent": "DNS-Worker/1.0" },
         signal: AbortSignal.timeout(5000)
       }),
       fetch("https://www.cloudflare.com/ips-v6", {
-        headers: { "User-Agent": "Obex-DNS/1.0" },
+        headers: { "User-Agent": "DNS-Worker/1.0" },
         signal: AbortSignal.timeout(5000)
       }),
       fetch("https://cloudflare-dns.com/dns-query?name=cloudflare-ech.com&type=HTTPS", {

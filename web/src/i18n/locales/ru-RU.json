@@ -214,7 +214,7 @@
     "connected": "Подключено",
     "notConnected": "Не подключено",
     "profileMatch": "Фильтрация через этот профиль активна.",
-    "profileMismatch": "Obex используется, но ID профиля не совпадает.",
+    "profileMismatch": "DNS Worker используется, но ID профиля не совпадает.",
     "verifyHint": "После настройки нажмите кнопку для проверки.",
     "refreshStatus": "Обновить статус",
     "egressIp": "Исходящий IP",
