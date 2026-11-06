@@ -1,3 +1,5 @@
+import { deflateSync, inflateSync } from "node:zlib";
+
 /**
  * D1 单行 / BLOB 存储切片大小（字节）
  * Cloudflare D1 单行/BLOB 的硬性上限为 2,000,000 字节 (~1.907 MB)。
@@ -6,6 +8,13 @@
  * - 将默认 ~2.29 MB 的布隆过滤器切片数由 5 片降至 2 片，大幅缩减 D1 读写行数成本与 RPC 往返。
  */
 export const BLOOM_CHUNK_SIZE = 1.5 * 1024 * 1024; // 1,572,864 bytes
+
+/**
+ * 压缩版布隆过滤器魔数：ASCII 'BLMZ' (0x5A4D4C42)
+ * 用于在序列化二进制头部快速区分版本化压缩格式与传统未压缩格式。
+ */
+const BLMZ_MAGIC = 0x5a4d4c42;
+const BLMZ_HEADER_SIZE = 20;
 
 /**
  * BloomFilter.ts - 高性能布隆过滤器实现
@@ -27,6 +36,8 @@ export class BloomFilter {
 
   private static readonly FNV_PRIME = 16777619;
   private static readonly FNV_SEED_0 = 2166136261;
+  /** 预计算的 "||" (ASCII 124, 124) FNV-1a 流式哈希状态种子 */
+  private static readonly FNV_SEED_PIPE_PIPE = 1431891397;
   
   // 预分配 TextEncoder 以避免重复创建开销 (Isolate 全局)
   private static readonly encoder = new TextEncoder();
@@ -95,6 +106,38 @@ export class BloomFilter {
   }
 
   /**
+   * 添加带有 "||" 前缀的域名元素（等价于 add(`||${domain}`)）。
+   * 性能优化：直接使用预计算的 "||" FNV-1a 哈希种子继续流式哈希，
+   * 彻底避免在 V8 堆内存中分配数万至数十万个新字符串模板！
+   *
+   * @param domain 纯域名字符串
+   */
+  addPipePipe(domain: string): void {
+    let h1 = BloomFilter.FNV_SEED_PIPE_PIPE;
+    const len = domain.length;
+    for (let i = 0; i < len; i++) {
+      h1 ^= domain.charCodeAt(i) & 0xff;
+      h1 = Math.imul(h1, BloomFilter.FNV_PRIME);
+    }
+    h1 = h1 >>> 0;
+
+    let h2 = h1 ^ (h1 >>> 16);
+    h2 = Math.imul(h2, 0x85ebca6b);
+    h2 = h2 ^ (h2 >>> 13);
+    h2 = Math.imul(h2, 0xc2b2ae35);
+    h2 = (h2 ^ (h2 >>> 16)) >>> 0;
+
+    const arr = this.bitArray;
+    const size = this.size;
+    const k = this.hashes;
+
+    for (let i = 0; i < k; i++) {
+      const pos = (h1 + i * h2) % size;
+      arr[pos >>> 5] |= (1 << (pos & 31));
+    }
+  }
+
+  /**
    * 检测元素是否存在 (无假阴性，有极低假阳性)
    * @param element 待检测字符串
    */
@@ -128,27 +171,140 @@ export class BloomFilter {
   }
 
   /**
-   * 导出为原始二进制格式 (用于 R2 / D1 存储，避开 Base64 开销)
-   * 结构: [4字节 size][4字节 hashes][位数组]
+   * 获取布隆过滤器位长度 (bits)
    */
-  toUint8Array(): Uint8Array {
-    const res = new Uint8Array(8 + this.bitArray.byteLength);
+  getSize(): number {
+    return this.size;
+  }
+
+  /**
+   * 获取哈希函数数量 (k)
+   */
+  getHashes(): number {
+    return this.hashes;
+  }
+
+  /**
+   * 获取内部 32 位字数组
+   */
+  getBitArray(): Uint32Array {
+    return this.bitArray;
+  }
+
+  /**
+   * 导出为二进制格式。
+   * 默认启用 Deflate 压缩（BLMZ 魔数封装），对于稀疏或常见订阅规则布隆过滤器，
+   * 体积可缩减 70% ~ 99%，大幅减轻 D1 BLOB 存储行数与跨网络/缓存 I/O。
+   *
+   * @param compress 是否启用压缩，默认为 true；若设为 false 则输出传统未压缩格式
+   */
+  toUint8Array(compress: boolean = true): Uint8Array {
+    if (!compress) {
+      // 传统未压缩格式: [4字节 size][4字节 hashes][位数组]
+      const res = new Uint8Array(8 + this.bitArray.byteLength);
+      const view = new DataView(res.buffer);
+      view.setUint32(0, this.size, true); // 小端序存储
+      view.setUint32(4, this.hashes, true);
+      res.set(new Uint8Array(this.bitArray.buffer, this.bitArray.byteOffset, this.bitArray.byteLength), 8);
+      return res;
+    }
+
+    const rawBytes = new Uint8Array(this.bitArray.buffer, this.bitArray.byteOffset, this.bitArray.byteLength);
+    let payload: Uint8Array;
+    let isCompressed = false;
+
+    try {
+      const compressed = deflateSync(rawBytes);
+      // 仅当压缩确实减小了体积时才启用压缩标志（防范极端高密度随机位反向膨胀）
+      if (compressed.length < rawBytes.length) {
+        payload = compressed;
+        isCompressed = true;
+      } else {
+        payload = rawBytes;
+      }
+    } catch {
+      payload = rawBytes;
+    }
+
+    const res = new Uint8Array(BLMZ_HEADER_SIZE + payload.length);
     const view = new DataView(res.buffer);
-    view.setUint32(0, this.size, true); // 小端序存储
-    view.setUint32(4, this.hashes, true);
-    
-    // 拷贝 underlying byte data 到目标 Uint8Array
-    res.set(new Uint8Array(this.bitArray.buffer, this.bitArray.byteOffset, this.bitArray.byteLength), 8);
+    view.setUint32(0, BLMZ_MAGIC, true);              // 4字节魔数 'BLMZ'
+    view.setUint8(4, 1);                              // 1字节版本 (v1)
+    view.setUint8(5, isCompressed ? 1 : 0);           // 1字节标志位 (bit 0: isCompressed)
+    view.setUint16(6, 0, true);                       // 2字节保留字段 (对齐4字节边界)
+    view.setUint32(8, this.size, true);               // 4字节 size (bits)
+    view.setUint32(12, this.hashes, true);            // 4字节 hashes (k)
+    view.setUint32(16, this.bitArray.length, true);   // 4字节 expected words count
+
+    res.set(payload, BLMZ_HEADER_SIZE);
     return res;
   }
 
   /**
-   * 从原始二进制流恢复 (零拷贝/对齐安全反序列化)
+   * 从二进制流恢复布隆过滤器。
+   * 具备全自动格式嗅探与向后兼容能力：
+   * 1. 优先检测 BLMZ 压缩魔数头并即时快速解压；
+   * 2. 若为旧版无魔数二进制（[4字节 size][4字节 hashes][位数组]），平滑回退至零拷贝反序列化。
    */
   static fromUint8Array(buffer: Uint8Array): BloomFilter {
     if (!buffer || buffer.byteLength < 8) {
       throw new Error("Invalid bloom filter buffer: header too short");
     }
+
+    // 1. 嗅探是否为带有 BLMZ 魔数头的版本化/压缩格式
+    if (buffer.byteLength >= BLMZ_HEADER_SIZE) {
+      const view = new DataView(buffer.buffer, buffer.byteOffset, BLMZ_HEADER_SIZE);
+      const magic = view.getUint32(0, true);
+
+      if (magic === BLMZ_MAGIC) {
+        const version = view.getUint8(4);
+        if (version !== 1) {
+          throw new Error(`Unsupported bloom filter version: ${version}`);
+        }
+        const flags = view.getUint8(5);
+        const isCompressed = (flags & 1) !== 0;
+        const size = view.getUint32(8, true);
+        const hashes = view.getUint32(12, true);
+        const expectedWords = view.getUint32(16, true);
+
+        if (size === 0 || hashes === 0 || expectedWords === 0) {
+          throw new Error("Invalid bloom filter parameters in BLMZ header");
+        }
+
+        const payload = buffer.subarray(BLMZ_HEADER_SIZE);
+        let rawBytes: Uint8Array;
+
+        if (isCompressed) {
+          try {
+            rawBytes = inflateSync(payload);
+          } catch (e: any) {
+            throw new Error(`Failed to decompress bloom filter payload: ${e.message || String(e)}`);
+          }
+        } else {
+          rawBytes = payload;
+        }
+
+        const actualWords = rawBytes.byteLength >> 2;
+        if (actualWords < expectedWords) {
+          throw new Error(
+            `Invalid bloom filter payload: bit array truncated (expected ${expectedWords} words, got ${actualWords})`
+          );
+        }
+
+        let bitData: Uint32Array;
+        if (rawBytes.byteOffset % 4 === 0) {
+          bitData = new Uint32Array(rawBytes.buffer, rawBytes.byteOffset, expectedWords);
+        } else {
+          const copy = new Uint8Array(expectedWords << 2);
+          copy.set(rawBytes.subarray(0, expectedWords << 2));
+          bitData = new Uint32Array(copy.buffer, 0, expectedWords);
+        }
+
+        return new BloomFilter(size, hashes, bitData);
+      }
+    }
+
+    // 2. 传统未压缩格式兼容回退: [4字节 size][4字节 hashes][位数组]
     const view = new DataView(buffer.buffer, buffer.byteOffset, 8);
     const size = view.getUint32(0, true);
     const hashes = view.getUint32(4, true);
@@ -156,7 +312,7 @@ export class BloomFilter {
     if (size === 0 || hashes === 0) {
       throw new Error("Invalid bloom filter parameters: size and hashes must be positive integers");
     }
-    
+
     const offset = buffer.byteOffset + 8;
     const length = buffer.byteLength - 8;
     const expectedWords = (size + 31) >>> 5;
@@ -167,7 +323,7 @@ export class BloomFilter {
         `Invalid bloom filter buffer: bit array truncated (expected ${expectedWords} words, got ${actualWords})`
       );
     }
-    
+
     let bitData: Uint32Array;
     // 确保 offset 是 4 的倍数，否则 Uint32Array 构建会抛出异常
     if (offset % 4 === 0) {

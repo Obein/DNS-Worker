@@ -150,7 +150,7 @@ async function runTests() {
       SYNC_YIELD_SLEEP_MS: 5
     } as any;
 
-    const syncError = await syncSingleList(
+    const { syncError } = await syncSingleList(
       'p1',
       { id: 1, url: mockUrl },
       syncEnv,

@@ -81,6 +81,25 @@ export function parseAdGuardLine(line: string): ParsedAdGuardRule | null {
   const trimmed = line.trim();
   if (!trimmed) return null;
 
+  // Fast Path: High-frequency standard AdGuard domain rule (e.g. ||ad.example.com^)
+  // Bypasses cosmetic, comment, regex, and modifier checks for >80% of blocklist rules.
+  if (trimmed.charCodeAt(0) === 124 && trimmed.charCodeAt(1) === 124) { // '||'
+    if (!trimmed.includes("$") && !trimmed.includes("*") && !trimmed.includes("#")) {
+      let target = trimmed.substring(2);
+      const caretIdx = target.indexOf("^");
+      if (caretIdx !== -1) target = target.substring(0, caretIdx);
+      target = target.trim().toLowerCase();
+      if (target) {
+        return {
+          kind: AdGuardRuleKind.BLOOM_DOMAIN,
+          raw: trimmed,
+          domain: target,
+          includeSubdomains: true
+        };
+      }
+    }
+  }
+
   // 1. Cosmetic / Element-hiding rules (not applicable to DNS)
   if (trimmed.includes("##") || trimmed.includes("#@#") || trimmed.includes("#?#") || trimmed.startsWith("$$")) {
     return { kind: AdGuardRuleKind.UNSUPPORTED, raw: trimmed };

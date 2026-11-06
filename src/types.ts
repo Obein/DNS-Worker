@@ -137,6 +137,8 @@ export interface List {
   enabled: boolean;
   last_synced_at?: number;
   sync_error?: string | null;
+  etag?: string | null;
+  last_modified?: string | null;
 }
 
 export interface DNSQuery {

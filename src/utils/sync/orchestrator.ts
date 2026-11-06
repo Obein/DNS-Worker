@@ -7,9 +7,64 @@ import { combineAndPromote } from "./combine";
 import { syncSingleList } from "./singleListSync";
 
 /**
+ * 正在执行的同步任务描述
+ */
+interface InFlightSync {
+  type: "all" | "next" | "single" | "rebuild";
+  listId?: number;
+  promise: Promise<void>;
+}
+
+/**
+ * 内存级 Profile 同步并发互斥锁（按 profileId 隔离）。
+ * 彻底防止多协程（例如用户连续点击“同步全部”、Cron 定时任务并发触发、或多个列表同时同步）
+ * 导致的大列表重复拉取、内存飙升与 D1 SQLite 数据库写锁冲突。
+ */
+const inFlightSyncs = new Map<string, InFlightSync>();
+
+/**
+ * 检查指定 profile 是否正在进行同步（供监控或测试使用）
+ */
+export function isProfileSyncing(profileId: string): boolean {
+  return inFlightSyncs.has(profileId);
+}
+
+/**
+ * 仅供测试套件重置互斥锁状态
+ */
+export function _resetInFlightSyncsForTesting(): void {
+  inFlightSyncs.clear();
+}
+
+/**
  * 【Cron 专用】每次触发时处理**单个**最旧的订阅列表。
  */
 export async function syncNextListForProfile(
+  profileId: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
+  const activeSync = inFlightSyncs.get(profileId);
+  if (activeSync) {
+    console.log(
+      `[Sync] Profile ${profileId}: another sync (${activeSync.type}) is already in-flight. Skipping cron sync pass.`
+    );
+    return;
+  }
+
+  const syncPromise = (async () => {
+    try {
+      await _executeSyncNextListForProfile(profileId, env, ctx);
+    } finally {
+      inFlightSyncs.delete(profileId);
+    }
+  })();
+
+  inFlightSyncs.set(profileId, { type: "next", promise: syncPromise });
+  return syncPromise;
+}
+
+async function _executeSyncNextListForProfile(
   profileId: string,
   env: Env,
   ctx: ExecutionContext
@@ -128,6 +183,42 @@ export async function syncAllListsForProfile(
   env: Env,
   ctx: ExecutionContext
 ): Promise<void> {
+  const activeSync = inFlightSyncs.get(profileId);
+  if (activeSync) {
+    if (activeSync.type === "all") {
+      console.log(
+        `[Sync] Profile ${profileId}: full sync already in-flight. Joining active promise.`
+      );
+      return activeSync.promise;
+    }
+    console.log(
+      `[Sync] Profile ${profileId}: waiting for in-flight ${activeSync.type} sync to complete before starting full sync.`
+    );
+    await activeSync.promise.catch(() => {});
+  }
+
+  const postWaitSync = inFlightSyncs.get(profileId);
+  if (postWaitSync && postWaitSync.type === "all") {
+    return postWaitSync.promise;
+  }
+
+  const syncPromise = (async () => {
+    try {
+      await _executeSyncAllListsForProfile(profileId, env, ctx);
+    } finally {
+      inFlightSyncs.delete(profileId);
+    }
+  })();
+
+  inFlightSyncs.set(profileId, { type: "all", promise: syncPromise });
+  return syncPromise;
+}
+
+async function _executeSyncAllListsForProfile(
+  profileId: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
   const profileModel = new ProfileModel(env.DB);
   const listModel = new ListModel(env.DB);
   const profileBloomModel = new ProfileBloomModel(env.DB);
@@ -151,12 +242,23 @@ export async function syncAllListsForProfile(
     }
 
     // 依次串行同步所有列表，并在每个列表处理完成后相隔 1 秒，防范 CPU 激增与锁争用
+    let anyListModified = false;
     for (let i = 0; i < activeLists.length; i++) {
       const list = activeLists[i];
-      await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+      const res = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+      if (!res.notModified) {
+        anyListModified = true;
+      }
       if (i < activeLists.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
+    }
+
+    // 若全部列表均命中 304 协商缓存，已有合并布隆完全有效，直接跳过合并晋升阶段，零 CPU/DB 消耗
+    if (!anyListModified) {
+      await profileModel.updateListUpdatedAt(profileId, now);
+      console.log(`[Sync] Profile ${profileId}: all ${activeLists.length} list(s) were 304 Not Modified — skipped combine.`);
+      return;
     }
 
     // 【熔断器】先更新主表时间，以防合并过程中崩溃导致无限重试
@@ -195,6 +297,54 @@ export async function syncSingleListForProfile(
   env: Env,
   ctx: ExecutionContext
 ): Promise<void> {
+  const activeSync = inFlightSyncs.get(profileId);
+  if (activeSync) {
+    if (activeSync.type === "single" && activeSync.listId === listId) {
+      console.log(
+        `[Sync] Profile ${profileId}: sync for list #${listId} already in-flight. Joining active promise.`
+      );
+      return activeSync.promise;
+    }
+    if (activeSync.type === "all") {
+      console.log(
+        `[Sync] Profile ${profileId}: full sync in-flight (covers list #${listId}). Joining active promise.`
+      );
+      return activeSync.promise;
+    }
+    console.log(
+      `[Sync] Profile ${profileId}: waiting for in-flight ${activeSync.type} sync to finish before syncing list #${listId}.`
+    );
+    await activeSync.promise.catch(() => {});
+  }
+
+  const postWaitSync = inFlightSyncs.get(profileId);
+  if (postWaitSync) {
+    if (postWaitSync.type === "single" && postWaitSync.listId === listId) {
+      return postWaitSync.promise;
+    }
+    if (postWaitSync.type === "all") {
+      return postWaitSync.promise;
+    }
+  }
+
+  const syncPromise = (async () => {
+    try {
+      await _executeSyncSingleListForProfile(profileId, listId, env, ctx);
+    } finally {
+      inFlightSyncs.delete(profileId);
+    }
+  })();
+
+  inFlightSyncs.set(profileId, { type: "single", listId, promise: syncPromise });
+  return syncPromise;
+}
+
+async function _executeSyncSingleListForProfile(
+  profileId: string,
+  listId: number,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
   const listModel = new ListModel(env.DB);
   const listBloomModel = new ListBloomModel(env.DB);
   const profileBloomModel = new ProfileBloomModel(env.DB);
@@ -209,10 +359,10 @@ export async function syncSingleListForProfile(
     }
 
     // 1. 单独同步该列表
-    await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+    const { notModified } = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
 
-    // 2. 若列表处于启用状态，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
-    if (list.enabled) {
+    // 2. 若列表处于启用状态且内容发生变动，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
+    if (list.enabled && !notModified) {
       await profileModel.updateListUpdatedAt(profileId, now);
       await combineAndPromote(
         profileId,
@@ -226,6 +376,9 @@ export async function syncSingleListForProfile(
         Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
         env
       );
+    } else if (list.enabled && notModified) {
+      await profileModel.updateListUpdatedAt(profileId, now);
+      console.log(`[Sync] Profile ${profileId}: single list #${listId} 304 Not Modified — skipped combine.`);
     }
     console.log(`[Sync] Profile ${profileId}: single list #${listId} sync complete.`);
   } catch (e) {
@@ -238,6 +391,31 @@ export async function syncSingleListForProfile(
  * 适用场景：删除规则列表、切换列表启用/禁用状态等仅改变参与合并的集合、而不改变列表本身内容的场景。
  */
 export async function rebuildProfileBloom(
+  profileId: string,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<void> {
+  const activeSync = inFlightSyncs.get(profileId);
+  if (activeSync) {
+    console.log(
+      `[Sync] Profile ${profileId}: waiting for in-flight ${activeSync.type} sync before rebuilding bloom.`
+    );
+    await activeSync.promise.catch(() => {});
+  }
+
+  const syncPromise = (async () => {
+    try {
+      await _executeRebuildProfileBloom(profileId, env, ctx);
+    } finally {
+      inFlightSyncs.delete(profileId);
+    }
+  })();
+
+  inFlightSyncs.set(profileId, { type: "rebuild", promise: syncPromise });
+  return syncPromise;
+}
+
+async function _executeRebuildProfileBloom(
   profileId: string,
   env: Env,
   ctx: ExecutionContext

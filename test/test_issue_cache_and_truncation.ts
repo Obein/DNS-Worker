@@ -141,11 +141,47 @@ async function runIssueVerificationTests() {
       ASSETS: {}
     };
 
-    const syncWarning = await syncSingleList("prof_trunc_test", { id: 42, url: mockListUrl }, mockEnv, mockListModel, mockListBloomModel, Math.floor(Date.now() / 1000));
+    const syncRes = await syncSingleList("prof_trunc_test", { id: 42, url: mockListUrl }, mockEnv, mockListModel, mockListBloomModel, Math.floor(Date.now() / 1000));
+    const syncWarning = syncRes.syncError;
     assert.ok(syncWarning !== null, "syncError should not be null on truncation");
     assert.ok(syncWarning?.includes("truncated"), "syncError should mention truncation");
     assert.strictEqual(savedSyncStatus?.syncError, syncWarning, "sync_error should be saved in database");
     console.log("   ✓ syncSingleList safely recorded truncation warning without silent pass.");
+
+    // Test 1.4: Zero-allocation addPipePipe bit-for-bit equivalence with add("||" + domain)
+    const bfStandard = BloomFilter.create(10000, 0.0001);
+    const bfOptimized = BloomFilter.create(10000, 0.0001);
+    const testDomains = ["adservice.google.com", "tracker.analytics.net", "telemetry.badsite.org"];
+    for (const d of testDomains) {
+      bfStandard.add(`||${d}`);
+      bfOptimized.addPipePipe(d);
+    }
+    const buf1 = bfStandard.toUint8Array();
+    const buf2 = bfOptimized.toUint8Array();
+    assert.strictEqual(buf1.length, buf2.length);
+    assert.ok(buf1.every((byte, idx) => byte === buf2[idx]), "addPipePipe must match standard add(||domain) bit for bit");
+    console.log("   ✓ addPipePipe zero-heap-allocation prefix hash verified bit-for-bit identical.");
+
+    // Test 1.5: HTTP 304 Not Modified conditional request handling
+    let receivedConditionalHeaders: any = null;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      receivedConditionalHeaders = init?.headers;
+      // Per RFC 7230 / WHATWG Fetch spec: status 304 must have null body
+      return new Response(null, {
+        status: 304,
+        headers: { "ETag": '"etag-v123"', "Last-Modified": "Wed, 21 Oct 2026 07:28:00 GMT" }
+      });
+    }) as any;
+
+    const res304 = await fetchListContent(mockListUrl, 10000, 5000, () => {
+      assert.fail("Callback should not be invoked on 304 Not Modified");
+    }, { etag: '"etag-v123"' });
+
+    assert.strictEqual(res304.notModified, true, "Should report notModified: true");
+    assert.strictEqual(res304.count, 0, "No domains should be parsed on 304");
+    assert.strictEqual(res304.error, null);
+    assert.strictEqual(receivedConditionalHeaders["If-None-Match"], '"etag-v123"');
+    console.log("   ✓ HTTP 304 Not Modified conditional request verified with 0 parsing overhead.");
 
     // =========================================================================
     // 2. Verify L2 Cache consistency and Bloom rehydration
