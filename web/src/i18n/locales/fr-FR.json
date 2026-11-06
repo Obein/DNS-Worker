@@ -986,7 +986,7 @@
     "item3Title": "Réseau Edge mondial",
     "item3Desc": "Profite du vaste réseau edge de Cloudflare pour obtenir une résolution ultrarapide et des latences minimales.",
     "item4Title": "Filtrage granulaire",
-    "item4Desc": "Support complet pour les listes de blocage et d'autorisation, les règles AdGuard et la redirection personnalisée d'enregistrements DNS.",
+    "item4Desc": "Support complet pour les listes de blocage et d'autorisation, les règles de listes externes et la redirection personnalisée d'enregistrements DNS.",
     "item5Title": "Statistiques en temps réel",
     "item5Desc": "Visualisez l'état du réseau via des journaux de requêtes détaillés et un tableau de bord complet.",
     "item6Title": "UI moderne et mode sombre",

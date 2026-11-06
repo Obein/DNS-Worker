@@ -105,8 +105,8 @@ DNS Worker 在最底层的 DNS 解析阶段即可拦截网络威胁——在建�
 flowchart TD
     REQ["收到查询请求 (例如 sub.adserver.tracker.com)"]
     L1["阶段 1: 自定义规则 (Local Rules)<br/>(白名单 / 重定向 / 黑名单，可选匹配子域)"]
-    L2["阶段 2: AdGuard 白名单例外 (@@)<br/>(内存散列表 O(1) 匹配 + 标签逐级回溯)"]
-    L3["阶段 3: AdGuard DNS 重写 ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
+    L2["阶段 2: 外部列表白名单例外 (@@)<br/>(内存散列表 O(1) 匹配 + 标签逐级回溯)"]
+    L3["阶段 3: 外部列表 DNS 重写 ($dnsrewrite)<br/>(A / AAAA / CNAME / NXDOMAIN / REFUSED)"]
     L4["阶段 4: 双态前缀布隆过滤器 (Bloom Filter)<br/>(|| 泛子域与精确域名黑名单 ~90%)"]
     L5["阶段 5: 正则与复杂通配符池 (Regex Pool)<br/>(顶级域名索引加速，MAX_REGEX_RULES 上限保护)"]
     PASS["放行通过 (Clean / Whitelist)"]
@@ -132,8 +132,8 @@ flowchart TD
 
 1. **分级高效短路**：
    - **阶段 1：本地自定义规则**：优先级最高。支持单域名精确匹配与自定义子域名匹配。
-   - **阶段 2：AdGuard 白名单例外（`@@`）**：采用内存散列表（Hash Set，`Set<string>`）维护，先以 $O(1)$ 查表，再进行父级标签逐级回溯（Parent Walk）。命中即刻放行，彻底消除布隆过滤器的假阳性误判风险。
-   - **阶段 3：AdGuard DNS 重写（`$dnsrewrite`）**：支持将域名实时合成为指定 IPv4、IPv6、CNAME 或阻断状态（NXDOMAIN / REFUSED）。
+   - **阶段 2：外部列表白名单例外（`@@`）**：采用内存散列表（Hash Set，`Set<string>`）维护，先以 $O(1)$ 查表，再进行父级标签逐级回溯（Parent Walk）。命中即刻放行，彻底消除布隆过滤器的假阳性误判风险。
+   - **阶段 3：外部列表 DNS 重写（`$dnsrewrite`）**：支持将域名实时合成为指定 IPv4、IPv6、CNAME 或阻断状态（NXDOMAIN / REFUSED）。
    - **阶段 4：双态前缀布隆过滤器**：海量静态黑名单的主力防线。通过前缀区分单域名黑名单与带 `||` 的泛子域黑名单，在微秒级时间内完成匹配，杜绝单域名规则误杀子域名。
    - **阶段 5：正则与复杂通配符池**：对 `/regex/` 及复杂通配符建立顶级域名（Apex Domain）倒排索引，大幅收窄正则评估范围，单配置默认上限为 1000 条。
 

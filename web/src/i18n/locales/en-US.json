@@ -986,7 +986,7 @@
     "item3Title": "Global Edge Network",
     "item3Desc": "Extreme speed and ultra-low latency powered by Cloudflare's edge network.",
     "item4Title": "Fine-grained Filtering",
-    "item4Desc": "Full support for whitelist/blacklist, AdGuard rules, and custom DNS redirects.",
+    "item4Desc": "Full support for whitelist/blacklist, external list rules, and custom DNS redirects.",
     "item5Title": "Real-time Analytics",
     "item5Desc": "Gain insights into network health with detailed logs and comprehensive dashboards.",
     "item6Title": "Modern UI & Dark Mode",
