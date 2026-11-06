@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import { BloomFilter } from '../src/utils/bloom';
 import { fetchListContent } from '../src/utils/listFetcher';
 import {
   syncAllListsForProfile,
@@ -173,6 +174,50 @@ async function runOptimizationsTests() {
       'syncNextListForProfile must skip execution when another sync is already in-flight'
     );
     console.log('   ✓ syncNextListForProfile properly skipped when profile was busy.');
+
+    // 4. Test Bloom Filter Compression, Decompression & Legacy Compatibility
+    console.log('4. Testing Bloom Filter compression, decompression & legacy backward compatibility...');
+    const originalBf = BloomFilter.create(100000, 0.0001);
+    for (let i = 0; i < 500; i++) {
+      originalBf.add(`tracker-${i}.adservice.com`);
+    }
+
+    // A. Verify compressed binary size reduction
+    const rawBinary = originalBf.toUint8Array(false); // Legacy uncompressed
+    const compressedBinary = originalBf.toUint8Array(true); // Default compressed
+
+    assert.ok(
+      compressedBinary.length < rawBinary.length * 0.15,
+      `Compressed bloom binary should be < 15% of raw binary (raw: ${rawBinary.length} bytes, compressed: ${compressedBinary.length} bytes)`
+    );
+    console.log(
+      `   ✓ Bloom binary compression reduced size by ${((1 - compressedBinary.length / rawBinary.length) * 100).toFixed(1)}% (${rawBinary.length} B -> ${compressedBinary.length} B)`
+    );
+
+    // B. Verify BLMZ magic header
+    const magicView = new DataView(compressedBinary.buffer, compressedBinary.byteOffset, 4);
+    assert.strictEqual(magicView.getUint32(0, true), 0x5a4d4c42, "Header must start with BLMZ magic bytes");
+    console.log('   ✓ BLMZ magic header verified.');
+
+    // C. Verify decompression and element lookup
+    const restoredFromCompressed = BloomFilter.fromUint8Array(compressedBinary);
+    assert.strictEqual(restoredFromCompressed.getSize(), originalBf.getSize());
+    assert.strictEqual(restoredFromCompressed.getHashes(), originalBf.getHashes());
+    for (let i = 0; i < 500; i++) {
+      assert.strictEqual(restoredFromCompressed.test(`tracker-${i}.adservice.com`), true);
+    }
+    assert.strictEqual(restoredFromCompressed.test('safe-domain.example.com'), false);
+    console.log('   ✓ Restored compressed Bloom Filter correctly verified all elements.');
+
+    // D. Verify backward compatibility with legacy uncompressed format
+    const restoredFromLegacy = BloomFilter.fromUint8Array(rawBinary);
+    assert.strictEqual(restoredFromLegacy.getSize(), originalBf.getSize());
+    assert.strictEqual(restoredFromLegacy.getHashes(), originalBf.getHashes());
+    for (let i = 0; i < 500; i++) {
+      assert.strictEqual(restoredFromLegacy.test(`tracker-${i}.adservice.com`), true);
+    }
+    assert.strictEqual(restoredFromLegacy.test('safe-domain.example.com'), false);
+    console.log('   ✓ Legacy uncompressed format seamlessly restored without errors.');
 
   } finally {
     globalThis.fetch = originalFetch;
