@@ -36,6 +36,26 @@ export async function combineAndPromote(
       profileBloomModel.clearProfileBlooms(profileId),
       adguardRulesModel?.clearProfileRules(profileId)
     ]);
+  } else if (activeLists.length === 1) {
+    // 性能优化：单列表短路晋升 (Single-List Direct Promotion)
+    // 仅有 1 个列表时直接复用其 Bloom 与规则，彻底跳过内存重建与循环合并开销
+    const single = activeLists[0];
+    const [buf, listRules] = await Promise.all([
+      listBloomModel.getListBloom(single.id),
+      adguardRulesModel ? adguardRulesModel.getListRules(single.id) : Promise.resolve(null)
+    ]);
+
+    const saveOps: Promise<any>[] = [];
+    if (buf) {
+      saveOps.push(profileBloomModel.upsertProfileBloom(profileId, buf, now));
+    } else {
+      saveOps.push(profileBloomModel.clearProfileBlooms(profileId));
+    }
+    if (adguardRulesModel) {
+      const payload: AdGuardPayload = listRules || { exceptions: [], rewrites: {}, patterns: [] };
+      saveOps.push(adguardRulesModel.upsertProfileRules(profileId, payload, now));
+    }
+    await Promise.all(saveOps);
   } else {
     // 重建并按位或 (OR) 合并所有列表级布隆过滤器，并汇总 AdGuard 规则
     const merged = BloomFilter.create(maxDomains, falsePositiveRate);

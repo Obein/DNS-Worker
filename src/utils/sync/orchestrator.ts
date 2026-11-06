@@ -151,12 +151,23 @@ export async function syncAllListsForProfile(
     }
 
     // 依次串行同步所有列表，并在每个列表处理完成后相隔 1 秒，防范 CPU 激增与锁争用
+    let anyListModified = false;
     for (let i = 0; i < activeLists.length; i++) {
       const list = activeLists[i];
-      await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+      const res = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+      if (!res.notModified) {
+        anyListModified = true;
+      }
       if (i < activeLists.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
+    }
+
+    // 若全部列表均命中 304 协商缓存，已有合并布隆完全有效，直接跳过合并晋升阶段，零 CPU/DB 消耗
+    if (!anyListModified) {
+      await profileModel.updateListUpdatedAt(profileId, now);
+      console.log(`[Sync] Profile ${profileId}: all ${activeLists.length} list(s) were 304 Not Modified — skipped combine.`);
+      return;
     }
 
     // 【熔断器】先更新主表时间，以防合并过程中崩溃导致无限重试
@@ -209,10 +220,10 @@ export async function syncSingleListForProfile(
     }
 
     // 1. 单独同步该列表
-    await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+    const { notModified } = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
 
-    // 2. 若列表处于启用状态，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
-    if (list.enabled) {
+    // 2. 若列表处于启用状态且内容发生变动，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
+    if (list.enabled && !notModified) {
       await profileModel.updateListUpdatedAt(profileId, now);
       await combineAndPromote(
         profileId,
@@ -226,6 +237,9 @@ export async function syncSingleListForProfile(
         Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
         env
       );
+    } else if (list.enabled && notModified) {
+      await profileModel.updateListUpdatedAt(profileId, now);
+      console.log(`[Sync] Profile ${profileId}: single list #${listId} 304 Not Modified — skipped combine.`);
     }
     console.log(`[Sync] Profile ${profileId}: single list #${listId} sync complete.`);
   } catch (e) {

@@ -27,6 +27,8 @@ export class BloomFilter {
 
   private static readonly FNV_PRIME = 16777619;
   private static readonly FNV_SEED_0 = 2166136261;
+  /** 预计算的 "||" (ASCII 124, 124) FNV-1a 流式哈希状态种子 */
+  private static readonly FNV_SEED_PIPE_PIPE = 1431891397;
   
   // 预分配 TextEncoder 以避免重复创建开销 (Isolate 全局)
   private static readonly encoder = new TextEncoder();
@@ -90,6 +92,38 @@ export class BloomFilter {
       // Double Hashing: (h1 + i * h2) % m
       const pos = (h1 + i * h2) % size;
       // 32位数组优化: index / 32 => pos >>> 5, index % 32 => pos & 31
+      arr[pos >>> 5] |= (1 << (pos & 31));
+    }
+  }
+
+  /**
+   * 添加带有 "||" 前缀的域名元素（等价于 add(`||${domain}`)）。
+   * 性能优化：直接使用预计算的 "||" FNV-1a 哈希种子继续流式哈希，
+   * 彻底避免在 V8 堆内存中分配数万至数十万个新字符串模板！
+   *
+   * @param domain 纯域名字符串
+   */
+  addPipePipe(domain: string): void {
+    let h1 = BloomFilter.FNV_SEED_PIPE_PIPE;
+    const len = domain.length;
+    for (let i = 0; i < len; i++) {
+      h1 ^= domain.charCodeAt(i) & 0xff;
+      h1 = Math.imul(h1, BloomFilter.FNV_PRIME);
+    }
+    h1 = h1 >>> 0;
+
+    let h2 = h1 ^ (h1 >>> 16);
+    h2 = Math.imul(h2, 0x85ebca6b);
+    h2 = h2 ^ (h2 >>> 13);
+    h2 = Math.imul(h2, 0xc2b2ae35);
+    h2 = (h2 ^ (h2 >>> 16)) >>> 0;
+
+    const arr = this.bitArray;
+    const size = this.size;
+    const k = this.hashes;
+
+    for (let i = 0; i < k; i++) {
+      const pos = (h1 + i * h2) % size;
       arr[pos >>> 5] |= (1 << (pos & 31));
     }
   }

@@ -84,25 +84,37 @@ export class ListModel {
   }
 
   /**
-   * Updates list sync status. If enabled is null or undefined,
-   * the current enabled status in the database is preserved.
+   * Updates list sync status, including optional ETag and Last-Modified caching headers.
+   * If enabled is null or undefined, the current enabled status in the database is preserved.
    */
-  async updateListSyncStatus(id: number, now: number | null, enabled?: number | null, syncError: string | null = null): Promise<boolean> {
+  async updateListSyncStatus(
+    id: number,
+    now: number | null,
+    enabled?: number | null,
+    syncError: string | null = null,
+    etag?: string | null,
+    lastModified?: string | null
+  ): Promise<boolean> {
+    const fields: string[] = ["last_synced_at = ?", "sync_error = ?"];
+    const params: any[] = [now, syncError];
+
     if (enabled !== undefined && enabled !== null) {
-      const result = await this.db.prepare(
-        "UPDATE lists SET last_synced_at = ?, enabled = ?, sync_error = ? WHERE id = ?"
-      )
-        .bind(now, enabled, syncError, id)
-        .run();
-      return result.success;
-    } else {
-      const result = await this.db.prepare(
-        "UPDATE lists SET last_synced_at = ?, sync_error = ? WHERE id = ?"
-      )
-        .bind(now, syncError, id)
-        .run();
-      return result.success;
+      fields.push("enabled = ?");
+      params.push(enabled);
     }
+    if (etag !== undefined) {
+      fields.push("etag = ?");
+      params.push(etag);
+    }
+    if (lastModified !== undefined) {
+      fields.push("last_modified = ?");
+      params.push(lastModified);
+    }
+
+    params.push(id);
+    const sql = `UPDATE lists SET ${fields.join(", ")} WHERE id = ?`;
+    const result = await this.db.prepare(sql).bind(...params).run();
+    return result.success;
   }
 
   async resetListSyncStatus(profileId: string): Promise<boolean> {

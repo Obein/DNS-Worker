@@ -11,6 +11,18 @@ export interface FetchListResult {
   truncated: boolean;
   /** 实际处理字节数 */
   totalBytes?: number;
+  /** 是否命中了 HTTP 304 Not Modified 协商缓存 */
+  notModified?: boolean;
+  /** 上游返回的最新 ETag */
+  etag?: string | null;
+  /** 上游返回的最新 Last-Modified */
+  lastModified?: string | null;
+}
+
+/** 列表拉取的协商缓存选项 */
+export interface FetchListOptions {
+  etag?: string | null;
+  lastModified?: string | null;
 }
 
 /** 回调函数：支持同步返回 void（绝大多数场景），仅在出让 CPU 时返回 Promise */
@@ -59,7 +71,8 @@ export async function fetchListContent(
   url: string,
   maxBytes: number,
   timeoutMs: number,
-  onDomain: DomainConsumer
+  onDomain: DomainConsumer,
+  options?: FetchListOptions
 ): Promise<FetchListResult> {
   const deadline = Date.now() + timeoutMs;
   const MAX_REDIRECTS = 5;
@@ -95,11 +108,37 @@ export async function fetchListContent(
           return { count: 0, error: "Request timed out", truncated: false };
         }
 
+        const requestHeaders: Record<string, string> = {
+          "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
+          Accept: "text/plain, text/*, */*",
+        };
+        // 协商缓存：若已有 ETag 或 Last-Modified，附带条件请求头
+        if (options?.etag) {
+          requestHeaders["If-None-Match"] = options.etag;
+        }
+        if (options?.lastModified) {
+          requestHeaders["If-Modified-Since"] = options.lastModified;
+        }
+
         response = await fetch(currentUrl, {
           redirect: "manual",
           signal: AbortSignal.timeout(remainingTimeout),
-          headers: DEFAULT_FETCH_HEADERS,
+          headers: requestHeaders,
         });
+
+        // Handle HTTP 304 Not Modified conditional response (RFC 7232 / RFC 9110)
+        if (response.status === 304) {
+          const respEtag = response.headers.get("etag") || options?.etag || null;
+          const respLastModified = response.headers.get("last-modified") || options?.lastModified || null;
+          return {
+            count: 0,
+            error: null,
+            truncated: false,
+            notModified: true,
+            etag: respEtag,
+            lastModified: respLastModified,
+          };
+        }
 
         // Handle HTTP 3xx redirects securely (RFC 7231 / RFC 7538)
         if (response.status >= 300 && response.status < 400) {
@@ -234,7 +273,18 @@ export async function fetchListContent(
         console.warn(`[Fetcher] List truncated at ${(maxBytes / 1024 / 1024).toFixed(0)} MB: ${url}`);
       }
 
-      return { count, error: null, truncated, totalBytes };
+      const respEtag = response.headers.get("etag") || null;
+      const respLastModified = response.headers.get("last-modified") || null;
+
+      return {
+        count,
+        error: null,
+        truncated,
+        totalBytes,
+        notModified: false,
+        etag: respEtag,
+        lastModified: respLastModified,
+      };
     } catch (e: any) {
       lastError = e.message || String(e);
       if (attempt < MAX_RETRIES && deadline - Date.now() > 2000) {
