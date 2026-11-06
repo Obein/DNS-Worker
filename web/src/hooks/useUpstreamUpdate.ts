@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const CACHE_KEY = "obexdns_upstream_release_check_v2";
+const CACHE_KEY = "dns_worker_upstream_release_check_v2";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1-hour cache TTL to prevent hitting GitHub unauthenticated rate limits (60 req/hr)
 const REQUEST_TIMEOUT_MS = 6000;
 

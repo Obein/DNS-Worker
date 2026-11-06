@@ -85,7 +85,7 @@ export async function runBackendSuite(): Promise<void> {
     }) as any;
 
     // Case 1: Missing turnstileToken -> Expect 400
-    const reqMissingToken = new Request("https://obexdns.internal/api/auth/prelogin", {
+    const reqMissingToken = new Request("https://dns-worker.internal/api/auth/prelogin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice" })
@@ -95,7 +95,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(await resMissing.text(), "Verification failed");
 
     // Case 2: Invalid turnstileToken -> Expect 400
-    const reqInvalidToken = new Request("https://obexdns.internal/api/auth/prelogin", {
+    const reqInvalidToken = new Request("https://dns-worker.internal/api/auth/prelogin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice", turnstileToken: "bad_token" })
@@ -105,7 +105,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(await resInvalid.text(), "Verification failed");
 
     // Case 3: Valid turnstileToken -> Expect 200 with preauth session
-    const reqValidToken = new Request("https://obexdns.internal/api/auth/prelogin", {
+    const reqValidToken = new Request("https://dns-worker.internal/api/auth/prelogin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice", turnstileToken: "valid_token" })
@@ -121,7 +121,7 @@ export async function runBackendSuite(): Promise<void> {
     await settingsModel.set("turnstile_enabled_login", "false");
     SystemSettingsModel.clearMemoryCache();
 
-    const reqDisabled = new Request("https://obexdns.internal/api/auth/prelogin", {
+    const reqDisabled = new Request("https://dns-worker.internal/api/auth/prelogin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice" })
@@ -148,7 +148,7 @@ export async function runBackendSuite(): Promise<void> {
     };
 
     // Case 1: Missing turnstileToken -> Expect 400
-    const reqRegMissing = new Request("https://obexdns.internal/api/auth/register", {
+    const reqRegMissing = new Request("https://dns-worker.internal/api/auth/register", {
       method: "POST",
       headers: cfGeoHeaders,
       body: JSON.stringify({ username: "bob_test_123", password: "Password123!@#" })
@@ -158,7 +158,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(await resRegMissing.text(), "Verification failed");
 
     // Case 2: Invalid turnstileToken -> Expect 400
-    const reqRegInvalid = new Request("https://obexdns.internal/api/auth/register", {
+    const reqRegInvalid = new Request("https://dns-worker.internal/api/auth/register", {
       method: "POST",
       headers: cfGeoHeaders,
       body: JSON.stringify({ username: "bob_test_123", password: "Password123!@#", turnstileToken: "fake_token" })
@@ -167,7 +167,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(resRegInvalid.status, 400, "Registration with invalid Turnstile token must return HTTP 400");
 
     // Case 3: Valid turnstileToken -> Expect 200 and user registered
-    const reqRegValid = new Request("https://obexdns.internal/api/auth/register", {
+    const reqRegValid = new Request("https://dns-worker.internal/api/auth/register", {
       method: "POST",
       headers: cfGeoHeaders,
       body: JSON.stringify({ username: "bob_test_123", password: "Password123!@#", turnstileToken: "valid_token" })
@@ -181,7 +181,7 @@ export async function runBackendSuite(): Promise<void> {
     await settingsModel.set("turnstile_enabled_signup", "false");
     SystemSettingsModel.clearMemoryCache();
 
-    const reqRegDisabled = new Request("https://obexdns.internal/api/auth/register", {
+    const reqRegDisabled = new Request("https://dns-worker.internal/api/auth/register", {
       method: "POST",
       headers: cfGeoHeaders,
       body: JSON.stringify({ username: "charlie_test_123", password: "Password123!@#" })
@@ -201,7 +201,7 @@ export async function runBackendSuite(): Promise<void> {
     SystemSettingsModel.clearMemoryCache();
 
     // Case 1: Missing turnstileToken -> Expect 400
-    const reqFpMissing = new Request("https://obexdns.internal/api/auth/forgot-password/init", {
+    const reqFpMissing = new Request("https://dns-worker.internal/api/auth/forgot-password/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice" })
@@ -211,7 +211,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(await resFpMissing.text(), "Verification failed");
 
     // Case 2: Invalid turnstileToken -> Expect 400
-    const reqFpInvalid = new Request("https://obexdns.internal/api/auth/forgot-password/init", {
+    const reqFpInvalid = new Request("https://dns-worker.internal/api/auth/forgot-password/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice", turnstileToken: "wrong_token" })
@@ -220,7 +220,7 @@ export async function runBackendSuite(): Promise<void> {
     assert.strictEqual(resFpInvalid.status, 400, "Forgot password init with invalid token must return HTTP 400");
 
     // Case 3: Valid turnstileToken -> Expect 200
-    const reqFpValid = new Request("https://obexdns.internal/api/auth/forgot-password/init", {
+    const reqFpValid = new Request("https://dns-worker.internal/api/auth/forgot-password/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice", turnstileToken: "valid_token" })
@@ -232,7 +232,7 @@ export async function runBackendSuite(): Promise<void> {
     await settingsModel.set("turnstile_enabled_login", "false");
     SystemSettingsModel.clearMemoryCache();
 
-    const reqFpDisabled = new Request("https://obexdns.internal/api/auth/forgot-password/init", {
+    const reqFpDisabled = new Request("https://dns-worker.internal/api/auth/forgot-password/init", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username: "alice" })
@@ -252,7 +252,7 @@ export async function runBackendSuite(): Promise<void> {
     await settingsModel.set("turnstile_enabled_login", "true");
     SystemSettingsModel.clearMemoryCache();
 
-    const reqConfig = new Request("https://obexdns.internal/api/auth/config", { method: "GET" });
+    const reqConfig = new Request("https://dns-worker.internal/api/auth/config", { method: "GET" });
     const resConfig = await handleAuthConfigRequest(reqConfig, env);
     assert.strictEqual(resConfig.status, 200);
     const configData = (await resConfig.json()) as any;

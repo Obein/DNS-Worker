@@ -89,7 +89,7 @@ async function main(): Promise<void> {
 
   if (values.help) {
     console.log(formatHelpMenu({
-      name: 'ObexDNS Production Database Migration',
+      name: 'DNS Worker Production Database Migration',
       description: 'Unified schema migration runner for Cloudflare D1 and Turso (libSQL)',
       usage: [
         'npm run db:migrate:prod [options]',

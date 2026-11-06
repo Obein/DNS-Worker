@@ -59,11 +59,52 @@ async function runIssueVerificationTests() {
     }) as any;
 
     // Test 1.1: Content smaller than maxBytes -> not truncated
+    let capturedHeaders: any = null;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      capturedHeaders = init?.headers;
+      return new Response(samplePayloadBytes, {
+        status: 200,
+        headers: { "Content-Type": "text/plain" }
+      });
+    }) as any;
+
     const resNormal = await fetchListContent(mockListUrl, 10000, 5000, () => {});
     assert.strictEqual(resNormal.count, 100);
     assert.strictEqual(resNormal.error, null);
     assert.strictEqual(resNormal.truncated, false, "Should not be truncated when size is within limit");
-    console.log("   ✓ Non-truncated list parsed completely with truncated=false.");
+    assert.ok(capturedHeaders, "Headers should be provided to fetch");
+    const ua = capturedHeaders["User-Agent"] || (capturedHeaders instanceof Headers ? capturedHeaders.get("User-Agent") : "");
+    assert.ok(ua?.includes("DNS-Worker"), `User-Agent should identify as DNS-Worker, got: ${ua}`);
+    console.log("   ✓ Non-truncated list parsed completely with standardized DNS-Worker User-Agent.");
+
+    // Test 1.1b: Transient 525 retry mechanism
+    let attemptCount = 0;
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      attemptCount++;
+      if (attemptCount === 1) {
+        // First attempt returns Cloudflare 525
+        return new Response("", { status: 525, statusText: "" });
+      }
+      // Second attempt succeeds
+      return new Response(samplePayloadBytes, {
+        status: 200,
+        headers: { "Content-Type": "text/plain" }
+      });
+    }) as any;
+
+    const resRetry = await fetchListContent(mockListUrl, 10000, 5000, () => {});
+    assert.strictEqual(attemptCount, 2, "Should have retried after initial 525 failure");
+    assert.strictEqual(resRetry.count, 100);
+    assert.strictEqual(resRetry.error, null);
+    console.log("   ✓ Transient HTTP 525 successfully recovered via backoff retry.");
+
+    // Reset fetch mock for 1.2
+    globalThis.fetch = (async (url: string | URL | Request) => {
+      return new Response(samplePayloadBytes, {
+        status: 200,
+        headers: { "Content-Type": "text/plain" }
+      });
+    }) as any;
 
     // Test 1.2: Content larger than maxBytes (e.g. limit to 500 bytes) -> truncated=true
     let parsedCountTruncated = 0;

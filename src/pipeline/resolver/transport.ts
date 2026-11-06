@@ -254,7 +254,7 @@ export async function fetchFromUpstream(
       headers: {
         Accept: "application/dns-message",
         "Content-Type": "application/dns-message",
-        "User-Agent": "Obex-DNS/1.0"
+        "User-Agent": "DNS-Worker/1.0"
       },
       body: queryRaw,
       signal: AbortSignal.timeout(5000)

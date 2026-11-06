@@ -20,7 +20,7 @@ export * from "./block";
 export * from "./observability";
 
 /**
- * High-level DNS resolution coordinator for the ObexDNS pipeline.
+ * High-level DNS resolution coordinator for the DNS Worker pipeline.
  *
  * Orchestrates:
  * - Upstream URL safety validation
