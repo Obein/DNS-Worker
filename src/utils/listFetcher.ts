@@ -54,6 +54,18 @@ const MAX_RETRIES = 2; // 最多重试 2 次（共 3 次请求）
 const BASE_RETRY_DELAY_MS = 1000; // 基础退避延迟（1s -> 2s）
 
 /**
+ * 已知因源站 TLS 配置（如启用 TLS 重新协商、握手超时或证书链缺陷）导致 Cloudflare Workers
+ * 边缘网络抛出 HTTP 525 (SSL Handshake Failed) 的订阅列表与官方 GitHub 镜像映射表。
+ * 当请求源站持续 525 时，透明回退至该源的官方 GitHub 镜像，确保零维护开箱即用。
+ */
+export const KNOWN_TLS_MIRROR_FALLBACKS: Record<string, string> = {
+  "https://big.oisd.nl": "https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_big.txt",
+  "https://big.oisd.nl/domainswild2": "https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_big.txt",
+  "https://small.oisd.nl": "https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_small.txt",
+  "https://small.oisd.nl/domainswild2": "https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_small.txt",
+};
+
+/**
  * 流式拉取单个订阅列表并逐行解析域名。
  *
  * 性能优化：不再将完整的网络流存入大二进制缓冲区、解码为大字符串并拆分大数组。
@@ -78,6 +90,7 @@ export async function fetchListContent(
   const deadline = Date.now() + timeoutMs;
   const MAX_REDIRECTS = 5;
   let lastError: string | null = null;
+  let activeUrl = url;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     // 若为重试轮次，先等待指数退避时间（需确保剩余总超时预算充足）
@@ -90,7 +103,7 @@ export async function fetchListContent(
       await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
 
-    let currentUrl = url;
+    let currentUrl = activeUrl;
     let redirectCount = 0;
     let response: Response;
 
@@ -187,6 +200,20 @@ export async function fetchListContent(
       }
 
       if (!response.ok) {
+        // 若遇到 525 (SSL Handshake Failed)，且源站属于已知 Cloudflare TLS 重协商冲突站点，透明回退至官方镜像
+        if (response.status === 525) {
+          const normalized = currentUrl.replace(/\/+$/, "").toLowerCase();
+          const fallback = KNOWN_TLS_MIRROR_FALLBACKS[normalized];
+          if (fallback && currentUrl !== fallback) {
+            console.warn(
+              `[Fetcher] Origin ${currentUrl} failed with HTTP 525 (TLS renegotiation). Falling back to official mirror: ${fallback}`
+            );
+            activeUrl = fallback;
+            currentUrl = fallback;
+            continue;
+          }
+        }
+
         const statusText = response.statusText || (response.status === 525 ? "SSL Handshake Failed" : "<none>");
         lastError = `HTTP error! Status: ${response.status} ${statusText}`;
 
@@ -302,6 +329,18 @@ export async function fetchListContent(
       };
     } catch (e: any) {
       lastError = e.message || String(e);
+      // 若抛出网络层 TLS 握手异常，同样尝试已知官方镜像回退
+      const normalized = currentUrl.replace(/\/+$/, "").toLowerCase();
+      const fallback = KNOWN_TLS_MIRROR_FALLBACKS[normalized];
+      if (fallback && currentUrl !== fallback) {
+        console.warn(
+          `[Fetcher] Connection error for ${currentUrl} (${lastError}). Falling back to official mirror: ${fallback}`
+        );
+        activeUrl = fallback;
+        currentUrl = fallback;
+        continue;
+      }
+
       if (attempt < MAX_RETRIES && deadline - Date.now() > 2000) {
         console.warn(
           `[Fetcher] Transient network error for ${url}: ${lastError}. Retrying attempt ${attempt + 1}/${MAX_RETRIES}...`
