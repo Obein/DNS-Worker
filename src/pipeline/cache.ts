@@ -8,6 +8,7 @@ export interface ConfigCacheEntry {
   rules: Rule[];
   timestamp: number;
   adguard?: AdGuardPayload | null;
+  hasBloom?: boolean;
 }
 
 /**
@@ -80,6 +81,8 @@ async function purgeTags(env: Env, tags: string[]): Promise<void> {
   }
 }
 
+export const PROFILE_CACHE_KEY_PREFIX = "profile_v8";
+
 export const pipelineCache = {
   /**
    * 清理指定 Profile 的各级缓存。
@@ -131,9 +134,13 @@ export const pipelineCache = {
       if (typeof caches !== "undefined" && caches && (caches as any).default) {
         const cache = (caches as any).default;
         const tasks: Promise<any>[] = [
+          cacheUtils.delete(cache, `${PROFILE_CACHE_KEY_PREFIX}:${profileId}`),
+          cacheUtils.delete(cache, `profile_v7:${profileId}`),
           cacheUtils.delete(cache, `profile_v6:${profileId}`)
         ];
         if (clearBloom) {
+          tasks.push(cacheUtils.delete(cache, `bloom-bin:${profileId}`));
+          // 防御性清理旧版硬编码 URL
           tasks.push(cache.delete(`https://obex.local/bloom-bin/${profileId}`));
         }
         await Promise.all(tasks);

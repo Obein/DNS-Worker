@@ -5,7 +5,7 @@ import { ProfileBloomModel } from "../models/profileBloom";
 import { AdguardRulesModel } from "../models/adguardRules";
 import { BloomFilter } from "../utils/bloom";
 import { cacheUtils } from "../utils/cache";
-import { configCache, bloomMemoryMap, adguardMemoryMap } from "./cache";
+import { configCache, bloomMemoryMap, adguardMemoryMap, PROFILE_CACHE_KEY_PREFIX } from "./cache";
 import { DEFAULT_FAIL_OPEN_UPSTREAM } from "../constants/presets";
 import { AdGuardProfileEngine, AdGuardPayload } from "../lib/adguard";
 
@@ -43,13 +43,16 @@ export const pipelineConfig = {
     if (cachedConfig && (Date.now() - (cachedConfig.timestamp || 0) < configMemTtl)) {
       track('load_config_l1_mem');
       const validBloom = (inMem && Date.now() - inMem.ts < bloomMemTtl) ? inMem.bloom : undefined;
-      const validAdguard = inMemAdguard ? inMemAdguard.engine : (cachedConfig.adguard ? new AdGuardProfileEngine(cachedConfig.adguard) : undefined);
-      return { ...cachedConfig, bloom: validBloom, adguard: validAdguard };
+      // 若该配置标记包含 Bloom，但内存中 Bloom 已过期缺失，不盲目短路返回，继续向下恢复 Bloom
+      if (!cachedConfig.hasBloom || validBloom) {
+        const validAdguard = inMemAdguard ? inMemAdguard.engine : (cachedConfig.adguard ? new AdGuardProfileEngine(cachedConfig.adguard) : undefined);
+        return { ...cachedConfig, bloom: validBloom, adguard: validAdguard };
+      }
     }
 
     // 2. 检查 L2 Cache API
     const cache = typeof caches !== "undefined" ? (caches as any).default : null;
-    const profileCacheKey = `profile_v7:${profileId}`;
+    const profileCacheKey = `${PROFILE_CACHE_KEY_PREFIX}:${profileId}`;
     const bloomInternalUrl = cacheUtils.generateCacheUrl(`bloom-bin:${profileId}`);
     
     let apiCached = cache ? await cacheUtils.get<any>(cache, profileCacheKey) : null;
@@ -71,6 +74,31 @@ export const pipelineConfig = {
           }
         } catch {
           // Non-critical bloom cache read error
+        }
+      }
+
+      // 防御回退：若 L2 缓存指示存在 Bloom 规则，但在内存及 Cache API 中均未命中，从 D1 回退拉取 Bloom
+      if (apiCached.hasBloom && !bloom && env.DB) {
+        try {
+          const bloomModel = new ProfileBloomModel(env.DB);
+          const buffer = await bloomModel.getProfileBloom(profileId);
+          if (buffer) {
+            track('load_bloom_d1_fallback');
+            bloom = BloomFilter.fromUint8Array(new Uint8Array(buffer));
+            bloomMemoryMap.set(profileId, { bloom, ts: Date.now() });
+            if (cache) {
+              const bloomRes = new Response(buffer, {
+                headers: {
+                  "Content-Type": "application/octet-stream",
+                  "Cache-Control": "public, max-age=86400",
+                  "Cache-Tag": `bloom-${profileId}`
+                }
+              });
+              ctx.waitUntil(cache.put(bloomInternalUrl, bloomRes));
+            }
+          }
+        } catch (e) {
+          console.error(`[Config] D1 Bloom fallback fetch failed for profile ${profileId}:`, e);
         }
       }
 
@@ -144,12 +172,22 @@ export const pipelineConfig = {
         adguardMemoryMap.set(profileId, { engine: adguardEngine, ts: Date.now() });
       }
 
-      const config = { settings, rules, adguard: adguardPayload };
+      const config = { settings, rules, adguard: adguardPayload, hasBloom: Boolean(buffer) };
       if (bloom) bloomMemoryMap.set(profileId, { bloom, ts: Date.now() });
       
       configCache.set(profileId, { ...config, timestamp: Date.now() });
       if (cache) {
         ctx.waitUntil(cacheUtils.set(cache, profileCacheKey, config, 86400, [`profile-${profileId}`]));
+        if (buffer) {
+          const bloomRes = new Response(buffer, {
+            headers: {
+              "Content-Type": "application/octet-stream",
+              "Cache-Control": "public, max-age=86400",
+              "Cache-Tag": `bloom-${profileId}`
+            }
+          });
+          ctx.waitUntil(cache.put(bloomInternalUrl, bloomRes));
+        }
       }
       
       track('load_config_full_sync');

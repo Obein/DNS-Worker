@@ -7,6 +7,10 @@ export interface FetchListResult {
   count: number;
   /** 错误信息；成功时为 null */
   error: string | null;
+  /** 是否因超出单列表最大字节数被截断 */
+  truncated: boolean;
+  /** 实际处理字节数 */
+  totalBytes?: number;
 }
 
 /** 回调函数：支持同步返回 void（绝大多数场景），仅在出让 CPU 时返回 Promise */
@@ -43,12 +47,13 @@ export async function fetchListContent(
         return {
           count: 0,
           error: "Invalid list URL. Private networks, localhosts, and internal domains are not allowed.",
+          truncated: false,
         };
       }
 
       const remainingTimeout = deadline - Date.now();
       if (remainingTimeout <= 0) {
-        return { count: 0, error: "Request timed out" };
+        return { count: 0, error: "Request timed out", truncated: false };
       }
 
       response = await fetch(currentUrl, {
@@ -63,6 +68,7 @@ export async function fetchListContent(
           return {
             count: 0,
             error: `Redirect status ${response.status} without Location header`,
+            truncated: false,
           };
         }
 
@@ -71,6 +77,7 @@ export async function fetchListContent(
           return {
             count: 0,
             error: `Too many redirects (max ${MAX_REDIRECTS})`,
+            truncated: false,
           };
         }
 
@@ -81,6 +88,7 @@ export async function fetchListContent(
             return {
               count: 0,
               error: `Invalid redirect protocol: ${nextProto}`,
+              truncated: false,
             };
           }
           currentUrl = nextUrl;
@@ -89,6 +97,7 @@ export async function fetchListContent(
           return {
             count: 0,
             error: `Invalid redirect location: ${location}`,
+            truncated: false,
           };
         }
       }
@@ -100,6 +109,7 @@ export async function fetchListContent(
       return {
         count: 0,
         error: `HTTP error! Status: ${response.status} ${response.statusText}`,
+        truncated: false,
       };
     }
 
@@ -109,12 +119,13 @@ export async function fetchListContent(
       return {
         count: 0,
         error: `List too large (${(parseInt(contentLength, 10) / 1024 / 1024).toFixed(2)} MB), limit is ${(maxBytes / 1024 / 1024).toFixed(0)} MB`,
+        truncated: true,
       };
     }
 
     const reader = response.body?.getReader();
     if (!reader) {
-      return { count: 0, error: "Failed to get stream reader from response" };
+      return { count: 0, error: "Failed to get stream reader from response", truncated: false };
     }
 
     const decoder = new TextDecoder("utf-8", { fatal: false, ignoreBOM: true });
@@ -172,8 +183,8 @@ export async function fetchListContent(
       console.warn(`[Fetcher] List truncated at ${(maxBytes / 1024 / 1024).toFixed(0)} MB: ${url}`);
     }
 
-    return { count, error: null };
+    return { count, error: null, truncated, totalBytes };
   } catch (e: any) {
-    return { count: 0, error: e.message || String(e) };
+    return { count: 0, error: e.message || String(e), truncated: false };
   }
 }
