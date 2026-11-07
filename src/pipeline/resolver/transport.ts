@@ -260,11 +260,11 @@ export function resolveUpstreamEndpoint(rawUpstreamUrl: string): UpstreamEndpoin
  *
  * Upstream Protocol Priority:
  * 1. HTTP/3 (DoH3 / RFC 9114) -> Future extension point
- * 2. HTTP/2 (RFC 8484 §5.2)   -> Prioritizes native multiplexed H2 connections (Node.js Serverfull)
- * 3. HTTP/1.1 (Standard Fetch)-> Universal fallback for runtimes without native H2 (Cloudflare Workers)
+ * 2. HTTP/2 (RFC 8484 §5.2)   -> Required minimum HTTP version for DoH. In Node.js Serverfull, DoH queries strictly enforce native HTTP/2.
  *
+ * In accordance with RFC 8484 §5.2, HTTP/1.1 negotiation is forbidden for DoH ("Clients and servers MUST NOT negotiate HTTP/1.1 for DoH").
  * If an upstream DoH query fails, the failure details (HTTP status code, status text, upstream body snippet)
- * are raised directly via UpstreamHttpError to ensure transparent diagnostics without silent protocol switching.
+ * are raised directly via UpstreamHttpError without silent protocol switching.
  *
  * @param endpoint - Resolved upstream endpoint information.
  * @param queryRaw - Wire-format DNS query packet.
@@ -323,11 +323,13 @@ export async function fetchFromUpstream(
         if (h2Err instanceof UpstreamHttpError) {
           throw h2Err;
         }
-        // If H2 connection / ALPN negotiation failed, fall through to universal fetch
+        // Strict RFC 8484 §5.2: Minimum HTTP version is HTTP/2. Do NOT fall back to HTTP/1.1 fetch.
+        const errMsg = h2Err instanceof Error ? h2Err.message : String(h2Err);
+        throw new Error(`Upstream DoH requires HTTP/2 or later (RFC 8484 §5.2). HTTP/2 connection failed: ${errMsg}`);
       }
     }
 
-    // 2. Standard fetch (Cloudflare Workers or H2 negotiation fallback)
+    // 2. Standard fetch (Cloudflare Workers runtime with edge HTTP/2 negotiation)
     const response = await fetch(effectiveUrl, {
       method: "POST",
       headers: {

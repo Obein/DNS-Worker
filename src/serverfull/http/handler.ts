@@ -46,18 +46,20 @@ export function createHttpRequestHandler(
         return;
       }
 
-      const hostHeader = req.headers.host || `${host}:${port}`;
+      const hostHeader = (req.headers[':authority'] as string) || req.headers.host || `${host}:${port}`;
       const fullUrl = new URL(req.url || '/', `${proto}://${hostHeader}`);
 
       const headers = new Headers();
       for (const [k, v] of Object.entries(req.headers)) {
-        if (!v) continue;
+        // Skip HTTP/2 pseudo-headers (:path, :authority, :method, :scheme) which are invalid in Web Fetch Headers
+        if (!v || k.startsWith(':')) continue;
         if (Array.isArray(v)) {
           v.forEach((val) => headers.append(k, val));
         } else {
           headers.set(k, String(v));
         }
       }
+      headers.set('X-Http-Version', req.httpVersion);
 
       // Populate remote client IP (supports direct connections, Cloudflare, Caddy, Nginx)
       const clientIp = extractClientIp(headers, req.socket.remoteAddress, env.TRUSTED_PROXIES);
@@ -100,7 +102,9 @@ export function createHttpRequestHandler(
       const response = await worker.fetch(request, env, ctx);
 
       res.statusCode = response.status;
-      res.statusMessage = response.statusText;
+      if (req.httpVersion !== '2.0') {
+        res.statusMessage = response.statusText;
+      }
 
       // Extract all Set-Cookie headers properly without Node.js res.setHeader overwriting
       let rawCookies: string[] = typeof (response.headers as any).getSetCookie === 'function'

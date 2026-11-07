@@ -78,8 +78,10 @@ Because the database schema must operate seamlessly across Cloudflare D1, Turso 
 
 - **SSRF Prevention**:
   - All URLs supplied by users or administrators (such as upstream DoH endpoints and blocklist sources) must pass `isSafeUrlWithDnsCheck`. Private IP ranges (RFC 1918), loopback interfaces, link-local addresses, and cloud provider metadata IPs (`169.254.169.254`) are unconditionally blocked.
-- **Protocol Compliance & Resilient Fallback**:
-  - Upstream DoH clients prefer native HTTP/2 multiplexing (satisfying RFC 8484 §5.2). When encountering upstream incompatibilities (e.g., HTTP 505 or TLS handshake failure 525), the client automatically fails over to resilient native DoT (`tls://...:853`).
+- **Protocol Compliance & Strict Minimum HTTP Version (RFC 8484 §5.2)**:
+  - DoH endpoints and upstream clients strictly enforce **HTTP/2 as the minimum HTTP version**. HTTP/1.1 negotiation is forbidden per RFC 8484 §5.2 ("Clients and servers MUST NOT negotiate HTTP/1.1 for DoH").
+  - In Serverfull mode, the HTTPS server natively negotiates ALPN `h2` via `http2.createSecureServer`, and incoming DoH requests over HTTP/1.1 are rejected with `HTTP 505 (HTTP Version Not Supported)`.
+  - When upstream DoH queries encounter errors, the exact upstream status and diagnostic response snippet are surfaced transparently to the user without silent or unauthorized protocol downgrades.
 - **Post-Quantum Zero-Knowledge Privacy**:
   - Audit logs and analytics payloads are protected via post-quantum cryptography (ML-KEM-768) and envelope encryption (AES-256-GCM). The server stores only ciphertext; private keys are held solely by client devices via WebAuthn / Passkeys.
 

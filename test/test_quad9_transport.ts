@@ -5,6 +5,7 @@
 
 import assert from "node:assert";
 import http from "node:http";
+import http2 from "node:http2";
 import { resolveUpstreamEndpoint, fetchFromUpstream } from "../src/pipeline/resolver/transport";
 import { isSafeUrl } from "../src/utils/validator";
 import { http2SessionPool, isHttp2Supported } from "../src/utils/http2Client";
@@ -106,10 +107,10 @@ async function runTests(): Promise<void> {
     console.warn(`    ⚠ Live network test failed or skipped (network dependency):`, errorMsg);
   }
 
-  // 7. Test HTTP 505 / error surfacing without silent DoT fallback
+  // 7. Test HTTP 505 / error surfacing over HTTP/2 without silent DoT fallback
   console.log("\n[7] Testing direct error surfacing without silent DoT fallback when an upstream DoH returns HTTP 505...");
-  const server = http.createServer((req, res) => {
-    res.writeHead(505, { "Content-Type": "text/html" });
+  const server = http2.createServer((req, res) => {
+    res.writeHead(505, { "content-type": "text/html" });
     res.end("<html><body>This server implements RFC 8484 and requires HTTP/2</body></html>");
   });
 
@@ -131,6 +132,32 @@ async function runTests(): Promise<void> {
     console.log(`    ✓ Handled HTTP 505 cleanly with expected UpstreamHttpError (no fallback): ${err.message}`);
   } finally {
     server.close();
+  }
+
+  // 8. Test HTTP/1.1 rejection: DoH upstreams that do not support HTTP/2 fail immediately
+  console.log("\n[8] Testing that DoH queries strictly enforce HTTP/2 minimum and reject HTTP/1.1-only upstreams...");
+  const http1Server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/dns-message" });
+    res.end();
+  });
+  await new Promise<void>((resolve) => http1Server.listen(0, "127.0.0.1", resolve));
+  const http1Port = (http1Server.address() as any).port;
+  const mockHttp1Endpoint = {
+    effectiveUrl: `http://127.0.0.1:${http1Port}/dns-query`,
+    diagMethod: "POST",
+    diagTarget: `http://127.0.0.1:${http1Port}/dns-query`
+  };
+  try {
+    await fetchFromUpstream(mockHttp1Endpoint, sampleQueryRaw);
+    assert.fail("Should have rejected HTTP/1.1-only upstream");
+  } catch (err: any) {
+    assert.ok(
+      err.message.includes("RFC 8484") || err.message.includes("HTTP/2"),
+      "Must reject with RFC 8484 HTTP/2 requirement message"
+    );
+    console.log(`    ✓ HTTP/1.1 upstream rejected as expected: ${err.message}`);
+  } finally {
+    http1Server.close();
   }
 
   // Clean up pooled H2 sessions
