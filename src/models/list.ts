@@ -18,6 +18,7 @@ export class ListModel {
         l.profile_id, 
         l.url, 
         l.enabled, 
+        COALESCE(l.is_system, 0) AS is_system,
         COALESCE(gm.last_synced_at, l.last_synced_at) AS last_synced_at,
         COALESCE(gm.sync_error, l.sync_error) AS sync_error,
         COALESCE(gm.etag, l.etag) AS etag,
@@ -29,9 +30,11 @@ export class ListModel {
     return results;
   }
 
-  async addList(profileId: string, url: string): Promise<{ success: boolean; id?: number }> {
+  async addList(profileId: string, url: string, isSystem = false): Promise<{ success: boolean; id?: number }> {
     const canonicalUrl = ListModel.normalizeUrl(url);
-    const result = await this.db.prepare("INSERT INTO lists (profile_id, url) VALUES (?, ?)").bind(profileId, canonicalUrl).run();
+    const result = await this.db.prepare(
+      "INSERT INTO lists (profile_id, url, is_system) VALUES (?, ?, ?)"
+    ).bind(profileId, canonicalUrl, isSystem ? 1 : 0).run();
     const lastRowId = result.meta?.last_row_id;
     if (lastRowId && typeof lastRowId === 'number' && lastRowId > 0) {
       return { success: result.success, id: lastRowId };
@@ -49,6 +52,7 @@ export class ListModel {
         l.profile_id, 
         l.url, 
         l.enabled, 
+        COALESCE(l.is_system, 0) AS is_system,
         COALESCE(gm.last_synced_at, l.last_synced_at) AS last_synced_at,
         COALESCE(gm.sync_error, l.sync_error) AS sync_error,
         COALESCE(gm.etag, l.etag) AS etag,
@@ -114,6 +118,7 @@ export class ListModel {
         l.profile_id, 
         l.url, 
         l.enabled, 
+        COALESCE(l.is_system, 0) AS is_system,
         COALESCE(gm.last_synced_at, l.last_synced_at) AS last_synced_at,
         COALESCE(gm.sync_error, l.sync_error) AS sync_error,
         COALESCE(gm.etag, l.etag) AS etag,
@@ -124,6 +129,85 @@ export class ListModel {
     `)
       .bind(id, profileId)
       .first<List | null>();
+  }
+
+  /**
+   * Checks if a user already has a specific list URL configured across any of their profiles.
+   */
+  async hasListForUser(userId: string, url: string): Promise<boolean> {
+    const canonicalUrl = ListModel.normalizeUrl(url);
+    const row = await this.db.prepare(`
+      SELECT 1 FROM lists l
+      JOIN profiles p ON l.profile_id = p.id
+      WHERE p.owner_id = ? AND l.url = ?
+      LIMIT 1
+    `).bind(userId, canonicalUrl).first<{ 1: number }>();
+    return row !== null;
+  }
+
+  /**
+   * Distributes a filter list to all users in the system.
+   * If a user already has this list URL in any of their profiles, they are skipped.
+   * Returns summary statistics and the list of affected profile IDs that need filter recompilation.
+   */
+  async distributeListToAllUsers(url: string): Promise<{
+    canonicalUrl: string;
+    totalUsers: number;
+    addedCount: number;
+    skippedCount: number;
+    addedUsernames: string[];
+    skippedUsernames: string[];
+    affectedProfileIds: string[];
+  }> {
+    const canonicalUrl = ListModel.normalizeUrl(url);
+    const { results: users } = await this.db.prepare(
+      "SELECT id, username FROM users ORDER BY created_at ASC"
+    ).all<{ id: string; username: string }>();
+
+    let addedCount = 0;
+    let skippedCount = 0;
+    const addedUsernames: string[] = [];
+    const skippedUsernames: string[] = [];
+    const affectedProfileIds: string[] = [];
+
+    for (const user of users) {
+      const alreadyHas = await this.hasListForUser(user.id, canonicalUrl);
+      if (alreadyHas) {
+        skippedCount++;
+        skippedUsernames.push(user.username);
+        continue;
+      }
+
+      const { results: profiles } = await this.db.prepare(
+        "SELECT id FROM profiles WHERE owner_id = ? ORDER BY created_at ASC"
+      ).bind(user.id).all<{ id: string }>();
+
+      if (profiles.length === 0) {
+        skippedCount++;
+        skippedUsernames.push(user.username);
+        continue;
+      }
+
+      for (const profile of profiles) {
+        await this.db.prepare(
+          "INSERT INTO lists (profile_id, url, enabled, is_system) VALUES (?, ?, 1, 1)"
+        ).bind(profile.id, canonicalUrl).run();
+        affectedProfileIds.push(profile.id);
+      }
+
+      addedCount++;
+      addedUsernames.push(user.username);
+    }
+
+    return {
+      canonicalUrl,
+      totalUsers: users.length,
+      addedCount,
+      skippedCount,
+      addedUsernames,
+      skippedUsernames,
+      affectedProfileIds
+    };
   }
 
   async deleteList(id: number, profileId: string): Promise<boolean> {

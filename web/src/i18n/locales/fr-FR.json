@@ -538,7 +538,8 @@
     "singleSyncStarted": "Synchronisation de la liste démarrée",
     "checkWhitelisted": "Autorisé par cette liste",
     "checkWhitelistedDesc": "Correspond à une règle d'exception (@@) dans cette liste, l'autorisant en priorité face aux blocages.",
-    "checkViaPattern": "(correspond à une règle de motif)"
+    "checkViaPattern": "(correspond à une règle de motif)",
+    "systemDistributed": "Système"
   },
   "settings": {
     "title": "Paramètres du profil",
@@ -1062,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Résolution DNS sécurisée, rapide et personnalisable pour tous vos appareils. Basé sur Cloudflare Workers, open source et axé sur la confidentialité.",
     "setupDesc": "Configurez vos appareils pour utiliser DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Distribuer le filtre",
+      "description": "Distribuez une liste de filtres aux profils de tous les utilisateurs. Ignore automatiquement les utilisateurs possédant déjà ce filtre. Les utilisateurs peuvent supprimer les filtres distribués à tout moment.",
+      "quickPresets": "Préréglages rapides",
+      "urlLabel": "URL de la liste de filtres",
+      "urlHelper": "Prend en charge les formats standards tels qu'AdGuard, Hosts ou EasyList",
+      "submitBtn": "Distribuer maintenant",
+      "toastSuccess": "Filtre distribué avec succès à {{count}} utilisateur(s)",
+      "resultTitle": "Distribution terminée",
+      "resultSummary": "Total de {{total}} utilisateur(s) : distribué avec succès à {{added}} utilisateur(s) ({{profiles}} profils), {{skipped}} utilisateur(s) ayant déjà ce filtre ignoré(s).",
+      "addedUsers": "Utilisateurs ajoutés",
+      "skippedUsers": "Utilisateurs ignorés"
+    }
   }
 }

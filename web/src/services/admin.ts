@@ -79,3 +79,33 @@ export async function runDatabaseMigrations(): Promise<RunMigrationsResponse> {
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+
+export interface DistributeFilterResponse {
+  success: boolean;
+  url: string;
+  totalUsers: number;
+  addedCount: number;
+  skippedCount: number;
+  addedUsernames: string[];
+  skippedUsernames: string[];
+  affectedProfilesCount: number;
+}
+
+export async function distributeFilter(url: string): Promise<DistributeFilterResponse> {
+  const res = await fetch("/api/admin/distribute-filter", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (json.error) throw new Error(json.error);
+    } catch {
+      // fallback to raw text
+    }
+    throw new Error(text);
+  }
+  return res.json();
+}

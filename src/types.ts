@@ -136,6 +136,7 @@ export interface List {
   profile_id: string;
   url: string;
   enabled: boolean;
+  is_system?: boolean | number;
   last_synced_at?: number;
   sync_error?: string | null;
   etag?: string | null;

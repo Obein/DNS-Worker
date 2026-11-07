@@ -538,7 +538,8 @@
     "singleSyncStarted": "列表同步任务已开始",
     "checkWhitelisted": "被该列表放行",
     "checkWhitelistedDesc": "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。",
-    "checkViaPattern": "(匹配到通配规则)"
+    "checkViaPattern": "(匹配到通配规则)",
+    "systemDistributed": "系统下发"
   },
   "settings": {
     "title": "配置设置",
@@ -1062,5 +1063,20 @@
   "meta": {
     "defaultDesc": "为您的所有设备提供安全、快速且可定制的 DNS 解析。基于 Cloudflare Workers 构建，开源且注重隐私。",
     "setupDesc": "配置您的设备以使用 DNS Worker。"
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "下发过滤器",
+      "description": "向系统中所有用户的配置下发指定过滤规则列表。如果用户已存在相同规则则自动跳过。用户可自行删除已下发的过滤器。",
+      "quickPresets": "快捷预设",
+      "urlLabel": "规则列表 URL",
+      "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",
+      "submitBtn": "立即下发",
+      "toastSuccess": "过滤器已成功下发至 {{count}} 位用户",
+      "resultTitle": "下发执行完成",
+      "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
+      "addedUsers": "下发成功用户",
+      "skippedUsers": "自动跳过用户"
+    }
   }
 }

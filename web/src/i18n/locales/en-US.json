@@ -538,7 +538,8 @@
     "singleSyncStarted": "List sync task started",
     "checkWhitelisted": "Allowed by this list",
     "checkWhitelistedDesc": "Matched an exception rule (@@) in this list, allowing it even if matched by blocking rules.",
-    "checkViaPattern": "(matched a pattern rule)"
+    "checkViaPattern": "(matched a pattern rule)",
+    "systemDistributed": "System"
   },
   "settings": {
     "title": "Settings",
@@ -1062,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Secure, fast, and customizable DNS resolution for all your devices. Based on Cloudflare Workers. Open-source and privacy-focused.",
     "setupDesc": "Configure your devices to use DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Distribute Filter",
+      "description": "Distribute a filter list to all users' profiles. Automatically skips users who already have this filter. Users can delete distributed filters at any time.",
+      "quickPresets": "Quick Presets",
+      "urlLabel": "Filter List URL",
+      "urlHelper": "Supports AdGuard, Hosts, EasyList, and standard rule URLs",
+      "submitBtn": "Distribute Now",
+      "toastSuccess": "Filter successfully distributed to {{count}} user(s)",
+      "resultTitle": "Distribution Completed",
+      "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter.",
+      "addedUsers": "Added Users",
+      "skippedUsers": "Skipped Users"
+    }
   }
 }

@@ -538,7 +538,8 @@
     "singleSyncStarted": "Listensynchronisierung gestartet",
     "checkWhitelisted": "Von dieser Liste erlaubt",
     "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
-    "checkViaPattern": "(entspricht einer Musterregel)"
+    "checkViaPattern": "(entspricht einer Musterregel)",
+    "systemDistributed": "System"
   },
   "settings": {
     "title": "Profileinstellungen",
@@ -1062,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Sichere, schnelle und anpassbare DNS-Auflösung für alle Ihre Geräte. Basiert auf Cloudflare Workers, quelloffen und datenschutzorientiert.",
     "setupDesc": "Konfigurieren Sie Ihre Geräte für die Verwendung von DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Filter verteilen",
+      "description": "Verteilen Sie eine Filterliste an die Profile aller Benutzer. Überspringt automatisch Benutzer, die diesen Filter bereits haben. Benutzer können verteilte Filter jederzeit löschen.",
+      "quickPresets": "Schnellvoreinstellungen",
+      "urlLabel": "Filterlisten-URL",
+      "urlHelper": "Unterstützt AdGuard-, Hosts-, EasyList- und Standard-Regel-URLs",
+      "submitBtn": "Jetzt verteilen",
+      "toastSuccess": "Filter erfolgreich an {{count}} Benutzer verteilt",
+      "resultTitle": "Verteilung abgeschlossen",
+      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
+      "addedUsers": "Hinzugefügte Benutzer",
+      "skippedUsers": "Übersprungene Benutzer"
+    }
   }
 }

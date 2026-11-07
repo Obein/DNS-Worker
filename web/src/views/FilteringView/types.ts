@@ -11,5 +11,6 @@ export interface FilterList {
   url: string;
   last_synced_at?: number;
   enabled: boolean;
+  is_system?: boolean | number;
   sync_error?: string | null;
 }

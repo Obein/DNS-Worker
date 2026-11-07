@@ -25,7 +25,16 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
       key: "url",
       header: t("filtering.tableUrl"),
       cellClassName: "font-mono text-sm max-w-md truncate",
-      render: (list: FilterList): React.ReactNode => list.url,
+      render: (list: FilterList): React.ReactNode => (
+        <div className="flex items-center space-x-2 truncate">
+          <span className="truncate">{list.url}</span>
+          {Boolean(list.is_system) && (
+            <Tag intent={Intent.PRIMARY} minimal className="shrink-0 text-xs font-sans">
+              {t("filtering.systemDistributed", "系统下发")}
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       key: "lastSync",
