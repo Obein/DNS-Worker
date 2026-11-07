@@ -140,6 +140,21 @@ export class UserCoreModel {
   }
 
   /**
+   * Retrieves the total count of registered users.
+   *
+   * @returns The total number of users registered in the system.
+   */
+  async count(): Promise<number> {
+    try {
+      const count = await this.db.prepare("SELECT COUNT(*) as count FROM users").first<number>('count');
+      return count ?? 0;
+    } catch (err) {
+      console.error("[UserModel] count: query failed:", err);
+      return 0;
+    }
+  }
+
+  /**
    * Checks whether the users table is completely empty (no users registered).
    *
    * Security consideration (CWE-636 Fail-Closed):

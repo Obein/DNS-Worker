@@ -49,6 +49,7 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
           turnstile_secret_key: sysSettings.turnstile_secret_key || "",
           turnstile_enabled_signup: sysSettings.turnstile_enabled_signup || "false",
           turnstile_enabled_login: sysSettings.turnstile_enabled_login || "false",
+          max_users: sysSettings.max_users || "0",
         }),
         10000
       );
@@ -125,6 +126,22 @@ export const SystemSettingsCard: React.FC<SystemSettingsCardProps> = ({
                 setSysSettings({ ...sysSettings, turnstile_enabled_login: String(e.currentTarget.checked) })
               }
             />
+            <Divider className="my-2" />
+            <H4 className="text-sm font-bold opacity-70 text-indigo-500">
+              {t("account.userLimits", "User Quota")}
+            </H4>
+            <FormGroup
+              label={t("account.maxUsers", "Max Users")}
+              helperText={t("account.maxUsersHelper", "Maximum number of users allowed in the system (0 for unlimited).")}
+            >
+              <InputGroup
+                type="number"
+                min={0}
+                value={sysSettings.max_users || ""}
+                onChange={(e) => setSysSettings({ ...sysSettings, max_users: e.target.value })}
+                placeholder="0"
+              />
+            </FormGroup>
           </div>
         </div>
         <Divider className="my-4" />

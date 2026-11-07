@@ -17,7 +17,7 @@ import {
 import { ShieldCheck, UserPlus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import { PASSWORD_REGEX, USERNAME_REGEX, hashPasswordClient } from "../../../utils/auth";
+import { PASSWORD_REGEX, USERNAME_REGEX, hashPasswordClient, formatApiErrorMessage } from "../../../utils/auth";
 import type { UserInfo } from "../../../services";
 import { createUser, deleteUser, updateSystemSettings } from "../../../services";
 import { executeWithTimeout } from "../../../utils/async";
@@ -27,6 +27,7 @@ export interface UserManagementCardProps {
   currentUserId: string;
   onRefresh: () => void;
   registrationEnabled?: boolean;
+  maxUsers?: string | number;
   onRefreshSettings?: () => void;
   onSavingChange?: (saving: boolean) => void;
   toasterRef?: React.RefObject<OverlayToaster | null>;
@@ -37,6 +38,7 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
   currentUserId,
   onRefresh,
   registrationEnabled = true,
+  maxUsers,
   onRefreshSettings,
   onSavingChange,
   toasterRef,
@@ -50,6 +52,9 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
   const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   const [isRegistrationEnabled, setIsRegistrationEnabled] = useState(registrationEnabled);
   const [toggleLoading, setToggleLoading] = useState(false);
+
+  const maxUsersLimit = maxUsers !== undefined && maxUsers !== null && maxUsers !== "" ? parseInt(String(maxUsers), 10) : 0;
+  const isQuotaReached = maxUsersLimit > 0 && users.length >= maxUsersLimit;
 
   useEffect(() => {
     setIsRegistrationEnabled(registrationEnabled);
@@ -100,7 +105,7 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
       onRefresh();
     } catch (e: any) {
       console.error(e);
-      alert(e.message || t("common.errorNetwork"));
+      alert(formatApiErrorMessage(e, t));
     }
     finally { setCreateLoading(false); }
   };
@@ -119,6 +124,15 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
         <div className="flex items-center gap-2">
           <ShieldCheck size={20} className="text-red-500" />
           <H4 style={{ margin: 0 }}>{t("account.userManagement")}</H4>
+          {maxUsersLimit > 0 ? (
+            <Tag minimal intent={isQuotaReached ? Intent.DANGER : Intent.PRIMARY} round>
+              {users.length} / {maxUsersLimit}
+            </Tag>
+          ) : (
+            <Tag minimal round>
+              {users.length}
+            </Tag>
+          )}
         </div>
         <div className="flex items-center gap-4 flex-wrap">
           <Switch
@@ -128,7 +142,15 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
             onChange={(e) => handleToggleRegistration(e.currentTarget.checked)}
             className="mb-0"
           />
-          <Button className="whitespace-nowrap" icon={<UserPlus size={16} />} intent={Intent.SUCCESS} text={t("account.createUser")} onClick={() => setIsDialogOpen(true)} />
+          <Button
+            className="whitespace-nowrap"
+            icon={<UserPlus size={16} />}
+            intent={Intent.SUCCESS}
+            text={t("account.createUser")}
+            disabled={isQuotaReached}
+            title={isQuotaReached ? t("auth.maxUsersReached", "当前系统已达到用户数量上限，无法创建新用户。") : undefined}
+            onClick={() => setIsDialogOpen(true)}
+          />
         </div>
       </div>
       <Card elevation={Elevation.ONE} className="p-0 overflow-hidden overflow-x-auto">

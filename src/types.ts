@@ -6,6 +6,7 @@ export interface Env {
   JWT_SECRET?: string;
   MAX_ACCESS_POINTS_PER_PROFILE?: string | number;
   MAX_PROFILES_PER_USER?: string | number;
+  MAX_USERS?: string | number;
   DEFAULT_SESSION_EXPIRATION_MINUTES?: string | number;
   OPTIONAL_SESSION_EXPIRATION_DAYS?: string | number;
   ACCESS_TOKEN_EXPIRATION_MINUTES?: string | number;

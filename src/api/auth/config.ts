@@ -13,24 +13,32 @@ export async function handleAuthConfigRequest(request: Request, env: Env): Promi
   // 公开配置接口
   if (url.pathname === '/api/auth/config' && request.method === 'GET') {
     const settingsModel = new SystemSettingsModel(env.DB);
-    const [siteKey, signupEnabled, loginEnabled, hasUsers, registrationEnabled] = await Promise.all([
+    const [siteKey, signupEnabled, loginEnabled, userCount, registrationEnabled, maxUsersSetting] = await Promise.all([
       settingsModel.get('turnstile_site_key'),
       settingsModel.get('turnstile_enabled_signup'),
       settingsModel.get('turnstile_enabled_login'),
-      userModel.isEmpty().then((empty) => !empty).catch(() => false),
-      settingsModel.get('registration_enabled')
+      userModel.count().catch(() => 0),
+      settingsModel.get('registration_enabled'),
+      settingsModel.get('max_users')
     ]);
+    const hasUsers = userCount > 0;
+    const rawMaxUsers = maxUsersSetting !== null ? maxUsersSetting : env.MAX_USERS;
+    const maxUsers = rawMaxUsers !== undefined && rawMaxUsers !== null && rawMaxUsers !== "" ? parseInt(String(rawMaxUsers), 10) : 0;
+    const isMaxUsersReached = hasUsers && maxUsers > 0 && userCount >= maxUsers;
+
     return new Response(JSON.stringify({
       turnstile_site_key: siteKey,
       turnstile_enabled_signup: signupEnabled === 'true',
       turnstile_enabled_login: loginEnabled === 'true',
       optional_session_expiration_days: Number(env.OPTIONAL_SESSION_EXPIRATION_DAYS) || 7,
       has_users: hasUsers,
-      registration_enabled: registrationEnabled !== 'false'
+      registration_enabled: registrationEnabled !== 'false' && !isMaxUsersReached,
+      max_users: maxUsers > 0 ? maxUsers : null,
+      max_users_reached: isMaxUsersReached
     }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': hasUsers ? 'public, max-age=300, s-maxage=300' : 'no-store, no-cache'
+        'Cache-Control': hasUsers ? 'public, max-age=60, s-maxage=60' : 'no-store, no-cache'
       }
     });
   }

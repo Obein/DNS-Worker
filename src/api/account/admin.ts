@@ -21,7 +21,8 @@ const ALLOWED_ADMIN_SETTINGS_KEYS = new Set<string>([
   'turnstile_secret_key',
   'turnstile_enabled_signup',
   'turnstile_enabled_login',
-  'registration_enabled'
+  'registration_enabled',
+  'max_users'
 ]);
 
 /**
@@ -51,6 +52,18 @@ export async function handleAdminRequest(
       if (!password || !PASSWORD_REGEX.test(password)) {
         return new Response("Password format error", { status: 400 });
       }
+
+      const systemSettings = new SystemSettingsModel(env.DB);
+      const maxUsersSetting = await systemSettings.get('max_users');
+      const rawMaxUsers = maxUsersSetting !== null ? maxUsersSetting : env.MAX_USERS;
+      const maxUsers = rawMaxUsers !== undefined && rawMaxUsers !== null && rawMaxUsers !== "" ? parseInt(String(rawMaxUsers), 10) : 0;
+      if (maxUsers > 0) {
+        const currentCount = await userModel.count();
+        if (currentCount >= maxUsers) {
+          return new Response("max_users_reached", { status: 400 });
+        }
+      }
+
       const hashedPassword = await hashPassword(password, 2);
       const userId = generateId(15);
       try {
@@ -89,9 +102,21 @@ export async function handleAdminRequest(
 
       const filteredSettings: Record<string, string> = {};
       for (const [key, value] of Object.entries(body)) {
-        if (ALLOWED_ADMIN_SETTINGS_KEYS.has(key) && typeof value === 'string') {
-          // Bound setting value length to prevent unbounded storage usage
-          filteredSettings[key] = value.slice(0, 1024);
+        if (ALLOWED_ADMIN_SETTINGS_KEYS.has(key)) {
+          if (typeof value === 'string') {
+            filteredSettings[key] = value.slice(0, 1024);
+          } else if (typeof value === 'number') {
+            filteredSettings[key] = String(value);
+          }
+        }
+      }
+
+      if (filteredSettings.max_users !== undefined) {
+        const parsed = parseInt(filteredSettings.max_users, 10);
+        if (isNaN(parsed) || parsed < 0) {
+          filteredSettings.max_users = "0";
+        } else {
+          filteredSettings.max_users = String(parsed);
         }
       }
 

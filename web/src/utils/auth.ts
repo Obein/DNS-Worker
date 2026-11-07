@@ -226,6 +226,12 @@ export function formatApiErrorMessage(err: any, t: (key: string, options?: any) 
   if (bodyText === "username_exists") {
     return t("auth.usernameExists", "Username already exists.");
   }
+  if (bodyText === "max_users_reached") {
+    return t("auth.maxUsersReached", "当前系统已达到用户数量上限，无法创建新用户。");
+  }
+  if (bodyText === "registration_disabled") {
+    return t("auth.registrationDisabledDesc", "当前系统已暂停开放新用户注册，请联系系统管理员获取账号。");
+  }
   if (bodyText === "password_leaked") {
     return t("auth.passwordLeaked", "Your password has been leaked.");
   }

@@ -281,6 +281,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
               currentUserId={me.id}
               onRefresh={fetchUsers}
               registrationEnabled={sysSettings.registration_enabled !== "false"}
+              maxUsers={sysSettings.max_users}
               onRefreshSettings={fetchSystemSettings}
               onSavingChange={onSavingChange}
               toasterRef={toasterRef}
