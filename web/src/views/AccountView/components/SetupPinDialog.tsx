@@ -282,13 +282,16 @@ export const SetupPinDialog: React.FC<SetupPinDialogProps> = ({
           )}
 
           {authMethod === "passkey" && (
-            <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
-              <span className="text-xs">
-                {t(
-                  "account.passkey.submitNotice",
-                  t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
-                )}
-              </span>
+            <Callout intent={Intent.PRIMARY} icon={null}>
+              <div className="flex items-start gap-2 text-xs">
+                <Key className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  {t(
+                    "account.passkey.submitNotice",
+                    t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
+                  )}
+                </span>
+              </div>
             </Callout>
           )}
         </div>

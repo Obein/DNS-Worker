@@ -3,6 +3,7 @@ import {
   Card,
   Elevation,
   H4,
+  H5,
   Tag,
   Intent,
   Button,
@@ -138,10 +139,11 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
           </div>
 
           {!isCompleted && migrations && migrations.pendingFiles.length > 0 && (
-            <Callout intent={Intent.WARNING} icon={<AlertCircle size={16} />}>
-              <div className="text-xs font-semibold mb-1">
-                {t("account.pendingMigrationsList", "待应用的架构迁移文件：")}
-              </div>
+            <Callout intent={Intent.WARNING} icon={null}>
+              <H5 className="flex items-center gap-2 mb-1 text-xs font-semibold">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{t("account.pendingMigrationsList", "待应用的架构迁移文件：")}</span>
+              </H5>
               <ul className="list-disc list-inside text-xs font-mono space-y-0.5 text-gray-700 dark:text-gray-300 max-h-32 overflow-y-auto">
                 {migrations.pendingFiles.map((file) => (
                   <li key={file}>{file}</li>

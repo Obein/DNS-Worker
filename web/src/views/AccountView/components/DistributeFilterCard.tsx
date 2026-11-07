@@ -3,6 +3,7 @@ import {
   Card,
   Elevation,
   H4,
+  H5,
   FormGroup,
   InputGroup,
   Button,
@@ -157,17 +158,21 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
         </FormGroup>
 
         {error && (
-          <Callout intent={Intent.DANGER} icon={<AlertCircle className="w-4 h-4" />} title={t("common.error", "错误")}>
-            {error}
+          <Callout intent={Intent.DANGER} icon={null}>
+            <H5 className="flex items-center gap-2 mb-2 font-semibold">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{t("common.error", "错误")}</span>
+            </H5>
+            <div className="text-sm">{error}</div>
           </Callout>
         )}
 
         {result && (
-          <Callout
-            intent={Intent.SUCCESS}
-            icon={<CheckCircle2 className="w-4 h-4" />}
-            title={t("admin.distributeFilter.resultTitle", "下发执行完成")}
-          >
+          <Callout intent={Intent.SUCCESS} icon={null}>
+            <H5 className="flex items-center gap-2 mb-2 font-semibold">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{t("admin.distributeFilter.resultTitle", "下发执行完成")}</span>
+            </H5>
             <div className="space-y-2 text-sm">
               <p>
                 {t(

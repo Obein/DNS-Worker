@@ -98,11 +98,16 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
             </div>
           </>
         ) : (
-          <Callout intent={Intent.PRIMARY} icon={<KeyRound size={16} style={{ display: "inline-flex", alignItems: "center", marginRight: "8px" }} />}>
-            {t(
-              "account.mfa.unconfiguredHint",
-              "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
-            )}
+          <Callout intent={Intent.PRIMARY} icon={null}>
+            <div className="flex items-start gap-2 text-sm">
+              <KeyRound className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                {t(
+                  "account.mfa.unconfiguredHint",
+                  "No MFA method configured yet. Set up either a Passkey or Authenticator App below to safeguard your account and unlock passwordless login and account recovery."
+                )}
+              </span>
+            </div>
           </Callout>
         )}
       </div>
