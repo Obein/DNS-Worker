@@ -18,3 +18,11 @@ temp_*
 # Auto-generated embedded migrations (Source of truth: migrations/*.sql)
 src/lib/turso/embeddedMigrations.ts
 
+# AI Agent Instructions & Configs
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursor/
+.cursorrules
+.windsurfrules
+.clinerules
