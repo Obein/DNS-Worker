@@ -1,4 +1,5 @@
 import { Env, ExecutionContext } from '../types';
+import { getSystemVersion } from '../constants/version';
 
 /**
  * Intercepts /world-110m.json requests, fetches map topology from openlayers.org,
@@ -15,7 +16,7 @@ export async function handleMapDataRequest(request: Request, env: Env, ctx: Exec
       const url = 'https://openlayers.org/en/latest/examples/data/topojson/world-110m.json';
       const res = await fetch(url, {
         headers: {
-          'User-Agent': 'DNS Worker/1.0 (Cloudflare Worker Map Proxy)'
+          'User-Agent': `DNS-Worker/${getSystemVersion()} (Cloudflare Worker Map Proxy)`
         }
       });
       if (!res.ok) {

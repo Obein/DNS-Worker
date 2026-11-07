@@ -38,11 +38,11 @@ export async function combineAndPromote(
     ]);
   } else if (activeLists.length === 1) {
     // 性能优化：单列表短路晋升 (Single-List Direct Promotion)
-    // 仅有 1 个列表时直接复用其 Bloom 与规则，彻底跳过内存重建与循环合并开销
+    // 仅有 1 个列表时直接复用其全局 Bloom 与规则，彻底跳过内存重建与循环合并开销
     const single = activeLists[0];
     const [buf, listRules] = await Promise.all([
-      listBloomModel.getListBloom(single.id),
-      adguardRulesModel ? adguardRulesModel.getListRules(single.id) : Promise.resolve(null)
+      listBloomModel.getListBloom(single.url),
+      adguardRulesModel ? adguardRulesModel.getListRules(single.url) : Promise.resolve(null)
     ]);
 
     const saveOps: Promise<any>[] = [];
@@ -72,7 +72,7 @@ export async function combineAndPromote(
     for (const list of activeLists) {
       try {
         // 1. Bloom Filter 单列表合并
-        const buf = await listBloomModel.getListBloom(list.id);
+        const buf = await listBloomModel.getListBloom(list.url);
         if (buf) {
           const filter = BloomFilter.fromUint8Array(new Uint8Array(buf));
           merged.merge(filter);
@@ -81,7 +81,7 @@ export async function combineAndPromote(
 
         // 2. AdGuard 扩展规则合并
         if (adguardRulesModel) {
-          const listRules = await adguardRulesModel.getListRules(list.id);
+          const listRules = await adguardRulesModel.getListRules(list.url);
           if (listRules) {
             if (Array.isArray(listRules.exceptions)) {
               for (const exc of listRules.exceptions) {

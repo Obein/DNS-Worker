@@ -5,7 +5,7 @@
  */
 
 import http from 'node:http';
-import https from 'node:https';
+import http2 from 'node:http2';
 import fs from 'node:fs';
 import { Env } from '../types';
 import { formatPortError } from './format';
@@ -112,7 +112,7 @@ export class HttpServer {
  * Activated only when valid TLS certificates are provided.
  */
 export class HttpsServer {
-  private server: https.Server | null = null;
+  private server: http2.Http2SecureServer | null = null;
   private isRunning: boolean = false;
 
   constructor(private options: HttpsServerOptions) {
@@ -128,10 +128,22 @@ export class HttpsServer {
         const key = fs.readFileSync(keyPath);
 
         const handler = createHttpRequestHandler(env, 'https', host, port);
-        this.server = https.createServer({ cert, key }, handler);
+        this.server = http2.createSecureServer(
+          {
+            cert,
+            key,
+            allowHTTP1: true
+          },
+          handler as any
+        );
 
-        this.server.keepAliveTimeout = 65000;
-        this.server.headersTimeout = 66000;
+        if ('keepAliveTimeout' in this.server) {
+          (this.server as any).keepAliveTimeout = 65000;
+        }
+        if ('headersTimeout' in this.server) {
+          (this.server as any).headersTimeout = 66000;
+        }
+        this.server.setTimeout(65000);
         this.server.on('connection', (socket) => {
           socket.setNoDelay(true);
         });

@@ -92,6 +92,13 @@ export class UserModel {
   }
 
   /**
+   * Retrieves the total count of registered users.
+   */
+  async count(): Promise<number> {
+    return this.core.count();
+  }
+
+  /**
    * Checks if the user database is empty.
    */
   async isEmpty(): Promise<boolean> {

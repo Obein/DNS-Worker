@@ -190,6 +190,9 @@
     "totpFormatError": "Vui lòng nhập mã hợp lệ gồm 6 chữ số",
     "registrationDisabledTitle": "Đăng ký đã bị tắt",
     "registrationDisabledDesc": "Tính năng đăng ký người dùng mới hiện đang tạm khóa. Vui lòng liên hệ quản trị viên hệ thống để nhận tài khoản.",
+    "maxUsersReachedTitle": "Đã đạt giới hạn người dùng",
+    "maxUsersReachedDesc": "Số lượng người dùng đăng ký đã đạt giới hạn tối đa. Hệ thống tạm dừng đăng ký mới. Vui lòng liên hệ quản trị viên hệ thống.",
+    "maxUsersReached": "Đã đạt số lượng người dùng tối đa của hệ thống, không thể tạo thêm người dùng mới.",
     "backToLogin": "Quay lại đăng nhập",
     "jwtSecretPreset": "Đã phát hiện JWT_SECRET mặc định. Vui lòng sửa đổi JWT_SECRET đặt sẵn trong các biến môi trường trước khi triển khai.",
     "jwtSecretMissing": "Thiếu JWT_SECRET. Vui lòng định cấu hình khóa bảo mật trong các biến môi trường trước khi triển khai.",
@@ -535,7 +538,8 @@
     "singleSyncStarted": "Tác vụ đồng bộ danh sách đã bắt đầu",
     "checkWhitelisted": "Được cho phép bởi danh sách này",
     "checkWhitelistedDesc": "Khớp với quy tắc ngoại lệ (@@) trong danh sách này, được ưu tiên cho phép.",
-    "checkViaPattern": "(khớp quy tắc mẫu)"
+    "checkViaPattern": "(khớp quy tắc mẫu)",
+    "systemDistributed": "Hệ thống"
   },
   "settings": {
     "title": "Cài đặt cấu hình",
@@ -959,6 +963,9 @@
     "usePasskeyInstead": "Xác thực bằng Passkey",
     "changePasswordWithPasskey": "Xác minh bằng Passkey & Cập nhật mật khẩu",
     "enableRegistration": "Cho phép đăng ký người dùng mới",
+    "userLimits": "Hạn ngạch & giới hạn người dùng",
+    "maxUsers": "Số lượng người dùng tối đa",
+    "maxUsersHelper": "Giới hạn số lượng người dùng có thể đăng ký/tạo trong hệ thống (0 hoặc để trống là không giới hạn)",
     "timezone": "Múi giờ",
     "timezoneAuto": "Tự động (mặc định của trình duyệt)",
     "totpCode": "Mã xác thực",
@@ -1056,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Phân giải DNS an toàn, nhanh chóng và có thể tùy chỉnh cho tất cả các thiết bị của bạn. Dựa trên Cloudflare Workers, mã nguồn mở và tập trung vào quyền riêng tư.",
     "setupDesc": "Định cấu hình thiết bị của bạn để sử dụng DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Phân phối bộ lọc (Quản trị viên)",
+      "description": "Phân phối danh sách bộ lọc tới cấu hình của tất cả người dùng. Tự động bỏ qua người dùng đã có bộ lọc này. Người dùng có thể tự xóa bộ lọc được phân phối bất kỳ lúc nào.",
+      "quickPresets": "Cài đặt sẵn nhanh",
+      "urlLabel": "URL danh sách bộ lọc",
+      "urlHelper": "Hỗ trợ các định dạng tiêu chuẩn như AdGuard, Hosts, EasyList",
+      "submitBtn": "Phân phối ngay",
+      "toastSuccess": "Đã phân phối thành công bộ lọc tới {{count}} người dùng",
+      "resultTitle": "Đã hoàn tất phân phối",
+      "resultSummary": "Tổng cộng {{total}} người dùng: Đã phân phối tới {{added}} người dùng ({{profiles}} cấu hình), bỏ qua {{skipped}} người dùng đã có quy tắc này.",
+      "addedUsers": "Người dùng đã thêm",
+      "skippedUsers": "Người dùng đã bỏ qua"
+    }
   }
 }

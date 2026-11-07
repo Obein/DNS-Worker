@@ -233,11 +233,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         className="dark:bg-gray-900"
       >
         <div className={Classes.DIALOG_BODY}>
-          <Callout intent={Intent.WARNING} icon={<ShieldAlert size={16} />} className="mb-4 text-xs">
-            {t(
-              "account.recoveryKey.autoRotatedNotice",
-              "根据恢复密钥单次使用规则，您的原恢复密钥已失效，系统已为您生成全新 30 位紧急恢复密钥。请务必立即复制并妥善离线保存，关闭后将无法再次查看！"
-            )}
+          <Callout intent={Intent.WARNING} icon={null} className="mb-4 text-xs">
+            <div className="flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                {t(
+                  "account.recoveryKey.autoRotatedNotice",
+                  "根据恢复密钥单次使用规则，您的原恢复密钥已失效，系统已为您生成全新 30 位紧急恢复密钥。请务必立即复制并妥善离线保存，关闭后将无法再次查看！"
+                )}
+              </span>
+            </div>
           </Callout>
 
           {rotatedRecoveryKey && (

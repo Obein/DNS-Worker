@@ -1,0 +1,2 @@
+ALTER TABLE lists ADD COLUMN is_system INTEGER DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_lists_url ON lists(url);

@@ -1,12 +1,13 @@
 import React from "react";
-import { HTMLTable, Tag, Intent } from "@blueprintjs/core";
+import { HTMLTable, Tag, Intent, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import type {  FilterList  } from "../types";
+import type { FilterList } from "../types";
 
 export interface ListsTableProps {
   lists: FilterList[];
   onSelect: (list: FilterList) => void;
+  loading?: boolean;
 }
 
 interface ColumnConfig {
@@ -17,7 +18,7 @@ interface ColumnConfig {
   render: (list: FilterList) => React.ReactNode;
 }
 
-export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
+export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect, loading = false }) => {
   const { t } = useTranslation();
 
   const columns: ColumnConfig[] = [
@@ -25,7 +26,16 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
       key: "url",
       header: t("filtering.tableUrl"),
       cellClassName: "font-mono text-sm max-w-md truncate",
-      render: (list: FilterList): React.ReactNode => list.url,
+      render: (list: FilterList): React.ReactNode => (
+        <div className="flex items-center space-x-2 truncate">
+          <span className="truncate">{list.url}</span>
+          {Boolean(list.is_system) && (
+            <Tag intent={Intent.PRIMARY} minimal className="shrink-0 text-xs font-sans">
+              {t("filtering.systemDistributed", "系统下发")}
+            </Tag>
+          )}
+        </div>
+      ),
     },
     {
       key: "lastSync",
@@ -97,6 +107,23 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect }) => {
               ))}
             </tr>
           ))}
+          {lists.length === 0 && (
+            <tr>
+              <td colSpan={columns.length} className="text-center py-10 opacity-60">
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2 py-4">
+                    <Spinner size={16} />
+                    <span>{t("common.loading", "加载中...")}</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center space-y-1 py-4 select-none">
+                    <span className="text-sm font-medium">{t("filtering.noListsTitle", "尚未添加列表")}</span>
+                    <span className="text-xs opacity-75">{t("filtering.noListsDesc", "您还没有订阅任何外部拦截列表。")}</span>
+                  </div>
+                )}
+              </td>
+            </tr>
+          )}
         </tbody>
       </HTMLTable>
     </div>

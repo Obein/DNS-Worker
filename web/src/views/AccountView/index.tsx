@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Divider, Tag, Intent, Callout, type OverlayToaster } from "@blueprintjs/core";
+import { Divider, Tag, Intent, Callout, H5, type OverlayToaster } from "@blueprintjs/core";
 import { ShieldCheck, AlertTriangle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { clsx } from "clsx";
@@ -18,6 +18,7 @@ import { MfaCard } from "./components/MfaCard";
 import { ActivityLogCard } from "./components/ActivityLogCard";
 import { ActiveSessionsCard } from "./components/ActiveSessionsCard";
 import { UserManagementCard } from "./components/UserManagementCard";
+import { DistributeFilterCard } from "./components/DistributeFilterCard";
 import { SystemSettingsCard } from "./components/SystemSettingsCard";
 import { DatabaseMigrationCard } from "./components/DatabaseMigrationCard";
 import { DangerZoneCard } from "./components/DangerZoneCard";
@@ -212,9 +213,12 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
       {me?.role === "admin" && me?.jwt_secret_warning && (
         <Callout
           intent={Intent.WARNING}
-          icon={<AlertTriangle size={18} />}
-          title={t("account.jwtSecretWarningTitle")}
+          icon={null}
         >
+          <H5 className="flex items-center gap-2 mb-1 font-semibold">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{t("account.jwtSecretWarningTitle")}</span>
+          </H5>
           <div className="text-sm leading-relaxed mt-1">
             {t("account.jwtSecretWarningDesc")}
           </div>
@@ -281,7 +285,17 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
               currentUserId={me.id}
               onRefresh={fetchUsers}
               registrationEnabled={sysSettings.registration_enabled !== "false"}
+              maxUsers={sysSettings.max_users}
               onRefreshSettings={fetchSystemSettings}
+              onSavingChange={onSavingChange}
+              toasterRef={toasterRef}
+            />
+          </div>
+
+          {/* Admin: Distribute Filter (Admin) */}
+          <Divider />
+          <div className="space-y-4">
+            <DistributeFilterCard
               onSavingChange={onSavingChange}
               toasterRef={toasterRef}
             />

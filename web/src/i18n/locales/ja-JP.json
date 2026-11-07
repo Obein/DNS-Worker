@@ -190,6 +190,9 @@
     "totpFormatError": "有効な 6 桁のコードを入力してください",
     "registrationDisabledTitle": "登録は停止されています",
     "registrationDisabledDesc": "現在、新規ユーザーの登録は停止されています。アカウントの取得についてはシステム管理者にお問い合わせください。",
+    "maxUsersReachedTitle": "ユーザー上限に達しました",
+    "maxUsersReachedDesc": "登録ユーザー数が上限に達したため、現在新規登録を停止しています。システム管理者にお問い合わせください。",
+    "maxUsersReached": "システムのユーザー数上限に達しているため、新しいユーザーを作成できません。",
     "backToLogin": "ログインに戻る",
     "jwtSecretPreset": "デフォルトの JWT_SECRET が検出されました。デプロイ前に環境変数でプリセットの JWT_SECRET を変更してください。",
     "jwtSecretMissing": "JWT_SECRET が見つかりません。デプロイ前に環境変数で安全なキーを設定してください。",
@@ -535,7 +538,8 @@
     "singleSyncStarted": "リストの同期タスクを開始しました",
     "checkWhitelisted": "このリストで許可されています",
     "checkWhitelistedDesc": "このリストの例外ルール (@@) に一致したため、他のブロックルールより優先して許可されます。",
-    "checkViaPattern": "(パターンルールに一致)"
+    "checkViaPattern": "(パターンルールに一致)",
+    "systemDistributed": "システム配布"
   },
   "settings": {
     "title": "動作設定",
@@ -959,6 +963,9 @@
     "usePasskeyInstead": "パスキーで認証",
     "changePasswordWithPasskey": "パスキーで認証してパスワードを変更",
     "enableRegistration": "新規ユーザー登録を許可",
+    "userLimits": "ユーザー上限と制限",
+    "maxUsers": "最大ユーザー数",
+    "maxUsersHelper": "システムに登録・作成可能なユーザー数の上限（0または空欄で無制限）",
     "timezone": "タイムゾーン",
     "timezoneAuto": "自動（ブラウザのデフォルト）",
     "totpCode": "認証コード",
@@ -1056,5 +1063,20 @@
   "meta": {
     "defaultDesc": "すべてのデバイスに安全で高速、カスタマイズ可能なDNS解決を提供します。Cloudflare Workersベース、オープンソース、プライバシー重視。",
     "setupDesc": "DNS Workerを使用するようにデバイスを設定します。"
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "フィルター配布 (管理者限定)",
+      "description": "指定したフィルターリストを全ユーザーのプロファイルに配布します。既に同じルールを持つユーザーは自動的にスキップされます。ユーザーは配布されたフィルターをいつでも削除できます。",
+      "quickPresets": "クイックプリセット",
+      "urlLabel": "フィルターリストURL",
+      "urlHelper": "AdGuard、Hosts、EasyList などの標準形式URLをサポート",
+      "submitBtn": "今すぐ配布",
+      "toastSuccess": "フィルターが {{count}} 人のユーザーに正常に配布されました",
+      "resultTitle": "配布が完了しました",
+      "resultSummary": "システム内 {{total}} 人のユーザー：{{added}} 人のユーザー（{{profiles}} 件のプロファイル）に配布完了、既に存在する {{skipped}} 人をスキップしました。",
+      "addedUsers": "配布成功ユーザー",
+      "skippedUsers": "スキップされたユーザー"
+    }
   }
 }

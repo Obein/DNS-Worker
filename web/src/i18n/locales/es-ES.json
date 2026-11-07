@@ -190,6 +190,9 @@
     "totpFormatError": "Por favor, introduce un código válido de 6 dígitos",
     "registrationDisabledTitle": "Registro deshabilitado",
     "registrationDisabledDesc": "El registro de nuevos usuarios está actualmente cerrado. Póngase en contacto con el administrador para obtener una cuenta.",
+    "maxUsersReachedTitle": "Cuota de usuarios alcanzada",
+    "maxUsersReachedDesc": "Se ha alcanzado el número máximo de usuarios registrados. El registro de nuevos usuarios está cerrado temporalmente. Póngase en contacto con un administrador del sistema.",
+    "maxUsersReached": "Se ha alcanzado el límite de usuarios. No se pueden crear nuevos usuarios.",
     "backToLogin": "Volver al inicio de sesión",
     "jwtSecretPreset": "Se detectó el JWT_SECRET predeterminado. Modifique el JWT_SECRET preestablecido en las variables de entorno antes de implementar.",
     "jwtSecretMissing": "Falta JWT_SECRET. Configure una clave segura en las variables de entorno antes de implementar.",
@@ -535,7 +538,8 @@
     "singleSyncStarted": "Sincronización de lista iniciada",
     "checkWhitelisted": "Permitido por esta lista",
     "checkWhitelistedDesc": "Coincidió con una regla de excepción (@@) en esta lista, permitiéndola con prioridad sobre bloqueos.",
-    "checkViaPattern": "(coincidió con una regla de patrón)"
+    "checkViaPattern": "(coincidió con una regla de patrón)",
+    "systemDistributed": "Sistema"
   },
   "settings": {
     "title": "Ajustes de perfil",
@@ -959,6 +963,9 @@
     "usePasskeyInstead": "Autenticar con Passkey",
     "changePasswordWithPasskey": "Verificar con Passkey y actualizar",
     "enableRegistration": "Habilitar registro de usuarios",
+    "userLimits": "Cuotas y límites de usuarios",
+    "maxUsers": "Cantidad máxima de usuarios",
+    "maxUsersHelper": "Límite máximo de usuarios que pueden registrarse/crearse en el sistema (0 o vacío para ilimitado)",
     "timezone": "Zona horaria",
     "timezoneAuto": "Automático (predeterminado del navegador)",
     "totpCode": "Código de autenticador",
@@ -1056,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Resolución DNS segura, rápida y personalizable para todos sus dispositivos. Basado en Cloudflare Workers, de código abierto y enfocado en la privacidad.",
     "setupDesc": "Configure sus dispositivos para usar DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Distribuir filtro (solo administradores)",
+      "description": "Distribuye una lista de filtros a los perfiles de todos los usuarios. Omite automáticamente a los usuarios que ya tengan este filtro. Los usuarios pueden eliminar los filtros distribuidos en cualquier momento.",
+      "quickPresets": "Ajustes rápidos",
+      "urlLabel": "URL de lista de filtros",
+      "urlHelper": "Admite URLs de formato estándar como AdGuard, Hosts o EasyList",
+      "submitBtn": "Distribuir ahora",
+      "toastSuccess": "Filtro distribuido con éxito a {{count}} usuario(s)",
+      "resultTitle": "Distribución completada",
+      "resultSummary": "Total de {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s) ({{profiles}} perfiles), omitidos {{skipped}} usuario(s) que ya tenían este filtro.",
+      "addedUsers": "Usuarios añadidos",
+      "skippedUsers": "Usuarios omitidos"
+    }
   }
 }

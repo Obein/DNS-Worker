@@ -147,13 +147,18 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
       {!supported && (
         <Callout
           intent={Intent.WARNING}
-          icon={<ShieldAlert size={16} />}
+          icon={null}
           className="mb-4"
         >
-          {t(
-            "account.passkey.notSupported",
-            "Your browser or device does not support Passkeys (WebAuthn)."
-          )}
+          <div className="flex items-center gap-2 text-sm">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            <span>
+              {t(
+                "account.passkey.notSupported",
+                "Your browser or device does not support Passkeys (WebAuthn)."
+              )}
+            </span>
+          </div>
         </Callout>
       )}
 

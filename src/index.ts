@@ -182,14 +182,15 @@ export default {
         });
       }
 
-      // DNS-over-HTTPS (DoH) Route: /<5-12 char profile key or access point token>
+      // DNS-over-HTTPS (DoH) Route: /<5-12 char profile key or access point token> or canonical /dns-query
       const rawKey = url.pathname.slice(1); 
       const isKeyValid = ACCESS_KEY_REGEX.test(rawKey);
+      const isDnsQueryPath = url.pathname === '/dns-query';
       const isDoHRequest = request.method === 'POST' || 
                            url.searchParams.has('dns') || 
                            request.headers.get('accept')?.includes('dns-message');
                             
-      if (isKeyValid && (isDoHRequest || request.method === 'OPTIONS')) {
+      if ((isKeyValid || isDnsQueryPath) && (isDoHRequest || request.method === 'OPTIONS')) {
         if (request.method === 'OPTIONS') {
           return new Response(null, {
             status: 204,
@@ -201,7 +202,7 @@ export default {
             }
           });
         }
-        return handleDoHRequest(request, env, ctx, rawKey);
+        return handleDoHRequest(request, env, ctx, isDnsQueryPath ? '' : rawKey);
       }
 
       // Static Assets Hosting with Single Page App (SPA) fallback

@@ -37,10 +37,13 @@ export const RotatedKeyAlert: React.FC<RotatedKeyAlertProps> = ({
       <div className={Classes.DIALOG_BODY}>
         <Callout
           intent={Intent.WARNING}
-          icon={<ShieldAlert size={16} />}
+          icon={null}
           className="mb-4 text-xs"
         >
-          {t("account.recoveryKey.autoRotatedNotice")}
+          <div className="flex items-start gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{t("account.recoveryKey.autoRotatedNotice")}</span>
+          </div>
         </Callout>
 
         {rotatedKey && (

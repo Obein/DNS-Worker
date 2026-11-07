@@ -319,7 +319,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         lists={lists}
       />
 
-      <ListsTable lists={lists} onSelect={setSelectedList} />
+      <ListsTable lists={lists} onSelect={setSelectedList} loading={loading} />
 
       <ListDetailsDialog
         profileId={profileId}

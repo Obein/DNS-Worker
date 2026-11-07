@@ -126,8 +126,11 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
             </Callout>
           )}
 
-          <Callout intent={Intent.WARNING} className="mb-4" icon={<ShieldAlert size={20} />}>
-            {t("auth.disablePinWarning", "Disabling the PIN will disable the inactivity session locking feature completely.")}
+          <Callout intent={Intent.WARNING} className="mb-4" icon={null}>
+            <div className="flex items-start gap-2.5 text-sm">
+              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{t("auth.disablePinWarning", "Disabling the PIN will disable the inactivity session locking feature completely.")}</span>
+            </div>
           </Callout>
 
           <div className="mb-3 space-y-2">
@@ -213,13 +216,16 @@ export const DisablePinDialog: React.FC<DisablePinDialogProps> = ({
           )}
 
           {authMethod === "passkey" && (
-            <Callout intent={Intent.PRIMARY} icon={<Key size={16} />}>
-              <span className="text-xs">
-                {t(
-                  "account.passkey.submitNotice",
-                  t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
-                )}
-              </span>
+            <Callout intent={Intent.PRIMARY} icon={null}>
+              <div className="flex items-start gap-2 text-xs">
+                <Key className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  {t(
+                    "account.passkey.submitNotice",
+                    t("account.passkey.changePwNotice", "You will be prompted to verify via biometric authentication or your security key when submitting.")
+                  )}
+                </span>
+              </div>
             </Callout>
           )}
         </div>

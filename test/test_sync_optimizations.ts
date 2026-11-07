@@ -103,6 +103,9 @@ async function runOptimizationsTests() {
                 };
               },
               async first() {
+                if (sql.includes("global_list_blooms")) {
+                  return null;
+                }
                 return { id: profileId, list_updated_at: 0, settings: '{}' };
               },
               async run() {
@@ -218,6 +221,47 @@ async function runOptimizationsTests() {
     }
     assert.strictEqual(restoredFromLegacy.test('safe-domain.example.com'), false);
     console.log('   ✓ Legacy uncompressed format seamlessly restored without errors.');
+
+    // 5. Verify HTTP 525 TLS renegotiation fallback to official mirrors
+    console.log('5. Testing HTTP 525 fallback for big.oisd.nl to official GitHub mirror...');
+    let hitOisdDomain = false;
+    let hitGithubMirror = false;
+
+    globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (urlStr.includes('big.oisd.nl')) {
+        hitOisdDomain = true;
+        // Simulate Cloudflare 525 SSL Handshake Failed
+        return new Response('', { status: 525, statusText: '' });
+      }
+      if (urlStr.includes('raw.githubusercontent.com/sjhgvr/oisd')) {
+        hitGithubMirror = true;
+        return new Response('||oisd-blocked.com^\n||telemetry.oisd.org^\n', {
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
+      return originalFetch(input, init);
+    };
+
+    const oisdParsedDomains: string[] = [];
+    const oisdResult = await fetchListContent(
+      'https://big.oisd.nl',
+      10 * 1024 * 1024,
+      10000,
+      (rule) => {
+        if ('domain' in rule && rule.domain) {
+          oisdParsedDomains.push(rule.domain);
+        }
+      }
+    );
+
+    assert.strictEqual(hitOisdDomain, true, 'Should attempt initial fetch from big.oisd.nl');
+    assert.strictEqual(hitGithubMirror, true, 'Should automatically fall back to official GitHub mirror');
+    assert.strictEqual(oisdResult.error, null, 'Fetch result should succeed via fallback mirror');
+    assert.strictEqual(oisdResult.count, 2, 'Parsed 2 rules from mirror');
+    assert.deepStrictEqual(oisdParsedDomains, ['oisd-blocked.com', 'telemetry.oisd.org']);
+    console.log('   ✓ HTTP 525 on big.oisd.nl safely recovered via transparent official GitHub mirror fallback.');
 
   } finally {
     globalThis.fetch = originalFetch;

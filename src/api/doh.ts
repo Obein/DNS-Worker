@@ -170,6 +170,20 @@ export async function handleDoHRequest(
   ctx: ExecutionContext,
   profileKey: string
 ): Promise<Response> {
+  // RFC 8484 §5.2: Minimum HTTP version restriction for DoH
+  // "The DNS-over-HTTPS protocol MUST be implemented using HTTP/2 or later. Clients and servers MUST NOT negotiate HTTP/1.1 for DoH."
+  const httpProto = (request.cf?.httpProtocol as string | undefined) || request.headers.get('X-Http-Version');
+  if (httpProto && (httpProto === 'HTTP/1.0' || httpProto === 'HTTP/1.1' || httpProto === '1.0' || httpProto === '1.1')) {
+    return new Response(
+      'This server implements RFC 8484 - DNS Queries over HTTP, and requires HTTP/2 or later in accordance with section 5.2 of the RFC.\n',
+      {
+        status: 505,
+        statusText: 'HTTP Version Not Supported',
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      }
+    );
+  }
+
   const cache = (caches as any).default;
   let queryRaw: Uint8Array | null = null;
 

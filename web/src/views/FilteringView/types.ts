@@ -10,6 +10,9 @@ export interface FilterList {
   id: number;
   url: string;
   last_synced_at?: number;
+  last_modified?: number | null;
+  etag?: string | null;
   enabled: boolean;
+  is_system?: boolean | number;
   sync_error?: string | null;
 }

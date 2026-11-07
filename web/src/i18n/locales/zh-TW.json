@@ -191,6 +191,9 @@
     "totpFormatError": "請輸入有效的 6 位驗證碼",
     "registrationDisabledTitle": "註冊已停用",
     "registrationDisabledDesc": "目前系統已暫停開放新使用者註冊，請聯絡系統管理員取得帳號。",
+    "maxUsersReachedTitle": "使用者配額已滿",
+    "maxUsersReachedDesc": "目前系統註冊使用者數已達到上限，暫不接受新使用者註冊。請聯絡系統管理員。",
+    "maxUsersReached": "目前系統已達到使用者數量上限，無法建立新使用者。",
     "backToLogin": "返回登入",
     "jwtSecretPreset": "檢測到正在使用預設的 JWT_SECRET，請在環境變數中修改並替換為自訂安全金鑰後重新部署。",
     "jwtSecretMissing": "缺少 JWT_SECRET，請在環境變數中配置安全金鑰後重新部署。",
@@ -535,7 +538,8 @@
     "singleSyncStarted": "清單同步任務已開始",
     "checkWhitelisted": "被該清單放行",
     "checkWhitelistedDesc": "命中該訂閱清單中的白名單/例外規則 (@@)，即使被其他黑名單規則命中也會優先放行。",
-    "checkViaPattern": "(比對到萬用字元規則)"
+    "checkViaPattern": "(比對到萬用字元規則)",
+    "systemDistributed": "系統下發"
   },
   "settings": {
     "title": "配置設定",
@@ -959,6 +963,9 @@
     "usePasskeyInstead": "使用通行金鑰驗證",
     "changePasswordWithPasskey": "使用通行金鑰核驗並修改密碼",
     "enableRegistration": "開放新使用者註冊",
+    "userLimits": "使用者配額與限制",
+    "maxUsers": "最大使用者數量",
+    "maxUsersHelper": "限制系統中可註冊/建立的最大使用者數（0 或留空表示無限制）",
     "timezone": "時區",
     "timezoneAuto": "自動（跟隨瀏覽器預設）",
     "totpCode": "驗證器動態口令",
@@ -1056,5 +1063,20 @@
   "meta": {
     "defaultDesc": "為您的所有裝置提供安全、快速且可自訂的 DNS 解析。基於 Cloudflare Workers 構建，開源且注重隱私。",
     "setupDesc": "設定您的裝置以使用 DNS Worker。"
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "下發過濾器 (管理員)",
+      "description": "向系統中所有使用者的設定下發指定過濾規則清單。若使用者已存在相同規則則自動略過。使用者可自行刪除已下發的過濾器。",
+      "quickPresets": "快捷預設",
+      "urlLabel": "規則清單 URL",
+      "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",
+      "submitBtn": "立即下發",
+      "toastSuccess": "過濾器已成功下發至 {{count}} 位使用者",
+      "resultTitle": "下發執行完成",
+      "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定），略過 {{skipped}} 位已存在該規則的使用者。",
+      "addedUsers": "下發成功使用者",
+      "skippedUsers": "自動略過使用者"
+    }
   }
 }

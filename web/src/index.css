@@ -75,6 +75,20 @@
   animation: rowGlow 2.5s ease-out;
 }
 
+/* 修复 Blueprint Callout 在使用非内置图标（如 Lucide SVG）时图标与标题未对齐的问题 */
+.bp6-callout.bp6-callout-icon > svg:first-child,
+.bp6-callout.bp6-callout-icon > .lucide:first-child {
+  left: 16px;
+  position: absolute;
+  top: 18px;
+}
+
+.bp6-callout.bp6-compact.bp6-callout-icon > svg:first-child,
+.bp6-callout.bp6-compact.bp6-callout-icon > .lucide:first-child {
+  left: 8px;
+  top: 10px;
+}
+
 /* Ensure Blueprint portals appear above modals, overlays, and lock screen */
 .bp6-portal {
   z-index: 20000 !important;

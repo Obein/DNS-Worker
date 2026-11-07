@@ -1,26 +1,71 @@
 import { D1Database } from "@cloudflare/workers-types";
 import { BLOOM_CHUNK_SIZE } from "../utils/bloom";
 
+/**
+ * Model for managing global compiled Bloom filter chunks stored in `global_list_blooms`.
+ *
+ * Single Responsibility: Storage and retrieval of compiled Bloom filter binary chunks
+ * keyed globally by canonical list URL rather than per-profile subscription ID.
+ * Supports dual-type resolution (URL string or legacy list_id number) for seamless compatibility.
+ */
 export class ListBloomModel {
   constructor(private db: D1Database) {}
 
-  async upsertListBloom(listId: number, bloomFilter: ArrayBuffer, now: number): Promise<boolean> {
+  /**
+   * Normalizes a blocklist URL for canonical global indexing.
+   */
+  static normalizeUrl(url: string): string {
+    return url.trim().replace(/\/+$/, "");
+  }
+
+  /**
+   * Resolves a URL string or legacy list ID to a canonical URL.
+   */
+  private async resolveUrl(urlOrId: string | number): Promise<string | null> {
+    if (typeof urlOrId === "string") {
+      return ListBloomModel.normalizeUrl(urlOrId);
+    }
+    const row = await this.db
+      .prepare("SELECT url FROM lists WHERE id = ?")
+      .bind(urlOrId)
+      .first<{ url: string }>();
+    return row?.url ? ListBloomModel.normalizeUrl(row.url) : null;
+  }
+
+  /**
+   * Upserts the compiled Bloom filter binary chunks for a given list URL or list ID.
+   *
+   * @param urlOrId The canonical blocklist URL string or legacy list ID number.
+   * @param bloomFilter Full serialized binary ArrayBuffer of the Bloom filter.
+   * @param now Current unix timestamp in seconds.
+   */
+  async upsertListBloom(urlOrId: string | number, bloomFilter: ArrayBuffer, now: number): Promise<boolean> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return false;
+
     const uint8Array = new Uint8Array(bloomFilter);
     const statements = [];
 
-    // Delete existing chunks for this list
+    // Ensure parent metadata row exists for foreign key integrity
     statements.push(
-      this.db.prepare("DELETE FROM list_blooms WHERE list_id = ?").bind(listId)
+      this.db.prepare(
+        "INSERT OR IGNORE INTO global_list_metadata (url, created_at) VALUES (?, ?)"
+      ).bind(canonicalUrl, now)
     );
 
-    // Insert new chunks (1.5MB per chunk, <= 2MB D1 limit)
+    // Delete existing chunks for this global list
+    statements.push(
+      this.db.prepare("DELETE FROM global_list_blooms WHERE url = ?").bind(canonicalUrl)
+    );
+
+    // Insert new chunks (1.5MB per chunk, well within the 2MB D1 statement boundary)
     let chunkIndex = 0;
     for (let offset = 0; offset < uint8Array.length; offset += BLOOM_CHUNK_SIZE) {
       const chunkData = uint8Array.slice(offset, offset + BLOOM_CHUNK_SIZE).buffer as ArrayBuffer;
       statements.push(
         this.db.prepare(
-          "INSERT INTO list_blooms (list_id, chunk_index, bloom_filter_chunk, updated_at) VALUES (?, ?, ?, ?)"
-        ).bind(listId, chunkIndex, chunkData, now)
+          "INSERT INTO global_list_blooms (url, chunk_index, bloom_filter_chunk, updated_at) VALUES (?, ?, ?, ?)"
+        ).bind(canonicalUrl, chunkIndex, chunkData, now)
       );
       chunkIndex++;
     }
@@ -30,25 +75,34 @@ export class ListBloomModel {
   }
 
   /**
-   * Whether any bloom chunk is stored for this list.
+   * Probes whether any bloom chunk is stored for the specified list URL or list ID.
    *
-   * getListBloom concatenates every chunk (~2.4MB for a 1M-domain list), which
-   * is far too much work to answer a yes/no question - and doing it for several
-   * lists concurrently would blow past the memory ceiling combineAndPromote
-   * maintains by loading one list at a time.
+   * Uses LIMIT 1 existence probe to avoid loading full binary chunks into memory.
    */
-  async hasListBloom(listId: number): Promise<boolean> {
+  async hasListBloom(urlOrId: string | number): Promise<boolean> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return false;
+
     const row = await this.db.prepare(
-      "SELECT 1 AS present FROM list_blooms WHERE list_id = ? LIMIT 1"
-    ).bind(listId).first<{ present: number }>();
+      "SELECT 1 AS present FROM global_list_blooms WHERE url = ? LIMIT 1"
+    ).bind(canonicalUrl).first<{ present: number }>();
     return !!row;
   }
 
-  async getListBloom(listId: number): Promise<ArrayBuffer | null> {
+  /**
+   * Retrieves and concatenates all binary chunks for a list URL or list ID into a single ArrayBuffer.
+   *
+   * @param urlOrId The canonical blocklist URL string or legacy list ID number.
+   * @returns Concatenated ArrayBuffer or null if not found.
+   */
+  async getListBloom(urlOrId: string | number): Promise<ArrayBuffer | null> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return null;
+
     const { results } = await this.db.prepare(
-      "SELECT bloom_filter_chunk FROM list_blooms WHERE list_id = ? ORDER BY chunk_index ASC"
+      "SELECT bloom_filter_chunk FROM global_list_blooms WHERE url = ? ORDER BY chunk_index ASC"
     )
-      .bind(listId)
+      .bind(canonicalUrl)
       .all<{ bloom_filter_chunk: ArrayBuffer }>();
 
     if (!results || results.length === 0) return null;
@@ -69,54 +123,18 @@ export class ListBloomModel {
     return combined.buffer as ArrayBuffer;
   }
 
-  async deleteListBloom(listId: number): Promise<boolean> {
+  /**
+   * Deletes all compiled Bloom filter chunks for the specified list URL or list ID.
+   */
+  async deleteListBloom(urlOrId: string | number): Promise<boolean> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return false;
+
     const result = await this.db.prepare(
-      "DELETE FROM list_blooms WHERE list_id = ?"
+      "DELETE FROM global_list_blooms WHERE url = ?"
     )
-      .bind(listId)
+      .bind(canonicalUrl)
       .run();
     return result.success;
-  }
-
-  async getActiveListBloomsForProfile(profileId: string): Promise<ArrayBuffer[]> {
-    const { results } = await this.db.prepare(`
-      SELECT lb.list_id, lb.bloom_filter_chunk
-      FROM list_blooms lb
-      JOIN lists l ON lb.list_id = l.id
-      WHERE l.profile_id = ? AND l.enabled = 1
-      ORDER BY lb.list_id ASC, lb.chunk_index ASC
-    `)
-      .bind(profileId)
-      .all<{ list_id: number; bloom_filter_chunk: ArrayBuffer }>();
-
-    if (!results || results.length === 0) return [];
-
-    // Group chunks by list_id
-    const groups = new Map<number, ArrayBuffer[]>();
-    for (const row of results) {
-      if (!groups.has(row.list_id)) {
-        groups.set(row.list_id, []);
-      }
-      groups.get(row.list_id)!.push(row.bloom_filter_chunk);
-    }
-
-    // Combine chunks for each list_id
-    const blooms: ArrayBuffer[] = [];
-    for (const [, chunks] of groups.entries()) {
-      const totalLength = chunks.reduce((acc, chunk) => {
-        const len = chunk.byteLength ?? (chunk as any).length;
-        return acc + len;
-      }, 0);
-      const combined = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        const chunkArr = new Uint8Array(chunk);
-        combined.set(chunkArr, offset);
-        offset += chunkArr.length;
-      }
-      blooms.push(combined.buffer as ArrayBuffer);
-    }
-
-    return blooms;
   }
 }

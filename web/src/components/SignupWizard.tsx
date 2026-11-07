@@ -19,6 +19,8 @@ interface AuthConfig {
   optional_session_expiration_days?: number;
   has_users?: boolean;
   registration_enabled?: boolean;
+  max_users?: number | null;
+  max_users_reached?: boolean;
 }
 
 /**
@@ -90,7 +92,10 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
     handleSignupSubmit
   } = useSignupWizard({ authConfig, turnstileReady, onSuccess });
 
-  if (authConfig && authConfig.has_users !== false && authConfig.registration_enabled === false) {
+  const isMaxUsersReached = Boolean(authConfig?.max_users_reached);
+  const isRegistrationDisabled = authConfig && authConfig.has_users !== false && authConfig.registration_enabled === false;
+
+  if (isRegistrationDisabled || isMaxUsersReached) {
     return (
       <div className="space-y-6 text-center">
         <div className="flex flex-col items-center">
@@ -103,8 +108,14 @@ export const SignupWizard: React.FC<SignupWizardProps> = ({
             {t("auth.signup")}
           </H3>
         </div>
-        <Callout intent={Intent.WARNING} icon="lock" title={t("auth.registrationDisabledTitle", "注册已停用")}>
-          {t("auth.registrationDisabledDesc", "当前系统已暂停开放新用户注册，请联系系统管理员分配账号。")}
+        <Callout
+          intent={isMaxUsersReached ? Intent.DANGER : Intent.WARNING}
+          icon={isMaxUsersReached ? "error" : "lock"}
+          title={isMaxUsersReached ? t("auth.maxUsersReachedTitle", "用户配额已满") : t("auth.registrationDisabledTitle", "注册已停用")}
+        >
+          {isMaxUsersReached
+            ? t("auth.maxUsersReachedDesc", "当前系统注册用户数已达到上限，暂不接受新用户注册。请联系系统管理员。")
+            : t("auth.registrationDisabledDesc", "当前系统已暂停开放新用户注册，请联系系统管理员获取账号。")}
         </Callout>
         <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-center items-center text-sm">
           <button

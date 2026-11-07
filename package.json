@@ -53,6 +53,11 @@
     "test:compat": "tsx test/test_legacy_compat.ts",
     "test:turso": "tsx test/test_turso.ts",
     "test:turnstile": "tsx test/test_turnstile.ts",
+    "test:max-users": "tsx test/test_max_users.ts",
+    "test:global-lists": "tsx test/test_global_lists.ts",
+    "test:distribute-filter": "tsx test/test_distribute_filter.ts",
+    "test:quad9": "tsx test/test_quad9_transport.ts",
+    "test:sync-optimizations": "tsx test/test_sync_optimizations.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "test:reset": "tsx test/test_serverfull_reset.ts",
     "lint": "oxlint",
@@ -80,13 +85,13 @@
     "url": "https://github.com/Obein/DNS-Worker/issues"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261101.1",
+    "@cloudflare/workers-types": "^5.20261107.1",
     "@types/node": "^26.6.6",
     "concurrently": "^10.0.6",
-    "oxlint": "^1.90.0",
+    "oxlint": "^1.92.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "wrangler": "^4.156.0"
+    "wrangler": "^4.158.0"
   },
   "overrides": {
     "esbuild": "^0.28.1",

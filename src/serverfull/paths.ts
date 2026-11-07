@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { APP_VERSION } from '../constants/version';
 import { writeDefaultConfigFile } from './defaults';
 
 /**
@@ -44,7 +45,7 @@ export function getPackageVersion(): string {
       if (pkg.version) return pkg.version;
     }
   } catch {}
-  return '1.0.0';
+  return APP_VERSION;
 }
 
 /**

@@ -190,6 +190,9 @@
     "totpFormatError": "Bitte geben Sie einen gültigen 6-stelligen Code ein",
     "registrationDisabledTitle": "Registrierung deaktiviert",
     "registrationDisabledDesc": "Die Registrierung neuer Benutzer ist derzeit deaktiviert. Bitte wenden Sie sich an den Systemadministrator.",
+    "maxUsersReachedTitle": "Benutzerkontingent erreicht",
+    "maxUsersReachedDesc": "Die maximale Anzahl registrierter Benutzer wurde erreicht. Neue Registrierungen sind vorübergehend geschlossen. Bitte wenden Sie sich an einen Systemadministrator.",
+    "maxUsersReached": "Das Benutzerlimit wurde erreicht. Neue Benutzer können nicht erstellt werden.",
     "backToLogin": "Zurück zur Anmeldung",
     "jwtSecretPreset": "Standard-JWT_SECRET erkannt. Bitte ändern Sie das voreingestellte JWT_SECRET in den Umgebungsvariablen vor der Bereitstellung.",
     "jwtSecretMissing": "JWT_SECRET fehlt. Bitte konfigurieren Sie einen sicheren Schlüssel in den Umgebungsvariablen vor der Bereitstellung.",
@@ -535,7 +538,8 @@
     "singleSyncStarted": "Listensynchronisierung gestartet",
     "checkWhitelisted": "Von dieser Liste erlaubt",
     "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
-    "checkViaPattern": "(entspricht einer Musterregel)"
+    "checkViaPattern": "(entspricht einer Musterregel)",
+    "systemDistributed": "System"
   },
   "settings": {
     "title": "Profileinstellungen",
@@ -959,6 +963,9 @@
     "usePasskeyInstead": "Mit Passkey bestätigen",
     "changePasswordWithPasskey": "Mit Passkey bestätigen & ändern",
     "enableRegistration": "Benutzerregistrierung aktivieren",
+    "userLimits": "Benutzerkontingente & Limits",
+    "maxUsers": "Maximale Benutzeranzahl",
+    "maxUsersHelper": "Begrenzung der maximal erstellbaren/registrierbaren Benutzer im System (0 oder leer für unbegrenzt)",
     "timezone": "Zeitzone",
     "timezoneAuto": "Automatisch (Browser-Standard)",
     "totpCode": "Authenticator-Code",
@@ -1056,5 +1063,20 @@
   "meta": {
     "defaultDesc": "Sichere, schnelle und anpassbare DNS-Auflösung für alle Ihre Geräte. Basiert auf Cloudflare Workers, quelloffen und datenschutzorientiert.",
     "setupDesc": "Konfigurieren Sie Ihre Geräte für die Verwendung von DNS Worker."
+  },
+  "admin": {
+    "distributeFilter": {
+      "title": "Filter verteilen (nur Admins)",
+      "description": "Verteilen Sie eine Filterliste an die Profile aller Benutzer. Überspringt automatisch Benutzer, die diesen Filter bereits haben. Benutzer können verteilte Filter jederzeit löschen.",
+      "quickPresets": "Schnellvoreinstellungen",
+      "urlLabel": "Filterlisten-URL",
+      "urlHelper": "Unterstützt AdGuard-, Hosts-, EasyList- und Standard-Regel-URLs",
+      "submitBtn": "Jetzt verteilen",
+      "toastSuccess": "Filter erfolgreich an {{count}} Benutzer verteilt",
+      "resultTitle": "Verteilung abgeschlossen",
+      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
+      "addedUsers": "Hinzugefügte Benutzer",
+      "skippedUsers": "Übersprungene Benutzer"
+    }
   }
 }

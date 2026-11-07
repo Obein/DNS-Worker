@@ -180,23 +180,36 @@ export class NodeD1Database implements D1Database {
     }
   }
 
+  private batchMutex: Promise<void> = Promise.resolve();
+
   prepare(query: string): D1PreparedStatement {
     return new NodeD1PreparedStatement(this.rawDb, query) as unknown as D1PreparedStatement;
   }
 
   async batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]> {
-    this.rawDb.exec('BEGIN IMMEDIATE');
+    const acquireLock = this.batchMutex;
+    let releaseLock: () => void;
+    this.batchMutex = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    await acquireLock;
     try {
-      const results: D1Result<T>[] = [];
-      for (const stmt of statements) {
-        const res = await stmt.run<T>();
-        results.push(res);
+      this.rawDb.exec('BEGIN IMMEDIATE');
+      try {
+        const results: D1Result<T>[] = [];
+        for (const stmt of statements) {
+          const res = await stmt.run<T>();
+          results.push(res);
+        }
+        this.rawDb.exec('COMMIT');
+        return results;
+      } catch (err) {
+        this.rawDb.exec('ROLLBACK');
+        throw err;
       }
-      this.rawDb.exec('COMMIT');
-      return results;
-    } catch (err) {
-      this.rawDb.exec('ROLLBACK');
-      throw err;
+    } finally {
+      releaseLock!();
     }
   }
 

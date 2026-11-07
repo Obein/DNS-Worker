@@ -4,7 +4,7 @@ import { ListModel } from "../../models/list";
 import { ProfileBloomModel } from "../../models/profileBloom";
 import { ListBloomModel } from "../../models/listBloom";
 import { combineAndPromote } from "./combine";
-import { syncSingleList } from "./singleListSync";
+import { syncSingleList, syncGlobalList } from "./singleListSync";
 
 /**
  * 正在执行的同步任务描述
@@ -17,8 +17,7 @@ interface InFlightSync {
 
 /**
  * 内存级 Profile 同步并发互斥锁（按 profileId 隔离）。
- * 彻底防止多协程（例如用户连续点击“同步全部”、Cron 定时任务并发触发、或多个列表同时同步）
- * 导致的大列表重复拉取、内存飙升与 D1 SQLite 数据库写锁冲突。
+ * 彻底防止多协程导致的大列表重复拉取、内存飙升与 D1 SQLite 数据库写锁冲突。
  */
 const inFlightSyncs = new Map<string, InFlightSync>();
 
@@ -37,7 +36,74 @@ export function _resetInFlightSyncsForTesting(): void {
 }
 
 /**
- * 【Cron 专用】每次触发时处理**单个**最旧的订阅列表。
+ * 【Cron / 系统侧统一更新专用】
+ * 周期性扫描全系统活跃的唯一订阅列表 URL，挑选最陈旧的一个进行网络同步与布隆编译。
+ * 若上游列表内容发生实质变动，自动触发所有订阅该列表的 Profile 进行合并晋升。
+ * 若上游命中 304 Not Modified，0 重新编译与 0 Profile 级合并消耗。
+ */
+export async function syncNextGlobalList(
+  env: Env,
+  ctx: ExecutionContext
+): Promise<boolean> {
+  const listModel = new ListModel(env.DB);
+  const listBloomModel = new ListBloomModel(env.DB);
+  const profileBloomModel = new ProfileBloomModel(env.DB);
+  const profileModel = new ProfileModel(env.DB);
+  const now = Math.floor(Date.now() / 1000);
+
+  const syncIntervalSec = Number(env.SYNC_PROFILE_INTERVAL_SEC) || 86400;
+  const cutoffTime = now - syncIntervalSec;
+
+  const staleUrls = await listModel.getDistinctActiveUrls(cutoffTime, 1);
+  if (staleUrls.length === 0) {
+    return false;
+  }
+
+  const targetUrl = staleUrls[0];
+  console.log(`[Sync System] Checking unified update for global list: ${targetUrl}`);
+
+  try {
+    const { notModified, syncError } = await syncGlobalList(targetUrl, env, listModel, listBloomModel, now);
+
+    if (!notModified && !syncError) {
+      // 列表内容发生变动：查找所有订阅此 URL 的已启用 Profile，批量重新合并其布隆过滤器
+      const affectedProfiles = await listModel.getProfilesSubscribingToUrl(targetUrl);
+      console.log(`[Sync System] List updated: recompiling filters for ${affectedProfiles.length} affected profile(s).`);
+
+      const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
+      const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
+
+      for (const profileId of affectedProfiles) {
+        try {
+          await combineAndPromote(
+            profileId,
+            listModel,
+            listBloomModel,
+            profileBloomModel,
+            profileModel,
+            ctx,
+            now,
+            maxDomains,
+            falsePositiveRate,
+            env
+          );
+        } catch (combErr) {
+          console.error(`[Sync System] Failed to recombine profile ${profileId}:`, combErr);
+        }
+      }
+    } else if (notModified) {
+      console.log(`[Sync System] List ${targetUrl} 304 Not Modified: 0 profiles need recombine.`);
+    }
+
+    return true;
+  } catch (err) {
+    console.error(`[Sync System] Error updating global list ${targetUrl}:`, err);
+    return false;
+  }
+}
+
+/**
+ * 【Cron 专用】每次触发时处理指定 Profile 下单个最旧的订阅列表。
  */
 export async function syncNextListForProfile(
   profileId: string,
@@ -105,12 +171,9 @@ async function _executeSyncNextListForProfile(
       .sort((a, b) => (a.last_synced_at ?? 0) - (b.last_synced_at ?? 0));
 
     if (pendingLists.length === 0) {
-      // 逻辑重入边际情况：所有列表已完成，进行合并
       const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
       const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
 
-      // 【熔断器】在进入高能 CPU 运算前，抢先将时间戳标记为当前时间。
-      // 避免万一合并阶段超时崩掉，导致该 Profile 下次仍处于 stale 态，从而陷入每分钟无限重试超时的死循环。
       await profileModel.updateListUpdatedAt(profileId, now);
 
       await combineAndPromote(
@@ -128,7 +191,7 @@ async function _executeSyncNextListForProfile(
       return;
     }
 
-    // ── 处理单个列表 ──────────────────────────────────────────────────────────
+    // ── 同步全局列表 ──────────────────────────────────────────────────────────
     const list = pendingLists[0];
     await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
 
@@ -141,7 +204,6 @@ async function _executeSyncNextListForProfile(
       const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
       const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
 
-      // 【熔断器】先标记该 Profile 为 Fresh 态，以防 combineAndPromote 超时 crash 造成死循环重试
       await profileModel.updateListUpdatedAt(profileId, now);
 
       await combineAndPromote(
@@ -158,25 +220,19 @@ async function _executeSyncNextListForProfile(
       );
       console.log(
         `[Sync] Profile ${profileId}: all ${activeUpdatedLists.length} list(s) processed — ` +
-          `promoted combined active bloom.`
-      );
-    } else {
-      const remaining = activeUpdatedLists.filter(
-        (l) => (l.last_synced_at ?? 0) <= lastFullSync
-      ).length;
-      console.log(
-        `[Sync] Profile ${profileId}: ${remaining} active list(s) remaining in this cycle.`
+          `combined Bloom filter promoted to active.`
       );
     }
   } catch (e) {
-    console.error(`[Sync] Critical failure for Profile ${profileId}:`, e);
-    // 防止单点故障永久阻塞
+    console.error(`[Sync] Critical failure in sync pass for Profile ${profileId}:`, e);
     await profileModel.updateListUpdatedAt(profileId, now);
   }
 }
 
 /**
- * 【手动/全量同步专用】同步该 Profile 下的所有已启用订阅列表。
+ * 【用户侧 / Profile 手动触发全量合并专用】
+ * 用户侧仅合并系统侧已存储编译的过滤器，不向外部源发起冗余的网络请求。
+ * 若列表尚未在系统全局编译过，则按需同步一次。
  */
 export async function syncAllListsForProfile(
   profileId: string,
@@ -187,12 +243,12 @@ export async function syncAllListsForProfile(
   if (activeSync) {
     if (activeSync.type === "all") {
       console.log(
-        `[Sync] Profile ${profileId}: full sync already in-flight. Joining active promise.`
+        `[Sync] Profile ${profileId}: manual sync already in-flight. Joining active promise.`
       );
       return activeSync.promise;
     }
     console.log(
-      `[Sync] Profile ${profileId}: waiting for in-flight ${activeSync.type} sync to complete before starting full sync.`
+      `[Sync] Profile ${profileId}: waiting for in-flight ${activeSync.type} sync to finish before running manual sync.`
     );
     await activeSync.promise.catch(() => {});
   }
@@ -241,33 +297,20 @@ async function _executeSyncAllListsForProfile(
       return;
     }
 
-    // 依次串行同步所有列表，并在每个列表处理完成后相隔 1 秒，防范 CPU 激增与锁争用
-    let anyListModified = false;
-    for (let i = 0; i < activeLists.length; i++) {
-      const list = activeLists[i];
-      const res = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
-      if (!res.notModified) {
-        anyListModified = true;
-      }
-      if (i < activeLists.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+    // 用户侧仅合并系统侧存储的过滤器：确保缺失全局布隆的个别列表被系统初始化编译一次
+    for (const list of activeLists) {
+      const hasBloom = await listBloomModel.hasListBloom(list.url);
+      if (!hasBloom) {
+        await syncGlobalList(list.url, env, listModel, listBloomModel, now);
       }
     }
 
-    // 若全部列表均命中 304 协商缓存，已有合并布隆完全有效，直接跳过合并晋升阶段，零 CPU/DB 消耗
-    if (!anyListModified) {
-      await profileModel.updateListUpdatedAt(profileId, now);
-      console.log(`[Sync] Profile ${profileId}: all ${activeLists.length} list(s) were 304 Not Modified — skipped combine.`);
-      return;
-    }
-
-    // 【熔断器】先更新主表时间，以防合并过程中崩溃导致无限重试
     await profileModel.updateListUpdatedAt(profileId, now);
 
     const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
     const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
 
-    // 全部同步完毕后，执行合并和晋升操作
+    // 从系统侧全局存储中高速本地合并并晋升
     await combineAndPromote(
       profileId,
       listModel,
@@ -280,16 +323,16 @@ async function _executeSyncAllListsForProfile(
       falsePositiveRate,
       env
     );
-    console.log(`[Sync] Profile ${profileId}: manual sync cycle complete.`);
+    console.log(`[Sync] Profile ${profileId}: manual recombine cycle complete.`);
   } catch (e) {
     console.error(`[Sync] Critical failure in manual sync for Profile ${profileId}:`, e);
-    // 防止单点故障永久阻塞
     await profileModel.updateListUpdatedAt(profileId, now);
   }
 }
 
 /**
- * 【单个列表手动同步专用】针对指定 listId 进行单独同步并触发 Profile 布隆过滤器与 AdGuard 规则重构。
+ * 【用户侧 / 单个列表手动触发合并专用】
+ * 用户侧仅合并系统侧存储的过滤器，快速重构 Profile 的布隆过滤器与扩展规则。
  */
 export async function syncSingleListForProfile(
   profileId: string,
@@ -358,11 +401,14 @@ async function _executeSyncSingleListForProfile(
       return;
     }
 
-    // 1. 单独同步该列表
-    const { notModified } = await syncSingleList(profileId, list, env, listModel, listBloomModel, now);
+    // 检查系统全局存储中是否已有编译产物，若缺失则补充拉取一次
+    const hasBloom = await listBloomModel.hasListBloom(list.url);
+    if (!hasBloom) {
+      await syncGlobalList(list.url, env, listModel, listBloomModel, now);
+    }
 
-    // 2. 若列表处于启用状态且内容发生变动，触发该 Profile 整体布隆过滤器与 AdGuard 规则的重构合并
-    if (list.enabled && !notModified) {
+    // 用户侧仅合并系统侧存储的过滤器
+    if (list.enabled) {
       await profileModel.updateListUpdatedAt(profileId, now);
       await combineAndPromote(
         profileId,
@@ -376,13 +422,10 @@ async function _executeSyncSingleListForProfile(
         Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001,
         env
       );
-    } else if (list.enabled && notModified) {
-      await profileModel.updateListUpdatedAt(profileId, now);
-      console.log(`[Sync] Profile ${profileId}: single list #${listId} 304 Not Modified — skipped combine.`);
     }
-    console.log(`[Sync] Profile ${profileId}: single list #${listId} sync complete.`);
+    console.log(`[Sync] Profile ${profileId}: list #${listId} merged from system storage.`);
   } catch (e) {
-    console.error(`[Sync] Critical failure in single list sync for Profile ${profileId}, list ${listId}:`, e);
+    console.error(`[Sync] Critical failure in single list merge for Profile ${profileId}, list ${listId}:`, e);
   }
 }
 
@@ -428,39 +471,28 @@ async function _executeRebuildProfileBloom(
   const profile = await profileModel.getById(profileId);
   const priorListUpdatedAt = profile?.list_updated_at ?? 0;
 
-  // A list can be enabled while it has no bloom yet - added disabled in bulk, or
-  // its last sync failed. combineAndPromote would skip it silently, so fetch it
-  // first. hasListBloom is an existence probe: getListBloom would concatenate
-  // every chunk of every list just to answer a boolean.
   const activeLists = (await listModel.getLists(profileId)).filter((l) => !!l.enabled);
   const presence = await Promise.all(
     activeLists.map((l) =>
       listBloomModel
-        .hasListBloom(l.id)
-        // Treat an unreadable row as present rather than downloading on a
-        // transient D1 error; cron will catch it on its next pass.
+        .hasListBloom(l.url)
         .catch(() => true)
     )
   );
 
-  // Sync the list that is actually missing, rather than delegating to
-  // syncNextListForProfile: a list whose sync errored carries a recent
-  // last_synced_at, so that picker would fetch a healthy list ahead of it.
-  // One per call keeps this bounded; cron handles any others.
   const missingIndex = presence.findIndex((present) => !present);
   if (missingIndex !== -1) {
     const missing = activeLists[missingIndex];
     try {
-      await syncSingleList(
-        profileId,
-        missing,
+      await syncGlobalList(
+        missing.url,
         env,
         listModel,
         listBloomModel,
         Math.floor(Date.now() / 1000)
       );
     } catch (e) {
-      console.error(`[Sync] fetch of list ${missing.id} during rebuild failed:`, e);
+      console.error(`[Sync] fetch of list ${missing.url} during rebuild failed:`, e);
     }
   }
 
@@ -477,8 +509,5 @@ async function _executeRebuildProfileBloom(
     env
   );
 
-  // combineAndPromote 会将 list_updated_at 标记为当前时间戳（类似于完成了一个全量同步周期）。
-  // 由于本次仅为列表删除后的本地重构合并，并未真正重新下载更新所有列表，因此需恢复先前的 list_updated_at；
-  // 否则 Cron 定时任务会误认为刚刚完成了全量更新，从而推迟常规的周期性刷新。
   await profileModel.updateListUpdatedAt(profileId, priorListUpdatedAt);
 }

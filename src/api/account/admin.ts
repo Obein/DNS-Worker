@@ -3,8 +3,13 @@ import { generateId } from "../../lib/auth";
 import { hashPassword } from "../../utils/crypto";
 import { UserModel } from "../../models/user";
 import { ProfileModel } from "../../models/profile";
+import { ListModel } from "../../models/list";
+import { ListBloomModel } from "../../models/listBloom";
 import { SystemSettingsModel } from "../../models/systemSettings";
-import { PASSWORD_REGEX, USERNAME_REGEX } from "../../utils/validator";
+import { PASSWORD_REGEX, USERNAME_REGEX, isSafeUrlWithDnsCheck } from "../../utils/validator";
+import { syncGlobalList } from "../../utils/sync/singleListSync";
+import { rebuildProfileBloom } from "../../utils/sync";
+import { pipeline } from "../../pipeline";
 import {
   getDatabaseService,
   isTursoConfigured,
@@ -21,7 +26,8 @@ const ALLOWED_ADMIN_SETTINGS_KEYS = new Set<string>([
   'turnstile_secret_key',
   'turnstile_enabled_signup',
   'turnstile_enabled_login',
-  'registration_enabled'
+  'registration_enabled',
+  'max_users'
 ]);
 
 /**
@@ -51,6 +57,18 @@ export async function handleAdminRequest(
       if (!password || !PASSWORD_REGEX.test(password)) {
         return new Response("Password format error", { status: 400 });
       }
+
+      const systemSettings = new SystemSettingsModel(env.DB);
+      const maxUsersSetting = await systemSettings.get('max_users');
+      const rawMaxUsers = maxUsersSetting !== null ? maxUsersSetting : env.MAX_USERS;
+      const maxUsers = rawMaxUsers !== undefined && rawMaxUsers !== null && rawMaxUsers !== "" ? parseInt(String(rawMaxUsers), 10) : 0;
+      if (maxUsers > 0) {
+        const currentCount = await userModel.count();
+        if (currentCount >= maxUsers) {
+          return new Response("max_users_reached", { status: 400 });
+        }
+      }
+
       const hashedPassword = await hashPassword(password, 2);
       const userId = generateId(15);
       try {
@@ -89,9 +107,21 @@ export async function handleAdminRequest(
 
       const filteredSettings: Record<string, string> = {};
       for (const [key, value] of Object.entries(body)) {
-        if (ALLOWED_ADMIN_SETTINGS_KEYS.has(key) && typeof value === 'string') {
-          // Bound setting value length to prevent unbounded storage usage
-          filteredSettings[key] = value.slice(0, 1024);
+        if (ALLOWED_ADMIN_SETTINGS_KEYS.has(key)) {
+          if (typeof value === 'string') {
+            filteredSettings[key] = value.slice(0, 1024);
+          } else if (typeof value === 'number') {
+            filteredSettings[key] = String(value);
+          }
+        }
+      }
+
+      if (filteredSettings.max_users !== undefined) {
+        const parsed = parseInt(filteredSettings.max_users, 10);
+        if (isNaN(parsed) || parsed < 0) {
+          filteredSettings.max_users = "0";
+        } else {
+          filteredSettings.max_users = String(parsed);
         }
       }
 
@@ -143,6 +173,69 @@ export async function handleAdminRequest(
         }), { headers: { 'Content-Type': 'application/json' } });
       }
     }
+  }
+
+  // 下发过滤器接口: POST /api/admin/distribute-filter
+  if (pathParts[2] === 'distribute-filter') {
+    if (request.method !== 'POST') {
+      return new Response("Method Not Allowed", { status: 405 });
+    }
+
+    let body: { url?: unknown };
+    try {
+      body = await request.json() as { url?: unknown };
+    } catch {
+      return new Response("Invalid JSON payload", { status: 400 });
+    }
+
+    const rawUrl = typeof body?.url === 'string' ? body.url.trim() : '';
+    if (!rawUrl) {
+      return new Response("Missing list URL", { status: 400 });
+    }
+
+    if (!(await isSafeUrlWithDnsCheck(rawUrl))) {
+      return new Response("Invalid list URL. Private networks, localhosts, and internal domains are not allowed.", { status: 400 });
+    }
+
+    const canonicalUrl = ListModel.normalizeUrl(rawUrl);
+    const listModel = new ListModel(env.DB);
+    const listBloomModel = new ListBloomModel(env.DB);
+    const now = Math.floor(Date.now() / 1000);
+
+    // 1. 确保全局布隆过滤器与扩展规则已编译（方案 B）
+    const hasBloom = await listBloomModel.hasListBloom(canonicalUrl);
+    if (!hasBloom) {
+      const syncRes = await syncGlobalList(canonicalUrl, env, listModel, listBloomModel, now);
+      if (syncRes.syncError) {
+        return new Response(JSON.stringify({ error: syncRes.syncError }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // 2. 下发至所有未订阅此 URL 的用户
+    const result = await listModel.distributeListToAllUsers(canonicalUrl);
+
+    // 3. 异步触发所有受影响 Profile 的本地内存快速合并
+    for (const profileId of result.affectedProfileIds) {
+      ctx.waitUntil(
+        rebuildProfileBloom(profileId, env, ctx)
+          .then(() => pipeline.clearCache(profileId, true, env))
+          .catch((e) => console.error(`[Admin] Failed to rebuild bloom for profile ${profileId}:`, e))
+      );
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      url: canonicalUrl,
+      totalUsers: result.totalUsers,
+      addedCount: result.addedCount,
+      skippedCount: result.skippedCount,
+      addedUsernames: result.addedUsernames,
+      skippedUsernames: result.skippedUsernames,
+      affectedProfilesCount: result.affectedProfileIds.length
+    }), { headers: { 'Content-Type': 'application/json' } });
   }
 
   return new Response("Not Found", { status: 404 });

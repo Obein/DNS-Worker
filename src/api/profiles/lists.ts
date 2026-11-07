@@ -47,9 +47,9 @@ export async function handleProfileListsRequest(
       const list = await listModel.getListById(listId, profileId);
       if (!list) return new Response("List Not Found", { status: 404 });
 
-      const buffer = await new ListBloomModel(env.DB).getListBloom(listId);
+      const buffer = await new ListBloomModel(env.DB).getListBloom(list.url);
       const adguardRulesModel = env.DB ? new AdguardRulesModel(env.DB) : null;
-      const adguardPayload = adguardRulesModel ? await adguardRulesModel.getListRules(listId) : null;
+      const adguardPayload = adguardRulesModel ? await adguardRulesModel.getListRules(list.url) : null;
 
       if (!buffer && !adguardPayload) {
         return new Response(JSON.stringify({ domain, blocked: false, synced: false }), {
@@ -255,7 +255,7 @@ export async function handleProfileListsRequest(
       let insertedCount = 0;
       if (itemsToInsert.length > 0) {
         insertedCount = await listModel.addListsBulk(profileId, itemsToInsert);
-        ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
+        ctx.waitUntil(rebuildProfileBloom(profileId, env, ctx));
         ctx.waitUntil(pipeline.clearCache(profileId, true, env));
       }
 
@@ -286,8 +286,21 @@ export async function handleProfileListsRequest(
   }
 
   if (request.method === 'DELETE') {
-    const { id } = await request.json() as { id: number };
-    await listModel.deleteList(id, profileId);
+    let listId = Number(pathParts[4]);
+    if (!Number.isInteger(listId) || listId <= 0) {
+      try {
+        const body = await request.json() as { id?: number };
+        if (typeof body?.id === 'number') {
+          listId = body.id;
+        }
+      } catch {
+        // body may be empty
+      }
+    }
+    if (!listId || listId <= 0) {
+      return new Response("Invalid or missing list id", { status: 400 });
+    }
+    await listModel.deleteList(listId, profileId);
     // 触发纯内存重构合并，并在落库后清除缓存，彻底消除竞态条件与 pending 阻塞
     ctx.waitUntil(
       rebuildProfileBloom(profileId, env, ctx)

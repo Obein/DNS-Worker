@@ -39,16 +39,27 @@ export async function handleAuthRegisterRequest(request: Request, env: Env): Pro
 
   const { username, password, turnstileToken } = await request.json() as any;
   const settingsModel = new SystemSettingsModel(env.DB);
-  const [secretKey, enabled, registrationEnabled, isDbEmpty] = await Promise.all([
+  const [secretKey, enabled, registrationEnabled, maxUsersSetting, isDbEmpty] = await Promise.all([
     settingsModel.get('turnstile_secret_key'),
     settingsModel.get('turnstile_enabled_signup'),
     settingsModel.get('registration_enabled'),
+    settingsModel.get('max_users'),
     userModel.isEmpty()
   ]);
 
   // 停用注册拦截：如果库中已有用户且管理员停用了自主注册，禁止注册
   if (!isDbEmpty && registrationEnabled === 'false') {
     return new Response("registration_disabled", { status: 403 });
+  }
+
+  // 用户数量上限拦截：如果已有用户且达到用户配额，禁止继续注册（首位管理员注册豁免）
+  const rawMaxUsers = maxUsersSetting !== null ? maxUsersSetting : env.MAX_USERS;
+  const maxUsers = rawMaxUsers !== undefined && rawMaxUsers !== null && rawMaxUsers !== "" ? parseInt(String(rawMaxUsers), 10) : 0;
+  if (!isDbEmpty && maxUsers > 0) {
+    const currentCount = await userModel.count();
+    if (currentCount >= maxUsers) {
+      return new Response("max_users_reached", { status: 403 });
+    }
   }
 
   if (enabled === 'true' && secretKey) {

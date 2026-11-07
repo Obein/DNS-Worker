@@ -137,8 +137,13 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
           </Callout>
         )}
 
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 break-all font-mono text-sm">
-          {selectedList?.url}
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 break-all font-mono text-sm flex items-center justify-between gap-2">
+          <span>{selectedList?.url}</span>
+          {Boolean(selectedList?.is_system) && (
+            <Tag intent={Intent.PRIMARY} minimal className="shrink-0 font-sans">
+              {t("filtering.systemDistributed", "系统下发")}
+            </Tag>
+          )}
         </div>
 
         <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3">

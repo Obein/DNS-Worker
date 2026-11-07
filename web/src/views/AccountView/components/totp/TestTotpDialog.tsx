@@ -85,11 +85,16 @@ export const TestTotpDialog: React.FC<TestTotpDialogProps> = ({
         </p>
 
         {success && (
-          <Callout intent={Intent.SUCCESS} icon={<CheckCircle2 size={16} />}>
-            {t(
-              "account.totp.testSuccess",
-              "Verification successful! Your authenticator app is configured properly."
-            )}
+          <Callout intent={Intent.SUCCESS} icon={null}>
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>
+                {t(
+                  "account.totp.testSuccess",
+                  "Verification successful! Your authenticator app is configured properly."
+                )}
+              </span>
+            </div>
           </Callout>
         )}
 

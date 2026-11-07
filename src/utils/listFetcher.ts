@@ -1,4 +1,5 @@
 import { isSafeUrlWithDnsCheck } from "./validator";
+import { getListFetcherUserAgent } from "../constants/version";
 import { parseAdGuardLine, AdGuardRuleKind, ParsedAdGuardRule } from "../lib/adguard";
 
 /** 单个列表的拉取结果 */
@@ -15,14 +16,24 @@ export interface FetchListResult {
   notModified?: boolean;
   /** 上游返回的最新 ETag */
   etag?: string | null;
-  /** 上游返回的最新 Last-Modified */
-  lastModified?: string | null;
+  /** 上游返回的最新 Last-Modified（Unix 秒级时间戳整数） */
+  lastModified?: number | null;
 }
 
 /** 列表拉取的协商缓存选项 */
 export interface FetchListOptions {
   etag?: string | null;
-  lastModified?: string | null;
+  lastModified?: number | null;
+}
+
+/**
+ * 将 RFC 7231 / RFC 2616 HTTP-date 时间文本（如 "Wed, 21 Oct 2015 07:28:00 GMT"）
+ * 解析为系统统一规范的 Unix 秒级时间戳整数。解析失败或为空时返回 null。
+ */
+export function parseHttpDateToUnix(headerVal: string | null | undefined): number | null {
+  if (!headerVal) return null;
+  const parsed = Date.parse(headerVal);
+  return isNaN(parsed) ? null : Math.floor(parsed / 1000);
 }
 
 /** 回调函数：支持同步返回 void（绝大多数场景），仅在出让 CPU 时返回 Promise */
@@ -45,13 +56,25 @@ const TRANSIENT_HTTP_STATUSES = new Set([
 
 /** 默认请求头：携带规范的 User-Agent、Accept 与 Accept-Encoding，启用压缩并规避上游防爬虫/限流误杀 */
 const DEFAULT_FETCH_HEADERS: HeadersInit = {
-  "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
+  "User-Agent": getListFetcherUserAgent(),
   Accept: "text/plain, text/*, */*",
   "Accept-Encoding": "gzip, deflate, br",
 };
 
 const MAX_RETRIES = 2; // 最多重试 2 次（共 3 次请求）
 const BASE_RETRY_DELAY_MS = 1000; // 基础退避延迟（1s -> 2s）
+
+/**
+ * 已知因源站 TLS 配置（如启用 TLS 重新协商、握手超时或证书链缺陷）导致 Cloudflare Workers
+ * 边缘网络抛出 HTTP 525 (SSL Handshake Failed) 的订阅列表与官方 GitHub 镜像映射表。
+ * 当请求源站持续 525 时，透明回退至该源的官方 GitHub 镜像，确保零维护开箱即用。
+ */
+export const KNOWN_TLS_MIRROR_FALLBACKS: Record<string, string> = {
+  "https://big.oisd.nl": "https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_big.txt",
+  "https://big.oisd.nl/domainswild2": "https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_big.txt",
+  "https://small.oisd.nl": "https://raw.githubusercontent.com/sjhgvr/oisd/main/abp_small.txt",
+  "https://small.oisd.nl/domainswild2": "https://raw.githubusercontent.com/sjhgvr/oisd/main/domainswild2_small.txt",
+};
 
 /**
  * 流式拉取单个订阅列表并逐行解析域名。
@@ -78,6 +101,7 @@ export async function fetchListContent(
   const deadline = Date.now() + timeoutMs;
   const MAX_REDIRECTS = 5;
   let lastError: string | null = null;
+  let activeUrl = url;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     // 若为重试轮次，先等待指数退避时间（需确保剩余总超时预算充足）
@@ -90,7 +114,7 @@ export async function fetchListContent(
       await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
 
-    let currentUrl = url;
+    let currentUrl = activeUrl;
     let redirectCount = 0;
     let response: Response;
 
@@ -110,7 +134,7 @@ export async function fetchListContent(
         }
 
         const requestHeaders: Record<string, string> = {
-          "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
+          "User-Agent": getListFetcherUserAgent(),
           Accept: "text/plain, text/*, */*",
           "Accept-Encoding": "gzip, deflate, br",
         };
@@ -118,8 +142,12 @@ export async function fetchListContent(
         if (options?.etag) {
           requestHeaders["If-None-Match"] = options.etag;
         }
-        if (options?.lastModified) {
-          requestHeaders["If-Modified-Since"] = options.lastModified;
+        if (options?.lastModified !== undefined && options?.lastModified !== null) {
+          // 将系统统一存储的 Unix 秒级时间戳转换回 RFC 7231 / RFC 2616 HTTP-date 标准协议格式
+          const httpDate = typeof options.lastModified === 'number'
+            ? new Date(options.lastModified * 1000).toUTCString()
+            : String(options.lastModified);
+          requestHeaders["If-Modified-Since"] = httpDate;
         }
 
         response = await fetch(currentUrl, {
@@ -131,7 +159,7 @@ export async function fetchListContent(
         // Handle HTTP 304 Not Modified conditional response (RFC 7232 / RFC 9110)
         if (response.status === 304) {
           const respEtag = response.headers.get("etag") || options?.etag || null;
-          const respLastModified = response.headers.get("last-modified") || options?.lastModified || null;
+          const respLastModified = parseHttpDateToUnix(response.headers.get("last-modified")) ?? options?.lastModified ?? null;
           return {
             count: 0,
             error: null,
@@ -187,6 +215,20 @@ export async function fetchListContent(
       }
 
       if (!response.ok) {
+        // 若遇到 525 (SSL Handshake Failed)，且源站属于已知 Cloudflare TLS 重协商冲突站点，透明回退至官方镜像
+        if (response.status === 525) {
+          const normalized = currentUrl.replace(/\/+$/, "").toLowerCase();
+          const fallback = KNOWN_TLS_MIRROR_FALLBACKS[normalized];
+          if (fallback && currentUrl !== fallback) {
+            console.warn(
+              `[Fetcher] Origin ${currentUrl} failed with HTTP 525 (TLS renegotiation). Falling back to official mirror: ${fallback}`
+            );
+            activeUrl = fallback;
+            currentUrl = fallback;
+            continue;
+          }
+        }
+
         const statusText = response.statusText || (response.status === 525 ? "SSL Handshake Failed" : "<none>");
         lastError = `HTTP error! Status: ${response.status} ${statusText}`;
 
@@ -289,7 +331,7 @@ export async function fetchListContent(
       }
 
       const respEtag = response.headers.get("etag") || null;
-      const respLastModified = response.headers.get("last-modified") || null;
+      const respLastModified = parseHttpDateToUnix(response.headers.get("last-modified"));
 
       return {
         count,
@@ -302,6 +344,18 @@ export async function fetchListContent(
       };
     } catch (e: any) {
       lastError = e.message || String(e);
+      // 若抛出网络层 TLS 握手异常，同样尝试已知官方镜像回退
+      const normalized = currentUrl.replace(/\/+$/, "").toLowerCase();
+      const fallback = KNOWN_TLS_MIRROR_FALLBACKS[normalized];
+      if (fallback && currentUrl !== fallback) {
+        console.warn(
+          `[Fetcher] Connection error for ${currentUrl} (${lastError}). Falling back to official mirror: ${fallback}`
+        );
+        activeUrl = fallback;
+        currentUrl = fallback;
+        continue;
+      }
+
       if (attempt < MAX_RETRIES && deadline - Date.now() > 2000) {
         console.warn(
           `[Fetcher] Transient network error for ${url}: ${lastError}. Retrying attempt ${attempt + 1}/${MAX_RETRIES}...`

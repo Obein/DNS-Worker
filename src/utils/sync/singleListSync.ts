@@ -14,24 +14,24 @@ export interface SingleListSyncResult {
 }
 
 /**
- * 同步单个订阅列表的通用业务逻辑。
- * 
- * 性能优化：
- * 1. 支持 HTTP 304 Not Modified 协商缓存，未变更列表 0 CPU/存储消耗。
- * 2. 使用流式下载与行解析，直接在下载过程中动态将域名填入布隆过滤器。
- * 3. 采用 addPipePipe 零堆内存分配 FNV 前缀哈希，消除数十万次字符串拼接。
- * 4. 协作式调度每批出让 CPU 喘息，规避 CPU 超载。
- * 
- * @returns 最终的同步结果包含错误信息及是否命中未修改缓存
+ * Synchronizes an external blocklist URL globally on the system side.
+ *
+ * Performance and Architectural Guarantees:
+ * 1. Global Dedup: Any list URL subscribed to across multiple profiles is fetched and compiled ONLY ONCE globally.
+ * 2. HTTP 304 Not Modified negotiation avoids unnecessary downstream compilation.
+ * 3. Compiles Bloom filter chunks into `global_list_blooms` and extended rules into `global_list_adguard_rules`.
+ * 4. Cooperative yielding during line scanning bounds event-loop latency.
+ *
+ * @returns Sync result containing error message and notModified flag.
  */
-export async function syncSingleList(
-  profileId: string,
-  list: { id: number; url: string; etag?: string | null; last_modified?: string | null },
+export async function syncGlobalList(
+  url: string,
   env: Env,
   listModel: ListModel,
   listBloomModel: ListBloomModel,
   now: number
 ): Promise<SingleListSyncResult> {
+  const canonicalUrl = ListModel.normalizeUrl(url);
   const timeoutMs = Number(env.SYNC_TIMEOUT_MS) || 90000;
   const maxListDomains = Number(env.MAX_LIST_DOMAINS) || 500000;
   const maxDomains = Number(env.MAX_SYNC_DOMAINS) || 1000000;
@@ -39,11 +39,12 @@ export async function syncSingleList(
   const falsePositiveRate = Number(env.BLOOM_FALSE_POSITIVE_RATE) || 0.0001;
   const maxRegexRules = Number(env.MAX_REGEX_RULES) || 1000;
 
-  // 协作式调度参数：降低单次持续计算量，适度平摊 CPU 峰值
+  // Cooperative scheduling parameters
   const yieldBatchSize = Number(env.SYNC_YIELD_BATCH_SIZE) || 5000;
   const yieldSleepMs = Number(env.SYNC_YIELD_SLEEP_MS) || 10;
 
-  // 创建对应的列表布隆过滤器与扩展规则载荷
+  const meta = await listModel.getGlobalListMetadata(canonicalUrl);
+
   const listBloom = BloomFilter.create(maxDomains, falsePositiveRate);
   const adguardPayload: AdGuardPayload = {
     exceptions: [],
@@ -54,9 +55,8 @@ export async function syncSingleList(
   let count = 0;
   let domainsSinceYield = 0;
 
-  // 流式下载并按行解析规则，分流分类存储，携带协商缓存头
   const { error: fetchError, truncated, notModified, etag, lastModified } = await fetchListContent(
-    list.url,
+    canonicalUrl,
     maxListBytes,
     timeoutMs,
     (rule: ParsedAdGuardRule) => {
@@ -64,7 +64,6 @@ export async function syncSingleList(
         if (rule.kind === AdGuardRuleKind.BLOOM_DOMAIN && rule.domain) {
           listBloom.add(rule.domain);
           if (rule.includeSubdomains) {
-            // 零内存分配：预计算前缀哈希种子，无需拼接产生新字符串
             listBloom.addPipePipe(rule.domain);
           }
           count++;
@@ -95,20 +94,24 @@ export async function syncSingleList(
 
         domainsSinceYield++;
 
-        // 协作式调度：每处理 yieldBatchSize 个规则让出事件循环，注入喘息延迟平摊 CPU 负载
         if (domainsSinceYield >= yieldBatchSize) {
           domainsSinceYield = 0;
           return new Promise<void>((resolve) => setTimeout(resolve, yieldSleepMs));
         }
       }
     },
-    { etag: list.etag, lastModified: list.last_modified }
+    { etag: meta?.etag, lastModified: meta?.last_modified }
   );
 
-  // 协商缓存命中：上游规则未发生变动，直接沿用原有布隆与规则，跳过数据库覆写与后续合并计算
   if (notModified) {
-    console.log(`[Sync] Profile ${profileId}: list #${list.id} 304 Not Modified (using cached rules).`);
-    await listModel.updateListSyncStatus(list.id, now, null, null, etag, lastModified);
+    console.log(`[Sync Global] URL ${canonicalUrl} 304 Not Modified (using cached global bloom).`);
+    await listModel.updateGlobalListMetadata(
+      canonicalUrl,
+      now,
+      etag ?? meta?.etag,
+      lastModified ?? meta?.last_modified,
+      null
+    );
     return { syncError: null, notModified: true };
   }
 
@@ -118,31 +121,49 @@ export async function syncSingleList(
     if (truncated) {
       syncError = `List truncated at ${(maxListBytes / 1024 / 1024).toFixed(0)} MB: Maximum list size reached. Excess rules were omitted.`;
       console.warn(
-        `[Sync] Profile ${profileId}: list #${list.id} truncated at ${(maxListBytes / 1024 / 1024).toFixed(0)} MB with ${count} rules. Warning: ${syncError}`
+        `[Sync Global] URL ${canonicalUrl} truncated at ${(maxListBytes / 1024 / 1024).toFixed(0)} MB with ${count} rules. Warning: ${syncError}`
       );
     }
-    // 写入列表级布隆过滤器和扩展规则到数据库
+
     const saveOps: Promise<any>[] = [
-      listBloomModel.upsertListBloom(list.id, listBloom.toUint8Array().buffer as ArrayBuffer, now)
+      listBloomModel.upsertListBloom(canonicalUrl, listBloom.toUint8Array().buffer as ArrayBuffer, now)
     ];
     if (env?.DB) {
-      saveOps.push(new AdguardRulesModel(env.DB).upsertListRules(list.id, adguardPayload, now));
+      saveOps.push(new AdguardRulesModel(env.DB).upsertListRules(canonicalUrl, adguardPayload, now));
     }
     await Promise.all(saveOps);
     if (!truncated) {
       console.log(
-        `[Sync] Profile ${profileId}: successfully updated list #${list.id} with ${count} rules.`
+        `[Sync Global] successfully updated global list ${canonicalUrl} with ${count} rules.`
       );
     }
   } else {
-    // 拉取失败：跳过，并沿用原有列表缓存，记录错误原因，保持启用状态
     console.warn(
-      `[Sync] Profile ${profileId}: failed to fetch/parse list #${list.id}. ` +
+      `[Sync Global] failed to fetch/parse global list ${canonicalUrl}. ` +
         `Skipping and keeping old bloom. Error: ${fetchError}`
     );
   }
 
-  // 无论成功还是失败，都更新 last_synced_at、etag、last_modified 并记录 syncError
-  await listModel.updateListSyncStatus(list.id, now, null, syncError, etag, lastModified);
+  await listModel.updateGlobalListMetadata(
+    canonicalUrl,
+    now,
+    etag ?? meta?.etag,
+    lastModified ?? meta?.last_modified,
+    syncError
+  );
   return { syncError, notModified: false };
+}
+
+/**
+ * Backward-compatible adapter delegating per-profile list sync to the system-side global list synchronizer.
+ */
+export async function syncSingleList(
+  _profileId: string,
+  list: { id: number; url: string; etag?: string | null; last_modified?: number | string | null },
+  env: Env,
+  listModel: ListModel,
+  listBloomModel: ListBloomModel,
+  now: number
+): Promise<SingleListSyncResult> {
+  return await syncGlobalList(list.url, env, listModel, listBloomModel, now);
 }
