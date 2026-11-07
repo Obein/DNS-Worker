@@ -261,8 +261,10 @@ export function resolveUpstreamEndpoint(rawUpstreamUrl: string): UpstreamEndpoin
  * Upstream Protocol Priority:
  * 1. HTTP/3 (DoH3 / RFC 9114) -> Future extension point
  * 2. HTTP/2 (RFC 8484 §5.2)   -> Prioritizes native multiplexed H2 connections (Node.js Serverfull)
- * 3. HTTP/1.1 (Standard Fetch)-> Universal fallback for runtimes without native H2
- * 4. DoT (RFC 7858)          -> Automatic resilient fallback on HTTP 505 (H2 required) or 525 (TLS error)
+ * 3. HTTP/1.1 (Standard Fetch)-> Universal fallback for runtimes without native H2 (Cloudflare Workers)
+ *
+ * If an upstream DoH query fails, the failure details (HTTP status code, status text, upstream body snippet)
+ * are raised directly via UpstreamHttpError to ensure transparent diagnostics without silent protocol switching.
  *
  * @param endpoint - Resolved upstream endpoint information.
  * @param queryRaw - Wire-format DNS query packet.
@@ -307,20 +309,6 @@ export async function fetchFromUpstream(
           };
         }
 
-        // If upstream responded with 505 (HTTP version not supported) or 525 over H2
-        if (h2Res.status === 505 || h2Res.status === 525) {
-          try {
-            const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
-            const latency = Date.now() - startFetch;
-            return {
-              answer: fallbackAnswer,
-              latency,
-              diagMethod: "DoT (fallback)",
-              diagTarget: `tls://${dohUrl.hostname}:853`
-            };
-          } catch {}
-        }
-
         let snippet = "";
         try {
           snippet = new TextDecoder()
@@ -339,34 +327,17 @@ export async function fetchFromUpstream(
       }
     }
 
-    // 2. Fallback to standard fetch (Cloudflare Workers or H2 negotiation fallback)
-    let response: Response;
-    try {
-      response = await fetch(effectiveUrl, {
-        method: "POST",
-        headers: {
-          Accept: "application/dns-message",
-          "Content-Type": "application/dns-message",
-          "User-Agent": getAppUserAgent()
-        },
-        body: queryRaw,
-        signal: AbortSignal.timeout(5000)
-      });
-    } catch (fetchErr: unknown) {
-      // Outbound fetch failed with TLS/network failure (e.g. Cloudflare edge TLS error 525)
-      try {
-        const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
-        const latency = Date.now() - startFetch;
-        return {
-          answer: fallbackAnswer,
-          latency,
-          diagMethod: "DoT (fallback)",
-          diagTarget: `tls://${dohUrl.hostname}:853`
-        };
-      } catch {
-        throw fetchErr;
-      }
-    }
+    // 2. Standard fetch (Cloudflare Workers or H2 negotiation fallback)
+    const response = await fetch(effectiveUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/dns-message",
+        "Content-Type": "application/dns-message",
+        "User-Agent": getAppUserAgent()
+      },
+      body: queryRaw,
+      signal: AbortSignal.timeout(5000)
+    });
 
     if (!response.ok) {
       let snippet = "";
@@ -376,27 +347,6 @@ export async function fetchFromUpstream(
         snippet = rawBody.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim().slice(0, 300);
       } catch {}
       const cfRay = response.headers.get("cf-ray") || undefined;
-
-      // Resilient DoT fallback on RFC 8484 HTTP 505 (HTTP/2 required) or Cloudflare 525 (SSL handshake failed)
-      if (
-        response.status === 505 ||
-        response.status === 525 ||
-        (response.status === 400 && snippet.includes("HTTP/2"))
-      ) {
-        try {
-          const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
-          const latency = Date.now() - startFetch;
-          return {
-            answer: fallbackAnswer,
-            latency,
-            diagMethod: "DoT (fallback)",
-            diagTarget: `tls://${dohUrl.hostname}:853`
-          };
-        } catch {
-          // If fallback fails, preserve original HTTP error with rich snippet
-        }
-      }
-
       throw new UpstreamHttpError(response.status, response.statusText, snippet, cfRay);
     }
 

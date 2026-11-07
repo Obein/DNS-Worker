@@ -1,6 +1,6 @@
 /**
  * @file test_quad9_transport.ts
- * @description Validates HTTP/2 upstream DoH resolution, session reuse, and resilient DoT fallback without hardcoding.
+ * @description Validates HTTP/2 upstream DoH resolution, session reuse, strict error surfacing without silent DoT fallback, and native DoT presets.
  */
 
 import assert from "node:assert";
@@ -54,6 +54,11 @@ async function runTests(): Promise<void> {
   assert.strictEqual(epDnsStandard.effectiveUrl, "https://dns.quad9.net/dns-query");
   console.log(`    ✓ https://dns.quad9.net/dns-query preserved as universal DoH endpoint`);
 
+  const epQuad9Dot = resolveUpstreamEndpoint("tls://dns.quad9.net");
+  assert.strictEqual(epQuad9Dot.diagMethod, "DoT");
+  assert.strictEqual(epQuad9Dot.diagTarget, "tls://dns.quad9.net:853");
+  console.log(`    ✓ tls://dns.quad9.net resolved as native DoT preset endpoint`);
+
   const epCf = resolveUpstreamEndpoint("https://cloudflare-dns.com/dns-query");
   assert.strictEqual(epCf.diagMethod, "POST");
   assert.strictEqual(epCf.effectiveUrl, "https://cloudflare-dns.com/dns-query");
@@ -101,8 +106,8 @@ async function runTests(): Promise<void> {
     console.warn(`    ⚠ Live network test failed or skipped (network dependency):`, errorMsg);
   }
 
-  // 7. Test HTTP 505 / 525 resilient fallback to DoT
-  console.log("\n[7] Testing resilient DoT fallback when an upstream DoH returns HTTP 505...");
+  // 7. Test HTTP 505 / error surfacing without silent DoT fallback
+  console.log("\n[7] Testing direct error surfacing without silent DoT fallback when an upstream DoH returns HTTP 505...");
   const server = http.createServer((req, res) => {
     res.writeHead(505, { "Content-Type": "text/html" });
     res.end("<html><body>This server implements RFC 8484 and requires HTTP/2</body></html>");
@@ -119,11 +124,11 @@ async function runTests(): Promise<void> {
 
   try {
     await fetchFromUpstream(mockEndpoint, sampleQueryRaw);
-    assert.fail("Should have thrown because localhost doesn't run DoT on 853");
+    assert.fail("Should have thrown UpstreamHttpError with 505 without falling back to DoT");
   } catch (err: any) {
-    assert.strictEqual(err.status, 505, "Must retain 505 status if DoT fallback unavailable");
+    assert.strictEqual(err.status, 505, "Must retain 505 status directly");
     assert.ok(err.responseBodySnippet.includes("RFC 8484"), "Must retain upstream response snippet");
-    console.log(`    ✓ Handled HTTP 505 cleanly with expected UpstreamHttpError: ${err.message}`);
+    console.log(`    ✓ Handled HTTP 505 cleanly with expected UpstreamHttpError (no fallback): ${err.message}`);
   } finally {
     server.close();
   }
