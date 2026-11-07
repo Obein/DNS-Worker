@@ -250,6 +250,16 @@ export default defineConfig({
               },
               slug: 'architecture/overview',
             },
+            {
+              label: 'Design & Coding Standards',
+              translations: {
+                'zh-CN': '设计与编码规范',
+                'zh-cn': '设计与编码规范',
+                'zh-TW': '設計與編碼規範',
+                'zh-tw': '設計與編碼規範',
+              },
+              slug: 'architecture/standards',
+            },
           ],
         },
         {
