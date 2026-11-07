@@ -103,6 +103,9 @@ async function runOptimizationsTests() {
                 };
               },
               async first() {
+                if (sql.includes("global_list_blooms")) {
+                  return null;
+                }
                 return { id: profileId, list_updated_at: 0, settings: '{}' };
               },
               async run() {

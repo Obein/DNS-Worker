@@ -24,9 +24,9 @@ async function runTests() {
   const bloom2 = BloomFilter.create(10000, 0.001);
   bloom2.add("malware2.com");
 
-  const listBloomStore = new Map<number, ArrayBuffer>([
-    [1, bloom1.toUint8Array().buffer as ArrayBuffer],
-    [2, bloom2.toUint8Array().buffer as ArrayBuffer]
+  const globalBloomStore = new Map<string, ArrayBuffer>([
+    ["https://example.com/list1.txt", bloom1.toUint8Array().buffer as ArrayBuffer],
+    ["https://example.com/list2.txt", bloom2.toUint8Array().buffer as ArrayBuffer]
   ]);
 
   let profileBloomStore: ArrayBuffer | null = null;
@@ -41,14 +41,18 @@ async function runTests() {
               if (sql.includes("FROM profiles WHERE id = ?")) {
                 return profileStore.id === args[0] ? profileStore : null;
               }
+              if (sql.includes("FROM global_list_blooms WHERE url = ?")) {
+                const buf = globalBloomStore.get(args[0]);
+                return buf ? { 1: 1 } : null;
+              }
               return null;
             },
             async all() {
-              if (sql.includes("FROM lists WHERE profile_id = ?")) {
+              if (sql.includes("FROM lists") && sql.includes("profile_id = ?")) {
                 return { results: listStore.filter(l => l.profile_id === args[0]) };
               }
-              if (sql.includes("FROM list_blooms WHERE list_id = ?")) {
-                const buf = listBloomStore.get(args[0]);
+              if (sql.includes("FROM global_list_blooms WHERE url = ?")) {
+                const buf = globalBloomStore.get(args[0]);
                 return { results: buf ? [{ bloom_filter_chunk: buf }] : [] };
               }
               return { results: [] };
@@ -108,7 +112,7 @@ async function runTests() {
   // Test 2: Simulate list 1 deleted -> rebuild with only list 2 remaining
   console.log("2. Testing rebuildProfileBloom after deleting list 1...");
   listStore.shift(); // remove list 1
-  listBloomStore.delete(1);
+  globalBloomStore.delete("https://example.com/list1.txt");
 
   await rebuildProfileBloom("prof_1", testEnv, mockCtx);
 
@@ -121,7 +125,7 @@ async function runTests() {
   // Test 3: Simulate list 2 deleted -> rebuild with 0 lists remaining
   console.log("3. Testing rebuildProfileBloom after deleting all lists...");
   listStore.shift(); // remove list 2
-  listBloomStore.delete(2);
+  globalBloomStore.delete("https://example.com/list2.txt");
 
   await rebuildProfileBloom("prof_1", testEnv, mockCtx);
   assert.strictEqual(profileBloomStore, null, "Profile bloom should be cleared when 0 lists remain");

@@ -47,9 +47,9 @@ export async function handleProfileListsRequest(
       const list = await listModel.getListById(listId, profileId);
       if (!list) return new Response("List Not Found", { status: 404 });
 
-      const buffer = await new ListBloomModel(env.DB).getListBloom(listId);
+      const buffer = await new ListBloomModel(env.DB).getListBloom(list.url);
       const adguardRulesModel = env.DB ? new AdguardRulesModel(env.DB) : null;
-      const adguardPayload = adguardRulesModel ? await adguardRulesModel.getListRules(listId) : null;
+      const adguardPayload = adguardRulesModel ? await adguardRulesModel.getListRules(list.url) : null;
 
       if (!buffer && !adguardPayload) {
         return new Response(JSON.stringify({ domain, blocked: false, synced: false }), {
@@ -255,7 +255,7 @@ export async function handleProfileListsRequest(
       let insertedCount = 0;
       if (itemsToInsert.length > 0) {
         insertedCount = await listModel.addListsBulk(profileId, itemsToInsert);
-        ctx.waitUntil(syncNextListForProfile(profileId, env, ctx));
+        ctx.waitUntil(rebuildProfileBloom(profileId, env, ctx));
         ctx.waitUntil(pipeline.clearCache(profileId, true, env));
       }
 

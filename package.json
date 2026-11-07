@@ -54,6 +54,8 @@
     "test:turso": "tsx test/test_turso.ts",
     "test:turnstile": "tsx test/test_turnstile.ts",
     "test:max-users": "tsx test/test_max_users.ts",
+    "test:global-lists": "tsx test/test_global_lists.ts",
+    "test:sync-optimizations": "tsx test/test_sync_optimizations.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",
     "test:reset": "tsx test/test_serverfull_reset.ts",
     "lint": "oxlint",

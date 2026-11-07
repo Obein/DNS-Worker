@@ -9,31 +9,55 @@ import { AdGuardPayload } from "../lib/adguard/types";
 export class AdguardRulesModel {
   constructor(private db: D1Database) {}
 
+  /**
+   * Resolves a URL string or legacy list ID to a canonical URL.
+   */
+  private async resolveUrl(urlOrId: string | number): Promise<string | null> {
+    if (typeof urlOrId === "string") {
+      return urlOrId.trim().replace(/\/+$/, "");
+    }
+    const row = await this.db
+      .prepare("SELECT url FROM lists WHERE id = ?")
+      .bind(urlOrId)
+      .first<{ url: string }>();
+    return row?.url ? row.url.trim().replace(/\/+$/, "") : null;
+  }
+
   // ─── List-Level Operations ────────────────────────────────────────────────
 
   /**
-   * Upserts the AdGuard extended rules payload for a specific subscription list.
+   * Upserts the AdGuard extended rules payload for a specific canonical list URL or list ID.
    */
-  async upsertListRules(listId: number, payload: AdGuardPayload, now: number): Promise<boolean> {
+  async upsertListRules(urlOrId: string | number, payload: AdGuardPayload, now: number): Promise<boolean> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return false;
     const jsonStr = JSON.stringify(payload);
+
+    // Ensure parent metadata row exists
+    await this.db.prepare(
+      "INSERT OR IGNORE INTO global_list_metadata (url, created_at) VALUES (?, ?)"
+    ).bind(canonicalUrl, now).run();
+
     const result = await this.db.prepare(
-      `INSERT INTO list_adguard_rules (list_id, payload, updated_at)
+      `INSERT INTO global_list_adguard_rules (url, payload, updated_at)
        VALUES (?, ?, ?)
-       ON CONFLICT(list_id) DO UPDATE SET
+       ON CONFLICT(url) DO UPDATE SET
          payload = excluded.payload,
          updated_at = excluded.updated_at`
-    ).bind(listId, jsonStr, now).run();
+    ).bind(canonicalUrl, jsonStr, now).run();
 
     return result.success;
   }
 
   /**
-   * Retrieves the AdGuard extended rules payload for a specific list.
+   * Retrieves the AdGuard extended rules payload for a specific canonical list URL or list ID.
    */
-  async getListRules(listId: number): Promise<AdGuardPayload | null> {
+  async getListRules(urlOrId: string | number): Promise<AdGuardPayload | null> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return null;
     const row = await this.db.prepare(
-      "SELECT payload FROM list_adguard_rules WHERE list_id = ?"
-    ).bind(listId).first<{ payload: string }>();
+      "SELECT payload FROM global_list_adguard_rules WHERE url = ?"
+    ).bind(canonicalUrl).first<{ payload: string }>();
 
     if (!row || !row.payload) return null;
     try {
@@ -44,12 +68,14 @@ export class AdguardRulesModel {
   }
 
   /**
-   * Deletes the AdGuard extended rules for a specific list.
+   * Deletes the AdGuard extended rules for a specific canonical list URL or list ID.
    */
-  async deleteListRules(listId: number): Promise<boolean> {
+  async deleteListRules(urlOrId: string | number): Promise<boolean> {
+    const canonicalUrl = await this.resolveUrl(urlOrId);
+    if (!canonicalUrl) return false;
     const result = await this.db.prepare(
-      "DELETE FROM list_adguard_rules WHERE list_id = ?"
-    ).bind(listId).run();
+      "DELETE FROM global_list_adguard_rules WHERE url = ?"
+    ).bind(canonicalUrl).run();
     return result.success;
   }
 
