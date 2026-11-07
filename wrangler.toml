@@ -155,11 +155,11 @@ PRESET_UPSTREAMS = """
   },
   {
     "label": "settings.presetQuad9",
-    "url": "tls://dns.quad9.net"
+    "url": "https://dns.quad9.net/dns-query"
   },
   {
     "label": "settings.presetQuad9Ecs",
-    "url": "tls://dns11.quad9.net"
+    "url": "https://dns11.quad9.net/dns-query"
   },
   {
     "label": "settings.presetControlDFree",

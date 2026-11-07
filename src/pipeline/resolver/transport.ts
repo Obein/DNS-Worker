@@ -1,5 +1,6 @@
 import { connectUniversal } from "../../utils/sockets";
 import { parseDnsStamp } from "../../utils/dnsStamp";
+import { http2SessionPool, isHttp2Supported } from "../../utils/http2Client";
 import { UpstreamHttpError, UpstreamTransportResult } from "./types";
 
 /**
@@ -226,29 +227,6 @@ export function resolveUpstreamEndpoint(rawUpstreamUrl: string): UpstreamEndpoin
     };
   }
 
-  // Quad9 strictly enforces RFC 8484 §5.2 for DoH and rejects HTTP/1.1 with HTTP 505.
-  // Furthermore, Cloudflare Workers outbound subrequests to dns11.quad9.net trigger TLS 525 errors,
-  // and Cloudflare Workers fetch cannot negotiate HTTP/2 to third-party origins.
-  // Automatically route Quad9 DoH to Quad9 DoT (RFC 7858 on port 853), providing direct TLS 1.3
-  // encryption with zero HTTP protocol mismatch and zero retry latency.
-  const isQuad9Doh =
-    /^https?:\/\/(?:[a-zA-Z0-9-]+\.)?quad9\.net(?::\d+)?(?:\/.*)?$/i.test(effectiveUrl) ||
-    /^https?:\/\/(?:9\.9\.9\.(?:9|10|11)|149\.112\.112\.(?:10|11|112))(?::\d+)?(?:\/.*)?$/i.test(effectiveUrl);
-
-  if (isQuad9Doh) {
-    try {
-      const urlObj = new URL(effectiveUrl);
-      const host = urlObj.hostname;
-      return {
-        effectiveUrl: `tls://${host}:853`,
-        diagMethod: "DoT",
-        diagTarget: `tls://${host}:853`
-      };
-    } catch {
-      // If URL parsing fails, proceed through regular path
-    }
-  }
-
   if (effectiveUrl.startsWith("tls://")) {
     const rawHost = effectiveUrl.replace(/^tls:\/\//, "");
     const { host, port } = parseHostAndPort(rawHost, 853);
@@ -279,6 +257,12 @@ export function resolveUpstreamEndpoint(rawUpstreamUrl: string): UpstreamEndpoin
 /**
  * Communicates with the upstream DNS server over DoH, DoT, TCP, or DNS Stamps.
  *
+ * Upstream Protocol Priority:
+ * 1. HTTP/3 (DoH3 / RFC 9114) -> Future extension point
+ * 2. HTTP/2 (RFC 8484 §5.2)   -> Prioritizes native multiplexed H2 connections (Node.js Serverfull)
+ * 3. HTTP/1.1 (Standard Fetch)-> Universal fallback for runtimes without native H2
+ * 4. DoT (RFC 7858)          -> Automatic resilient fallback on HTTP 505 (H2 required) or 525 (TLS error)
+ *
  * @param endpoint - Resolved upstream endpoint information.
  * @param queryRaw - Wire-format DNS query packet.
  * @returns Upstream resolution result containing raw answer, latency, and diagnostics.
@@ -305,7 +289,56 @@ export async function fetchFromUpstream(
     const { host: tcpHost, port: tcpPort } = parseHostAndPort(rawHost, 53);
     answer = await queryTcp(tcpHost, tcpPort, queryRaw, 5000);
   } else {
-    // ── DoH (DNS over HTTPS) ───────────────────────────────────────────
+    // ── DoH (DNS over HTTPS - RFC 8484) ─────────────────────────────────
+    const dohUrl = new URL(effectiveUrl);
+
+    // 1. Prioritize HTTP/2 (H2) if supported in the current environment
+    if (isHttp2Supported()) {
+      try {
+        const h2Res = await http2SessionPool.request(dohUrl, queryRaw, 5000);
+        if (h2Res.status >= 200 && h2Res.status < 300) {
+          const latency = Date.now() - startFetch;
+          return {
+            answer: h2Res.answer,
+            latency,
+            diagMethod: "H2",
+            diagTarget: effectiveUrl
+          };
+        }
+
+        // If upstream responded with 505 (HTTP version not supported) or 525 over H2
+        if (h2Res.status === 505 || h2Res.status === 525) {
+          try {
+            const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
+            const latency = Date.now() - startFetch;
+            return {
+              answer: fallbackAnswer,
+              latency,
+              diagMethod: "DoT (fallback)",
+              diagTarget: `tls://${dohUrl.hostname}:853`
+            };
+          } catch {}
+        }
+
+        let snippet = "";
+        try {
+          snippet = new TextDecoder()
+            .decode(h2Res.answer)
+            .replace(/<[^>]*>?/gm, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 300);
+        } catch {}
+        throw new UpstreamHttpError(h2Res.status, "HTTP/2 Error", snippet);
+      } catch (h2Err) {
+        if (h2Err instanceof UpstreamHttpError) {
+          throw h2Err;
+        }
+        // If H2 connection / ALPN negotiation failed, fall through to universal fetch
+      }
+    }
+
+    // 2. Fallback to standard fetch (Cloudflare Workers or H2 negotiation fallback)
     let response: Response;
     try {
       response = await fetch(effectiveUrl, {
@@ -321,7 +354,6 @@ export async function fetchFromUpstream(
     } catch (fetchErr: unknown) {
       // Outbound fetch failed with TLS/network failure (e.g. Cloudflare edge TLS error 525)
       try {
-        const dohUrl = new URL(effectiveUrl);
         const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
         const latency = Date.now() - startFetch;
         return {
@@ -351,7 +383,6 @@ export async function fetchFromUpstream(
         (response.status === 400 && snippet.includes("HTTP/2"))
       ) {
         try {
-          const dohUrl = new URL(effectiveUrl);
           const fallbackAnswer = await queryDoT(dohUrl.hostname, 853, queryRaw, 5000);
           const latency = Date.now() - startFetch;
           return {
