@@ -1,4 +1,5 @@
 import { isSafeUrlWithDnsCheck } from "./validator";
+import { getListFetcherUserAgent } from "../constants/version";
 import { parseAdGuardLine, AdGuardRuleKind, ParsedAdGuardRule } from "../lib/adguard";
 
 /** 单个列表的拉取结果 */
@@ -45,7 +46,7 @@ const TRANSIENT_HTTP_STATUSES = new Set([
 
 /** 默认请求头：携带规范的 User-Agent、Accept 与 Accept-Encoding，启用压缩并规避上游防爬虫/限流误杀 */
 const DEFAULT_FETCH_HEADERS: HeadersInit = {
-  "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
+  "User-Agent": getListFetcherUserAgent(),
   Accept: "text/plain, text/*, */*",
   "Accept-Encoding": "gzip, deflate, br",
 };
@@ -123,7 +124,7 @@ export async function fetchListContent(
         }
 
         const requestHeaders: Record<string, string> = {
-          "User-Agent": "DNS-Worker/1.0 (+https://github.com/Obein/DNS-Worker)",
+          "User-Agent": getListFetcherUserAgent(),
           Accept: "text/plain, text/*, */*",
           "Accept-Encoding": "gzip, deflate, br",
         };

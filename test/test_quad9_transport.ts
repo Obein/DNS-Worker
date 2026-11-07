@@ -8,6 +8,7 @@ import http from "node:http";
 import { resolveUpstreamEndpoint, fetchFromUpstream } from "../src/pipeline/resolver/transport";
 import { isSafeUrl } from "../src/utils/validator";
 import { http2SessionPool, isHttp2Supported } from "../src/utils/http2Client";
+import { getAppUserAgent, getListFetcherUserAgent, getSystemVersion } from "../src/constants/version";
 
 async function runTests(): Promise<void> {
   console.log("================================================================");
@@ -29,6 +30,17 @@ async function runTests(): Promise<void> {
   assert.strictEqual(isSafeUrl("tls://dns.quad9.net"), true);
   assert.strictEqual(isSafeUrl("tcp://9.9.9.11:9953"), true);
   console.log("    ✓ All upstream endpoints validated as safe URLs.");
+
+  // 1b. Verify System Version & Standardized User-Agent
+  console.log("\n[1b] Testing standardized User-Agent with real system version...");
+  const version = getSystemVersion();
+  assert.match(version, /^\d+\.\d+\.\d+/, "System version must follow semantic versioning x.y.z");
+  const appUa = getAppUserAgent();
+  assert.strictEqual(appUa, `DNS-Worker/${version}`, "App User-Agent must use real version x.y.z");
+  const listUa = getListFetcherUserAgent();
+  assert.ok(listUa.startsWith(`DNS-Worker/${version}`), "List fetcher User-Agent must use real version x.y.z");
+  console.log(`    ✓ Validated User-Agent: ${appUa}`);
+  console.log(`    ✓ Validated List User-Agent: ${listUa}`);
 
   // 2. Verify Endpoint Resolution (Clean, no hardcoded isQuad9Doh)
   console.log("\n[2] Testing clean endpoint resolution (agnostic, zero hardcoding)...");

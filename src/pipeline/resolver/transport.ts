@@ -1,6 +1,7 @@
 import { connectUniversal } from "../../utils/sockets";
 import { parseDnsStamp } from "../../utils/dnsStamp";
 import { http2SessionPool, isHttp2Supported } from "../../utils/http2Client";
+import { getAppUserAgent } from "../../constants/version";
 import { UpstreamHttpError, UpstreamTransportResult } from "./types";
 
 /**
@@ -346,7 +347,7 @@ export async function fetchFromUpstream(
         headers: {
           Accept: "application/dns-message",
           "Content-Type": "application/dns-message",
-          "User-Agent": "DNS-Worker/1.0"
+          "User-Agent": getAppUserAgent()
         },
         body: queryRaw,
         signal: AbortSignal.timeout(5000)

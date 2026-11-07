@@ -5,6 +5,7 @@
  */
 
 import type { ClientHttp2Session } from 'node:http2';
+import { getAppUserAgent } from '../constants/version';
 
 /**
  * Result returned by an HTTP/2 query.
@@ -114,7 +115,7 @@ export class Http2SessionPool {
         'accept': 'application/dns-message',
         'content-type': 'application/dns-message',
         'content-length': String(queryRaw.length),
-        'user-agent': 'DNS-Worker/1.0'
+        'user-agent': getAppUserAgent()
       });
 
       let status = 0;

@@ -3,6 +3,7 @@ import { parseCidr } from "../cidr";
 import { SystemSettingsModel } from "../../models/systemSettings";
 import { updateActiveCfProxyCidrs, getActiveCfProxyCidrs } from "./cloudflareIp";
 import { DEFAULT_CF_PROXY_CIDRS } from "./constants";
+import { getAppUserAgent } from "../../constants/version";
 
 let cachedActiveCfEchConfig: string | null = null;
 let isRangesInitialized = false;
@@ -143,11 +144,11 @@ export async function syncCloudflareIpRanges(
   try {
     const [v4Res, v6Res, echRes] = await Promise.all([
       fetch("https://www.cloudflare.com/ips-v4", {
-        headers: { "User-Agent": "DNS-Worker/1.0" },
+        headers: { "User-Agent": getAppUserAgent() },
         signal: AbortSignal.timeout(5000)
       }),
       fetch("https://www.cloudflare.com/ips-v6", {
-        headers: { "User-Agent": "DNS-Worker/1.0" },
+        headers: { "User-Agent": getAppUserAgent() },
         signal: AbortSignal.timeout(5000)
       }),
       fetch("https://cloudflare-dns.com/dns-query?name=cloudflare-ech.com&type=HTTPS", {
