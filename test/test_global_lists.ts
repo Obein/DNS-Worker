@@ -157,7 +157,12 @@ async function runGlobalListTests() {
   assert.ok(meta, "Global metadata row must exist");
   assert.strictEqual(meta?.etag, '"shared-etag-v1"', "ETag must be persisted globally");
   assert.strictEqual(meta?.sync_error, null);
-  console.log("   ✓ global_list_metadata correctly persisted ETag and timestamp.\n");
+  assert.strictEqual(typeof meta?.last_modified, "number", "last_modified in global_list_metadata must be stored as Unix timestamp integer");
+  assert.strictEqual(meta?.last_modified, Math.floor(Date.parse("Wed, 01 Jan 2026 00:00:00 GMT") / 1000));
+
+  const dbRow = rawDb.prepare("SELECT typeof(last_modified) as col_type, last_modified FROM global_list_metadata WHERE url = ?").get(sharedUrl) as { col_type: string; last_modified: number };
+  assert.strictEqual(dbRow.col_type, "integer", "SQLite column storage type for last_modified must be integer");
+  console.log("   ✓ global_list_metadata correctly persisted ETag and Unix timestamp (integer).\n");
 
   // 4. Test User Manual Recombination (Option B: Pure Local Merge, Zero HTTP Requests)
   console.log("4. Testing user manual recombine (Option B: zero external network traffic)...");
@@ -205,6 +210,11 @@ async function runGlobalListTests() {
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     upstreamHits++;
     const headers = init?.headers as Record<string, string>;
+    assert.strictEqual(
+      headers?.["If-Modified-Since"],
+      "Thu, 01 Jan 2026 00:00:00 GMT",
+      "If-Modified-Since must format Unix timestamp to RFC 7231 HTTP-date"
+    );
     if (headers && headers["If-None-Match"] === '"shared-etag-v1"') {
       return new Response(null, { status: 304 });
     }

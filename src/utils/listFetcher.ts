@@ -16,14 +16,24 @@ export interface FetchListResult {
   notModified?: boolean;
   /** 上游返回的最新 ETag */
   etag?: string | null;
-  /** 上游返回的最新 Last-Modified */
-  lastModified?: string | null;
+  /** 上游返回的最新 Last-Modified（Unix 秒级时间戳整数） */
+  lastModified?: number | null;
 }
 
 /** 列表拉取的协商缓存选项 */
 export interface FetchListOptions {
   etag?: string | null;
-  lastModified?: string | null;
+  lastModified?: number | null;
+}
+
+/**
+ * 将 RFC 7231 / RFC 2616 HTTP-date 时间文本（如 "Wed, 21 Oct 2015 07:28:00 GMT"）
+ * 解析为系统统一规范的 Unix 秒级时间戳整数。解析失败或为空时返回 null。
+ */
+export function parseHttpDateToUnix(headerVal: string | null | undefined): number | null {
+  if (!headerVal) return null;
+  const parsed = Date.parse(headerVal);
+  return isNaN(parsed) ? null : Math.floor(parsed / 1000);
 }
 
 /** 回调函数：支持同步返回 void（绝大多数场景），仅在出让 CPU 时返回 Promise */
@@ -132,8 +142,12 @@ export async function fetchListContent(
         if (options?.etag) {
           requestHeaders["If-None-Match"] = options.etag;
         }
-        if (options?.lastModified) {
-          requestHeaders["If-Modified-Since"] = options.lastModified;
+        if (options?.lastModified !== undefined && options?.lastModified !== null) {
+          // 将系统统一存储的 Unix 秒级时间戳转换回 RFC 7231 / RFC 2616 HTTP-date 标准协议格式
+          const httpDate = typeof options.lastModified === 'number'
+            ? new Date(options.lastModified * 1000).toUTCString()
+            : String(options.lastModified);
+          requestHeaders["If-Modified-Since"] = httpDate;
         }
 
         response = await fetch(currentUrl, {
@@ -145,7 +159,7 @@ export async function fetchListContent(
         // Handle HTTP 304 Not Modified conditional response (RFC 7232 / RFC 9110)
         if (response.status === 304) {
           const respEtag = response.headers.get("etag") || options?.etag || null;
-          const respLastModified = response.headers.get("last-modified") || options?.lastModified || null;
+          const respLastModified = parseHttpDateToUnix(response.headers.get("last-modified")) ?? options?.lastModified ?? null;
           return {
             count: 0,
             error: null,
@@ -317,7 +331,7 @@ export async function fetchListContent(
       }
 
       const respEtag = response.headers.get("etag") || null;
-      const respLastModified = response.headers.get("last-modified") || null;
+      const respLastModified = parseHttpDateToUnix(response.headers.get("last-modified"));
 
       return {
         count,

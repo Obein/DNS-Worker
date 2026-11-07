@@ -290,3 +290,18 @@ sequenceDiagram
     User->>OPFS: Execute Complex Analytics Query (ISP, Time, Geo, Action)
     OPFS-->>User: Local Worker Computes & Returns Result in 0ms
 ```
+
+---
+
+## Data Persistence & Timestamp Standardization
+
+The system enforces strict engineering standards across persistence layers and internal communication:
+
+1. **Integer Unix Timestamp Data Model**:
+   - All database tables, persistence columns, domain models, and internal REST/RPC payload schemas MUST represent time exclusively as integer Unix timestamps in seconds (`Math.floor(Date.now() / 1000)` / SQLite `INTEGER`).
+   - Applies to all core entities including `created_at`, `updated_at`, `last_synced_at`, and conditional subscription metadata `global_list_metadata.last_modified`.
+   - Storing formatted date strings (such as ISO-8601 strings, RFC 2822, or RFC 7231 dates) in database columns or domain models is strictly forbidden.
+2. **Protocol Boundary Parsing & Serialization**:
+   - When communicating over external protocols (such as HTTP `Last-Modified` / `If-Modified-Since` RFC 7231 date headers), inbound headers must be parsed into integer Unix timestamps immediately at the ingestion boundary. Outbound conditional request headers are generated dynamically by the transport layer on demand.
+3. **Deferred Presentation-Layer Formatting**:
+   - All human-readable date/time formatting, user-configured timezone offsets (`timezone`), and localization (`formatDateTime(new Date(timestamp * 1000))`) are strictly deferred to the UI presentation layer, guaranteeing high computational performance and temporal consistency across pipelines.

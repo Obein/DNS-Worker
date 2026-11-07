@@ -159,7 +159,7 @@ export async function syncGlobalList(
  */
 export async function syncSingleList(
   _profileId: string,
-  list: { id: number; url: string; etag?: string | null; last_modified?: string | null },
+  list: { id: number; url: string; etag?: string | null; last_modified?: number | string | null },
   env: Env,
   listModel: ListModel,
   listBloomModel: ListBloomModel,

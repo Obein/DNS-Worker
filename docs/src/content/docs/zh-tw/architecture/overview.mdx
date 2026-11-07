@@ -290,3 +290,18 @@ sequenceDiagram
     User->>OPFS: 发起复杂多维聚合查询 (按时间/ISP/国家/拦截原因)
     OPFS-->>User: 本地 Worker 0ms 瞬间返回计算结果
 ```
+
+---
+
+## 數據持久化與統一時間戳規範 (Data Persistence & Timestamp Standardization)
+
+系統在數據持久化與分層架構中遵循嚴格的工程統一規範：
+
+1. **秒級 Unix 時間戳模型 (Integer Unix Timestamp)**：
+   - 數據庫所有表結構、持久化列、數據模型（Domain Model）及內部 REST/RPC 接口，時間字段一律採用秒級整數時間戳（SQLite `INTEGER` / `Math.floor(Date.now() / 1000)`）。
+   - 涵蓋系統內所有核心實體：創建時間 (`created_at`)、更新时间 (`updated_at`)、最後同步時間 (`last_synced_at`)、訂閱源協商修改時間 (`global_list_metadata.last_modified`) 等。
+   - 嚴禁在數據庫層和實體模型層直接持久化文本格式時間（如 ISO-8601 字符串、RFC 2822 或 RFC 7231 日期文本）。
+2. **外部協議邊界轉換 (Protocol Boundary Parsing)**：
+   - 涉及外部協議通信（例如 HTTP `Last-Modified` / `If-Modified-Since` 的 RFC 7231 標準時間頭）時，外部入站響應在數據解析邊界必須立即轉換為秒級整數時間戳落庫；出站發起條件協商請求時，由傳輸層負責按需格式化為標準協議時間文本。
+3. **表現層延遲格式化 (Presentation Layer Formatting)**：
+   - 所有人類可讀時間顯示、時區轉換（根據用戶設定的 `timezone`）與本地化格式（`formatDateTime(new Date(timestamp * 1000))`），一律嚴格限制在前端 UI 表現層最終執行，保證全鏈路數據傳輸與算子計算的一致性與高效性。
