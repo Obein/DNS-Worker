@@ -90,7 +90,7 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
         <div>
           <H4 className="flex items-center space-x-2 text-base font-semibold">
             <Send className="w-5 h-5 text-indigo-500" />
-            <span>{t("admin.distributeFilter.title", "下发过滤器")}</span>
+            <span>{t("admin.distributeFilter.title", "下发过滤器 (管理员)")}</span>
           </H4>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t(

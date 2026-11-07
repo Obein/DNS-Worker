@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribute Filter",
+      "title": "Distribute Filter (Admin)",
       "description": "Distribute a filter list to all users' profiles. Automatically skips users who already have this filter. Users can delete distributed filters at any time.",
       "quickPresets": "Quick Presets",
       "urlLabel": "Filter List URL",

@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribuer le filtre",
+      "title": "Distribuer le filtre (Admins uniquement)",
       "description": "Distribuez une liste de filtres aux profils de tous les utilisateurs. Ignore automatiquement les utilisateurs possédant déjà ce filtre. Les utilisateurs peuvent supprimer les filtres distribués à tout moment.",
       "quickPresets": "Préréglages rapides",
       "urlLabel": "URL de la liste de filtres",

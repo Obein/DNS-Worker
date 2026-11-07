@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Filter verteilen",
+      "title": "Filter verteilen (nur Admins)",
       "description": "Verteilen Sie eine Filterliste an die Profile aller Benutzer. Überspringt automatisch Benutzer, die diesen Filter bereits haben. Benutzer können verteilte Filter jederzeit löschen.",
       "quickPresets": "Schnellvoreinstellungen",
       "urlLabel": "Filterlisten-URL",

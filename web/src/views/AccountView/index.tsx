@@ -292,7 +292,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
             />
           </div>
 
-          {/* Admin: Distribute Filter */}
+          {/* Admin: Distribute Filter (Admin) */}
           <Divider />
           <div className="space-y-4">
             <DistributeFilterCard

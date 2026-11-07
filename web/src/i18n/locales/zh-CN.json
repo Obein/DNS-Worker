@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下发过滤器",
+      "title": "下发过滤器 (管理员)",
       "description": "向系统中所有用户的配置下发指定过滤规则列表。如果用户已存在相同规则则自动跳过。用户可自行删除已下发的过滤器。",
       "quickPresets": "快捷预设",
       "urlLabel": "规则列表 URL",

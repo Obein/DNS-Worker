@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下發過濾器",
+      "title": "下發過濾器 (管理員)",
       "description": "向系統中所有使用者的設定下發指定過濾規則清單。若使用者已存在相同規則則自動略過。使用者可自行刪除已下發的過濾器。",
       "quickPresets": "快捷預設",
       "urlLabel": "規則清單 URL",

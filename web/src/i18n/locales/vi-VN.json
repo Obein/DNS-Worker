@@ -1066,7 +1066,7 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Phân phối bộ lọc",
+      "title": "Phân phối bộ lọc (Quản trị viên)",
       "description": "Phân phối danh sách bộ lọc tới cấu hình của tất cả người dùng. Tự động bỏ qua người dùng đã có bộ lọc này. Người dùng có thể tự xóa bộ lọc được phân phối bất kỳ lúc nào.",
       "quickPresets": "Cài đặt sẵn nhanh",
       "urlLabel": "URL danh sách bộ lọc",
