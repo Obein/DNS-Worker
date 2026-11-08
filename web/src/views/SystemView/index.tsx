@@ -102,7 +102,7 @@ export const SystemView: React.FC<SystemViewProps> = ({ onSavingChange, toasterR
 
   return (
     <div className={clsx("max-w-5xl mx-auto space-y-8", isMobile ? "p-0" : "px-8")}>
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-start sm:items-end gap-3 flex-wrap sm:flex-nowrap">
         <div>
           <h2 className="bp6-heading">{t("system.title", "系统管理")}</h2>
           <p className="bp6-text-muted">
@@ -114,6 +114,7 @@ export const SystemView: React.FC<SystemViewProps> = ({ onSavingChange, toasterR
           round
           intent={Intent.DANGER}
           icon={<ShieldCheck size={16} />}
+          className="shrink-0 whitespace-nowrap"
         >
           {t("account.roleAdmin", "管理员")}
         </Tag>

@@ -250,14 +250,14 @@ export const UserFilterListsCard: React.FC<UserFilterListsCardProps> = ({
           </div>
         ) : (
           <div className="overflow-x-auto border border-gray-100 dark:border-gray-800 rounded-lg">
-            <HTMLTable interactive striped className="w-full text-sm">
+            <HTMLTable interactive striped className="w-full text-sm whitespace-nowrap">
               <thead>
                 <tr>
-                  <th className="py-2.5 px-3 text-left font-semibold">{t("account.userFilterLists.colUrl", "列表 URL")}</th>
-                  <th className="py-2.5 px-3 text-left font-semibold w-24">{t("account.userFilterLists.colType", "类型")}</th>
-                  <th className="py-2.5 px-3 text-left font-semibold w-36">{t("account.userFilterLists.colLastSync", "最近同步")}</th>
-                  <th className="py-2.5 px-3 text-center font-semibold w-24">{t("account.userFilterLists.colStatus", "状态")}</th>
-                  <th className="py-2.5 px-3 text-right font-semibold w-20">{t("account.userFilterLists.colActions", "操作")}</th>
+                  <th className="py-2.5 px-3 text-left font-semibold whitespace-nowrap">{t("account.userFilterLists.colUrl", "列表 URL")}</th>
+                  <th className="py-2.5 px-3 text-left font-semibold w-24 whitespace-nowrap">{t("account.userFilterLists.colType", "类型")}</th>
+                  <th className="py-2.5 px-3 text-left font-semibold w-36 whitespace-nowrap">{t("account.userFilterLists.colLastSync", "最近同步")}</th>
+                  <th className="py-2.5 px-3 text-center font-semibold w-24 whitespace-nowrap">{t("account.userFilterLists.colStatus", "状态")}</th>
+                  <th className="py-2.5 px-3 text-right font-semibold w-20 whitespace-nowrap">{t("account.userFilterLists.colActions", "操作")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,21 +266,21 @@ export const UserFilterListsCard: React.FC<UserFilterListsCardProps> = ({
                     <td className="py-2 px-3 font-mono text-xs max-w-xs sm:max-w-md truncate" title={l.url}>
                       {l.url}
                     </td>
-                    <td className="py-2 px-3">
+                    <td className="py-2 px-3 whitespace-nowrap">
                       {l.is_system === 1 ? (
-                        <Tag intent={Intent.PRIMARY} minimal round className="text-xs font-sans">
+                        <Tag intent={Intent.PRIMARY} minimal round className="text-xs font-sans whitespace-nowrap">
                           {t("filtering.tagSystem", "系统")}
                         </Tag>
                       ) : (
-                        <Tag intent={Intent.SUCCESS} minimal round className="text-xs font-sans">
+                        <Tag intent={Intent.SUCCESS} minimal round className="text-xs font-sans whitespace-nowrap">
                           {t("filtering.tagUser", "用户")}
                         </Tag>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-xs opacity-70">
+                    <td className="py-2 px-3 text-xs opacity-70 whitespace-nowrap">
                       {l.last_synced_at ? formatDateTime(new Date(l.last_synced_at * 1000)) : t("filtering.neverSynced", "未同步")}
                     </td>
-                    <td className="py-2 px-3 text-center">
+                    <td className="py-2 px-3 text-center whitespace-nowrap">
                       <Switch
                         checked={l.enabled}
                         onChange={(e) => void handleToggle(l.id, (e.target as HTMLInputElement).checked)}
@@ -289,7 +289,7 @@ export const UserFilterListsCard: React.FC<UserFilterListsCardProps> = ({
                         innerLabel={t("common.no", "关")}
                       />
                     </td>
-                    <td className="py-2 px-3 text-right">
+                    <td className="py-2 px-3 text-right whitespace-nowrap">
                       {l.is_system === 0 ? (
                         <PopoverNext
                           isOpen={deleteConfirmId === l.id}

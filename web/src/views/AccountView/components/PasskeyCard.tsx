@@ -95,8 +95,8 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
     <div className="space-y-4">
       <OverlayToaster ref={toasterRef} />
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <Key size={20} className="text-purple-500" />
           <H4 style={{ margin: 0 }}>
             {t("account.passkey.title", "Passkeys")}
@@ -105,6 +105,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
             intent={passkeys.length > 0 ? Intent.SUCCESS : Intent.NONE}
             minimal
             round
+            className="whitespace-nowrap"
           >
             {passkeys.length > 0
               ? t("account.passkey.count", {
@@ -115,7 +116,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
           </Tag>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           {supported && passkeys.length > 0 && (
             <Button
               intent={Intent.NONE}
@@ -124,6 +125,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
               text={t("account.passkey.testBtn", "Test Passkey")}
               onClick={() => handleTestPasskey()}
               loading={testingId === "all"}
+              className="whitespace-nowrap"
             />
           )}
           {supported && (
@@ -132,6 +134,7 @@ export const PasskeyCard: React.FC<PasskeyCardProps> = ({ onRefresh, user }) => 
               icon={<Plus size={16} />}
               text={t("account.passkey.addBtn", "Add Passkey")}
               onClick={handleOpenAdd}
+              className="whitespace-nowrap"
             />
           )}
         </div>

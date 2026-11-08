@@ -74,7 +74,7 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Database size={20} className="text-gray-500" />
           <H4 style={{ margin: 0 }}>{t("account.databaseSettings", "数据库 (管理员)")}</H4>
@@ -85,13 +85,14 @@ export const DatabaseMigrationCard: React.FC<DatabaseMigrationCardProps> = ({
             round
             intent={isCompleted ? Intent.SUCCESS : Intent.WARNING}
             icon={isCompleted ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            className="whitespace-nowrap self-start sm:self-auto"
           >
             {isCompleted
               ? t("account.migrationCompleted", "迁移已完成")
               : t("account.migrationPending", "有待执行迁移")}
           </Tag>
         ) : (
-          <Tag large round intent={Intent.NONE}>
+          <Tag large round intent={Intent.NONE} className="whitespace-nowrap self-start sm:self-auto">
             {t("common.loading", "加载中...")}
           </Tag>
         )}

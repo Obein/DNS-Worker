@@ -1,12 +1,11 @@
 import React from "react";
 import { Button, Navbar, Alignment, Icon, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon, Monitor, Settings, Menu as MenuIcon } from "lucide-react";
+import { Sun, Moon, Monitor, Menu as MenuIcon } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { SessionLockButton } from "../components/SessionLockButton";
 import type { Profile, UserInfo } from "../types/auth";
 import { useIsMobile } from "../hooks/useIsMobile";
-import clsx from "clsx";
 
 /**
  * Properties for the HeaderNavbar component.

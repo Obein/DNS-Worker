@@ -55,13 +55,13 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <Smartphone size={20} className="text-blue-500" />
           <H4 style={{ margin: 0 }}>
             {t("account.totp.title", "Authenticator App (TOTP)")}
           </H4>
-          <Tag minimal round intent={Intent.NONE}>
+          <Tag minimal round intent={Intent.NONE} className="whitespace-nowrap">
             {t("account.totp.disabled", "Disabled")}
           </Tag>
         </div>
@@ -76,6 +76,7 @@ export const TOTPSetupForm: React.FC<TOTPSetupFormProps> = ({
             )}
             loading={setupLoading}
             onClick={onStartSetup}
+            className="whitespace-nowrap self-start sm:self-auto"
           />
         )}
       </div>

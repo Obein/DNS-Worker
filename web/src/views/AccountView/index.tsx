@@ -149,7 +149,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
 
   return (
     <div className={clsx("max-w-5xl mx-auto space-y-8", isMobile ? "p-0" : "px-8")}>
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-start sm:items-end gap-3 flex-wrap sm:flex-nowrap">
         <div>
           <h2 className="bp6-heading">{t("account.title")}</h2>
           <p className="bp6-text-muted">{t("account.subtitle")}</p>
@@ -160,6 +160,7 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
             round
             intent={me.role === "admin" ? Intent.DANGER : Intent.PRIMARY}
             icon={<ShieldCheck size={16} />}
+            className="shrink-0 whitespace-nowrap"
           >
             {me.role === "admin" ? t("account.roleAdmin") : t("account.roleUser")}
           </Tag>

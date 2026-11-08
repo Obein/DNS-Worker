@@ -106,14 +106,14 @@ export const ActivityLogCard: React.FC<ActivityLogCardProps> = ({
             </p>
           ) : (
             <div className="overflow-x-auto">
-              <HTMLTable interactive striped className="w-full text-sm">
+              <HTMLTable interactive striped className="w-full text-sm whitespace-nowrap">
                 <thead>
                   <tr>
-                    <th>{t("account.activity.action", "Action")}</th>
-                    <th>{t("account.activity.time", "Time")}</th>
-                    <th>{t("account.activity.session", "Session")}</th>
-                    <th>{t("account.activity.ip", "IP Address")}</th>
-                    <th>{t("account.activity.device", "Device")}</th>
+                    <th className="whitespace-nowrap">{t("account.activity.action", "Action")}</th>
+                    <th className="whitespace-nowrap">{t("account.activity.time", "Time")}</th>
+                    <th className="whitespace-nowrap">{t("account.activity.session", "Session")}</th>
+                    <th className="whitespace-nowrap">{t("account.activity.ip", "IP Address")}</th>
+                    <th className="whitespace-nowrap">{t("account.activity.device", "Device")}</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -107,13 +107,13 @@ export const SessionLockCard: React.FC<SessionLockCardProps> = ({
 
   return (
     <Card elevation={Elevation.ONE}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <ShieldCheck size={20} className="text-indigo-600" />
           <H4 className="m-0!">{t("auth.sessionLockTitle", "Idle Session Lock")}</H4>
         </div>
         {!isPinEnabled && (
-          <Button icon="key" intent={Intent.PRIMARY} onClick={handleOpenSetup} disabled={loading}>
+          <Button icon="key" intent={Intent.PRIMARY} onClick={handleOpenSetup} disabled={loading} className="whitespace-nowrap self-start sm:self-auto">
             {t("auth.configurePin", "Configure 4-Digit PIN")}
           </Button>
         )}
