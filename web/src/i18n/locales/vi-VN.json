@@ -60,7 +60,8 @@
     "stats": "Thống kê",
     "logs": "Nhật ký",
     "filter": "Bộ lọc",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt",
+    "noActiveProfileHint": "Chưa chọn hồ sơ, nhấn để xem danh sách hồ sơ"
   },
   "theme": {
     "light": "Sáng",

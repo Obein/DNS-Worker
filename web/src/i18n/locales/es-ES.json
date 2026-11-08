@@ -60,7 +60,8 @@
     "stats": "Estadísticas",
     "logs": "Registros",
     "filter": "Listas de filtro",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "noActiveProfileHint": "Ningún perfil seleccionado, haz clic para ver los perfiles"
   },
   "theme": {
     "light": "Claro",

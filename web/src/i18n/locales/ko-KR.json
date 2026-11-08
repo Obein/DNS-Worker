@@ -60,7 +60,8 @@
     "stats": "통계",
     "logs": "로그",
     "filter": "필터링",
-    "settings": "설정"
+    "settings": "설정",
+    "noActiveProfileHint": "선택된 프로필이 없습니다. 클릭하여 프로필 목록으로 이동"
   },
   "theme": {
     "light": "라이트 모드",

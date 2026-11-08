@@ -60,7 +60,8 @@
     "stats": "Statistiken",
     "logs": "Protokolle",
     "filter": "Filterlisten",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "noActiveProfileHint": "Kein Profil ausgewählt, klicken um zur Übersicht zu gelangen"
   },
   "theme": {
     "light": "Hell",

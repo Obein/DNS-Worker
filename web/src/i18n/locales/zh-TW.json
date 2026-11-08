@@ -60,7 +60,8 @@
     "stats": "統計",
     "logs": "日誌",
     "filter": "過濾項",
-    "settings": "設定"
+    "settings": "設定",
+    "noActiveProfileHint": "未選擇配置，點擊前往配置列表"
   },
   "theme": {
     "light": "淺色",

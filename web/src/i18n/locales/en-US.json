@@ -60,7 +60,8 @@
     "stats": "Analytics",
     "logs": "Logs",
     "filter": "Filters",
-    "settings": "Settings"
+    "settings": "Settings",
+    "noActiveProfileHint": "No profile selected, click to view profiles"
   },
   "theme": {
     "light": "Light",

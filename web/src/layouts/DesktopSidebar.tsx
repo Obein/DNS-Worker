@@ -73,6 +73,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   // Swipe-to-close handling on mobile
   const touchStartRef = React.useRef<{ x: number; y: number; time: number } | null>(null);
   const [dragOffset, setDragOffset] = React.useState<number | null>(null);
+  // Swipe-to-open handling on mobile
+  const [dragOpenOffset, setDragOpenOffset] = React.useState<number | null>(null);
 
   useEffect(() => {
     if (!isSidebarOpen) {
@@ -117,6 +119,83 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
     touchStartRef.current = null;
   };
 
+  // Swipe-to-open gesture from screen edge when sidebar is closed on mobile
+  useEffect(() => {
+    if (!isMobile || isSidebarOpen) {
+      setDragOpenOffset(null);
+      return;
+    }
+
+    let startTouch: { x: number; y: number; time: number } | null = null;
+    let isSwiping = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      // Touch must begin near the left edge (<= 35px from screen edge)
+      if (touch.clientX <= 35) {
+        startTouch = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+        isSwiping = false;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!startTouch) return;
+      const touch = e.touches[0];
+      const diffX = touch.clientX - startTouch.x;
+      const diffY = touch.clientY - startTouch.y;
+
+      if (!isSwiping) {
+        // Only engage when moving right and horizontal motion dominates
+        if (diffX > 8 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+          isSwiping = true;
+        } else if (Math.abs(diffY) > 10) {
+          // Primarily vertical scrolling, cancel gesture
+          startTouch = null;
+          return;
+        }
+      }
+
+      if (isSwiping && diffX > 0) {
+        setDragOpenOffset(Math.min(0, -256 + diffX));
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!startTouch) return;
+      if (isSwiping) {
+        const touch = e.changedTouches[0];
+        const diffX = touch.clientX - startTouch.x;
+        const duration = Date.now() - startTouch.time;
+        // Open drawer if dragged right > 70px or quick flick right > 25px
+        if (diffX > 70 || (duration < 300 && diffX > 25)) {
+          setIsSidebarOpen(true);
+        }
+      }
+      startTouch = null;
+      isSwiping = false;
+      setDragOpenOffset(null);
+    };
+
+    const onTouchCancel = () => {
+      startTouch = null;
+      isSwiping = false;
+      setDragOpenOffset(null);
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchCancel, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchCancel);
+    };
+  }, [isMobile, isSidebarOpen, setIsSidebarOpen]);
+
   // On mobile, automatically close drawer on Escape key press
   useEffect(() => {
     if (!isMobile || !isSidebarOpen) return;
@@ -138,10 +217,18 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
     }
   };
 
+  const handleProfileNavClick = (path: string) => {
+    if (!isProfileActive) {
+      handleNavClick("/dash");
+    } else {
+      handleNavClick(path);
+    }
+  };
+
   return (
     <>
       {/* Mobile Drawer Backdrop */}
-      {isMobile && isSidebarOpen && (
+      {isMobile && (isSidebarOpen || dragOpenOffset !== null) && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity md:hidden!"
           onClick={() => setIsSidebarOpen(false)}
@@ -153,6 +240,11 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             dragOffset !== null
               ? {
                   opacity: Math.max(0, 1 - Math.abs(dragOffset) / 256),
+                  transition: "none",
+                }
+              : dragOpenOffset !== null
+              ? {
+                  opacity: Math.max(0, Math.min(1, (256 + dragOpenOffset) / 256)),
                   transition: "none",
                 }
               : undefined
@@ -167,13 +259,15 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           isMobile
             ? clsx(
                 "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform select-none",
-                isSidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+                isSidebarOpen || dragOpenOffset !== null
+                  ? "translate-x-0"
+                  : "-translate-x-full pointer-events-none"
               )
             : clsx(
                 "relative z-20 shrink-0",
                 isSidebarOpen ? "w-64" : "w-16"
               ),
-          dragOffset === null && "transition-all duration-300"
+          dragOffset === null && dragOpenOffset === null && "transition-all duration-300"
         )}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -183,6 +277,11 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           isMobile && isSidebarOpen && dragOffset !== null
             ? {
                 transform: `translateX(${dragOffset}px)`,
+                transition: "none",
+              }
+            : isMobile && dragOpenOffset !== null
+            ? {
+                transform: `translateX(${dragOpenOffset}px)`,
                 transition: "none",
               }
             : undefined
@@ -247,26 +346,35 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 key={item.id}
                 icon={item.icon as any}
                 text={showText ? item.label : ""}
-                disabled={!isProfileActive}
-                active={location.pathname.endsWith(
+                className={clsx(
+                  !isProfileActive && "opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
+                )}
+                title={!isProfileActive ? t("nav.noActiveProfileHint", "未选择配置，点击前往配置列表") : undefined}
+                active={isProfileActive && location.pathname.endsWith(
                   item.id === "stats" ? "/stats" : `/${item.id}`,
                 )}
-                onClick={() => handleNavClick(item.path)}
+                onClick={() => handleProfileNavClick(item.path)}
               />
             ))}
             <MenuItem
               icon={<ListFilter size={18} />}
               text={showText ? t("nav.filter") : ""}
-              disabled={!isProfileActive}
-              active={location.pathname.endsWith("/filter")}
-              onClick={() => handleNavClick(`/dash/${activeId}/filter`)}
+              className={clsx(
+                !isProfileActive && "opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
+              )}
+              title={!isProfileActive ? t("nav.noActiveProfileHint", "未选择配置，点击前往配置列表") : undefined}
+              active={isProfileActive && location.pathname.endsWith("/filter")}
+              onClick={() => handleProfileNavClick(`/dash/${activeId}/filter`)}
             />
             <MenuItem
               icon={<Settings size={18} />}
               text={showText ? t("nav.settings") : ""}
-              disabled={!isProfileActive}
-              active={location.pathname.endsWith("/settings")}
-              onClick={() => handleNavClick(`/dash/${activeId}/settings`)}
+              className={clsx(
+                !isProfileActive && "opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
+              )}
+              title={!isProfileActive ? t("nav.noActiveProfileHint", "未选择配置，点击前往配置列表") : undefined}
+              active={isProfileActive && location.pathname.endsWith("/settings")}
+              onClick={() => handleProfileNavClick(`/dash/${activeId}/settings`)}
             />
             <li className="my-4 border-t border-gray-100 dark:border-gray-800" />
             <MenuItem

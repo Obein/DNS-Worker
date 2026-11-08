@@ -60,7 +60,8 @@
     "stats": "Statistiques",
     "logs": "Journaux",
     "filter": "Listes de filtrage",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "noActiveProfileHint": "Aucun profil sélectionné, cliquez pour afficher les profils"
   },
   "theme": {
     "light": "Clair",
