@@ -89,14 +89,23 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
       const res = await distributeFilter(trimmed);
       setResult(res);
       setUrl("");
+
+      const toastMessage = res.failedCount > 0
+        ? t(
+            "admin.distributeFilter.toastPartialSuccess",
+            "过滤器已下发至 {{added}} 位用户，{{failed}} 位用户因无配置下发失败",
+            { added: res.addedCount, failed: res.failedCount }
+          )
+        : t(
+            "admin.distributeFilter.toastSuccess",
+            "过滤器已成功下发至 {{count}} 位用户",
+            { count: res.addedCount }
+          );
+
       toasterRef?.current?.show({
-        message: t(
-          "admin.distributeFilter.toastSuccess",
-          "过滤器已成功下发至 {{count}} 位用户",
-          { count: res.addedCount }
-        ),
-        intent: Intent.SUCCESS,
-        icon: "tick",
+        message: toastMessage,
+        intent: res.failedCount > 0 && res.addedCount === 0 ? Intent.DANGER : (res.failedCount > 0 ? Intent.WARNING : Intent.SUCCESS),
+        icon: res.failedCount > 0 && res.addedCount === 0 ? "error" : "tick",
       });
       await fetchDistributed();
     } catch (err: unknown) {
@@ -227,23 +236,42 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
         )}
 
         {result && (
-          <Callout intent={Intent.SUCCESS} icon={null}>
+          <Callout
+            intent={result.failedCount > 0 ? (result.addedCount > 0 ? Intent.WARNING : Intent.DANGER) : Intent.SUCCESS}
+            icon={null}
+          >
             <H5 className="flex items-center gap-2 mb-2 font-semibold">
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              {result.failedCount > 0 && result.addedCount === 0 ? (
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-green-500" />
+              )}
               <span>{t("admin.distributeFilter.resultTitle", "下发执行完成")}</span>
             </H5>
             <div className="space-y-2 text-sm">
               <p>
-                {t(
-                  "admin.distributeFilter.resultSummary",
-                  "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
-                  {
-                    total: result.totalUsers,
-                    added: result.addedCount,
-                    profiles: result.affectedProfilesCount,
-                    skipped: result.skippedCount,
-                  }
-                )}
+                {result.failedCount > 0
+                  ? t(
+                      "admin.distributeFilter.resultSummaryWithFailed",
+                      "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户，{{failed}} 位用户因无可用配置下发失败。",
+                      {
+                        total: result.totalUsers,
+                        added: result.addedCount,
+                        profiles: result.affectedProfilesCount,
+                        skipped: result.skippedCount,
+                        failed: result.failedCount,
+                      }
+                    )
+                  : t(
+                      "admin.distributeFilter.resultSummary",
+                      "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
+                      {
+                        total: result.totalUsers,
+                        added: result.addedCount,
+                        profiles: result.affectedProfilesCount,
+                        skipped: result.skippedCount,
+                      }
+                    )}
               </p>
 
               {result.addedUsernames.length > 0 && (
@@ -262,10 +290,23 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
               {result.skippedUsernames.length > 0 && (
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   <span className="text-xs font-medium text-gray-500">
-                    {t("admin.distributeFilter.skippedUsers", "自动跳过用户")}:
+                    {t("admin.distributeFilter.skippedUsers", "已存在规则用户")}:
                   </span>
                   {result.skippedUsernames.map((u) => (
                     <Tag key={u} intent={Intent.NONE} minimal round>
+                      {u}
+                    </Tag>
+                  ))}
+                </div>
+              )}
+
+              {result.failedUsernames.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-xs font-medium text-red-500 dark:text-red-400">
+                    {t("admin.distributeFilter.failedUsers", "无配置失败用户")}:
+                  </span>
+                  {result.failedUsernames.map((u) => (
+                    <Tag key={u} intent={Intent.DANGER} minimal round>
                       {u}
                     </Tag>
                   ))}

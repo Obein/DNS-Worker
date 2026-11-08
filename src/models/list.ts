@@ -172,8 +172,10 @@ export class ListModel {
     totalUsers: number;
     addedCount: number;
     skippedCount: number;
+    failedCount: number;
     addedUsernames: string[];
     skippedUsernames: string[];
+    failedUsernames: string[];
     affectedProfileIds: string[];
   }> {
     const canonicalUrl = ListModel.normalizeUrl(url);
@@ -183,8 +185,10 @@ export class ListModel {
 
     let addedCount = 0;
     let skippedCount = 0;
+    let failedCount = 0;
     const addedUsernames: string[] = [];
     const skippedUsernames: string[] = [];
+    const failedUsernames: string[] = [];
     const affectedProfileIds: string[] = [];
 
     for (const user of users) {
@@ -199,9 +203,10 @@ export class ListModel {
         "SELECT id FROM profiles WHERE owner_id = ? ORDER BY created_at ASC"
       ).bind(user.id).all<{ id: string }>();
 
+      // 用户不存在任何 Profile 时下发失败，单独计入 failedCount，不计入 skippedCount (已存在规则跳过)
       if (profiles.length === 0) {
-        skippedCount++;
-        skippedUsernames.push(user.username);
+        failedCount++;
+        failedUsernames.push(user.username);
         continue;
       }
 
@@ -221,8 +226,10 @@ export class ListModel {
       totalUsers: users.length,
       addedCount,
       skippedCount,
+      failedCount,
       addedUsernames,
       skippedUsernames,
+      failedUsernames,
       affectedProfileIds
     };
   }

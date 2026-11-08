@@ -1080,7 +1080,7 @@
       "resultTitle": "Distribución completada",
       "resultSummary": "Total de {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s) ({{profiles}} perfiles), omitidos {{skipped}} usuario(s) que ya tenían este filtro.",
       "addedUsers": "Usuarios añadidos",
-      "skippedUsers": "Usuarios omitidos",
+      "skippedUsers": "Ya tenían el filtro",
       "activeDistributedTitle": "Filtros del sistema distribuidos",
       "activeDistributedDesc": "Listas de filtros actualmente distribuidas y marcadas como «Sistema». La revocación solo las eliminará de los perfiles que mantengan esta etiqueta. Las reglas conservadas por los usuarios no se verán afectadas.",
       "noDistributedFilters": "Actualmente no hay reglas de filtrado distribuidas por el sistema",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "Confirmar revocación",
       "toastRevokeSuccess": "Filtro revocado con éxito, eliminado de {{count}} perfiles",
       "usersCount": "{{count}} usuarios",
-      "profilesCount": "{{count}} perfiles"
+      "profilesCount": "{{count}} perfiles",
+      "resultSummaryWithFailed": "Total {{total}} usuario(s): Distribuido exitosamente a {{added}} usuario(s) ({{profiles}} perfil(es)), se omitieron {{skipped}} usuario(s) que ya tenían este filtro y falló para {{failed}} usuario(s) sin perfil.",
+      "failedUsers": "Usuarios fallidos (sin perfil)",
+      "toastPartialSuccess": "Filtro distribuido a {{added}} usuario(s); falló en {{failed}} usuario(s) por falta de perfil"
     }
   }
 }

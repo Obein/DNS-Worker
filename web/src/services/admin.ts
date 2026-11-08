@@ -86,8 +86,10 @@ export interface DistributeFilterResponse {
   totalUsers: number;
   addedCount: number;
   skippedCount: number;
+  failedCount: number;
   addedUsernames: string[];
   skippedUsernames: string[];
+  failedUsernames: string[];
   affectedProfilesCount: number;
 }
 

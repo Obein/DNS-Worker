@@ -1080,7 +1080,7 @@
       "resultTitle": "Verteilung abgeschlossen",
       "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
       "addedUsers": "Hinzugefügte Benutzer",
-      "skippedUsers": "Übersprungene Benutzer",
+      "skippedUsers": "Bereits vorhandener Filter",
       "activeDistributedTitle": "Aktiv verteilte Systemfilter",
       "activeDistributedDesc": "Filterlisten, die derzeit im System verteilt und als „System“ markiert sind. Ein Widerruf entfernt sie nur aus Profilen mit dieser Kennzeichnung. Von Benutzern behaltene Listen bleiben unverändert.",
       "noDistributedFilters": "Derzeit sind keine vom System verteilten Filterregeln vorhanden",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "Widerruf bestätigen",
       "toastRevokeSuccess": "Filter erfolgreich widerrufen, aus {{count}} Profilen entfernt",
       "usersCount": "{{count}} Benutzer",
-      "profilesCount": "{{count}} Profile"
+      "profilesCount": "{{count}} Profile",
+      "resultSummaryWithFailed": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer übersprungen, die diesen Filter bereits hatten, und bei {{failed}} Benutzern ohne Profil fehlgeschlagen.",
+      "failedUsers": "Fehlgeschlagene Benutzer (kein Profil)",
+      "toastPartialSuccess": "Filter an {{added}} Benutzer verteilt; bei {{failed}} Benutzern ohne Profil fehlgeschlagen"
     }
   }
 }

@@ -7,9 +7,10 @@
  * 2. SSRF validation (private/internal networks rejected with 400).
  * 3. Distribution to all users with profile auto-attachment and `is_system = 1` tagging.
  * 4. Automatic skipping when a user already has the filter across any profile.
- * 5. GET /lists API correctly surfacing `is_system` attribute.
- * 6. Regular users' ability to delete distributed filters.
- * 7. Idempotency on repeated distribution passes.
+ * 5. Accurate failure tracking when a user has no profile (failedCount, failedUsernames).
+ * 6. GET /lists API correctly surfacing `is_system` attribute.
+ * 7. Regular users' ability to delete distributed filters.
+ * 8. Idempotency on repeated distribution passes.
  */
 
 import assert from "node:assert";
@@ -62,6 +63,7 @@ async function runDistributeFilterTests() {
   // - Alice (user_alice) - has 1 profile, no lists
   // - Bob (user_bob) - has 1 profile, ALREADY has shared.txt manually added
   // - Charlie (user_charlie) - has 2 profiles (Home, Work), no lists
+  // - Dave (user_dave) - has 0 profiles (should fail distribution and NOT be counted as skipped)
   console.log("2. Creating test users and profiles...");
   const now = Math.floor(Date.now() / 1000);
 
@@ -69,8 +71,9 @@ async function runDistributeFilterTests() {
   const aliceUser: User = { id: "u_alice", username: "user_alice", role: "user" };
   const bobUser: User = { id: "u_bob", username: "user_bob", role: "user" };
   const charlieUser: User = { id: "u_charlie", username: "user_charlie", role: "user" };
+  const daveUser: User = { id: "u_dave", username: "user_dave", role: "user" };
 
-  for (const u of [adminUser, aliceUser, bobUser, charlieUser]) {
+  for (const u of [adminUser, aliceUser, bobUser, charlieUser, daveUser]) {
     rawDb.prepare("INSERT INTO users (id, username, hashed_password, role, created_at, timezone, locale) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
       u.id, u.username, "mock_hash", u.role, now, "UTC", "en-US"
     );
@@ -145,15 +148,17 @@ async function runDistributeFilterTests() {
   const distData = await distRes.json() as any;
 
   assert.strictEqual(distData.success, true);
-  assert.strictEqual(distData.totalUsers, 4, "Total 4 users in system");
-  // Admin, Alice, Charlie added (3 users); Bob already had it (skipped = 1)
+  assert.strictEqual(distData.totalUsers, 5, "Total 5 users in system");
+  // Admin, Alice, Charlie added (3 users); Bob already had it (skipped = 1); Dave has no profile (failed = 1)
   assert.strictEqual(distData.addedCount, 3, "Should add to 3 users who did not have the filter");
   assert.strictEqual(distData.skippedCount, 1, "Should skip 1 user (Bob) who already had the filter");
+  assert.strictEqual(distData.failedCount, 1, "Should fail for 1 user (Dave) who has no profile");
   assert.deepStrictEqual(distData.skippedUsernames, ["user_bob"]);
+  assert.deepStrictEqual(distData.failedUsernames, ["user_dave"]);
   assert.ok(distData.addedUsernames.includes("user_alice"));
   assert.ok(distData.addedUsernames.includes("user_charlie"));
   assert.ok(distData.addedUsernames.includes("admin_user"));
-  console.log("   ✓ Distribution completed: 3 users added, 1 existing user skipped.\n");
+  console.log("   ✓ Distribution completed: 3 users added, 1 existing user skipped, 1 no-profile user failed.\n");
 
   // 6. Verify Lists & is_system tagging on User Side
   console.log("6. Verifying is_system tagging on user-side GET /api/profiles/:id/lists...");
@@ -204,10 +209,12 @@ async function runDistributeFilterTests() {
   const repeatRes = await handleAccountRequest(repeatReq, env, adminUser, ctx);
   const repeatData = await repeatRes.json() as any;
 
-  // Now: Admin, Bob, Charlie have it (3 skipped); Alice deleted it, so Alice gets it again!
+  // Now: Admin, Bob, Charlie have it (3 skipped); Alice deleted it, so Alice gets it again (1 added); Dave has no profile (1 failed)
   assert.strictEqual(repeatData.skippedCount, 3, "Admin, Bob, Charlie have it and should be skipped");
   assert.strictEqual(repeatData.addedCount, 1, "Alice receives it again");
+  assert.strictEqual(repeatData.failedCount, 1, "Dave has no profile and fails again");
   assert.deepStrictEqual(repeatData.addedUsernames, ["user_alice"]);
+  assert.deepStrictEqual(repeatData.failedUsernames, ["user_dave"]);
   console.log("   ✓ Repeated distribution properly skipped all users who already retained the filter.\n");
 
   // 9. Test User "Keep / Retain" list (保留为自定义列表: is_system becomes 0)

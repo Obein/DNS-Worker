@@ -1080,7 +1080,7 @@
       "resultTitle": "배포 완료",
       "resultSummary": "시스템 내 총 {{total}}명의 사용자: {{added}}명의 사용자({{profiles}}개 프로필)에게 배포 완료, 이미 존재하는 {{skipped}}명의 사용자는 건너뛰었습니다.",
       "addedUsers": "배포 완료 사용자",
-      "skippedUsers": "건너뛴 사용자",
+      "skippedUsers": "이미 규칙이 있는 사용자",
       "activeDistributedTitle": "배포된 시스템 규칙",
       "activeDistributedDesc": "현재 시스템에서 배포되어 '시스템 배포' 태그가 부여된 필터 목록입니다. 철회 시 이 태그를 유지하고 있는 프로필에서만 제거되며 사용자가 직접 유지한 규칙은 영향을 받지 않습니다.",
       "noDistributedFilters": "현재 시스템에서 배포된 필터 규칙이 없습니다",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "철회 확인",
       "toastRevokeSuccess": "필터가 성공적으로 철회되어 {{count}}개 프로필에서 제거되었습니다",
       "usersCount": "{{count}}명의 사용자",
-      "profilesCount": "{{count}}개 프로필"
+      "profilesCount": "{{count}}개 프로필",
+      "resultSummaryWithFailed": "총 {{total}}명의 사용자: {{added}}명의 사용자({{profiles}}개 프로필)에게 성공적으로 배포되었고, 이미 이 필터가 있는 {{skipped}}명의 사용자는 건너뛰었으며, 프로필이 없는 {{failed}}명의 사용자는 배포에 실패했습니다.",
+      "failedUsers": "실패한 사용자 (프로필 없음)",
+      "toastPartialSuccess": "필터가 {{added}}명의 사용자에게 배포되었으나, 프로필이 없는 {{failed}}명의 사용자는 실패했습니다"
     }
   }
 }

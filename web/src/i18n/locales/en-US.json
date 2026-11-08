@@ -1080,7 +1080,7 @@
       "resultTitle": "Distribution Completed",
       "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter.",
       "addedUsers": "Added Users",
-      "skippedUsers": "Skipped Users",
+      "skippedUsers": "Already Had Filter",
       "activeDistributedTitle": "Active Distributed Filters",
       "activeDistributedDesc": "Filter lists currently distributed and marked as \"System\". Revoking will only remove them from user profiles still holding this tag. Lists retained by users will not be affected.",
       "noDistributedFilters": "No system-distributed filter lists currently in the system",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "Confirm Revocation",
       "toastRevokeSuccess": "Filter revoked successfully, removed from {{count}} profiles",
       "usersCount": "{{count}} users",
-      "profilesCount": "{{count}} profiles"
+      "profilesCount": "{{count}} profiles",
+      "resultSummaryWithFailed": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter, and failed for {{failed}} user(s) without a profile.",
+      "failedUsers": "Failed Users (No Profile)",
+      "toastPartialSuccess": "Filter distributed to {{added}} user(s); {{failed}} user(s) failed due to missing profiles"
     }
   }
 }

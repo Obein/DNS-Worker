@@ -278,8 +278,10 @@ export async function handleAdminRequest(
       totalUsers: result.totalUsers,
       addedCount: result.addedCount,
       skippedCount: result.skippedCount,
+      failedCount: result.failedCount,
       addedUsernames: result.addedUsernames,
       skippedUsernames: result.skippedUsernames,
+      failedUsernames: result.failedUsernames,
       affectedProfilesCount: result.affectedProfileIds.length
     }), { headers: { 'Content-Type': 'application/json' } });
   }

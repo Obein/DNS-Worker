@@ -1080,7 +1080,7 @@
       "resultTitle": "Distribution terminée",
       "resultSummary": "Total de {{total}} utilisateur(s) : distribué avec succès à {{added}} utilisateur(s) ({{profiles}} profils), {{skipped}} utilisateur(s) ayant déjà ce filtre ignoré(s).",
       "addedUsers": "Utilisateurs ajoutés",
-      "skippedUsers": "Utilisateurs ignorés",
+      "skippedUsers": "Filtre déjà présent",
       "activeDistributedTitle": "Filtres système distribués",
       "activeDistributedDesc": "Listes actuellement distribuées et marquées comme « Système ». La révocation les supprimera uniquement des profils conservant ce badge. Les règles conservées par les utilisateurs ne seront pas affectées.",
       "noDistributedFilters": "Aucune règle de filtrage distribuée par le système pour le moment",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "Confirmer la révocation",
       "toastRevokeSuccess": "Filtre révoqué avec succès, supprimé de {{count}} profils",
       "usersCount": "{{count}} utilisateurs",
-      "profilesCount": "{{count}} profils"
+      "profilesCount": "{{count}} profils",
+      "resultSummaryWithFailed": "Total de {{total}} utilisateur(s) : distribué avec succès à {{added}} utilisateur(s) ({{profiles}} profil(s)), {{skipped}} utilisateur(s) possédant déjà ce filtre ont été ignorés et échec pour {{failed}} utilisateur(s) sans profil.",
+      "failedUsers": "Utilisateurs en échec (aucun profil)",
+      "toastPartialSuccess": "Filtre distribué à {{added}} utilisateur(s) ; échec pour {{failed}} utilisateur(s) sans profil"
     }
   }
 }

@@ -1080,7 +1080,7 @@
       "resultTitle": "下发执行完成",
       "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
       "addedUsers": "下发成功用户",
-      "skippedUsers": "自动跳过用户",
+      "skippedUsers": "已存在规则用户",
       "activeDistributedTitle": "已下发系统规则",
       "activeDistributedDesc": "当前处于系统下发状态且带有“系统下发”标记的规则列表。撤回后将仅从保有该标记的用户配置中移除，用户自行保留的规则不受影响。",
       "noDistributedFilters": "当前系统中无由系统下发的过滤规则",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "确认撤回",
       "toastRevokeSuccess": "已成功撤回过滤器，移除了 {{count}} 个配置中的系统规则",
       "usersCount": "{{count}} 位用户",
-      "profilesCount": "{{count}} 个配置"
+      "profilesCount": "{{count}} 个配置",
+      "resultSummaryWithFailed": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户，{{failed}} 位用户因无可用配置下发失败。",
+      "failedUsers": "无配置失败用户",
+      "toastPartialSuccess": "过滤器已下发至 {{added}} 位用户，{{failed}} 位用户因无配置下发失败"
     }
   }
 }

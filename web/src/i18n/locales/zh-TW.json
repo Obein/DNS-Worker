@@ -1080,7 +1080,7 @@
       "resultTitle": "下發執行完成",
       "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定），略過 {{skipped}} 位已存在該規則的使用者。",
       "addedUsers": "下發成功使用者",
-      "skippedUsers": "自動略過使用者",
+      "skippedUsers": "已存在規則使用者",
       "activeDistributedTitle": "已下發系統規則",
       "activeDistributedDesc": "目前處於系統下發狀態且帶有「系統下發」標記的規則清單。撤回後將僅從保有該標記的使用者設定檔中移除，使用者自行保留的規則不受影響。",
       "noDistributedFilters": "目前系統中無由系統下發的過濾規則",
@@ -1089,7 +1089,10 @@
       "confirmRevoke": "確認撤回",
       "toastRevokeSuccess": "已成功撤回過濾器，移除了 {{count}} 個設定檔中的系統規則",
       "usersCount": "{{count}} 位使用者",
-      "profilesCount": "{{count}} 個設定檔"
+      "profilesCount": "{{count}} 個設定檔",
+      "resultSummaryWithFailed": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定檔），跳過 {{skipped}} 位已存在該規則的使用者，{{failed}} 位使用者因無可用設定檔下發失敗。",
+      "failedUsers": "無設定檔失敗使用者",
+      "toastPartialSuccess": "過濾器已下發至 {{added}} 位使用者，{{failed}} 位使用者因無設定檔下發失敗"
     }
   }
 }
