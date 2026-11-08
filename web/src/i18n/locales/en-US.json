@@ -51,7 +51,8 @@
     "confirmDisable": "Confirm Disable",
     "modeServerfull": "Serverfull Mode",
     "modeCloudflare": "Cloudflare Worker Mode",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "system": "System"
   },
   "nav": {
     "setup": "Setup",
@@ -59,7 +60,8 @@
     "stats": "Analytics",
     "logs": "Logs",
     "filter": "Filters",
-    "settings": "Settings"
+    "settings": "Settings",
+    "noActiveProfileHint": "No profile selected, click to view profiles"
   },
   "theme": {
     "light": "Light",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "Allowed by this list",
     "checkWhitelistedDesc": "Matched an exception rule (@@) in this list, allowing it even if matched by blocking rules.",
     "checkViaPattern": "(matched a pattern rule)",
-    "systemDistributed": "System"
+    "systemDistributed": "System",
+    "keepList": "Keep as Custom List",
+    "keepListHint": "Retaining will remove the \"System\" tag and convert it to your custom list. It will not be removed if an admin revokes system rules.",
+    "systemListNotice": "This list was distributed by the system. Administrators can globally revoke un-retained system rules. You can keep this list to convert it to your personal custom list.",
+    "keepSuccess": "List retained as a custom list; it will not be removed if system rules are revoked",
+    "tagSystem": "System",
+    "tagUser": "User",
+    "noProfileListsTitle": "No profile-level lists added",
+    "noProfileListsDesc": "Add custom blocklists specific to this profile here.",
+    "userAndSystemListsTitle": "User & System Lists",
+    "userAndSystemListsSubtitle": "Global lists inherited from account settings or system distribution, automatically applied to all profiles. They can be disabled for this profile, but cannot be deleted here.",
+    "noUserSystemListsTitle": "No user-level or system lists",
+    "noUserSystemListsDesc": "You can add user-level rules in Account Settings to apply them across all profiles.",
+    "userListNotice": "This is an account-level user rule applied to all profiles. You can disable it for this profile, or delete it in Account Settings.",
+    "cannotDeleteUserListDesc": "User and system lists cannot be deleted in profile settings"
   },
   "settings": {
     "title": "Settings",
@@ -983,7 +999,27 @@
     "migrationFailed": "Database migration failed",
     "noMigrationsApplied": "None",
     "checkMigration": "Refresh Status",
-    "pendingMigrationsList": "Pending schema migration files:"
+    "pendingMigrationsList": "Pending schema migration files:",
+    "userFilterLists": {
+      "title": "User-Level Filter Lists",
+      "description": "Filter lists configured here automatically apply to all of your profiles. System lists carry a 'System' tag, and your custom lists carry a 'User' tag.",
+      "quickPresets": "Quick Presets",
+      "urlHelper": "Supports AdGuard, Hosts, EasyList, and standard rule URLs",
+      "addBtn": "Add List",
+      "addSuccess": "User-level filter list added and applied to all profiles",
+      "enabledToast": "List enabled globally across your account",
+      "disabledToast": "List disabled globally across your account",
+      "deleteSuccess": "User-level list removed",
+      "activeListsTitle": "Active Lists",
+      "empty": "No user or system filter lists found. You can add your own list above.",
+      "colUrl": "List URL",
+      "colType": "Type",
+      "colLastSync": "Last Synced",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "deleteConfirm": "Are you sure you want to delete this list from your account? It will be removed from all of your profiles.",
+      "systemManaged": "System Managed"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker Protective DNS",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribute Filter (Admin)",
-      "description": "Distribute a filter list to all users' profiles. Automatically skips users who already have this filter. Users can delete distributed filters at any time.",
+      "title": "System Filter Lists (Admin)",
+      "description": "Distribute system-level filter lists to all user accounts. Rules are automatically applied across all profiles with the \"System\" tag. Automatically skips users who already have this filter.",
       "quickPresets": "Quick Presets",
       "urlLabel": "Filter List URL",
       "urlHelper": "Supports AdGuard, Hosts, EasyList, and standard rule URLs",
       "submitBtn": "Distribute Now",
-      "toastSuccess": "Filter successfully distributed to {{count}} user(s)",
+      "toastSuccess": "System filter list successfully distributed to {{count}} user(s)",
       "resultTitle": "Distribution Completed",
-      "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter.",
+      "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s), skipped {{skipped}} user(s) who already had this filter.",
       "addedUsers": "Added Users",
-      "skippedUsers": "Skipped Users"
+      "skippedUsers": "Already Had Filter",
+      "activeDistributedTitle": "Active Distributed Filters",
+      "activeDistributedDesc": "System filter lists currently distributed and marked with the \"System\" tag. Revoking will remove this system rule from all user accounts; custom rules created by users will not be affected.",
+      "noDistributedFilters": "No distributed system filter lists currently in the system",
+      "revokeBtn": "Revoke",
+      "revokeConfirm": "Are you sure you want to revoke this system filter list? It will be removed from all user accounts; custom rules created by users will not be affected.",
+      "confirmRevoke": "Confirm Revocation",
+      "toastRevokeSuccess": "System filter list revoked successfully, removed from {{count}} users",
+      "usersCount": "{{count}} users",
+      "resultSummaryWithFailed": "Total {{total}} user(s): Successfully distributed to {{added}} user(s), skipped {{skipped}} user(s) who already had this filter, and failed for {{failed}} user(s).",
+      "failedUsers": "Failed Users",
+      "toastPartialSuccess": "System filter list distributed to {{added}} user(s); {{failed}} user(s) failed"
     }
+  },
+  "system": {
+    "title": "System Administration",
+    "subtitle": "Manage users, system filter lists, system settings, and database maintenance",
+    "accessDenied": "Access Denied",
+    "accessDeniedDesc": "This page is restricted to administrators only."
   }
 }

@@ -86,14 +86,57 @@ export interface DistributeFilterResponse {
   totalUsers: number;
   addedCount: number;
   skippedCount: number;
+  failedCount: number;
   addedUsernames: string[];
   skippedUsernames: string[];
+  failedUsernames: string[];
   affectedProfilesCount: number;
 }
 
 export async function distributeFilter(url: string): Promise<DistributeFilterResponse> {
   const res = await fetch("/api/admin/distribute-filter", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (json.error) throw new Error(json.error);
+    } catch {
+      // fallback to raw text
+    }
+    throw new Error(text);
+  }
+  return res.json();
+}
+
+export interface DistributedFilterItem {
+  url: string;
+  profileCount: number;
+  userCount: number;
+  usernames: string[];
+}
+
+export interface RevokeFilterResponse {
+  success: boolean;
+  url: string;
+  revokedCount: number;
+  affectedProfilesCount: number;
+  affectedUserCount: number;
+  affectedUsernames: string[];
+}
+
+export async function getDistributedFilters(): Promise<DistributedFilterItem[]> {
+  const res = await fetch("/api/admin/distribute-filter");
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function revokeDistributedFilter(url: string): Promise<RevokeFilterResponse> {
+  const res = await fetch("/api/admin/distribute-filter", {
+    method: "DELETE",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url })
   });

@@ -51,7 +51,8 @@
     "confirmDisable": "Confirmer la désactivation",
     "modeServerfull": "Mode Serverfull",
     "modeCloudflare": "Mode Cloudflare Worker",
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "system": "Système"
   },
   "nav": {
     "setup": "Installation",
@@ -59,7 +60,8 @@
     "stats": "Statistiques",
     "logs": "Journaux",
     "filter": "Listes de filtrage",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "noActiveProfileHint": "Aucun profil sélectionné, cliquez pour afficher les profils"
   },
   "theme": {
     "light": "Clair",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "Autorisé par cette liste",
     "checkWhitelistedDesc": "Correspond à une règle d'exception (@@) dans cette liste, l'autorisant en priorité face aux blocages.",
     "checkViaPattern": "(correspond à une règle de motif)",
-    "systemDistributed": "Système"
+    "systemDistributed": "Système",
+    "keepList": "Conserver comme liste personnalisée",
+    "keepListHint": "La conservation supprimera le badge « Système » pour en faire votre liste personnalisée ; elle ne sera pas supprimée si un administrateur révoque les règles système.",
+    "systemListNotice": "Cette liste a été distribuée par le système. Les administrateurs peuvent révoquer globalement les règles système non conservées. Vous pouvez la conserver pour la convertir en liste personnalisée.",
+    "keepSuccess": "Conservée avec succès en tant que liste personnalisée ; elle ne sera pas supprimée lors de la révocation des règles système",
+    "tagSystem": "Système",
+    "tagUser": "Utilisateur",
+    "noProfileListsTitle": "Aucune liste de profil ajoutée",
+    "noProfileListsDesc": "Ajoutez ici des listes de blocage spécifiques à ce profil.",
+    "userAndSystemListsTitle": "Listes Utilisateur & Système",
+    "userAndSystemListsSubtitle": "Listes globales héritées du compte ou du système, appliquées à tous les profils. Peuvent être désactivées ici, mais non supprimées.",
+    "noUserSystemListsTitle": "Aucune liste utilisateur ou système",
+    "noUserSystemListsDesc": "Vous pouvez ajouter des règles au niveau du compte pour les appliquer à tous les profils.",
+    "userListNotice": "Règle au niveau du compte appliquée à tous les profils. Peut être désactivée ici ou supprimée dans le Compte.",
+    "cannotDeleteUserListDesc": "Les listes utilisateur et système ne peuvent être supprimées dans le profil"
   },
   "settings": {
     "title": "Paramètres du profil",
@@ -983,7 +999,27 @@
     "migrationFailed": "Échec de la migration de la base de données",
     "noMigrationsApplied": "Aucune",
     "checkMigration": "Actualiser le statut",
-    "pendingMigrationsList": "Fichiers de migration de schéma en attente :"
+    "pendingMigrationsList": "Fichiers de migration de schéma en attente :",
+    "userFilterLists": {
+      "title": "Listes de filtres Utilisateur",
+      "description": "Les listes configurées ici s'appliquent automatiquement à tous vos profils. Les règles système portent le badge 'Système' et les vôtres 'Utilisateur'.",
+      "quickPresets": "Préréglages rapides",
+      "urlHelper": "Prend en charge les formats AdGuard, Hosts, EasyList, etc.",
+      "addBtn": "Ajouter la liste",
+      "addSuccess": "Liste utilisateur ajoutée et appliquée à tous les profils",
+      "enabledToast": "Liste activée sur l'ensemble du compte",
+      "disabledToast": "Liste désactivée sur l'ensemble du compte",
+      "deleteSuccess": "Liste utilisateur supprimée",
+      "activeListsTitle": "Listes actives",
+      "empty": "Aucune liste utilisateur ou système trouvée.",
+      "colUrl": "URL de liste",
+      "colType": "Type",
+      "colLastSync": "Dernière sync.",
+      "colStatus": "État",
+      "colActions": "Actions",
+      "deleteConfirm": "Voulez-vous vraiment supprimer cette liste de votre compte ? Elle sera retirée de tous vos profils.",
+      "systemManaged": "Géré par le système"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker de protection",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribuer le filtre (Admins uniquement)",
-      "description": "Distribuez une liste de filtres aux profils de tous les utilisateurs. Ignore automatiquement les utilisateurs possédant déjà ce filtre. Les utilisateurs peuvent supprimer les filtres distribués à tout moment.",
+      "title": "Listes de filtres système (Admin)",
+      "description": "Distribue des listes de filtres au niveau système à tous les comptes d'utilisateurs. Les règles s'appliquent automatiquement à tous les profils avec le badge « Système ». Ignore les doublons.",
       "quickPresets": "Préréglages rapides",
       "urlLabel": "URL de la liste de filtres",
       "urlHelper": "Prend en charge les formats standards tels qu'AdGuard, Hosts ou EasyList",
       "submitBtn": "Distribuer maintenant",
-      "toastSuccess": "Filtre distribué avec succès à {{count}} utilisateur(s)",
+      "toastSuccess": "Liste de filtres système distribuée avec succès à {{count}} utilisateur(s)",
       "resultTitle": "Distribution terminée",
-      "resultSummary": "Total de {{total}} utilisateur(s) : distribué avec succès à {{added}} utilisateur(s) ({{profiles}} profils), {{skipped}} utilisateur(s) ayant déjà ce filtre ignoré(s).",
+      "resultSummary": "Total {{total}} utilisateur(s) : distribuée à {{added}} utilisateur(s), {{skipped}} utilisateur(s) ignoré(s) car la règle existait déjà.",
       "addedUsers": "Utilisateurs ajoutés",
-      "skippedUsers": "Utilisateurs ignorés"
+      "skippedUsers": "Filtre déjà présent",
+      "activeDistributedTitle": "Filtres système distribués",
+      "activeDistributedDesc": "Listes de filtres actuellement distribuées avec le badge « Système ». La révocation les supprimera de tous les comptes utilisateurs ; les règles personnalisées ne seront pas affectées.",
+      "noDistributedFilters": "Aucune liste de filtres système actuellement distribuée",
+      "revokeBtn": "Révoquer",
+      "revokeConfirm": "Êtes-vous sûr de vouloir révoquer cette liste système ? Elle sera supprimée de tous les comptes utilisateurs sans affecter les règles personnalisées.",
+      "confirmRevoke": "Confirmer la révocation",
+      "toastRevokeSuccess": "Liste de filtres système révoquée avec succès, supprimée pour {{count}} utilisateurs",
+      "usersCount": "{{count}} utilisateurs",
+      "resultSummaryWithFailed": "Total {{total}} utilisateur(s) : distribuée à {{added}} utilisateur(s), {{skipped}} ignoré(s), et échec pour {{failed}} utilisateur(s).",
+      "failedUsers": "Utilisateurs en échec",
+      "toastPartialSuccess": "Liste distribuée à {{added}} utilisateur(s) ; échec pour {{failed}} utilisateur(s)"
     }
+  },
+  "system": {
+    "title": "Administration système",
+    "subtitle": "Gérez les utilisateurs, listes de filtres système, paramètres et base de données",
+    "accessDenied": "Accès refusé",
+    "accessDeniedDesc": "Cette page est réservée aux administrateurs."
   }
 }

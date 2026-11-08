@@ -471,7 +471,14 @@ async function _executeRebuildProfileBloom(
   const profile = await profileModel.getById(profileId);
   const priorListUpdatedAt = profile?.list_updated_at ?? 0;
 
-  const activeLists = (await listModel.getLists(profileId)).filter((l) => !!l.enabled);
+  const rawActiveLists = (await listModel.getLists(profileId)).filter((l) => !!l.enabled);
+  const seenUrls = new Set<string>();
+  const activeLists = rawActiveLists.filter((l) => {
+    const norm = ListModel.normalizeUrl(l.url);
+    if (seenUrls.has(norm)) return false;
+    seenUrls.add(norm);
+    return true;
+  });
   const presence = await Promise.all(
     activeLists.map((l) =>
       listBloomModel

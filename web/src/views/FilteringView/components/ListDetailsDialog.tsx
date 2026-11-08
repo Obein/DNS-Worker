@@ -139,12 +139,35 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
 
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 break-all font-mono text-sm flex items-center justify-between gap-2">
           <span>{selectedList?.url}</span>
-          {Boolean(selectedList?.is_system) && (
+          {selectedList?.scope === "system" && (
             <Tag intent={Intent.PRIMARY} minimal className="shrink-0 font-sans">
-              {t("filtering.systemDistributed", "系统下发")}
+              {t("filtering.tagSystem", "系统")}
+            </Tag>
+          )}
+          {selectedList?.scope === "user" && (
+            <Tag intent={Intent.SUCCESS} minimal className="shrink-0 font-sans">
+              {t("filtering.tagUser", "用户")}
             </Tag>
           )}
         </div>
+
+        {selectedList?.scope === "system" && (
+          <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
+            {t(
+              "filtering.systemListNotice",
+              "此列表由系统下发并应用于所有配置。可在当前配置中停用，但不可在配置中删除。"
+            )}
+          </Callout>
+        )}
+
+        {selectedList?.scope === "user" && (
+          <Callout intent={Intent.SUCCESS} icon="info-sign" className="text-xs">
+            {t(
+              "filtering.userListNotice",
+              "此列表为账号级用户规则并应用于所有配置。可在当前配置中停用；如需删除，请前往「账号」管理页面。"
+            )}
+          </Callout>
+        )}
 
         <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3">
           <div>
@@ -291,46 +314,52 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
       </div>
 
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-        <PopoverNext
-          isOpen={deleteConfirmOpen}
-          onInteraction={setDeleteConfirmOpen}
-          placement="top-start"
-          portalClassName="z-20000"
-          content={
-            <div className="p-3 space-y-3 max-w-xs">
-              <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
-                {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  small
-                  variant="minimal"
-                  text={t("common.cancel", "Cancel")}
-                  onClick={() => setDeleteConfirmOpen(false)}
-                />
-                <Button
-                  small
-                  intent={Intent.DANGER}
-                  text={t("common.confirm", "Confirm")}
-                  onClick={() => {
-                    if (!selectedList) return;
-                    const id = selectedList.id;
-                    setDeleteConfirmOpen(false);
-                    reset();
-                    onDelete(id);
-                  }}
-                />
+        {selectedList?.scope === "profile" ? (
+          <PopoverNext
+            isOpen={deleteConfirmOpen}
+            onInteraction={setDeleteConfirmOpen}
+            placement="top-start"
+            portalClassName="z-20000"
+            content={
+              <div className="p-3 space-y-3 max-w-xs">
+                <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
+                  {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    small
+                    variant="minimal"
+                    text={t("common.cancel", "Cancel")}
+                    onClick={() => setDeleteConfirmOpen(false)}
+                  />
+                  <Button
+                    small
+                    intent={Intent.DANGER}
+                    text={t("common.confirm", "Confirm")}
+                    onClick={() => {
+                      if (!selectedList) return;
+                      const id = selectedList.id;
+                      setDeleteConfirmOpen(false);
+                      reset();
+                      onDelete(id);
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          }
-        >
-          <Button
-            icon={<Trash2 size={14} />}
-            intent={Intent.DANGER}
-            text={t("rules.delete", "Delete")}
-            onClick={() => setDeleteConfirmOpen(true)}
-          />
-        </PopoverNext>
+            }
+          >
+            <Button
+              icon={<Trash2 size={14} />}
+              intent={Intent.DANGER}
+              text={t("rules.delete", "Delete")}
+              onClick={() => setDeleteConfirmOpen(true)}
+            />
+          </PopoverNext>
+        ) : (
+          <span className="text-xs text-gray-400 italic">
+            {t("filtering.cannotDeleteUserListDesc", "用户级与系统级列表不可在配置中删除")}
+          </span>
+        )}
         <div className="flex gap-2">
           {onSyncSingle && (
             <Button

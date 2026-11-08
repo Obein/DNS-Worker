@@ -52,6 +52,36 @@ Navigate to **Filters** (规则订阅) in the Web Dashboard to inspect and manag
 
 ---
 
+### Profile-Level, User-Level & System-Level Filter Lists
+
+To balance **centralized administrative governance** with **personalized granular control** across diverse devices, endpoints, and users, DNS Worker introduces a structured three-tier filter list architecture:
+
+| Tier | Management Portal | Scope | Badge | Per-Profile Toggle | Independent Deletion |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Profile-Level** | `/filter` (Upper section) | Applies exclusively to the active profile | *None* | Supported | Supported |
+| **User-Level** | `/account` (User Filter Lists) | Inherited automatically by all profiles of the user | **User** (Green Tag) | Supported (Profile override) | `/account` page only |
+| **System-Level** | `/account` (System Filter Lists - Admin) | Distributed globally to all users and all profiles | **System** (Blue Tag) | Supported (Profile override) | Admin revocation only |
+
+#### 1. Core Architecture Tiers
+- **Profile-Level Lists**: Dedicated to a single profile. Added, synced, toggled, and deleted directly within `/filter`. Ideal for isolated policies (e.g. strict parental control lists on kids' devices, or minimal lightweight rules for server endpoints).
+- **User-Level Lists**: Shared across a user account. Managed once on the `/account` page and automatically inherited by every profile under that user. Eliminates the need to duplicate common personal blocklists across multiple endpoints.
+- **System-Level Lists**: Organization or platform security baselines. Distributed by administrators to all user accounts to enforce global threat intelligence (such as malware, phishing, and ransomware blocklists). Administrators can revoke distributed rules at any time, which purges the system-tagged list without affecting users' custom lists.
+
+#### 2. `/filter` Multi-Tier Layout & Controls
+Within each profile's `/filter` view, lists are organized in a split layout:
+- **Upper Section (Profile Lists)**: Displays profile-specific rules with full management capabilities (add, sync, toggle, delete).
+- **Divider**: Clearly delineates profile-specific rules from inherited global rules.
+- **Lower Section (User & System Lists)**: Displays inherited user-level and system-level lists with corresponding `User` or `System` badges:
+  - **Per-Profile Toggling**: Users can selectively disable or enable any user or system list for the current profile via profile override mappings (`profile_user_list_overrides`), without affecting other profiles.
+  - **Protected From Profile-Level Deletion**: To maintain global configuration integrity, delete buttons are hidden for inherited lists in the profile view. User lists must be managed from `/account`, while system lists are controlled by administrators.
+
+#### 3. Duplicate Handling & Linked Toggles
+- **Duplicate URLs Allowed**: The same subscription URL can coexist across profile-level, user-level, and system-level tiers.
+- **Linked Disabling**: When a user disables a filter list in a profile, if duplicate entries with the same URL exist across tiers, the system **simultaneously disables all matching entries** in that profile. This prevents deceptive states where a list appears disabled while identical rules remain active through another tier. Re-enabling affects only the individually toggled item.
+- **Deduplicated Engine Compilation**: When compiling active rules into Bloom filters and regex sets, the background synchronization pipeline automatically deduplicates active URLs (`Set<string>`). Identical URLs are fetched and parsed only once, minimizing network egress and edge compute overhead.
+
+---
+
 ### Custom Allowlist, Blocklist & Rewrites
 
 Navigate to **Rules** (自定义规则) to configure instant manual overrides on a per-profile basis:

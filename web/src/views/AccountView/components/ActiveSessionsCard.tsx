@@ -74,12 +74,12 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
 
   return (
     <Card elevation={Elevation.ONE}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Monitor size={20} className="text-green-500" />
           <H4 style={{ margin: 0 }}>{t("account.sessions.title", "Active Sessions")}</H4>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           {otherSessionsCount > 0 && (
             <Button
               small
@@ -89,6 +89,7 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
               text={t("account.sessions.revokeOthers", "Revoke Other Sessions")}
               loading={revokingOthers}
               onClick={() => setIsRevokeOthersAlertOpen(true)}
+              className="whitespace-nowrap"
             />
           )}
           <Button
@@ -109,15 +110,15 @@ export const ActiveSessionsCard: React.FC<ActiveSessionsCardProps> = ({
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <HTMLTable interactive striped className="w-full text-sm">
+          <HTMLTable interactive striped className="w-full text-sm whitespace-nowrap">
             <thead>
               <tr>
-                <th>{t("account.sessions.device", "Device")}</th>
-                <th>{t("account.sessions.session", "Session")}</th>
-                <th>{t("account.sessions.ip", "IP Address")}</th>
-                <th>{t("account.sessions.loginTime", "Login Time")}</th>
-                <th>{t("account.sessions.expires", "Expires")}</th>
-                <th>{t("account.sessions.action", "Action")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.device", "Device")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.session", "Session")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.ip", "IP Address")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.loginTime", "Login Time")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.expires", "Expires")}</th>
+                <th className="whitespace-nowrap">{t("account.sessions.action", "Action")}</th>
               </tr>
             </thead>
             <tbody>

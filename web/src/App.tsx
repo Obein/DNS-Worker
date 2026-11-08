@@ -24,8 +24,12 @@ const AccountView = lazyWithPreload(() =>
   import("./views/AccountView").then((m) => ({ default: m.AccountView })),
 );
 
+const SystemView = lazyWithPreload(() =>
+  import("./views/SystemView").then((m) => ({ default: m.SystemView })),
+);
+
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth >= 768 : true));
   const navigate = useNavigate();
   const location = useLocation();
   const toasterRef = useRef<OverlayToaster | null>(null);
@@ -200,6 +204,27 @@ function App() {
                 isSaving={isSaving}
               >
                 <AccountView onSavingChange={setIsSaving} toasterRef={toasterRef} />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/system"
+            element={
+              <MainLayout
+                isSidebarOpen={isSidebarOpen}
+                setIsSidebarOpen={setIsSidebarOpen}
+                theme={theme}
+                setTheme={setTheme}
+                selectedProfile={selectedProfile}
+                profiles={profiles}
+                setSelectedProfile={setSelectedProfile}
+                location={location}
+                navigate={navigate}
+                handleLogout={handleLogout}
+                currentUser={currentUser}
+                isSaving={isSaving}
+              >
+                <SystemView onSavingChange={setIsSaving} toasterRef={toasterRef} />
               </MainLayout>
             }
           />

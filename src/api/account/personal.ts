@@ -3,6 +3,7 @@ import { handleMeRequest } from "./me";
 import { handleSecurityRequest } from "./security";
 import { handleSessionsRequest } from "./sessions";
 import { handleAccountE2eeRequest } from "./e2ee";
+import { handleUserListsRequest } from "./user_lists";
 
 /**
  * Handle personal account requests to /api/account/... by delegating to specialized handlers.
@@ -19,6 +20,11 @@ export async function handlePersonalAccountRequest(
   // Delegate basic account info and lifecycle actions
   if (action === 'me' || action === 'delete' || action === 'logs') {
     return handleMeRequest(request, env, user, pathParts, ctx);
+  }
+
+  // Delegate user-level filter lists
+  if (action === 'user-lists') {
+    return handleUserListsRequest(request, env, user, pathParts, ctx);
   }
 
   // Delegate password updates, TOTP and Passkey settings, MFA settings, and recovery keys

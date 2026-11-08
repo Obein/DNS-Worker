@@ -51,7 +51,8 @@
     "confirmDisable": "确认关闭",
     "modeServerfull": "Serverfull 模式",
     "modeCloudflare": "Cloudflare Worker 模式",
-    "unknown": "未知"
+    "unknown": "未知",
+    "system": "系统"
   },
   "nav": {
     "setup": "安装",
@@ -59,7 +60,8 @@
     "stats": "统计",
     "logs": "日志",
     "filter": "过滤项",
-    "settings": "设置"
+    "settings": "设置",
+    "noActiveProfileHint": "未选择配置，点击前往配置列表"
   },
   "theme": {
     "light": "浅色",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "被该列表放行",
     "checkWhitelistedDesc": "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。",
     "checkViaPattern": "(匹配到通配规则)",
-    "systemDistributed": "系统下发"
+    "systemDistributed": "系统下发",
+    "keepList": "保留为自定义列表",
+    "keepListHint": "保留后将移除“系统下发”标签，变为您的自定义列表；管理员撤回系统规则时此列表不会被移除。",
+    "systemListNotice": "此列表由系统下发。管理员可全局撤回未保留的系统规则。您可以保留此规则，将其转换为个人自定义列表。",
+    "keepSuccess": "已保留为自定义列表，管理员撤回规则时此列表将不会被删除",
+    "tagSystem": "系统",
+    "tagUser": "用户",
+    "noProfileListsTitle": "尚未添加配置级列表",
+    "noProfileListsDesc": "您可在此为当前配置添加专属的拦截列表。",
+    "userAndSystemListsTitle": "用户级与系统级列表",
+    "userAndSystemListsSubtitle": "继承自账号设置或由系统下发的全局规则列表，自动应用于所有配置。可在此处针对当前配置停用，但不可在此删除。",
+    "noUserSystemListsTitle": "暂无用户级与系统级列表",
+    "noUserSystemListsDesc": "可在账号设置页面中添加应用于所有配置的用户级规则。",
+    "userListNotice": "此列表为账号级用户规则并应用于所有配置。可在当前配置中停用；如需删除，请前往「账号」管理页面。",
+    "cannotDeleteUserListDesc": "用户级与系统级列表不可在配置中删除"
   },
   "settings": {
     "title": "配置设置",
@@ -983,7 +999,27 @@
     "migrationFailed": "数据库迁移失败",
     "noMigrationsApplied": "无",
     "checkMigration": "刷新状态",
-    "pendingMigrationsList": "待应用的架构迁移文件："
+    "pendingMigrationsList": "待应用的架构迁移文件：",
+    "userFilterLists": {
+      "title": "用户级过滤列表",
+      "description": "在此配置的过滤规则列表将自动应用于您的所有配置 (Profiles)。系统级规则带有“系统”标签，自建规则带有“用户”标签。",
+      "quickPresets": "快捷预设",
+      "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",
+      "addBtn": "添加列表",
+      "addSuccess": "用户级过滤规则已成功添加并应用于所有配置",
+      "enabledToast": "规则已在账号全局启用",
+      "disabledToast": "规则已在账号全局停用",
+      "deleteSuccess": "已删除用户级规则",
+      "activeListsTitle": "生效列表清单",
+      "empty": "暂无用户级与系统级过滤列表。您可在上方添加自建列表。",
+      "colUrl": "列表 URL",
+      "colType": "类型",
+      "colLastSync": "最近同步",
+      "colStatus": "状态",
+      "colActions": "操作",
+      "deleteConfirm": "确定从账号中删除此过滤列表吗？该规则将从您的所有配置中移除。",
+      "systemManaged": "统一维护"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保护性 DNS",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下发过滤器 (管理员)",
-      "description": "向系统中所有用户的配置下发指定过滤规则列表。如果用户已存在相同规则则自动跳过。用户可自行删除已下发的过滤器。",
+      "title": "系统过滤列表 (管理员)",
+      "description": "向系统中所有用户账号下发制定系统级过滤列表。规则自动应用于用户的全部配置，带有“系统”标签。如果用户已存在相同规则则自动跳过。",
       "quickPresets": "快捷预设",
       "urlLabel": "规则列表 URL",
       "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",
       "submitBtn": "立即下发",
-      "toastSuccess": "过滤器已成功下发至 {{count}} 位用户",
+      "toastSuccess": "系统过滤列表已成功下发至 {{count}} 位用户",
       "resultTitle": "下发执行完成",
-      "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
+      "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户，跳过 {{skipped}} 位已存在该规则的用户。",
       "addedUsers": "下发成功用户",
-      "skippedUsers": "自动跳过用户"
+      "skippedUsers": "已存在规则用户",
+      "activeDistributedTitle": "已下发系统规则",
+      "activeDistributedDesc": "当前处于系统下发状态且带有“系统”标签的规则列表。撤回后将从所有用户账号中移除此系统规则，用户自建的同名规则不受影响。",
+      "noDistributedFilters": "当前系统中无已下发的系统过滤列表",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "确定撤回此系统过滤列表？系统将从所有用户账号中移除此系统规则，用户自建的同名规则不受影响。",
+      "confirmRevoke": "确认撤回",
+      "toastRevokeSuccess": "已成功撤回系统过滤列表，移除了 {{count}} 位用户的系统规则",
+      "usersCount": "{{count}} 位用户",
+      "resultSummaryWithFailed": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户，跳过 {{skipped}} 位已存在该规则的用户，{{failed}} 位用户下发失败。",
+      "failedUsers": "下发失败用户",
+      "toastPartialSuccess": "系统过滤列表已下发至 {{added}} 位用户，{{failed}} 位用户下发失败"
     }
+  },
+  "system": {
+    "title": "系统管理",
+    "subtitle": "管理用户、系统过滤列表、系统配置与数据库维护",
+    "accessDenied": "访问受限",
+    "accessDeniedDesc": "当前页面仅限管理员访问。"
   }
 }

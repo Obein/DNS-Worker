@@ -175,8 +175,55 @@ export async function handleAdminRequest(
     }
   }
 
-  // 下发过滤器接口: POST /api/admin/distribute-filter
+  // 下发与撤回过滤器接口: /api/admin/distribute-filter
   if (pathParts[2] === 'distribute-filter') {
+    const listModel = new ListModel(env.DB);
+
+    // 查询当前系统中所有处于下发状态（is_system = 1）的规则列表
+    if (request.method === 'GET') {
+      const distributed = await listModel.getDistributedSystemLists();
+      return new Response(JSON.stringify(distributed), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // 撤回系统下发的过滤器（仅移除带有 is_system = 1 的记录，保留用户级列表）
+    if (request.method === 'DELETE' || (request.method === 'POST' && pathParts[3] === 'revoke')) {
+      let rawUrl = '';
+      try {
+        const body = await request.json() as { url?: unknown };
+        if (typeof body?.url === 'string') rawUrl = body.url.trim();
+      } catch {
+        const searchUrl = new URL(request.url).searchParams.get('url');
+        if (searchUrl) rawUrl = searchUrl.trim();
+      }
+
+      if (!rawUrl) {
+        return new Response("Missing list URL to revoke", { status: 400 });
+      }
+
+      const canonicalUrl = ListModel.normalizeUrl(rawUrl);
+      const revokeResult = await listModel.revokeSystemList(canonicalUrl);
+
+      // 异步触发所有受影响 Profile 的本地内存快速合并
+      for (const profileId of revokeResult.affectedProfileIds) {
+        ctx.waitUntil(
+          rebuildProfileBloom(profileId, env, ctx)
+            .then(() => pipeline.clearCache(profileId, true, env))
+            .catch((e) => console.error(`[Admin] Failed to rebuild bloom for profile ${profileId} after revoke:`, e))
+        );
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        url: canonicalUrl,
+        revokedCount: revokeResult.revokedProfilesCount,
+        affectedProfilesCount: revokeResult.affectedProfileIds.length,
+        affectedUserCount: revokeResult.affectedUsernames.length,
+        affectedUsernames: revokeResult.affectedUsernames
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (request.method !== 'POST') {
       return new Response("Method Not Allowed", { status: 405 });
     }
@@ -198,7 +245,6 @@ export async function handleAdminRequest(
     }
 
     const canonicalUrl = ListModel.normalizeUrl(rawUrl);
-    const listModel = new ListModel(env.DB);
     const listBloomModel = new ListBloomModel(env.DB);
     const now = Math.floor(Date.now() / 1000);
 
@@ -232,8 +278,10 @@ export async function handleAdminRequest(
       totalUsers: result.totalUsers,
       addedCount: result.addedCount,
       skippedCount: result.skippedCount,
+      failedCount: result.failedCount,
       addedUsernames: result.addedUsernames,
       skippedUsernames: result.skippedUsernames,
+      failedUsernames: result.failedUsernames,
       affectedProfilesCount: result.affectedProfileIds.length
     }), { headers: { 'Content-Type': 'application/json' } });
   }

@@ -36,7 +36,7 @@ flowchart TD
         end
     end
 
-    subgraph Pipeline["统一核心业务管道 (Shared Core Pipeline)"]
+    subgraph Pipeline["统一核心业务管道"]
         CACHE["响应缓存 (TTL Cache)"]
         FILTER["规则引擎 (精确匹配 / 通配符 / 分块布隆)"]
         ECS["ECS 智能注入与隐私脱敏 (/24 & /48)"]
@@ -49,7 +49,7 @@ flowchart TD
         PQC_STORE["后量子零知识加密存储 (ML-KEM-768 密文)"]
     end
 
-    subgraph Frontend["前端本地优先分析架构 (Local-First Web PWA)"]
+    subgraph Frontend["前端本地优先分析架构"]
         WORKER["后台独立线程 (Web Worker)"]
         WASM_DB["WebAssembly 编译版 SQLite 数据库"]
         OPFS["原生 OPFS 私有文件系统"]
@@ -134,7 +134,7 @@ DNS Worker 在逻辑架构上解构为五大垂直层级：
 
 - **五级级联混合过滤流水线**：
   1. **阶段 1：本地自定义规则**：匹配用户配置的白名单（立即放行）、重写规则与黑名单，支持自主指定是否匹配子域名。
-  2. **阶段 2：外部列表白名单例外 (`@@`)**：基于内存散列表（Hash Set）进行 $O(1)$ 直查与父级域名逐级回溯（Parent Walk），命中直接短路放行，彻底消除外部规则假阳性误判风险。
+  2. **阶段 2：外部列表白名单例外 (`@@`)**：基于内存散列表（Hash Set）进行 $O(1)$ 直查与父级域名逐级回溯，命中直接短路放行，彻底消除外部规则假阳性误判风险。
   3. **阶段 3：外部列表 DNS 重写 (`$dnsrewrite`)**：针对命中规则实时合成 A、AAAA、CNAME 或状态阻断（NXDOMAIN / REFUSED）响应。
   4. **阶段 4：双态前缀布隆过滤器**：针对收录数百万域名的海量外部规则集，通过前缀区分单域名黑名单与 `||` 泛子域黑名单，在亚微秒内完成精准匹配，内存开销比传统树结构降低 90% 以上且杜绝单域名误杀子域。
   5. **阶段 5：正则与复杂通配符池**：对 `/regex/` 规则建立顶级域名倒排索引收窄比对范围，并通过 `MAX_REGEX_RULES=1000` 上限保护避免 CPU 拖慢。
@@ -147,7 +147,7 @@ DNS Worker 在逻辑架构上解构为五大垂直层级：
 - **解析管线调度器 (`src/pipeline/index.ts`)**：
   - **响应缓存 (`src/pipeline/cache.ts`)**：维护带 TTL 的自适应缓存，对拦截域名直接合成拦截响应并设置短 TTL，减少冗余请求。
   - **ECS (EDNS Client Subnet) 注入与脱敏 (`src/utils/dns/injectEcs.ts`)**：截断客户端 IP 为 `/24` (IPv4) 或 `/48` (IPv6) 网段信息注入请求，使 CDN 获得就近调度能力的同时隔离客户端精确 IP。
-- **多协议并发上游调度**：同时管理 DoQ (`quic://`)、DoH+ECH (`https://`)、DoT (`tls://`) 与传统 UDP/TCP 上游，支持并发竞速（Race）与故障转移熔断机制。
+- **多协议并发上游调度**：同时管理 DoQ (`quic://`)、DoH+ECH (`https://`)、DoT (`tls://`) 与传统 UDP/TCP 上游，支持并发竞速与故障转移熔断机制。
 
 ### 4. 数据持久化与存储抽象层
 
@@ -184,15 +184,15 @@ sequenceDiagram
     Client->>Ingress: 发送 DNS 查询报文
     Ingress->>Pipeline: 标准化二进制报文
     Pipeline->>Pipeline: 检索本地响应缓存 (TTL Cache)
-    alt 缓存命中 (Cache Hit)
+    alt 缓存命中
         Pipeline-->>Ingress: 返回已缓存 DNS Answer
         Ingress-->>Client: 交付响应结果
-    else 缓存未命中 (Cache Miss)
+    else 缓存未命中
         Pipeline->>Filter: 提交域名合规判定
         Filter->>Filter: 校验白名单、黑名单与分块布隆过滤器
-        alt 判定拦截 (Blocked)
+        alt 判定拦截
             Filter-->>Pipeline: 阻断判定 (返回 0.0.0.0 / CNAME)
-        else 判定放行 (Allowed)
+        else 判定放行
             Filter-->>Pipeline: 放行判定
             Pipeline->>Pipeline: 注入脱敏客户端子网 (ECS)
             Pipeline->>Upstream: 并发向上游递归解析

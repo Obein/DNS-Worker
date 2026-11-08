@@ -11,8 +11,8 @@ export const E2eeHeader: React.FC<E2eeHeaderProps> = ({ isLogsE2eeEnabled }) => 
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-2 flex-wrap">
         <Lock
           size={20}
           className={isLogsE2eeEnabled ? "text-emerald-500" : "text-gray-400"}
@@ -24,13 +24,15 @@ export const E2eeHeader: React.FC<E2eeHeaderProps> = ({ isLogsE2eeEnabled }) => 
           intent={isLogsE2eeEnabled ? Intent.SUCCESS : Intent.NONE}
           minimal
           round
+          className="whitespace-nowrap"
         >
           {isLogsE2eeEnabled
             ? t("account.e2ee.enabled")
             : t("account.e2ee.disabled")}
         </Tag>
       </div>
-      <PopoverNext
+      <div className="shrink-0 self-end sm:self-auto">
+        <PopoverNext
         placement="bottom-end"
         usePortal={true}
         content={
@@ -47,6 +49,7 @@ export const E2eeHeader: React.FC<E2eeHeaderProps> = ({ isLogsE2eeEnabled }) => 
       >
         <Button icon="help" variant="minimal" intent={Intent.NONE} />
       </PopoverNext>
+      </div>
     </div>
   );
 };

@@ -8,7 +8,7 @@ hero:
     file: ../../../assets/logo.webp
   actions:
     - text: 快速開始
-      link: /DNS-Worker/zh-tw/guide/quickstart/
+      link: /DNS-Worker/zh-cn/guide/quickstart/
       icon: right-arrow
       variant: primary
     - text: GitHub 倉庫
@@ -48,12 +48,12 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## 🛡️ 廣告與惡意域名攔截
 
-DNS Worker 從底層架構起即作為**保護性 DNS（Protective DNS）**設計，在網路最基礎的解析層為所有裝置提供全天候威脅防禦與隱私屏障：
+DNS Worker 從底層架構起即作為**保護性 DNS**設計，在網路最基礎的解析層為所有裝置提供全天候威脅防禦與隱私屏障：
 
 - **廣告與全網遙測靜默遮蔽**：無需在終端安裝繁重的過濾外掛，即可在路由器、手機、平板與電視盒子全域性遮蔽橫幅廣告、影片貼片、誘導彈窗以及 Windows / Android 系統級診斷遙測。
 - **主動威脅防禦與反釣魚**：即時攔截木馬分發點、勒索病毒回撥、釣魚詐騙頁面、挖礦指令碼以及殭屍網路命令與控制（C2）惡意域名。
-- **高效能布隆過濾器引擎**：採用緊湊點陣圖雜湊（Bloom Filter）架構，單層微秒級併發評估數十萬條規則，極致節省記憶體與儲存空間。
+- **高效能布隆過濾器引擎**：採用緊湊點陣圖雜湊架構，單層微秒級併發評估數十萬條規則，極致節省記憶體與儲存空間。
 - **靈活完備的規則體系**：開箱即用支援主流精選規則源（OISD Big、AdGuard Base、HaGeZi Multi PRO++、StevenBlack Hosts），並支援自定義精確/萬用字元/正則白名單與黑名單，以及區域網 DNS 重寫對映。
-- **即時審計與威脅日誌**：直觀展示放行（PASS）、阻斷（BLOCK）與重寫（REWRITE）狀態，一鍵展開抽屜深入排查攔截規則歸屬、客戶端來源及解析耗時。
+- **即時審計與威脅日誌**：直觀展示放行、阻斷與重寫狀態，一鍵展開抽屜深入排查攔截規則歸屬、客戶端來源及解析耗時。
 
 👉 [檢視完整配置指南：域名過濾與威脅攔截](/DNS-Worker/zh-tw/filtering/rules/)

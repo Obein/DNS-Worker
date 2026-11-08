@@ -177,7 +177,7 @@ SERVERFULL_DISABLE_HTTPS=false
 
 ### 方案 1：Caddy 反向代理配置 (推荐首选)
 
-Caddy 原生支持全自动申请和续期 Let's Encrypt / ZeroSSL 证书，配置极其简洁。编辑 `/etc/caddy/Caddyfile`：
+Caddy 原生支持全自动申请和续期 Let's Encrypt / ZeroSSL 证书，默认在 UDP 443 端口启用优先的 HTTP/3 (QUIC) 极速解析通道，并向下兼容 HTTP/2。配置极其简洁，编辑 `/etc/caddy/Caddyfile`：
 
 ```caddy
 dns.example.com {
@@ -241,7 +241,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 > [!NOTE]
-> **透传客户端真实 IP**：务必在反向代理中正确传递 `X-Real-IP` 和 `X-Forwarded-For` 请求头，确保 DNS Worker 在查询日志审计、地理位置解析及速率限制（Rate Limiting）中能够精准识别客户端真实 IP，而非反向代理的 `127.0.0.1`。
+> **透传客户端真实 IP**：务必在反向代理中正确传递 `X-Real-IP` 和 `X-Forwarded-For` 请求头，确保 DNS Worker 在查询日志审计、地理位置解析及速率限制中能够精准识别客户端真实 IP，而非反向代理的 `127.0.0.1`。
 
 ---
 

@@ -51,7 +51,8 @@
     "confirmDisable": "Confirmar desactivación",
     "modeServerfull": "Modo Serverfull",
     "modeCloudflare": "Modo Cloudflare Worker",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "system": "Sistema"
   },
   "nav": {
     "setup": "Instalación",
@@ -59,7 +60,8 @@
     "stats": "Estadísticas",
     "logs": "Registros",
     "filter": "Listas de filtro",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "noActiveProfileHint": "Ningún perfil seleccionado, haz clic para ver los perfiles"
   },
   "theme": {
     "light": "Claro",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "Permitido por esta lista",
     "checkWhitelistedDesc": "Coincidió con una regla de excepción (@@) en esta lista, permitiéndola con prioridad sobre bloqueos.",
     "checkViaPattern": "(coincidió con una regla de patrón)",
-    "systemDistributed": "Sistema"
+    "systemDistributed": "Sistema",
+    "keepList": "Conservar como lista personalizada",
+    "keepListHint": "Al conservarla, se eliminará la etiqueta «Sistema» y se convertirá en su lista personalizada; no se eliminará si un administrador revoca las reglas del sistema.",
+    "systemListNotice": "Esta lista fue distribuida por el sistema. Los administradores pueden revocar globalmente las reglas del sistema no conservadas. Puede conservarla para convertirla en su lista personalizada.",
+    "keepSuccess": "Se ha conservado como lista personalizada; no se eliminará si se revocan las reglas del sistema",
+    "tagSystem": "Sistema",
+    "tagUser": "Usuario",
+    "noProfileListsTitle": "Aún no hay listas a nivel de perfil",
+    "noProfileListsDesc": "Añada listas de bloqueo específicas para este perfil aquí.",
+    "userAndSystemListsTitle": "Listas de Usuario y Sistema",
+    "userAndSystemListsSubtitle": "Listas globales heredadas de la cuenta o del sistema, aplicadas a todos los perfiles. Se pueden desactivar en este perfil, pero no eliminar aquí.",
+    "noUserSystemListsTitle": "No hay listas de usuario o de sistema",
+    "noUserSystemListsDesc": "Puede añadir reglas en la Configuración de Cuenta para aplicarlas a todos los perfiles.",
+    "userListNotice": "Esta es una regla a nivel de cuenta aplicada a todos los perfiles. Puede desactivarse aquí o eliminarse en la Cuenta.",
+    "cannotDeleteUserListDesc": "Las listas de usuario y sistema no se pueden eliminar en el perfil"
   },
   "settings": {
     "title": "Ajustes de perfil",
@@ -983,7 +999,27 @@
     "migrationFailed": "Error en la migración de base de datos",
     "noMigrationsApplied": "Ninguna",
     "checkMigration": "Actualizar estado",
-    "pendingMigrationsList": "Archivos de migración de esquema pendientes:"
+    "pendingMigrationsList": "Archivos de migración de esquema pendientes:",
+    "userFilterLists": {
+      "title": "Listas de Filtro de Usuario",
+      "description": "Las listas configuradas aquí se aplican automáticamente a todos sus perfiles. Las del sistema llevan etiqueta 'Sistema' y las suyas 'Usuario'.",
+      "quickPresets": "Preajustes rápidos",
+      "urlHelper": "Soporta URLs en formatos estándar como AdGuard, Hosts y EasyList",
+      "addBtn": "Añadir lista",
+      "addSuccess": "Lista de usuario añadida y aplicada a todos los perfiles",
+      "enabledToast": "Lista activada globalmente en la cuenta",
+      "disabledToast": "Lista desactivada globalmente en la cuenta",
+      "deleteSuccess": "Lista de usuario eliminada",
+      "activeListsTitle": "Listas activas",
+      "empty": "No hay listas de usuario o sistema. Puede añadir una arriba.",
+      "colUrl": "URL de lista",
+      "colType": "Tipo",
+      "colLastSync": "Última sinc.",
+      "colStatus": "Estado",
+      "colActions": "Acciones",
+      "deleteConfirm": "¿Está seguro de eliminar esta lista de su cuenta? Se eliminará de todos sus perfiles.",
+      "systemManaged": "Gestión centralizada"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker de protección",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribuir filtro (solo administradores)",
-      "description": "Distribuye una lista de filtros a los perfiles de todos los usuarios. Omite automáticamente a los usuarios que ya tengan este filtro. Los usuarios pueden eliminar los filtros distribuidos en cualquier momento.",
+      "title": "Listas de filtros del sistema (Admin)",
+      "description": "Distribuye listas de filtros a nivel de sistema a todas las cuentas de usuario. Las reglas se aplican automáticamente a todos los perfiles con la etiqueta \"Sistema\". Omite usuarios con reglas idénticas.",
       "quickPresets": "Ajustes rápidos",
       "urlLabel": "URL de lista de filtros",
       "urlHelper": "Admite URLs de formato estándar como AdGuard, Hosts o EasyList",
       "submitBtn": "Distribuir ahora",
-      "toastSuccess": "Filtro distribuido con éxito a {{count}} usuario(s)",
+      "toastSuccess": "Lista de filtros del sistema distribuida con éxito a {{count}} usuario(s)",
       "resultTitle": "Distribución completada",
-      "resultSummary": "Total de {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s) ({{profiles}} perfiles), omitidos {{skipped}} usuario(s) que ya tenían este filtro.",
+      "resultSummary": "Total {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s), omitido(s) {{skipped}} usuario(s) que ya tenían esta regla.",
       "addedUsers": "Usuarios añadidos",
-      "skippedUsers": "Usuarios omitidos"
+      "skippedUsers": "Ya tenían el filtro",
+      "activeDistributedTitle": "Filtros del sistema distribuidos",
+      "activeDistributedDesc": "Listas de reglas actualmente distribuidas marcadas con la etiqueta \"Sistema\". Al revocar, se eliminarán de todas las cuentas de usuario; las reglas personalizadas no se verán afectadas.",
+      "noDistributedFilters": "Actualmente no hay listas de filtros del sistema distribuidas",
+      "revokeBtn": "Revocar",
+      "revokeConfirm": "¿Está seguro de revocar esta lista de filtros del sistema? Se eliminará de todas las cuentas de usuario; las reglas personalizadas no se verán afectadas.",
+      "confirmRevoke": "Confirmar revocación",
+      "toastRevokeSuccess": "Lista de filtros del sistema revocada con éxito, eliminada de {{count}} usuarios",
+      "usersCount": "{{count}} usuarios",
+      "resultSummaryWithFailed": "Total {{total}} usuario(s): Distribuido a {{added}} usuario(s), omitido(s) {{skipped}} usuario(s), y falló para {{failed}} usuario(s).",
+      "failedUsers": "Usuarios fallidos",
+      "toastPartialSuccess": "Lista distribuida a {{added}} usuario(s); falló para {{failed}} usuario(s)"
     }
+  },
+  "system": {
+    "title": "Administración del sistema",
+    "subtitle": "Gestione usuarios, listas de filtros del sistema, configuración y base de datos",
+    "accessDenied": "Acceso denegado",
+    "accessDeniedDesc": "Esta página está restringida únicamente a administradores."
   }
 }

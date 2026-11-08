@@ -177,7 +177,7 @@ In production setups, in addition to binding port `10080` directly or using buil
 
 ### Option 1: Caddy Reverse Proxy (Recommended)
 
-Caddy natively provisions and renews Let's Encrypt / ZeroSSL certificates automatically. Edit `/etc/caddy/Caddyfile`:
+Caddy natively provisions and renews Let's Encrypt / ZeroSSL certificates automatically, enabling preferred HTTP/3 (QUIC) on UDP port 443 by default while maintaining seamless HTTP/2 compatibility. Edit `/etc/caddy/Caddyfile`:
 
 ```caddy
 dns.example.com {

@@ -51,7 +51,8 @@
     "confirmDisable": "確認停用",
     "modeServerfull": "Serverfull 模式",
     "modeCloudflare": "Cloudflare Worker 模式",
-    "unknown": "未知"
+    "unknown": "未知",
+    "system": "系統"
   },
   "nav": {
     "setup": "安裝",
@@ -59,7 +60,8 @@
     "stats": "統計",
     "logs": "日誌",
     "filter": "過濾項",
-    "settings": "設定"
+    "settings": "設定",
+    "noActiveProfileHint": "未選擇配置，點擊前往配置列表"
   },
   "theme": {
     "light": "淺色",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "被該清單放行",
     "checkWhitelistedDesc": "命中該訂閱清單中的白名單/例外規則 (@@)，即使被其他黑名單規則命中也會優先放行。",
     "checkViaPattern": "(比對到萬用字元規則)",
-    "systemDistributed": "系統下發"
+    "systemDistributed": "系統下發",
+    "keepList": "保留為自訂清單",
+    "keepListHint": "保留後將移除「系統下發」標籤，轉為您的自訂清單；管理員撤回系統規則時此清單不會被移除。",
+    "systemListNotice": "此清單由系統下發。管理員可全域撤回未保留的系統規則。您可以保留此規則，將其轉換為個人自訂清單。",
+    "keepSuccess": "已保留為自訂清單，管理員撤回規則時此清單將不會被刪除",
+    "tagSystem": "系統",
+    "tagUser": "使用者",
+    "noProfileListsTitle": "尚未新增設定檔級清單",
+    "noProfileListsDesc": "您可在此為目前設定檔新增專屬的攔截清單。",
+    "userAndSystemListsTitle": "使用者級與系統級清單",
+    "userAndSystemListsSubtitle": "繼承自帳號設定或由系統下發的全域規則清單，自動套用於所有設定檔。可在此處針對目前設定檔停用，但不可在此刪除。",
+    "noUserSystemListsTitle": "暫無使用者級與系統級清單",
+    "noUserSystemListsDesc": "可在帳號設定頁面中新增套用於所有設定檔的使用者級規則。",
+    "userListNotice": "此清單為帳號級使用者規則並套用於所有設定檔。可在目前設定檔中停用；如需刪除，請前往「帳號」管理頁面。",
+    "cannotDeleteUserListDesc": "使用者級與系統級清單不可在設定檔中刪除"
   },
   "settings": {
     "title": "配置設定",
@@ -983,7 +999,27 @@
     "migrationFailed": "資料庫遷移失敗",
     "noMigrationsApplied": "無",
     "checkMigration": "重新整理狀態",
-    "pendingMigrationsList": "待套用的架構遷移檔案："
+    "pendingMigrationsList": "待套用的架構遷移檔案：",
+    "userFilterLists": {
+      "title": "使用者級過濾清單",
+      "description": "在此設定的過濾規則清單將自動套用於您的所有設定檔 (Profiles)。系統級規則帶有「系統」標籤，自建規則帶有「使用者」標籤。",
+      "quickPresets": "快捷預設",
+      "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",
+      "addBtn": "新增清單",
+      "addSuccess": "使用者級過濾規則已成功新增並套用於所有設定檔",
+      "enabledToast": "規則已在帳號全域啟用",
+      "disabledToast": "規則已在帳號全域停用",
+      "deleteSuccess": "已刪除使用者級規則",
+      "activeListsTitle": "生效清單一覽",
+      "empty": "暫無使用者級與系統級過濾清單。您可在上方新增自建清單。",
+      "colUrl": "清單 URL",
+      "colType": "類型",
+      "colLastSync": "最近同步",
+      "colStatus": "狀態",
+      "colActions": "操作",
+      "deleteConfirm": "確定從帳號中刪除此過濾清單嗎？該規則將從您的所有設定檔中移除。",
+      "systemManaged": "統一維護"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保護性 DNS",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下發過濾器 (管理員)",
-      "description": "向系統中所有使用者的設定下發指定過濾規則清單。若使用者已存在相同規則則自動略過。使用者可自行刪除已下發的過濾器。",
+      "title": "系統過濾列表 (管理員)",
+      "description": "向系統中所有使用者帳號下發制定系統級過濾列表。規則自動套用於使用者的全部設定，帶有「系統」標籤。若使用者已存在相同規則則自動跳過。",
       "quickPresets": "快捷預設",
       "urlLabel": "規則清單 URL",
       "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",
       "submitBtn": "立即下發",
-      "toastSuccess": "過濾器已成功下發至 {{count}} 位使用者",
+      "toastSuccess": "系統過濾列表已成功下發至 {{count}} 位使用者",
       "resultTitle": "下發執行完成",
-      "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定），略過 {{skipped}} 位已存在該規則的使用者。",
+      "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者，跳過 {{skipped}} 位已存在該規則的使用者。",
       "addedUsers": "下發成功使用者",
-      "skippedUsers": "自動略過使用者"
+      "skippedUsers": "已存在規則使用者",
+      "activeDistributedTitle": "已下發系統規則",
+      "activeDistributedDesc": "目前處於系統下發狀態且帶有「系統」標籤的規則列表。撤回後將從所有使用者帳號中移除此系統規則，使用者自建的同名規則不受影響。",
+      "noDistributedFilters": "目前系統中無已下發的系統過濾列表",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "確定撤回此系統過濾列表？系統將從所有使用者帳號中移除此系統規則，使用者自建的同名規則不受影響。",
+      "confirmRevoke": "確認撤回",
+      "toastRevokeSuccess": "已成功撤回系統過濾列表，移除了 {{count}} 位使用者的系統規則",
+      "usersCount": "{{count}} 位使用者",
+      "resultSummaryWithFailed": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者，跳過 {{skipped}} 位已存在該規則的使用者，{{failed}} 位使用者下發失敗。",
+      "failedUsers": "下發失敗使用者",
+      "toastPartialSuccess": "系統過濾列表已下發至 {{added}} 位使用者，{{failed}} 位使用者下發失敗"
     }
+  },
+  "system": {
+    "title": "系統管理",
+    "subtitle": "管理使用者、系統過濾列表、系統設定與資料庫維護",
+    "accessDenied": "存取受限",
+    "accessDeniedDesc": "當前頁面僅限管理員存取。"
   }
 }

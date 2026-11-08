@@ -154,38 +154,38 @@ export const UserManagementCard: React.FC<UserManagementCardProps> = ({
         </div>
       </div>
       <Card elevation={Elevation.ONE} className="p-0 overflow-hidden overflow-x-auto">
-        <HTMLTable interactive striped className="w-full">
+        <HTMLTable interactive striped className="w-full whitespace-nowrap">
           <thead>
             <tr>
-              <th>{t("account.username")}</th>
-              <th>{t("account.role")}</th>
-              <th>MFA</th>
-              <th>ID</th>
-              <th>{t("account.createdAt")}</th>
-              <th>{t("account.lastActive")}</th>
-              <th>{t("account.lastResolve")}</th>
-              <th className="text-right">{t("account.actions")}</th>
+              <th className="whitespace-nowrap">{t("account.username")}</th>
+              <th className="whitespace-nowrap">{t("account.role")}</th>
+              <th className="whitespace-nowrap">MFA</th>
+              <th className="whitespace-nowrap">ID</th>
+              <th className="whitespace-nowrap">{t("account.createdAt")}</th>
+              <th className="whitespace-nowrap">{t("account.lastActive")}</th>
+              <th className="whitespace-nowrap">{t("account.lastResolve")}</th>
+              <th className="text-right whitespace-nowrap">{t("account.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {users.map(u => (
               <tr key={u.id}>
-                <td className="font-bold">{u.username}</td>
-                <td><Tag minimal intent={u.role === 'admin' ? Intent.DANGER : Intent.NONE}>{u.role === 'admin' ? t("account.roleAdmin") : t("account.roleUser")}</Tag></td>
-                <td>
+                <td className="font-bold whitespace-nowrap">{u.username}</td>
+                <td className="whitespace-nowrap"><Tag minimal intent={u.role === 'admin' ? Intent.DANGER : Intent.NONE} className="whitespace-nowrap">{u.role === 'admin' ? t("account.roleAdmin") : t("account.roleUser")}</Tag></td>
+                <td className="whitespace-nowrap">
                   <div className="flex flex-wrap gap-1">
-                    {Boolean(u.totp_enabled) && <Tag minimal intent={Intent.SUCCESS}>TOTP</Tag>}
-                    {Boolean(u.passkeys_count && u.passkeys_count > 0) && <Tag minimal intent={Intent.PRIMARY}>Passkey</Tag>}
+                    {Boolean(u.totp_enabled) && <Tag minimal intent={Intent.SUCCESS} className="whitespace-nowrap">TOTP</Tag>}
+                    {Boolean(u.passkeys_count && u.passkeys_count > 0) && <Tag minimal intent={Intent.PRIMARY} className="whitespace-nowrap">Passkey</Tag>}
                     {!u.totp_enabled && !(u.passkeys_count && u.passkeys_count > 0) && (
-                      <Tag minimal intent={Intent.NONE} style={{ color: "#8a9ba8" }}>{t("account.mfaNone", "无")}</Tag>
+                      <Tag minimal intent={Intent.NONE} style={{ color: "#8a9ba8" }} className="whitespace-nowrap">{t("account.mfaNone", "无")}</Tag>
                     )}
                   </div>
                 </td>
-                <td><code className="text-xs">{u.id}</code></td>
-                <td className="text-xs text-gray-500">{u.created_at ? formatDateTime(new Date(u.created_at * 1000)) : '-'}</td>
-                <td className="text-xs text-gray-500">{u.last_active_at ? formatDateTime(new Date(u.last_active_at * 1000)) : '-'}</td>
-                <td className="text-xs text-gray-500">{u.last_resolve_at ? formatDateTime(new Date(u.last_resolve_at * 1000)) : '-'}</td>
-                <td className="text-right">
+                <td className="whitespace-nowrap"><code className="text-xs">{u.id}</code></td>
+                <td className="text-xs text-gray-500 whitespace-nowrap">{u.created_at ? formatDateTime(new Date(u.created_at * 1000)) : '-'}</td>
+                <td className="text-xs text-gray-500 whitespace-nowrap">{u.last_active_at ? formatDateTime(new Date(u.last_active_at * 1000)) : '-'}</td>
+                <td className="text-xs text-gray-500 whitespace-nowrap">{u.last_resolve_at ? formatDateTime(new Date(u.last_resolve_at * 1000)) : '-'}</td>
+                <td className="text-right whitespace-nowrap">
                   <div className="inline-flex items-center gap-1">
                     <Button
                       minimal

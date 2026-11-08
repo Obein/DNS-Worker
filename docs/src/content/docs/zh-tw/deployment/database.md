@@ -131,7 +131,7 @@ TURSO_DATABASE_URL = "https://dns-worker-db-yourorg.turso.io"
 當 `DATABASE_SERVICE = "Turso"` 時，`wrangler.toml` 中的 `[[d1_databases]]` 配置塊**不再強制關聯**，可安全註釋或完全刪除，避免未開通 D1 的 Cloudflare 賬號在部署時遭遇靜態資料庫校驗失敗。本地與生產遷移指令碼（`npm run db:migrate:dev` / `npm run db:migrate:prod`）亦會自動感知並跳過 D1 流程。
 :::
 
-將 Auth Token 注入為加密金鑰（Secret）：
+將 Auth Token 注入為加密金鑰：
 ```bash
 npx wrangler secret put TURSO_AUTH_TOKEN
 # 粘贴刚刚生成的 Token

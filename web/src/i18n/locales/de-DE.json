@@ -51,7 +51,8 @@
     "confirmDisable": "Deaktivierung bestätigen",
     "modeServerfull": "Serverfull-Modus",
     "modeCloudflare": "Cloudflare Worker-Modus",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "system": "System"
   },
   "nav": {
     "setup": "Installation",
@@ -59,7 +60,8 @@
     "stats": "Statistiken",
     "logs": "Protokolle",
     "filter": "Filterlisten",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "noActiveProfileHint": "Kein Profil ausgewählt, klicken um zur Übersicht zu gelangen"
   },
   "theme": {
     "light": "Hell",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "Von dieser Liste erlaubt",
     "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
     "checkViaPattern": "(entspricht einer Musterregel)",
-    "systemDistributed": "System"
+    "systemDistributed": "System",
+    "keepList": "Als benutzerdefinierte Liste behalten",
+    "keepListHint": "Durch das Behalten wird das Tag „System“ entfernt und die Liste in Ihre benutzerdefinierte Liste umgewandelt; sie wird nicht entfernt, wenn Administratoren Systemregeln widerrufen.",
+    "systemListNotice": "Diese Liste wurde vom System verteilt. Administratoren können nicht behaltene Systemregeln global widerrufen. Sie können diese Regel behalten, um sie in eine eigene Liste umzuwandeln.",
+    "keepSuccess": "Erfolgreich als benutzerdefinierte Liste behalten. Sie wird nicht gelöscht, wenn Systemregeln widerrufen werden.",
+    "tagSystem": "System",
+    "tagUser": "Benutzer",
+    "noProfileListsTitle": "Noch keine profilbezogenen Listen hinzugefügt",
+    "noProfileListsDesc": "Fügen Sie hier spezifische Sperrlisten für dieses Profil hinzu.",
+    "userAndSystemListsTitle": "Benutzer- & Systemlisten",
+    "userAndSystemListsSubtitle": "Globale Listen, die von den Kontoeinstellungen oder der Systemverteilung geerbt werden. Kann für dieses Profil deaktiviert, aber hier nicht gelöscht werden.",
+    "noUserSystemListsTitle": "Keine Benutzer- oder Systemlisten",
+    "noUserSystemListsDesc": "Sie können in den Kontoeinstellungen Regeln hinzufügen, die für alle Profile gelten.",
+    "userListNotice": "Dies ist eine benutzerdefinierte Regel auf Kontoebene. Kann für dieses Profil deaktiviert oder in den Kontoeinstellungen gelöscht werden.",
+    "cannotDeleteUserListDesc": "Benutzer- und Systemlisten können im Profil nicht gelöscht werden"
   },
   "settings": {
     "title": "Profileinstellungen",
@@ -983,7 +999,27 @@
     "migrationFailed": "Datenbankmigration fehlgeschlagen",
     "noMigrationsApplied": "Keine",
     "checkMigration": "Status aktualisieren",
-    "pendingMigrationsList": "Ausstehende Schema-Migrationsdateien:"
+    "pendingMigrationsList": "Ausstehende Schema-Migrationsdateien:",
+    "userFilterLists": {
+      "title": "Filterlisten auf Benutzerebene",
+      "description": "Hier konfigurierte Listen gelten automatisch für alle Ihre Profile. Systemlisten tragen das 'System'-Tag, benutzerdefinierte Listen das 'Benutzer'-Tag.",
+      "quickPresets": "Schnellvoreinstellungen",
+      "urlHelper": "Unterstützt AdGuard, Hosts, EasyList und Standard-URLs",
+      "addBtn": "Liste hinzufügen",
+      "addSuccess": "Filterliste auf Benutzerebene hinzugefügt und auf alle Profile angewendet",
+      "enabledToast": "Liste kontoübergreifend aktiviert",
+      "disabledToast": "Liste kontoübergreifend deaktiviert",
+      "deleteSuccess": "Liste auf Benutzerebene gelöscht",
+      "activeListsTitle": "Aktive Listen",
+      "empty": "Keine Listen auf Benutzer- oder Systemebene vorhanden.",
+      "colUrl": "Listen-URL",
+      "colType": "Typ",
+      "colLastSync": "Letzte Synchronisierung",
+      "colStatus": "Status",
+      "colActions": "Aktionen",
+      "deleteConfirm": "Möchten Sie diese Filterliste wirklich aus Ihrem Konto löschen? Sie wird aus allen Profilen entfernt.",
+      "systemManaged": "Systemverwaltet"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker Schützendes DNS",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Filter verteilen (nur Admins)",
-      "description": "Verteilen Sie eine Filterliste an die Profile aller Benutzer. Überspringt automatisch Benutzer, die diesen Filter bereits haben. Benutzer können verteilte Filter jederzeit löschen.",
+      "title": "System-Filterlisten (Admin)",
+      "description": "Verteilt systemweite Filterlisten an alle Benutzerkonten. Regeln werden automatisch auf alle Profile mit dem Tag „System“ angewendet. Benutzer mit identischen Regeln werden übersprungen.",
       "quickPresets": "Schnellvoreinstellungen",
       "urlLabel": "Filterlisten-URL",
       "urlHelper": "Unterstützt AdGuard-, Hosts-, EasyList- und Standard-Regel-URLs",
       "submitBtn": "Jetzt verteilen",
-      "toastSuccess": "Filter erfolgreich an {{count}} Benutzer verteilt",
+      "toastSuccess": "System-Filterliste erfolgreich an {{count}} Benutzer verteilt",
       "resultTitle": "Verteilung abgeschlossen",
-      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
+      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer verteilt, {{skipped}} Benutzer mit vorhandener Regel übersprungen.",
       "addedUsers": "Hinzugefügte Benutzer",
-      "skippedUsers": "Übersprungene Benutzer"
+      "skippedUsers": "Bereits vorhandener Filter",
+      "activeDistributedTitle": "Aktiv verteilte Systemfilter",
+      "activeDistributedDesc": "Aktuell verteilte Regellisten mit dem Tag „System“. Durch den Widerruf wird diese Regel aus allen Benutzerkonten entfernt; vom Benutzer erstellte gleichnamige Regeln bleiben unberührt.",
+      "noDistributedFilters": "Derzeit sind keine verteilten System-Filterlisten im System vorhanden",
+      "revokeBtn": "Widerrufen",
+      "revokeConfirm": "Möchten Sie diese System-Filterliste wirklich widerrufen? Sie wird aus allen Benutzerkonten entfernt; benutzerdefinierte Regeln bleiben unberührt.",
+      "confirmRevoke": "Widerruf bestätigen",
+      "toastRevokeSuccess": "System-Filterliste erfolgreich widerrufen, bei {{count}} Benutzern entfernt",
+      "usersCount": "{{count}} Benutzer",
+      "resultSummaryWithFailed": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer verteilt, {{skipped}} Benutzer übersprungen, bei {{failed}} Benutzern fehlgeschlagen.",
+      "failedUsers": "Fehlgeschlagene Benutzer",
+      "toastPartialSuccess": "System-Filterliste an {{added}} Benutzer verteilt; bei {{failed}} Benutzern fehlgeschlagen"
     }
+  },
+  "system": {
+    "title": "Systemverwaltung",
+    "subtitle": "Benutzer, System-Filterlisten, Systemeinstellungen und Datenbankverwaltung",
+    "accessDenied": "Zugriff verweigert",
+    "accessDeniedDesc": "Diese Seite ist nur für Administratoren zugänglich."
   }
 }

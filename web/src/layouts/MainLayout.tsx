@@ -5,14 +5,12 @@ import {
   BarChart3,
   Clock,
   Download,
-  ListFilter,
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useIsMobile } from "../hooks/useIsMobile";
 import type { Profile, UserInfo } from "../types/auth";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { HeaderNavbar } from "./HeaderNavbar";
-import { MobileBottomNav } from "./MobileBottomNav";
 
 /**
  * Properties for the MainLayout component.
@@ -48,7 +46,8 @@ interface MainLayoutProps {
 
 /**
  * MainLayout component establishes the page template framing for all authenticated views.
- * It dynamically alternates between Sidebar layout (for desktops) and Bottom Tab layout (for mobile devices).
+ * Desktop and mobile both share the responsive sidebar layout, where mobile defaults to completely collapsed
+ * and toggles via the top header bar.
  *
  * @param props - Component props containing shared state hooks and layout controllers.
  * @returns React elements representing the page layout template.
@@ -94,11 +93,9 @@ export const MainLayout = ({
     },
     {
       id: "rules",
-      label: isMobile && location.pathname.includes("/filter") ? t("nav.filter") : t("nav.rules"),
-      icon: isMobile && location.pathname.includes("/filter") ? <ListFilter size={20} /> : <Edit3 size={20} />,
-      path: isMobile && location.pathname.includes("/filter")
-        ? `/dash/${activeId}/filter`
-        : `/dash/${activeId}/rules`,
+      label: t("nav.rules"),
+      icon: <Edit3 size={20} />,
+      path: `/dash/${activeId}/rules`,
     },
     {
       id: "stats",
@@ -116,20 +113,18 @@ export const MainLayout = ({
 
   return (
     <div className="flex h-screen w-full bg-white dark:bg-gray-950 overflow-hidden flex-col md:flex-row">
-
-      {!isMobile && (
-        <DesktopSidebar
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          isProfileActive={isProfileActive}
-          activeId={activeId}
-          location={location}
-          navigate={navigate}
-          handleLogout={handleLogout}
-          currentUser={currentUser}
-          navItems={navItems}
-        />
-      )}
+      <DesktopSidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        isMobile={isMobile}
+        isProfileActive={isProfileActive}
+        activeId={activeId}
+        location={location}
+        navigate={navigate}
+        handleLogout={handleLogout}
+        currentUser={currentUser}
+        navItems={navItems}
+      />
 
       <main className="flex-1 min-w-0 h-full relative bg-gray-50/20 dark:bg-gray-950/20 flex flex-col overflow-hidden">
         {/* Top Header Navbar */}
@@ -142,6 +137,9 @@ export const MainLayout = ({
           navigate={navigate}
           isSaving={isSaving}
           currentUser={currentUser}
+          isMobile={isMobile}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         {/* Page Content */}
@@ -150,20 +148,10 @@ export const MainLayout = ({
             <div className="flex-1 overflow-y-auto">{children}</div>
           ) : (
             <div className="flex-1 overflow-y-auto pt-14">
-              <div className="p-2 md:p-4 pb-24 md:pb-8">{children}</div>
+              <div className="p-2 md:p-4 pb-6 md:pb-8">{children}</div>
             </div>
           )}
         </div>
-
-        {/* Mobile Bottom Navigation Bar */}
-        {isMobile && (
-          <MobileBottomNav
-            isProfileActive={isProfileActive}
-            navItems={navItems}
-            location={location}
-            navigate={navigate}
-          />
-        )}
       </main>
     </div>
   );

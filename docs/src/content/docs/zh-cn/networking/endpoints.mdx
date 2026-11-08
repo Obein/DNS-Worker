@@ -1,6 +1,6 @@
 ---
 title: 接入点配置与客户端设置
-description: DNS Worker 接入点（Profile）创建管理、连接协议矩阵及多平台客户端配置完整指南。
+description: DNS Worker 接入点创建管理、连接协议矩阵及多平台客户端配置完整指南。
 sidebar:
   order: 1
 ---
@@ -23,20 +23,20 @@ import setupImg from '../../../../../screenshots/dns.obex-setup.webp';
 ### 步骤 1：访问管理面板
 1. 打开 DNS Worker Web 控制面板（例如 `https://dns.example.com` 或 `http://<server-ip>:10080`）。
 2. 使用管理员凭据登录系统。
-3. 在左侧导航栏中，点击 **Profiles**（接入点管理）。
+3. 在左侧导航栏中，点击 **接入点管理**。
 
 ### 步骤 2：新建接入点
-1. 点击右上角 **+ New Profile**（新建接入点）按钮。
+1. 点击右上角 **+ 新建接入点** 按钮。
 2. 输入接入点名称（例如 `Phone-Mobile`、`Living-Room-Router`、`Kids-Tablet`）。
-3. 点击 **Create Profile**（创建接入点）。
+3. 点击 **创建接入点**。
 
 ```mermaid
 flowchart LR
-    subgraph ProfileCard["接入点配置示例 (Profile)"]
+    subgraph ProfileCard["接入点配置示例"]
         direction TB
         P1["接入点名称: Phone-Mobile"]
         P2["路由密钥: a8f9c2d14e..."]
-        P3["运行状态: 激活 (Active)"]
+        P3["运行状态: 激活"]
         P4["拦截响应: Zero IP (0.0.0.0 / ::)"]
         P5["日志策略: 启用 (保留 30 天)"]
         P1 --- P2 --- P3 --- P4 --- P5
@@ -79,9 +79,9 @@ Web 控制面板内置了针对各个操作系统的交互式客户端配置指�
 ### Android 9+（原生私有 DNS）
 Android 原生支持通过 853 端口发起 DNS over TLS：
 
-1. 打开 Android 设备 **设置 (Settings)**。
-2. 进入 **网络和互联网 (Network & Internet)** → **私有 DNS (Private DNS)**。
-3. 选择 **私有 DNS 提供商主机名 (Private DNS provider hostname)**。
+1. 打开 Android 设备 **设置**。
+2. 进入 **网络和互联网** → **私有 DNS**。
+3. 选择 **私有 DNS 提供商主机名**。
 4. 填入您的接入点主机名：
    ```text
    <profileKey>.<dotDomain>

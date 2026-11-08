@@ -65,23 +65,24 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
           <Smartphone size={20} className="text-blue-500" />
           <H4 style={{ margin: 0 }}>
             {t("account.totp.title", "Authenticator App (TOTP)")}
           </H4>
-          <Tag intent={Intent.SUCCESS} minimal round>
+          <Tag intent={Intent.SUCCESS} minimal round className="whitespace-nowrap">
             {t("account.totp.enabled", "Enabled")}
           </Tag>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <Button
             outlined
             icon={<KeyRound size={14} />}
             text={t("account.totp.testBtn", "Test Code")}
             onClick={() => setTestDialogOpen(true)}
+            className="whitespace-nowrap"
           />
           <Button
             intent={Intent.DANGER}
@@ -89,6 +90,7 @@ export const TOTPEnabledState: React.FC<TOTPEnabledStateProps> = ({
             icon={<ShieldOff size={14} />}
             text={t("account.totp.disable", "Disable Authenticator App (TOTP)")}
             onClick={() => setDisableDialogOpen(true)}
+            className="whitespace-nowrap"
           />
         </div>
       </div>

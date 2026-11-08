@@ -28,18 +28,30 @@ export async function combineAndPromote(
 ): Promise<void> {
   const lists = await listModel.getLists(profileId);
   const activeLists = lists.filter((l) => !!l.enabled);
+
+  // 后台合并时不合并重复项：按 URL 对启用的列表进行去重，避免重复加载相同全局 Bloom 与规则
+  const seenUrls = new Set<string>();
+  const uniqueActiveLists: typeof activeLists = [];
+  for (const l of activeLists) {
+    const canonical = ListModel.normalizeUrl(l.url);
+    if (!seenUrls.has(canonical)) {
+      seenUrls.add(canonical);
+      uniqueActiveLists.push(l);
+    }
+  }
+
   const adguardRulesModel = env?.DB ? new AdguardRulesModel(env.DB) : null;
 
-  if (activeLists.length === 0) {
+  if (uniqueActiveLists.length === 0) {
     // 若没有已同步的列表，清空 profile_blooms 与 profile_adguard_rules
     await Promise.all([
       profileBloomModel.clearProfileBlooms(profileId),
       adguardRulesModel?.clearProfileRules(profileId)
     ]);
-  } else if (activeLists.length === 1) {
+  } else if (uniqueActiveLists.length === 1) {
     // 性能优化：单列表短路晋升 (Single-List Direct Promotion)
     // 仅有 1 个列表时直接复用其全局 Bloom 与规则，彻底跳过内存重建与循环合并开销
-    const single = activeLists[0];
+    const single = uniqueActiveLists[0];
     const [buf, listRules] = await Promise.all([
       listBloomModel.getListBloom(single.url),
       adguardRulesModel ? adguardRulesModel.getListRules(single.url) : Promise.resolve(null)
@@ -69,7 +81,7 @@ export async function combineAndPromote(
     const maxRegexRules = Number(env?.MAX_REGEX_RULES) || 1000;
     const seenExceptions = new Set<string>();
 
-    for (const list of activeLists) {
+    for (const list of uniqueActiveLists) {
       try {
         // 1. Bloom Filter 单列表合并
         const buf = await listBloomModel.getListBloom(list.url);

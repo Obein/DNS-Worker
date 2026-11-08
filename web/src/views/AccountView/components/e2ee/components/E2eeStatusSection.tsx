@@ -76,18 +76,18 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
       </div>
 
       {/* Hardware Key & Device Status (shown when keypair exists) */}
-      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 space-y-2 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="opacity-70 flex items-center gap-1.5">
+      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 space-y-3 text-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+          <span className="opacity-70 flex items-center gap-1.5 shrink-0">
             <KeyRound size={13} />
             {t("account.e2ee.keyType")}:
           </span>
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="font-mono break-all sm:break-normal">
               {isPqc ? "P256-MLKEM768 + AES-256-GCM" : "ECDH P-256 + AES-256-GCM"}
             </span>
             {isPqc ? (
-              <Tag minimal intent={Intent.PRIMARY} className="text-[10px]">
+              <Tag minimal intent={Intent.PRIMARY} className="text-[10px] whitespace-nowrap">
                 {t("account.e2ee.pqcTag", "PQC / NIST FIPS 203")}
               </Tag>
             ) : (
@@ -99,19 +99,20 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                 text={t("account.e2ee.upgradePqcBtn", "升级到后量子 (PQC)")}
                 loading={processing}
                 onClick={onUpgradeToPqc}
+                className="whitespace-nowrap"
               />
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="opacity-70 flex items-center gap-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+          <span className="opacity-70 flex items-center gap-1.5 shrink-0">
             <ShieldCheck size={13} />
             {t("account.e2ee.deviceState")}:
           </span>
           {isUnlocked ? (
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <Tag minimal intent={Intent.SUCCESS} className="text-[10px]">
+            <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+              <Tag minimal intent={Intent.SUCCESS} className="text-[10px] whitespace-nowrap">
                 {t("account.e2ee.unlocked")}
               </Tag>
               {hasPasskey && (status?.wrappedPasskeys?.length || 0) === 0 && onEnrollPasskey && (
@@ -122,6 +123,7 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                   text={t("account.e2ee.enrollPasskeyBtn", "关联当前通行密钥")}
                   loading={processing}
                   onClick={onEnrollPasskey}
+                  className="whitespace-nowrap"
                 />
               )}
               <Button
@@ -131,10 +133,11 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                 icon="lock"
                 text={t("account.e2ee.lockDevice", "锁定此设备")}
                 onClick={onLockDevice}
+                className="whitespace-nowrap"
               />
             </div>
           ) : (
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="flex items-center gap-2 flex-wrap sm:justify-end">
               {hasPasskey && (status?.wrappedPasskeys?.length || 0) > 0 && (
                 <Button
                   small
@@ -144,6 +147,7 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                   text={t("account.e2ee.unlockButton")}
                   loading={processing}
                   onClick={onUnlockPasskey}
+                  className="whitespace-nowrap"
                 />
               )}
               <Button
@@ -153,6 +157,7 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                 icon={<KeyRound size={12} />}
                 text={t("account.e2ee.unlockRecoveryButton")}
                 onClick={onOpenRecoveryUnlockDialog}
+                className="whitespace-nowrap"
               />
               {onOpenResetAlert && (
                 <Button
@@ -162,6 +167,7 @@ export const E2eeStatusSection: React.FC<E2eeStatusSectionProps> = ({
                   icon="reset"
                   text={t("account.e2ee.resetKeypairBtn", "重置密钥对")}
                   onClick={onOpenResetAlert}
+                  className="whitespace-nowrap"
                 />
               )}
             </div>

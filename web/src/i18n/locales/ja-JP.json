@@ -51,7 +51,8 @@
     "confirmDisable": "無効化を確認",
     "modeServerfull": "Serverfull モード",
     "modeCloudflare": "Cloudflare Worker モード",
-    "unknown": "不明"
+    "unknown": "不明",
+    "system": "システム"
   },
   "nav": {
     "setup": "インストール",
@@ -59,7 +60,8 @@
     "stats": "統計",
     "logs": "ログ",
     "filter": "フィルター",
-    "settings": "設定"
+    "settings": "設定",
+    "noActiveProfileHint": "プロファイルが未選択です。クリックしてプロファイル一覧へ"
   },
   "theme": {
     "light": "ライト",
@@ -539,7 +541,21 @@
     "checkWhitelisted": "このリストで許可されています",
     "checkWhitelistedDesc": "このリストの例外ルール (@@) に一致したため、他のブロックルールより優先して許可されます。",
     "checkViaPattern": "(パターンルールに一致)",
-    "systemDistributed": "システム配布"
+    "systemDistributed": "システム配布",
+    "keepList": "カスタムリストとして保持",
+    "keepListHint": "保持すると「システム配信」タグが削除され、カスタムリストに変換されます。管理者がシステムルールを撤回しても削除されません。",
+    "systemListNotice": "このリストはシステムによって配信されました。管理者は未保持のシステムルールを一括撤回できます。このルールを保持して個人用カスタムリストに変換できます。",
+    "keepSuccess": "カスタムリストとして保持しました。システムルール撤回時にも削除されません",
+    "tagSystem": "システム",
+    "tagUser": "ユーザー",
+    "noProfileListsTitle": "プロファイル固有のリストはまだありません",
+    "noProfileListsDesc": "このプロファイル専用のブロックリストをここに追加できます。",
+    "userAndSystemListsTitle": "ユーザー級およびシステム級リスト",
+    "userAndSystemListsSubtitle": "アカウント設定またはシステム配布から継承され、すべてのプロファイルに自動適用されます。このプロファイルで無効化できますが、ここでは削除できません。",
+    "noUserSystemListsTitle": "ユーザー級・システム級リストはありません",
+    "noUserSystemListsDesc": "アカウント設定ページですべてのプロファイルに適用するルールを追加できます。",
+    "userListNotice": "すべてのプロファイルに適用されるアカウント級ルールです。このプロファイルで無効化するか、アカウント設定で削除できます。",
+    "cannotDeleteUserListDesc": "ユーザー級およびシステム級リストはプロファイル設定からは削除できません"
   },
   "settings": {
     "title": "動作設定",
@@ -983,7 +999,27 @@
     "migrationFailed": "データベースのマイグレーションに失敗しました",
     "noMigrationsApplied": "なし",
     "checkMigration": "状態を更新",
-    "pendingMigrationsList": "保留中のスキーママイグレーションファイル："
+    "pendingMigrationsList": "保留中のスキーママイグレーションファイル：",
+    "userFilterLists": {
+      "title": "ユーザー級フィルターリスト",
+      "description": "ここで設定されたルールリストは、すべてのプロファイル (Profiles) に自動的に適用されます。システム配布ルールには「システム」、自作ルールには「ユーザー」タグが付きます。",
+      "quickPresets": "クイックプリセット",
+      "urlHelper": "AdGuard、Hosts、EasyList などの標準 URL をサポート",
+      "addBtn": "リストを追加",
+      "addSuccess": "ユーザー級フィルターリストが追加され、全プロファイルに適用されました",
+      "enabledToast": "アカウント全体でルールが有効になりました",
+      "disabledToast": "アカウント全体でルールが無効になりました",
+      "deleteSuccess": "ユーザー級ルールが削除されました",
+      "activeListsTitle": "有効なリスト一覧",
+      "empty": "ユーザー級・システム級フィルターリストはありません。上で新しいリストを追加できます。",
+      "colUrl": "リスト URL",
+      "colType": "タイプ",
+      "colLastSync": "最終同期",
+      "colStatus": "状態",
+      "colActions": "操作",
+      "deleteConfirm": "このフィルターリストをアカウントから削除してもよろしいですか？すべてのプロファイルから削除されます。",
+      "systemManaged": "一元管理"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保護DNS",
@@ -1066,17 +1102,34 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "フィルター配布 (管理者限定)",
-      "description": "指定したフィルターリストを全ユーザーのプロファイルに配布します。既に同じルールを持つユーザーは自動的にスキップされます。ユーザーは配布されたフィルターをいつでも削除できます。",
+      "title": "システムフィルターリスト (管理者)",
+      "description": "システム内の全ユーザーアカウントにシステムレベルのフィルターリストを配信します。ルールは「システム」タグ付きで全プロファイルに自動適用されます。",
       "quickPresets": "クイックプリセット",
       "urlLabel": "フィルターリストURL",
       "urlHelper": "AdGuard、Hosts、EasyList などの標準形式URLをサポート",
       "submitBtn": "今すぐ配布",
-      "toastSuccess": "フィルターが {{count}} 人のユーザーに正常に配布されました",
+      "toastSuccess": "{{count}} 人のユーザーにシステムフィルターリストを正常に配信しました",
       "resultTitle": "配布が完了しました",
-      "resultSummary": "システム内 {{total}} 人のユーザー：{{added}} 人のユーザー（{{profiles}} 件のプロファイル）に配布完了、既に存在する {{skipped}} 人をスキップしました。",
+      "resultSummary": "全 {{total}} ユーザー：{{added}} 人のユーザーに配信成功、既存ルール保持の {{skipped}} 人をスキップしました。",
       "addedUsers": "配布成功ユーザー",
-      "skippedUsers": "スキップされたユーザー"
+      "skippedUsers": "ルール既存のユーザー",
+      "activeDistributedTitle": "配信済みシステムルール",
+      "activeDistributedDesc": "現在配信中で「システム」タグが付与されているルールリストです。取り消すと全ユーザーアカウントから削除されます（ユーザー自作の同名ルールには影響しません）。",
+      "noDistributedFilters": "現在システムに配信済みのシステムフィルターリストはありません",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "このシステムフィルターリストを取り消しますか？全ユーザーアカウントから削除されます。ユーザー自作のカスタムルールには影響しません。",
+      "confirmRevoke": "撤回を確認",
+      "toastRevokeSuccess": "システムフィルターリストを取り消しました（{{count}} 人のユーザーから削除）",
+      "usersCount": "{{count}} 人のユーザー",
+      "resultSummaryWithFailed": "全 {{total}} ユーザー：{{added}} 人に配信成功、{{skipped}} 人をスキップ、{{failed}} 人の配信に失敗しました。",
+      "failedUsers": "配信失敗ユーザー",
+      "toastPartialSuccess": "システムフィルターリストを {{added}} 人に配信しました（{{failed}} 人失敗）"
     }
+  },
+  "system": {
+    "title": "システム管理",
+    "subtitle": "ユーザー、システムフィルターリスト、環境設定、データベースの管理",
+    "accessDenied": "アクセス拒否",
+    "accessDeniedDesc": "このページは管理者のみアクセスできます。"
   }
 }

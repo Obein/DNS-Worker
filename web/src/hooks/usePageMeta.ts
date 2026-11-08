@@ -19,6 +19,8 @@ export function usePageMeta() {
       moduleName = t("common.selectProfile");
     } else if (path === "/account") {
       moduleName = t("common.account");
+    } else if (path === "/system") {
+      moduleName = t("common.system");
     } else if (path.endsWith("/setup")) {
       moduleName = t("nav.setup");
       description = t("meta.setupDesc", "Configure your devices to use DNS Worker.");

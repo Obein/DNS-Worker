@@ -50,8 +50,8 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
   return (
     <Card elevation={Elevation.ONE} className="space-y-6">
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
             <ShieldCheck
               size={20}
               className={isMfaEnabled ? "text-green-500" : "text-gray-400"}
@@ -59,7 +59,7 @@ export const MfaCard: React.FC<MfaCardProps> = ({ user, onRefresh }) => {
             <H4 style={{ margin: 0 }}>
               {t("account.mfa.title", "Multi-Factor Authentication (MFA)")}
             </H4>
-            <Tag intent={isMfaEnabled ? Intent.SUCCESS : Intent.NONE} minimal round>
+            <Tag intent={isMfaEnabled ? Intent.SUCCESS : Intent.NONE} minimal round className="whitespace-nowrap">
               {isMfaEnabled
                 ? t("account.mfa.enabled", "Configured")
                 : t("account.mfa.notConfigured", "Not Configured")}
