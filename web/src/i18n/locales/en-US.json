@@ -539,7 +539,11 @@
     "checkWhitelisted": "Allowed by this list",
     "checkWhitelistedDesc": "Matched an exception rule (@@) in this list, allowing it even if matched by blocking rules.",
     "checkViaPattern": "(matched a pattern rule)",
-    "systemDistributed": "System"
+    "systemDistributed": "System",
+    "keepList": "Keep as Custom List",
+    "keepListHint": "Retaining will remove the \"System\" tag and convert it to your custom list. It will not be removed if an admin revokes system rules.",
+    "systemListNotice": "This list was distributed by the system. Administrators can globally revoke un-retained system rules. You can keep this list to convert it to your personal custom list.",
+    "keepSuccess": "List retained as a custom list; it will not be removed if system rules are revoked"
   },
   "settings": {
     "title": "Settings",
@@ -1076,7 +1080,16 @@
       "resultTitle": "Distribution Completed",
       "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter.",
       "addedUsers": "Added Users",
-      "skippedUsers": "Skipped Users"
+      "skippedUsers": "Skipped Users",
+      "activeDistributedTitle": "Active Distributed Filters",
+      "activeDistributedDesc": "Filter lists currently distributed and marked as \"System\". Revoking will only remove them from user profiles still holding this tag. Lists retained by users will not be affected.",
+      "noDistributedFilters": "No system-distributed filter lists currently in the system",
+      "revokeBtn": "Revoke",
+      "revokeConfirm": "Are you sure you want to revoke this filter? It will be removed from all user profiles holding the \"System\" tag. Rules retained by users as custom lists will not be affected.",
+      "confirmRevoke": "Confirm Revocation",
+      "toastRevokeSuccess": "Filter revoked successfully, removed from {{count}} profiles",
+      "usersCount": "{{count}} users",
+      "profilesCount": "{{count}} profiles"
     }
   }
 }

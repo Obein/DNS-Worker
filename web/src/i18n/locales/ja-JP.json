@@ -539,7 +539,11 @@
     "checkWhitelisted": "このリストで許可されています",
     "checkWhitelistedDesc": "このリストの例外ルール (@@) に一致したため、他のブロックルールより優先して許可されます。",
     "checkViaPattern": "(パターンルールに一致)",
-    "systemDistributed": "システム配布"
+    "systemDistributed": "システム配布",
+    "keepList": "カスタムリストとして保持",
+    "keepListHint": "保持すると「システム配信」タグが削除され、カスタムリストに変換されます。管理者がシステムルールを撤回しても削除されません。",
+    "systemListNotice": "このリストはシステムによって配信されました。管理者は未保持のシステムルールを一括撤回できます。このルールを保持して個人用カスタムリストに変換できます。",
+    "keepSuccess": "カスタムリストとして保持しました。システムルール撤回時にも削除されません"
   },
   "settings": {
     "title": "動作設定",
@@ -1076,7 +1080,16 @@
       "resultTitle": "配布が完了しました",
       "resultSummary": "システム内 {{total}} 人のユーザー：{{added}} 人のユーザー（{{profiles}} 件のプロファイル）に配布完了、既に存在する {{skipped}} 人をスキップしました。",
       "addedUsers": "配布成功ユーザー",
-      "skippedUsers": "スキップされたユーザー"
+      "skippedUsers": "スキップされたユーザー",
+      "activeDistributedTitle": "配信済みシステムルール",
+      "activeDistributedDesc": "現在システムから配信され「システム配信」タグが付いているルール一覧です。撤回するとこのタグを保持するプロファイルからのみ削除され、ユーザーが保持したルールは影響を受けません。",
+      "noDistributedFilters": "現在システム配信されたフィルタールールはありません",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "このフィルターを撤回してもよろしいですか？「システム配信」タグが付いているすべてのユーザープロファイルから削除されます。ユーザーがカスタムリストとして保持したルールは影響を受けません。",
+      "confirmRevoke": "撤回を確認",
+      "toastRevokeSuccess": "フィルターを正常に撤回し、{{count}} 個のプロファイルから削除しました",
+      "usersCount": "{{count}} 人のユーザー",
+      "profilesCount": "{{count}} 件のプロファイル"
     }
   }
 }

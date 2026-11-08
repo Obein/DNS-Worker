@@ -10,7 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
-import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, addProfileRule } from "../../services";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, keepProfileList, addProfileRule } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -239,6 +239,26 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
     }
   };
 
+  const keepList = async (id: number) => {
+    try {
+      await keepProfileList(profileId, id);
+      setSelectedList((prev) => (prev && prev.id === id ? { ...prev, is_system: 0 } : prev));
+      toasterRef?.current?.show({
+        message: t("filtering.keepSuccess", "已保留为自定义列表，管理员撤回规则时此列表将不会被删除"),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await fetchData();
+    } catch (e) {
+      console.error(e);
+      toasterRef?.current?.show({
+        message: e instanceof Error ? e.message : String(e),
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    }
+  };
+
   const syncLists = async () => {
     setSyncing(true);
     try {
@@ -330,6 +350,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         onToggleEnabled={setListEnabled}
         onAllowDomain={allowDomain}
         onSyncSingle={handleSyncSingleList}
+        onKeep={keepList}
       />
     </div>
   );

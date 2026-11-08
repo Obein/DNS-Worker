@@ -539,7 +539,11 @@
     "checkWhitelisted": "Permitido por esta lista",
     "checkWhitelistedDesc": "Coincidió con una regla de excepción (@@) en esta lista, permitiéndola con prioridad sobre bloqueos.",
     "checkViaPattern": "(coincidió con una regla de patrón)",
-    "systemDistributed": "Sistema"
+    "systemDistributed": "Sistema",
+    "keepList": "Conservar como lista personalizada",
+    "keepListHint": "Al conservarla, se eliminará la etiqueta «Sistema» y se convertirá en su lista personalizada; no se eliminará si un administrador revoca las reglas del sistema.",
+    "systemListNotice": "Esta lista fue distribuida por el sistema. Los administradores pueden revocar globalmente las reglas del sistema no conservadas. Puede conservarla para convertirla en su lista personalizada.",
+    "keepSuccess": "Se ha conservado como lista personalizada; no se eliminará si se revocan las reglas del sistema"
   },
   "settings": {
     "title": "Ajustes de perfil",
@@ -1076,7 +1080,16 @@
       "resultTitle": "Distribución completada",
       "resultSummary": "Total de {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s) ({{profiles}} perfiles), omitidos {{skipped}} usuario(s) que ya tenían este filtro.",
       "addedUsers": "Usuarios añadidos",
-      "skippedUsers": "Usuarios omitidos"
+      "skippedUsers": "Usuarios omitidos",
+      "activeDistributedTitle": "Filtros del sistema distribuidos",
+      "activeDistributedDesc": "Listas de filtros actualmente distribuidas y marcadas como «Sistema». La revocación solo las eliminará de los perfiles que mantengan esta etiqueta. Las reglas conservadas por los usuarios no se verán afectadas.",
+      "noDistributedFilters": "Actualmente no hay reglas de filtrado distribuidas por el sistema",
+      "revokeBtn": "Revocar",
+      "revokeConfirm": "¿Está seguro de revocar este filtro? Se eliminará de todos los perfiles de usuario que tengan la etiqueta «Sistema». Las reglas conservadas por los usuarios no se verán afectadas.",
+      "confirmRevoke": "Confirmar revocación",
+      "toastRevokeSuccess": "Filtro revocado con éxito, eliminado de {{count}} perfiles",
+      "usersCount": "{{count}} usuarios",
+      "profilesCount": "{{count}} perfiles"
     }
   }
 }

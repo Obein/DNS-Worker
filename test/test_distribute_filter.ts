@@ -210,6 +210,102 @@ async function runDistributeFilterTests() {
   assert.deepStrictEqual(repeatData.addedUsernames, ["user_alice"]);
   console.log("   ✓ Repeated distribution properly skipped all users who already retained the filter.\n");
 
+  // 9. Test User "Keep / Retain" list (保留为自定义列表: is_system becomes 0)
+  console.log("9. Testing user retaining system-distributed list as custom list...");
+  const charlieProfile1Lists = await listModel.getLists("p_charlie_1");
+  assert.strictEqual(charlieProfile1Lists.length, 1);
+  assert.strictEqual(Boolean(charlieProfile1Lists[0].is_system), true, "Initially marked as is_system = 1");
+
+  const keepReq = new Request(`http://localhost/api/profiles/p_charlie_1/lists/${charlieProfile1Lists[0].id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "keep" })
+  });
+  const keepRes = await handleProfileListsRequest(keepReq, env, charlieUser, "p_charlie_1", ["api", "profiles", "p_charlie_1", "lists", String(charlieProfile1Lists[0].id)], ctx);
+  assert.strictEqual(keepRes.status, 200, "Keep request must succeed with 200 OK");
+  const keepData = await keepRes.json() as any;
+  assert.strictEqual(keepData.success, true);
+  assert.strictEqual(keepData.is_system, 0);
+
+  const charlieProfile1ListsAfter = await listModel.getLists("p_charlie_1");
+  assert.strictEqual(Boolean(charlieProfile1ListsAfter[0].is_system), false, "List is now user-level (is_system = 0)");
+  console.log("   ✓ User successfully kept list; is_system tag converted to 0.\n");
+
+  // 10. Test Admin Querying Distributed Lists (GET /api/admin/distribute-filter)
+  console.log("10. Testing Admin GET /api/admin/distribute-filter...");
+  const getDistReq = new Request("http://localhost/api/admin/distribute-filter", {
+    method: "GET"
+  });
+  const getDistRes = await handleAccountRequest(getDistReq, env, adminUser, ctx);
+  assert.strictEqual(getDistRes.status, 200);
+  const distLists = await getDistRes.json() as any[];
+  assert.strictEqual(distLists.length, 1, "Should list the distributed filter");
+  assert.strictEqual(distLists[0].url, sharedUrl);
+  // Profiles with is_system = 1: p_admin, p_alice, p_charlie_2 (total 3)
+  // (p_bob was user-added, p_charlie_1 was kept -> both is_system = 0)
+  assert.strictEqual(distLists[0].profileCount, 3, "Expected 3 profiles retaining system list");
+  assert.strictEqual(distLists[0].userCount, 3, "Expected 3 users retaining system list");
+  assert.ok(distLists[0].usernames.includes("admin_user"));
+  assert.ok(distLists[0].usernames.includes("user_alice"));
+  assert.ok(distLists[0].usernames.includes("user_charlie"));
+  assert.ok(!distLists[0].usernames.includes("user_bob"), "Bob should not be in system list usernames");
+  console.log("   ✓ GET /api/admin/distribute-filter correctly returned active system-distributed list counts.\n");
+
+  // 11. Test Revoke RBAC & Revocation Execution (DELETE /api/admin/distribute-filter)
+  console.log("11. Testing Admin Revoking Distributed Filter (DELETE /api/admin/distribute-filter)...");
+  // 11a. RBAC check: regular user cannot revoke
+  const revokeForbiddenReq = new Request("http://localhost/api/admin/distribute-filter", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: sharedUrl })
+  });
+  const revokeForbiddenRes = await handleAccountRequest(revokeForbiddenReq, env, aliceUser, ctx);
+  assert.strictEqual(revokeForbiddenRes.status, 403, "Non-admin cannot revoke distributed filter");
+
+  // 11b. Admin executes revocation
+  const revokeReq = new Request("http://localhost/api/admin/distribute-filter", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url: sharedUrl })
+  });
+  const revokeRes = await handleAccountRequest(revokeReq, env, adminUser, ctx);
+  assert.strictEqual(revokeRes.status, 200, "Revoke request must succeed with 200 OK");
+  const revokeData = await revokeRes.json() as any;
+  assert.strictEqual(revokeData.success, true);
+  assert.strictEqual(revokeData.revokedCount, 3, "Should revoke 3 system-tagged profile lists");
+  assert.strictEqual(revokeData.affectedProfilesCount, 3);
+  assert.strictEqual(revokeData.affectedUserCount, 3);
+
+  // 11c. Verify Database state:
+  // - Alice (was is_system = 1) -> Removed
+  const aliceListsFinal = await listModel.getLists("p_alice");
+  assert.strictEqual(aliceListsFinal.length, 0, "Alice's system list must be revoked");
+
+  // - Admin (was is_system = 1) -> Removed
+  const adminListsFinal = await listModel.getLists("p_admin");
+  assert.strictEqual(adminListsFinal.length, 0, "Admin's system list must be revoked");
+
+  // - Charlie profile 2 (was is_system = 1) -> Removed
+  const charlie2Final = await listModel.getLists("p_charlie_2");
+  assert.strictEqual(charlie2Final.length, 0, "Charlie's un-retained profile 2 list must be revoked");
+
+  // - Bob (was is_system = 0, user-added) -> PRESERVED!
+  const bobListsFinal = await listModel.getLists("p_bob");
+  assert.strictEqual(bobListsFinal.length, 1, "Bob's user-added list must be untouched");
+  assert.strictEqual(bobListsFinal[0].url, sharedUrl);
+
+  // - Charlie profile 1 (was kept by user, is_system = 0) -> PRESERVED!
+  const charlie1Final = await listModel.getLists("p_charlie_1");
+  assert.strictEqual(charlie1Final.length, 1, "Charlie's retained list must NOT be revoked");
+  assert.strictEqual(charlie1Final[0].url, sharedUrl);
+  assert.strictEqual(Boolean(charlie1Final[0].is_system), false, "Remains custom user list");
+
+  // 11d. GET /api/admin/distribute-filter should now return empty array
+  const getDistAfterRes = await handleAccountRequest(getDistReq, env, adminUser, ctx);
+  const distListsAfter = await getDistAfterRes.json() as any[];
+  assert.strictEqual(distListsAfter.length, 0, "No active system lists remaining for this URL");
+  console.log("   ✓ Revocation verified: strictly revoked is_system=1 lists, safely preserved user-added and kept lists.\n");
+
   // Cleanup
   globalThis.fetch = originalFetch;
   console.log("================================================================");

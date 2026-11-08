@@ -539,7 +539,11 @@
     "checkWhitelisted": "Được cho phép bởi danh sách này",
     "checkWhitelistedDesc": "Khớp với quy tắc ngoại lệ (@@) trong danh sách này, được ưu tiên cho phép.",
     "checkViaPattern": "(khớp quy tắc mẫu)",
-    "systemDistributed": "Hệ thống"
+    "systemDistributed": "Hệ thống",
+    "keepList": "Giữ lại làm danh sách tùy chỉnh",
+    "keepListHint": "Sau khi giữ lại, nhãn \"Hệ thống phát\" sẽ bị xóa và chuyển thành danh sách tùy chỉnh của bạn; danh sách này sẽ không bị xóa khi quản trị viên thu hồi quy tắc hệ thống.",
+    "systemListNotice": "Danh sách này do hệ thống phân phát. Quản trị viên có thể thu hồi toàn bộ các quy tắc hệ thống chưa được giữ lại. Bạn có thể giữ lại để chuyển đổi thành danh sách tùy chỉnh cá nhân.",
+    "keepSuccess": "Đã giữ lại làm danh sách tùy chỉnh thành công, danh sách này sẽ không bị xóa khi thu hồi quy tắc hệ thống"
   },
   "settings": {
     "title": "Cài đặt cấu hình",
@@ -1076,7 +1080,16 @@
       "resultTitle": "Đã hoàn tất phân phối",
       "resultSummary": "Tổng cộng {{total}} người dùng: Đã phân phối tới {{added}} người dùng ({{profiles}} cấu hình), bỏ qua {{skipped}} người dùng đã có quy tắc này.",
       "addedUsers": "Người dùng đã thêm",
-      "skippedUsers": "Người dùng đã bỏ qua"
+      "skippedUsers": "Người dùng đã bỏ qua",
+      "activeDistributedTitle": "Quy tắc hệ thống đã phân phát",
+      "activeDistributedDesc": "Danh sách bộ lọc hiện đang ở trạng thái phân phát và có nhãn \"Hệ thống phát\". Việc thu hồi sẽ chỉ xóa khỏi các cấu hình còn giữ nhãn này, các quy tắc do người dùng tự giữ lại sẽ không bị ảnh hưởng.",
+      "noDistributedFilters": "Hiện không có quy tắc lọc nào do hệ thống phân phát",
+      "revokeBtn": "Thu hồi",
+      "revokeConfirm": "Bạn có chắc chắn muốn thu hồi bộ lọc này? Hệ thống sẽ xóa quy tắc này khỏi tất cả cấu hình người dùng có nhãn \"Hệ thống phát\". Các quy tắc đã được người dùng giữ lại sẽ không bị ảnh hưởng.",
+      "confirmRevoke": "Xác nhận thu hồi",
+      "toastRevokeSuccess": "Đã thu hồi bộ lọc thành công, xóa khỏi {{count}} cấu hình",
+      "usersCount": "{{count}} người dùng",
+      "profilesCount": "{{count}} cấu hình"
     }
   }
 }

@@ -233,6 +233,93 @@ export class ListModel {
   }
 
   /**
+   * Retains a system-distributed list as a user-level list by setting is_system = 0.
+   * This removes the "system" flag so it will not be affected by administrative revocations.
+   */
+  async keepList(id: number, profileId: string): Promise<boolean> {
+    const result = await this.db
+      .prepare("UPDATE lists SET is_system = 0 WHERE id = ? AND profile_id = ?")
+      .bind(id, profileId)
+      .run();
+    return result.success;
+  }
+
+  /**
+   * Returns all filter list URLs currently active with is_system = 1,
+   * along with the counts of affected profiles and users.
+   */
+  async getDistributedSystemLists(): Promise<{
+    url: string;
+    profileCount: number;
+    userCount: number;
+    usernames: string[];
+  }[]> {
+    const { results } = await this.db.prepare(`
+      SELECT 
+        l.url,
+        COUNT(DISTINCT l.profile_id) AS profile_count,
+        COUNT(DISTINCT p.owner_id) AS user_count,
+        GROUP_CONCAT(DISTINCT u.username) AS usernames
+      FROM lists l
+      JOIN profiles p ON l.profile_id = p.id
+      JOIN users u ON p.owner_id = u.id
+      WHERE l.is_system = 1
+      GROUP BY l.url
+      ORDER BY l.url ASC
+    `).all<{
+      url: string;
+      profile_count: number;
+      user_count: number;
+      usernames: string | null;
+    }>();
+
+    return (results || []).map(row => ({
+      url: row.url,
+      profileCount: Number(row.profile_count) || 0,
+      userCount: Number(row.user_count) || 0,
+      usernames: row.usernames ? row.usernames.split(',').filter(Boolean) : []
+    }));
+  }
+
+  /**
+   * Revokes a system-distributed filter list across all profiles where is_system = 1.
+   * Does NOT touch lists where is_system = 0 (user-added or retained lists).
+   * Returns summary statistics and the list of affected profile IDs that need filter recompilation.
+   */
+  async revokeSystemList(url: string): Promise<{
+    canonicalUrl: string;
+    revokedProfilesCount: number;
+    affectedProfileIds: string[];
+    affectedUsernames: string[];
+  }> {
+    const canonicalUrl = ListModel.normalizeUrl(url);
+
+    // 1. Identify all profiles and users where this list has is_system = 1
+    const { results } = await this.db.prepare(`
+      SELECT DISTINCT l.profile_id, u.username
+      FROM lists l
+      JOIN profiles p ON l.profile_id = p.id
+      JOIN users u ON p.owner_id = u.id
+      WHERE l.url = ? AND l.is_system = 1
+    `).bind(canonicalUrl).all<{ profile_id: string; username: string }>();
+
+    const affectedProfileIds = Array.from(new Set((results || []).map(r => r.profile_id)));
+    const affectedUsernames = Array.from(new Set((results || []).map(r => r.username)));
+
+    // 2. Delete the system-distributed list records (strictly where is_system = 1)
+    const deleteResult = await this.db.prepare(`
+      DELETE FROM lists WHERE url = ? AND is_system = 1
+    `).bind(canonicalUrl).run();
+
+    return {
+      canonicalUrl,
+      revokedProfilesCount: deleteResult.meta?.changes || affectedProfileIds.length,
+      affectedProfileIds,
+      affectedUsernames
+    };
+  }
+
+  /**
    * Updates list sync status, including optional ETag and Last-Modified caching headers.
    * If enabled is null or undefined, the current enabled status in the database is preserved.
    * lastModified is normalized to an integer Unix timestamp in seconds.

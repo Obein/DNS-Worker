@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Elevation,
@@ -10,12 +10,21 @@ import {
   Intent,
   Callout,
   Tag,
+  Divider,
+  PopoverNext,
   type OverlayToaster
 } from "@blueprintjs/core";
-import { Send, CheckCircle2, AlertCircle, Filter } from "lucide-react";
+import { Send, CheckCircle2, AlertCircle, Filter, Undo2, ListFilter } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { distributeFilter, getPresetFilters, type DistributeFilterResponse } from "../../../services";
+import {
+  distributeFilter,
+  getPresetFilters,
+  getDistributedFilters,
+  revokeDistributedFilter,
+  type DistributeFilterResponse,
+  type DistributedFilterItem
+} from "../../../services";
 
 export interface DistributeFilterCardProps {
   toasterRef?: React.RefObject<OverlayToaster | null>;
@@ -33,6 +42,23 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
   const [result, setResult] = useState<DistributeFilterResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [distributed, setDistributed] = useState<DistributedFilterItem[]>([]);
+  const [loadingDistributed, setLoadingDistributed] = useState(false);
+  const [revokingUrl, setRevokingUrl] = useState<string | null>(null);
+  const [revokeConfirmUrl, setRevokeConfirmUrl] = useState<string | null>(null);
+
+  const fetchDistributed = useCallback(async () => {
+    setLoadingDistributed(true);
+    try {
+      const items = await getDistributedFilters();
+      setDistributed(items);
+    } catch (e) {
+      console.warn("Failed to fetch distributed filter lists", e);
+    } finally {
+      setLoadingDistributed(false);
+    }
+  }, []);
+
   useEffect(() => {
     getPresetFilters()
       .then((config) => {
@@ -46,7 +72,9 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
         }
       })
       .catch((e) => console.warn("Failed to fetch preset filters", e));
-  }, [t]);
+
+    fetchDistributed();
+  }, [t, fetchDistributed]);
 
   const handleDistribute = async () => {
     const trimmed = url.trim();
@@ -70,6 +98,7 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
         intent: Intent.SUCCESS,
         icon: "tick",
       });
+      await fetchDistributed();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -80,6 +109,36 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
       });
     } finally {
       setLoading(false);
+      onSavingChange?.(false);
+    }
+  };
+
+  const handleRevoke = async (targetUrl: string) => {
+    setRevokingUrl(targetUrl);
+    setRevokeConfirmUrl(null);
+    onSavingChange?.(true);
+
+    try {
+      const res = await revokeDistributedFilter(targetUrl);
+      toasterRef?.current?.show({
+        message: t(
+          "admin.distributeFilter.toastRevokeSuccess",
+          "已成功撤回过滤器，移除了 {{count}} 个配置中的系统规则",
+          { count: res.revokedCount }
+        ),
+        intent: Intent.SUCCESS,
+        icon: "tick",
+      });
+      await fetchDistributed();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toasterRef?.current?.show({
+        message: msg,
+        intent: Intent.DANGER,
+        icon: "error",
+      });
+    } finally {
+      setRevokingUrl(null);
       onSavingChange?.(false);
     }
   };
@@ -214,6 +273,110 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
               )}
             </div>
           </Callout>
+        )}
+      </div>
+
+      <Divider />
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold flex items-center space-x-2">
+            <ListFilter className="w-4 h-4 text-indigo-500" />
+            <span>{t("admin.distributeFilter.activeDistributedTitle", "已下发系统规则")}</span>
+          </div>
+          {distributed.length > 0 && (
+            <Tag minimal round intent={Intent.PRIMARY}>
+              {distributed.length}
+            </Tag>
+          )}
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {t(
+            "admin.distributeFilter.activeDistributedDesc",
+            "当前处于系统下发状态且带有“系统下发”标记的规则列表。撤回后将仅从保有该标记的用户配置中移除，用户自行保留的规则不受影响。"
+          )}
+        </p>
+
+        {loadingDistributed ? (
+          <div className="text-xs text-gray-400 py-3 text-center">
+            {t("common.loading", "加载中...")}
+          </div>
+        ) : distributed.length === 0 ? (
+          <div className="text-xs text-gray-400 dark:text-gray-500 py-4 px-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center border border-dashed border-gray-200 dark:border-gray-700">
+            {t("admin.distributeFilter.noDistributedFilters", "当前系统中无由系统下发的过滤规则")}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100 dark:divide-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+            {distributed.map((item) => (
+              <div
+                key={item.url}
+                className="p-3 bg-white dark:bg-gray-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <div className="font-mono text-xs text-gray-800 dark:text-gray-200 truncate select-all" title={item.url}>
+                    {item.url}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+                    <Tag minimal round intent={Intent.PRIMARY}>
+                      {t("admin.distributeFilter.usersCount", "{{count}} 位用户", { count: item.userCount })}
+                    </Tag>
+                    <Tag minimal round intent={Intent.NONE}>
+                      {t("admin.distributeFilter.profilesCount", "{{count}} 个配置", { count: item.profileCount })}
+                    </Tag>
+                    {item.usernames.length > 0 && (
+                      <span className="text-xs text-gray-400 truncate max-w-xs">
+                        ({item.usernames.join(", ")})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="shrink-0">
+                  <PopoverNext
+                    isOpen={revokeConfirmUrl === item.url}
+                    onInteraction={(nextOpen) => setRevokeConfirmUrl(nextOpen ? item.url : null)}
+                    placement="top-end"
+                    portalClassName="z-20000"
+                    content={
+                      <div className="p-3 space-y-3 max-w-xs">
+                        <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
+                          {t(
+                            "admin.distributeFilter.revokeConfirm",
+                            "确定撤回此过滤器？系统将从所有带有“系统下发”标记的用户配置中移除此规则。已被用户保留为自定义列表的规则不会受影响。"
+                          )}
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            small
+                            variant="minimal"
+                            text={t("common.cancel", "取消")}
+                            onClick={() => setRevokeConfirmUrl(null)}
+                          />
+                          <Button
+                            small
+                            intent={Intent.DANGER}
+                            loading={revokingUrl === item.url}
+                            text={t("admin.distributeFilter.confirmRevoke", "确认撤回")}
+                            onClick={() => handleRevoke(item.url)}
+                          />
+                        </div>
+                      </div>
+                    }
+                  >
+                    <Button
+                      small
+                      intent={Intent.DANGER}
+                      minimal
+                      icon={<Undo2 className="w-3.5 h-3.5" />}
+                      text={t("admin.distributeFilter.revokeBtn", "撤回")}
+                      loading={revokingUrl === item.url}
+                      onClick={() => setRevokeConfirmUrl(item.url)}
+                    />
+                  </PopoverNext>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </Card>

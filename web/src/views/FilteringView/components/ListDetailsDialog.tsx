@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag, PopoverNext } from "@blueprintjs/core";
-import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw, BookmarkCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import { checkDomainAgainstList, type ListCheckResult } from "../../../services";
+import { checkDomainAgainstList, keepProfileList, type ListCheckResult } from "../../../services";
 import type { FilterList } from "../types";
 
 export interface ListDetailsDialogProps {
@@ -18,6 +18,8 @@ export interface ListDetailsDialogProps {
   onAllowDomain: (domain: string) => Promise<void>;
   /** Triggers manual sync for this single list */
   onSyncSingle?: (id: number) => Promise<void>;
+  /** Retains a system-distributed list as a user-level list */
+  onKeep?: (id: number) => Promise<void>;
 }
 
 export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
@@ -29,6 +31,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   onToggleEnabled,
   onAllowDomain,
   onSyncSingle,
+  onKeep,
 }) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -38,6 +41,7 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   const [allowing, setAllowing] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [keeping, setKeeping] = useState(false);
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   /** Monotonic id of the newest check, so stale responses can be discarded. */
@@ -145,6 +149,41 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
             </Tag>
           )}
         </div>
+
+        {Boolean(selectedList?.is_system) && (
+          <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <span className="leading-relaxed">
+                {t(
+                  "filtering.systemListNotice",
+                  "此列表由系统下发。管理员可全局撤回未保留的系统规则。您可以保留此规则，将其转换为个人自定义列表。"
+                )}
+              </span>
+              <Button
+                small
+                intent={Intent.PRIMARY}
+                icon={<BookmarkCheck size={14} />}
+                text={t("filtering.keepList", "保留为自定义列表")}
+                title={t("filtering.keepListHint", "保留后将移除“系统下发”标签，变为您的自定义列表；管理员撤回系统规则时此列表不会被移除。")}
+                loading={keeping}
+                className="shrink-0 whitespace-nowrap"
+                onClick={async () => {
+                  if (!selectedList || keeping) return;
+                  setKeeping(true);
+                  try {
+                    if (onKeep) {
+                      await onKeep(selectedList.id);
+                    } else {
+                      await keepProfileList(profileId, selectedList.id);
+                    }
+                  } finally {
+                    setKeeping(false);
+                  }
+                }}
+              />
+            </div>
+          </Callout>
+        )}
 
         <div className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-lg p-3">
           <div>

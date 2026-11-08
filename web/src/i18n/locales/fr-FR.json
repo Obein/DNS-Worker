@@ -539,7 +539,11 @@
     "checkWhitelisted": "Autorisé par cette liste",
     "checkWhitelistedDesc": "Correspond à une règle d'exception (@@) dans cette liste, l'autorisant en priorité face aux blocages.",
     "checkViaPattern": "(correspond à une règle de motif)",
-    "systemDistributed": "Système"
+    "systemDistributed": "Système",
+    "keepList": "Conserver comme liste personnalisée",
+    "keepListHint": "La conservation supprimera le badge « Système » pour en faire votre liste personnalisée ; elle ne sera pas supprimée si un administrateur révoque les règles système.",
+    "systemListNotice": "Cette liste a été distribuée par le système. Les administrateurs peuvent révoquer globalement les règles système non conservées. Vous pouvez la conserver pour la convertir en liste personnalisée.",
+    "keepSuccess": "Conservée avec succès en tant que liste personnalisée ; elle ne sera pas supprimée lors de la révocation des règles système"
   },
   "settings": {
     "title": "Paramètres du profil",
@@ -1076,7 +1080,16 @@
       "resultTitle": "Distribution terminée",
       "resultSummary": "Total de {{total}} utilisateur(s) : distribué avec succès à {{added}} utilisateur(s) ({{profiles}} profils), {{skipped}} utilisateur(s) ayant déjà ce filtre ignoré(s).",
       "addedUsers": "Utilisateurs ajoutés",
-      "skippedUsers": "Utilisateurs ignorés"
+      "skippedUsers": "Utilisateurs ignorés",
+      "activeDistributedTitle": "Filtres système distribués",
+      "activeDistributedDesc": "Listes actuellement distribuées et marquées comme « Système ». La révocation les supprimera uniquement des profils conservant ce badge. Les règles conservées par les utilisateurs ne seront pas affectées.",
+      "noDistributedFilters": "Aucune règle de filtrage distribuée par le système pour le moment",
+      "revokeBtn": "Révoquer",
+      "revokeConfirm": "Êtes-vous sûr de vouloir révoquer ce filtre ? Il sera supprimé de tous les profils portant le badge « Système ». Les listes conservées par les utilisateurs ne seront pas affectées.",
+      "confirmRevoke": "Confirmer la révocation",
+      "toastRevokeSuccess": "Filtre révoqué avec succès, supprimé de {{count}} profils",
+      "usersCount": "{{count}} utilisateurs",
+      "profilesCount": "{{count}} profils"
     }
   }
 }

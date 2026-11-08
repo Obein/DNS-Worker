@@ -145,18 +145,30 @@ export async function handleProfileListsRequest(
       return new Response("Invalid list id", { status: 400 });
     }
 
-    let body: { enabled?: unknown };
+    let body: { enabled?: unknown; action?: unknown; keep?: unknown };
     try {
-      body = await request.json() as { enabled?: unknown };
+      body = await request.json() as { enabled?: unknown; action?: unknown; keep?: unknown };
     } catch {
-      return new Response("Body must be { enabled: boolean }", { status: 400 });
-    }
-    if (typeof body.enabled !== 'boolean') {
-      return new Response("Body must be { enabled: boolean }", { status: 400 });
+      return new Response("Invalid JSON payload", { status: 400 });
     }
 
     const list = await listModel.getListById(listId, profileId);
     if (!list) return new Response("List Not Found", { status: 404 });
+
+    // 用户“保留”系统下发列表：移除 is_system 标记，使其转为普通用户级列表
+    if (body.action === 'keep' || body.keep === true) {
+      const updated = await listModel.keepList(listId, profileId);
+      if (!updated) {
+        return new Response("Failed to keep list", { status: 500 });
+      }
+      return new Response(JSON.stringify({ success: true, id: listId, is_system: 0 }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (typeof body.enabled !== 'boolean') {
+      return new Response("Body must specify { enabled: boolean } or { action: 'keep' }", { status: 400 });
+    }
 
     const updated = await listModel.setEnabled(listId, profileId, body.enabled);
     if (!updated) {

@@ -539,7 +539,11 @@
     "checkWhitelisted": "Von dieser Liste erlaubt",
     "checkWhitelistedDesc": "Stimmt mit einer Ausnahmeregel (@@) in dieser Liste überein und erlaubt sie vorrangig vor Sperrregeln.",
     "checkViaPattern": "(entspricht einer Musterregel)",
-    "systemDistributed": "System"
+    "systemDistributed": "System",
+    "keepList": "Als benutzerdefinierte Liste behalten",
+    "keepListHint": "Durch das Behalten wird das Tag „System“ entfernt und die Liste in Ihre benutzerdefinierte Liste umgewandelt; sie wird nicht entfernt, wenn Administratoren Systemregeln widerrufen.",
+    "systemListNotice": "Diese Liste wurde vom System verteilt. Administratoren können nicht behaltene Systemregeln global widerrufen. Sie können diese Regel behalten, um sie in eine eigene Liste umzuwandeln.",
+    "keepSuccess": "Erfolgreich als benutzerdefinierte Liste behalten. Sie wird nicht gelöscht, wenn Systemregeln widerrufen werden."
   },
   "settings": {
     "title": "Profileinstellungen",
@@ -1076,7 +1080,16 @@
       "resultTitle": "Verteilung abgeschlossen",
       "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
       "addedUsers": "Hinzugefügte Benutzer",
-      "skippedUsers": "Übersprungene Benutzer"
+      "skippedUsers": "Übersprungene Benutzer",
+      "activeDistributedTitle": "Aktiv verteilte Systemfilter",
+      "activeDistributedDesc": "Filterlisten, die derzeit im System verteilt und als „System“ markiert sind. Ein Widerruf entfernt sie nur aus Profilen mit dieser Kennzeichnung. Von Benutzern behaltene Listen bleiben unverändert.",
+      "noDistributedFilters": "Derzeit sind keine vom System verteilten Filterregeln vorhanden",
+      "revokeBtn": "Widerrufen",
+      "revokeConfirm": "Möchten Sie diesen Filter wirklich widerrufen? Er wird aus allen Profilen mit der Kennzeichnung „System“ entfernt. Von Benutzern behaltene Listen sind nicht betroffen.",
+      "confirmRevoke": "Widerruf bestätigen",
+      "toastRevokeSuccess": "Filter erfolgreich widerrufen, aus {{count}} Profilen entfernt",
+      "usersCount": "{{count}} Benutzer",
+      "profilesCount": "{{count}} Profile"
     }
   }
 }

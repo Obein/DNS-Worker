@@ -539,7 +539,11 @@
     "checkWhitelisted": "被該清單放行",
     "checkWhitelistedDesc": "命中該訂閱清單中的白名單/例外規則 (@@)，即使被其他黑名單規則命中也會優先放行。",
     "checkViaPattern": "(比對到萬用字元規則)",
-    "systemDistributed": "系統下發"
+    "systemDistributed": "系統下發",
+    "keepList": "保留為自訂清單",
+    "keepListHint": "保留後將移除「系統下發」標籤，轉為您的自訂清單；管理員撤回系統規則時此清單不會被移除。",
+    "systemListNotice": "此清單由系統下發。管理員可全域撤回未保留的系統規則。您可以保留此規則，將其轉換為個人自訂清單。",
+    "keepSuccess": "已保留為自訂清單，管理員撤回規則時此清單將不會被刪除"
   },
   "settings": {
     "title": "配置設定",
@@ -1076,7 +1080,16 @@
       "resultTitle": "下發執行完成",
       "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定），略過 {{skipped}} 位已存在該規則的使用者。",
       "addedUsers": "下發成功使用者",
-      "skippedUsers": "自動略過使用者"
+      "skippedUsers": "自動略過使用者",
+      "activeDistributedTitle": "已下發系統規則",
+      "activeDistributedDesc": "目前處於系統下發狀態且帶有「系統下發」標記的規則清單。撤回後將僅從保有該標記的使用者設定檔中移除，使用者自行保留的規則不受影響。",
+      "noDistributedFilters": "目前系統中無由系統下發的過濾規則",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "確定撤回此過濾器？系統將從所有帶有「系統下發」標記的使用者設定檔中移除此規則。已被使用者保留為自訂清單的規則不會受影響。",
+      "confirmRevoke": "確認撤回",
+      "toastRevokeSuccess": "已成功撤回過濾器，移除了 {{count}} 個設定檔中的系統規則",
+      "usersCount": "{{count}} 位使用者",
+      "profilesCount": "{{count}} 個設定檔"
     }
   }
 }

@@ -539,7 +539,11 @@
     "checkWhitelisted": "이 리스트에 의해 허용됨",
     "checkWhitelistedDesc": "이 리스트의 예외 규칙 (@@) 에 일치하여 다른 차단 규칙보다 우선 허용됩니다.",
     "checkViaPattern": "(패턴 규칙 일치)",
-    "systemDistributed": "시스템 배포"
+    "systemDistributed": "시스템 배포",
+    "keepList": "사용자 지정 목록으로 유지",
+    "keepListHint": "유지하면 '시스템 배포' 태그가 제거되고 사용자 지정 목록으로 전환됩니다. 관리자가 시스템 규칙을 철회해도 삭제되지 않습니다.",
+    "systemListNotice": "이 목록은 시스템에서 배포되었습니다. 관리자는 유지되지 않은 시스템 규칙을 일괄 철회할 수 있습니다. 이 규칙을 유지하여 개인 사용자 지정 목록으로 전환할 수 있습니다.",
+    "keepSuccess": "사용자 지정 목록으로 유지되었습니다. 시스템 규칙이 철회되어도 삭제되지 않습니다"
   },
   "settings": {
     "title": "구성 설정",
@@ -1076,7 +1080,16 @@
       "resultTitle": "배포 완료",
       "resultSummary": "시스템 내 총 {{total}}명의 사용자: {{added}}명의 사용자({{profiles}}개 프로필)에게 배포 완료, 이미 존재하는 {{skipped}}명의 사용자는 건너뛰었습니다.",
       "addedUsers": "배포 완료 사용자",
-      "skippedUsers": "건너뛴 사용자"
+      "skippedUsers": "건너뛴 사용자",
+      "activeDistributedTitle": "배포된 시스템 규칙",
+      "activeDistributedDesc": "현재 시스템에서 배포되어 '시스템 배포' 태그가 부여된 필터 목록입니다. 철회 시 이 태그를 유지하고 있는 프로필에서만 제거되며 사용자가 직접 유지한 규칙은 영향을 받지 않습니다.",
+      "noDistributedFilters": "현재 시스템에서 배포된 필터 규칙이 없습니다",
+      "revokeBtn": "철회",
+      "revokeConfirm": "이 필터를 철회하시겠습니까? '시스템 배포' 태그가 있는 모든 사용자 프로필에서 제거됩니다. 사용자가 사용자 지정 목록으로 유지한 규칙은 영향을 받지 않습니다.",
+      "confirmRevoke": "철회 확인",
+      "toastRevokeSuccess": "필터가 성공적으로 철회되어 {{count}}개 프로필에서 제거되었습니다",
+      "usersCount": "{{count}}명의 사용자",
+      "profilesCount": "{{count}}개 프로필"
     }
   }
 }

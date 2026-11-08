@@ -539,7 +539,11 @@
     "checkWhitelisted": "被该列表放行",
     "checkWhitelistedDesc": "命中该订阅列表中的白名单/例外规则 (@@)，即使被其他黑名单规则命中也会优先放行。",
     "checkViaPattern": "(匹配到通配规则)",
-    "systemDistributed": "系统下发"
+    "systemDistributed": "系统下发",
+    "keepList": "保留为自定义列表",
+    "keepListHint": "保留后将移除“系统下发”标签，变为您的自定义列表；管理员撤回系统规则时此列表不会被移除。",
+    "systemListNotice": "此列表由系统下发。管理员可全局撤回未保留的系统规则。您可以保留此规则，将其转换为个人自定义列表。",
+    "keepSuccess": "已保留为自定义列表，管理员撤回规则时此列表将不会被删除"
   },
   "settings": {
     "title": "配置设置",
@@ -1076,7 +1080,16 @@
       "resultTitle": "下发执行完成",
       "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
       "addedUsers": "下发成功用户",
-      "skippedUsers": "自动跳过用户"
+      "skippedUsers": "自动跳过用户",
+      "activeDistributedTitle": "已下发系统规则",
+      "activeDistributedDesc": "当前处于系统下发状态且带有“系统下发”标记的规则列表。撤回后将仅从保有该标记的用户配置中移除，用户自行保留的规则不受影响。",
+      "noDistributedFilters": "当前系统中无由系统下发的过滤规则",
+      "revokeBtn": "撤回",
+      "revokeConfirm": "确定撤回此过滤器？系统将从所有带有“系统下发”标记的用户配置中移除此规则。已被用户保留为自定义列表的规则不会受影响。",
+      "confirmRevoke": "确认撤回",
+      "toastRevokeSuccess": "已成功撤回过滤器，移除了 {{count}} 个配置中的系统规则",
+      "usersCount": "{{count}} 位用户",
+      "profilesCount": "{{count}} 个配置"
     }
   }
 }

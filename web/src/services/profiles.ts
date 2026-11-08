@@ -107,6 +107,20 @@ export async function toggleProfileList(profileId: string, listId: number, enabl
   if (!res.ok) throw new Error(await res.text());
 }
 
+/**
+ * Retains a system-distributed list as a user-level list, removing the system tag
+ * so that subsequent administrator revocations will not remove it.
+ */
+export async function keepProfileList(profileId: string, listId: number): Promise<{ success: boolean; id: number; is_system: number }> {
+  const res = await profileFetch(`/api/profiles/${profileId}/lists/${listId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "keep" })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function addCustomProfileList(profileId: string, url: string): Promise<{ id?: number }> {
   const res = await profileFetch(`/api/profiles/${profileId}/lists`, {
     method: "POST",
