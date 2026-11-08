@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribute Filter (Admin)",
-      "description": "Distribute a filter list to all users' profiles. Automatically skips users who already have this filter. Users can delete distributed filters at any time.",
+      "title": "System Filter Lists (Admin)",
+      "description": "Distribute system-level filter lists to all user accounts. Rules are automatically applied across all profiles with the \"System\" tag. Automatically skips users who already have this filter.",
       "quickPresets": "Quick Presets",
       "urlLabel": "Filter List URL",
       "urlHelper": "Supports AdGuard, Hosts, EasyList, and standard rule URLs",
       "submitBtn": "Distribute Now",
-      "toastSuccess": "Filter successfully distributed to {{count}} user(s)",
+      "toastSuccess": "System filter list successfully distributed to {{count}} user(s)",
       "resultTitle": "Distribution Completed",
-      "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter.",
+      "resultSummary": "Total {{total}} user(s): Successfully distributed to {{added}} user(s), skipped {{skipped}} user(s) who already had this filter.",
       "addedUsers": "Added Users",
       "skippedUsers": "Already Had Filter",
       "activeDistributedTitle": "Active Distributed Filters",
-      "activeDistributedDesc": "Filter lists currently distributed and marked as \"System\". Revoking will only remove them from user profiles still holding this tag. Lists retained by users will not be affected.",
-      "noDistributedFilters": "No system-distributed filter lists currently in the system",
+      "activeDistributedDesc": "System filter lists currently distributed and marked with the \"System\" tag. Revoking will remove this system rule from all user accounts; custom rules created by users will not be affected.",
+      "noDistributedFilters": "No distributed system filter lists currently in the system",
       "revokeBtn": "Revoke",
-      "revokeConfirm": "Are you sure you want to revoke this filter? It will be removed from all user profiles holding the \"System\" tag. Rules retained by users as custom lists will not be affected.",
+      "revokeConfirm": "Are you sure you want to revoke this system filter list? It will be removed from all user accounts; custom rules created by users will not be affected.",
       "confirmRevoke": "Confirm Revocation",
-      "toastRevokeSuccess": "Filter revoked successfully, removed from {{count}} profiles",
+      "toastRevokeSuccess": "System filter list revoked successfully, removed from {{count}} users",
       "usersCount": "{{count}} users",
-      "profilesCount": "{{count}} profiles",
-      "resultSummaryWithFailed": "Total {{total}} user(s): Successfully distributed to {{added}} user(s) ({{profiles}} profile(s)), skipped {{skipped}} user(s) who already had this filter, and failed for {{failed}} user(s) without a profile.",
-      "failedUsers": "Failed Users (No Profile)",
-      "toastPartialSuccess": "Filter distributed to {{added}} user(s); {{failed}} user(s) failed due to missing profiles"
+      "resultSummaryWithFailed": "Total {{total}} user(s): Successfully distributed to {{added}} user(s), skipped {{skipped}} user(s) who already had this filter, and failed for {{failed}} user(s).",
+      "failedUsers": "Failed Users",
+      "toastPartialSuccess": "System filter list distributed to {{added}} user(s); {{failed}} user(s) failed"
     }
   }
 }

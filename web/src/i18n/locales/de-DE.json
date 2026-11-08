@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Filter verteilen (nur Admins)",
-      "description": "Verteilen Sie eine Filterliste an die Profile aller Benutzer. Überspringt automatisch Benutzer, die diesen Filter bereits haben. Benutzer können verteilte Filter jederzeit löschen.",
+      "title": "System-Filterlisten (Admin)",
+      "description": "Verteilt systemweite Filterlisten an alle Benutzerkonten. Regeln werden automatisch auf alle Profile mit dem Tag „System“ angewendet. Benutzer mit identischen Regeln werden übersprungen.",
       "quickPresets": "Schnellvoreinstellungen",
       "urlLabel": "Filterlisten-URL",
       "urlHelper": "Unterstützt AdGuard-, Hosts-, EasyList- und Standard-Regel-URLs",
       "submitBtn": "Jetzt verteilen",
-      "toastSuccess": "Filter erfolgreich an {{count}} Benutzer verteilt",
+      "toastSuccess": "System-Filterliste erfolgreich an {{count}} Benutzer verteilt",
       "resultTitle": "Verteilung abgeschlossen",
-      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer mit vorhandenem Filter übersprungen.",
+      "resultSummary": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer verteilt, {{skipped}} Benutzer mit vorhandener Regel übersprungen.",
       "addedUsers": "Hinzugefügte Benutzer",
       "skippedUsers": "Bereits vorhandener Filter",
       "activeDistributedTitle": "Aktiv verteilte Systemfilter",
-      "activeDistributedDesc": "Filterlisten, die derzeit im System verteilt und als „System“ markiert sind. Ein Widerruf entfernt sie nur aus Profilen mit dieser Kennzeichnung. Von Benutzern behaltene Listen bleiben unverändert.",
-      "noDistributedFilters": "Derzeit sind keine vom System verteilten Filterregeln vorhanden",
+      "activeDistributedDesc": "Aktuell verteilte Regellisten mit dem Tag „System“. Durch den Widerruf wird diese Regel aus allen Benutzerkonten entfernt; vom Benutzer erstellte gleichnamige Regeln bleiben unberührt.",
+      "noDistributedFilters": "Derzeit sind keine verteilten System-Filterlisten im System vorhanden",
       "revokeBtn": "Widerrufen",
-      "revokeConfirm": "Möchten Sie diesen Filter wirklich widerrufen? Er wird aus allen Profilen mit der Kennzeichnung „System“ entfernt. Von Benutzern behaltene Listen sind nicht betroffen.",
+      "revokeConfirm": "Möchten Sie diese System-Filterliste wirklich widerrufen? Sie wird aus allen Benutzerkonten entfernt; benutzerdefinierte Regeln bleiben unberührt.",
       "confirmRevoke": "Widerruf bestätigen",
-      "toastRevokeSuccess": "Filter erfolgreich widerrufen, aus {{count}} Profilen entfernt",
+      "toastRevokeSuccess": "System-Filterliste erfolgreich widerrufen, bei {{count}} Benutzern entfernt",
       "usersCount": "{{count}} Benutzer",
-      "profilesCount": "{{count}} Profile",
-      "resultSummaryWithFailed": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer ({{profiles}} Profile) verteilt, {{skipped}} Benutzer übersprungen, die diesen Filter bereits hatten, und bei {{failed}} Benutzern ohne Profil fehlgeschlagen.",
-      "failedUsers": "Fehlgeschlagene Benutzer (kein Profil)",
-      "toastPartialSuccess": "Filter an {{added}} Benutzer verteilt; bei {{failed}} Benutzern ohne Profil fehlgeschlagen"
+      "resultSummaryWithFailed": "Insgesamt {{total}} Benutzer: Erfolgreich an {{added}} Benutzer verteilt, {{skipped}} Benutzer übersprungen, bei {{failed}} Benutzern fehlgeschlagen.",
+      "failedUsers": "Fehlgeschlagene Benutzer",
+      "toastPartialSuccess": "System-Filterliste an {{added}} Benutzer verteilt; bei {{failed}} Benutzern fehlgeschlagen"
     }
   }
 }

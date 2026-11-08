@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下发过滤器 (管理员)",
-      "description": "向系统中所有用户的配置下发指定过滤规则列表。如果用户已存在相同规则则自动跳过。用户可自行删除已下发的过滤器。",
+      "title": "系统过滤列表 (管理员)",
+      "description": "向系统中所有用户账号下发制定系统级过滤列表。规则自动应用于用户的全部配置，带有“系统”标签。如果用户已存在相同规则则自动跳过。",
       "quickPresets": "快捷预设",
       "urlLabel": "规则列表 URL",
       "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",
       "submitBtn": "立即下发",
-      "toastSuccess": "过滤器已成功下发至 {{count}} 位用户",
+      "toastSuccess": "系统过滤列表已成功下发至 {{count}} 位用户",
       "resultTitle": "下发执行完成",
-      "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户。",
+      "resultSummary": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户，跳过 {{skipped}} 位已存在该规则的用户。",
       "addedUsers": "下发成功用户",
       "skippedUsers": "已存在规则用户",
       "activeDistributedTitle": "已下发系统规则",
-      "activeDistributedDesc": "当前处于系统下发状态且带有“系统下发”标记的规则列表。撤回后将仅从保有该标记的用户配置中移除，用户自行保留的规则不受影响。",
-      "noDistributedFilters": "当前系统中无由系统下发的过滤规则",
+      "activeDistributedDesc": "当前处于系统下发状态且带有“系统”标签的规则列表。撤回后将从所有用户账号中移除此系统规则，用户自建的同名规则不受影响。",
+      "noDistributedFilters": "当前系统中无已下发的系统过滤列表",
       "revokeBtn": "撤回",
-      "revokeConfirm": "确定撤回此过滤器？系统将从所有带有“系统下发”标记的用户配置中移除此规则。已被用户保留为自定义列表的规则不会受影响。",
+      "revokeConfirm": "确定撤回此系统过滤列表？系统将从所有用户账号中移除此系统规则，用户自建的同名规则不受影响。",
       "confirmRevoke": "确认撤回",
-      "toastRevokeSuccess": "已成功撤回过滤器，移除了 {{count}} 个配置中的系统规则",
+      "toastRevokeSuccess": "已成功撤回系统过滤列表，移除了 {{count}} 位用户的系统规则",
       "usersCount": "{{count}} 位用户",
-      "profilesCount": "{{count}} 个配置",
-      "resultSummaryWithFailed": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户（{{profiles}} 个配置），跳过 {{skipped}} 位已存在该规则的用户，{{failed}} 位用户因无可用配置下发失败。",
-      "failedUsers": "无配置失败用户",
-      "toastPartialSuccess": "过滤器已下发至 {{added}} 位用户，{{failed}} 位用户因无配置下发失败"
+      "resultSummaryWithFailed": "系统共 {{total}} 位用户：成功下发至 {{added}} 位用户，跳过 {{skipped}} 位已存在该规则的用户，{{failed}} 位用户下发失败。",
+      "failedUsers": "下发失败用户",
+      "toastPartialSuccess": "系统过滤列表已下发至 {{added}} 位用户，{{failed}} 位用户下发失败"
     }
   }
 }

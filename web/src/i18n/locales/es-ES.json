@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Distribuir filtro (solo administradores)",
-      "description": "Distribuye una lista de filtros a los perfiles de todos los usuarios. Omite automáticamente a los usuarios que ya tengan este filtro. Los usuarios pueden eliminar los filtros distribuidos en cualquier momento.",
+      "title": "Listas de filtros del sistema (Admin)",
+      "description": "Distribuye listas de filtros a nivel de sistema a todas las cuentas de usuario. Las reglas se aplican automáticamente a todos los perfiles con la etiqueta \"Sistema\". Omite usuarios con reglas idénticas.",
       "quickPresets": "Ajustes rápidos",
       "urlLabel": "URL de lista de filtros",
       "urlHelper": "Admite URLs de formato estándar como AdGuard, Hosts o EasyList",
       "submitBtn": "Distribuir ahora",
-      "toastSuccess": "Filtro distribuido con éxito a {{count}} usuario(s)",
+      "toastSuccess": "Lista de filtros del sistema distribuida con éxito a {{count}} usuario(s)",
       "resultTitle": "Distribución completada",
-      "resultSummary": "Total de {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s) ({{profiles}} perfiles), omitidos {{skipped}} usuario(s) que ya tenían este filtro.",
+      "resultSummary": "Total {{total}} usuario(s): Distribuido con éxito a {{added}} usuario(s), omitido(s) {{skipped}} usuario(s) que ya tenían esta regla.",
       "addedUsers": "Usuarios añadidos",
       "skippedUsers": "Ya tenían el filtro",
       "activeDistributedTitle": "Filtros del sistema distribuidos",
-      "activeDistributedDesc": "Listas de filtros actualmente distribuidas y marcadas como «Sistema». La revocación solo las eliminará de los perfiles que mantengan esta etiqueta. Las reglas conservadas por los usuarios no se verán afectadas.",
-      "noDistributedFilters": "Actualmente no hay reglas de filtrado distribuidas por el sistema",
+      "activeDistributedDesc": "Listas de reglas actualmente distribuidas marcadas con la etiqueta \"Sistema\". Al revocar, se eliminarán de todas las cuentas de usuario; las reglas personalizadas no se verán afectadas.",
+      "noDistributedFilters": "Actualmente no hay listas de filtros del sistema distribuidas",
       "revokeBtn": "Revocar",
-      "revokeConfirm": "¿Está seguro de revocar este filtro? Se eliminará de todos los perfiles de usuario que tengan la etiqueta «Sistema». Las reglas conservadas por los usuarios no se verán afectadas.",
+      "revokeConfirm": "¿Está seguro de revocar esta lista de filtros del sistema? Se eliminará de todas las cuentas de usuario; las reglas personalizadas no se verán afectadas.",
       "confirmRevoke": "Confirmar revocación",
-      "toastRevokeSuccess": "Filtro revocado con éxito, eliminado de {{count}} perfiles",
+      "toastRevokeSuccess": "Lista de filtros del sistema revocada con éxito, eliminada de {{count}} usuarios",
       "usersCount": "{{count}} usuarios",
-      "profilesCount": "{{count}} perfiles",
-      "resultSummaryWithFailed": "Total {{total}} usuario(s): Distribuido exitosamente a {{added}} usuario(s) ({{profiles}} perfil(es)), se omitieron {{skipped}} usuario(s) que ya tenían este filtro y falló para {{failed}} usuario(s) sin perfil.",
-      "failedUsers": "Usuarios fallidos (sin perfil)",
-      "toastPartialSuccess": "Filtro distribuido a {{added}} usuario(s); falló en {{failed}} usuario(s) por falta de perfil"
+      "resultSummaryWithFailed": "Total {{total}} usuario(s): Distribuido a {{added}} usuario(s), omitido(s) {{skipped}} usuario(s), y falló para {{failed}} usuario(s).",
+      "failedUsers": "Usuarios fallidos",
+      "toastPartialSuccess": "Lista distribuida a {{added}} usuario(s); falló para {{failed}} usuario(s)"
     }
   }
 }

@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "Phân phối bộ lọc (Quản trị viên)",
-      "description": "Phân phối danh sách bộ lọc tới cấu hình của tất cả người dùng. Tự động bỏ qua người dùng đã có bộ lọc này. Người dùng có thể tự xóa bộ lọc được phân phối bất kỳ lúc nào.",
+      "title": "Danh sách bộ lọc hệ thống (Quản trị)",
+      "description": "Phân phối danh sách bộ lọc cấp hệ thống cho tất cả tài khoản người dùng. Quy tắc tự động áp dụng cho tất cả hồ sơ với thẻ \"Hệ thống\".",
       "quickPresets": "Cài đặt sẵn nhanh",
       "urlLabel": "URL danh sách bộ lọc",
       "urlHelper": "Hỗ trợ các định dạng tiêu chuẩn như AdGuard, Hosts, EasyList",
       "submitBtn": "Phân phối ngay",
-      "toastSuccess": "Đã phân phối thành công bộ lọc tới {{count}} người dùng",
+      "toastSuccess": "Đã phân phối danh sách bộ lọc hệ thống thành công tới {{count}} người dùng",
       "resultTitle": "Đã hoàn tất phân phối",
-      "resultSummary": "Tổng cộng {{total}} người dùng: Đã phân phối tới {{added}} người dùng ({{profiles}} cấu hình), bỏ qua {{skipped}} người dùng đã có quy tắc này.",
+      "resultSummary": "Tổng cộng {{total}} người dùng: Đã phân phối tới {{added}} người dùng, bỏ qua {{skipped}} người dùng đã có quy tắc này.",
       "addedUsers": "Người dùng đã thêm",
       "skippedUsers": "Đã có quy tắc",
       "activeDistributedTitle": "Quy tắc hệ thống đã phân phát",
-      "activeDistributedDesc": "Danh sách bộ lọc hiện đang ở trạng thái phân phát và có nhãn \"Hệ thống phát\". Việc thu hồi sẽ chỉ xóa khỏi các cấu hình còn giữ nhãn này, các quy tắc do người dùng tự giữ lại sẽ không bị ảnh hưởng.",
-      "noDistributedFilters": "Hiện không có quy tắc lọc nào do hệ thống phân phát",
+      "activeDistributedDesc": "Danh sách quy tắc hiện đang được phân phối và có gắn thẻ \"Hệ thống\". Thu hồi sẽ xóa khỏi tất cả tài khoản người dùng.",
+      "noDistributedFilters": "Hiện không có danh sách bộ lọc hệ thống nào được phân phối",
       "revokeBtn": "Thu hồi",
-      "revokeConfirm": "Bạn có chắc chắn muốn thu hồi bộ lọc này? Hệ thống sẽ xóa quy tắc này khỏi tất cả cấu hình người dùng có nhãn \"Hệ thống phát\". Các quy tắc đã được người dùng giữ lại sẽ không bị ảnh hưởng.",
+      "revokeConfirm": "Bạn có chắc chắn muốn thu hồi danh sách bộ lọc hệ thống này? Quy tắc sẽ bị xóa khỏi tất cả tài khoản người dùng.",
       "confirmRevoke": "Xác nhận thu hồi",
-      "toastRevokeSuccess": "Đã thu hồi bộ lọc thành công, xóa khỏi {{count}} cấu hình",
+      "toastRevokeSuccess": "Đã thu hồi danh sách bộ lọc hệ thống thành công, xóa khỏi {{count}} người dùng",
       "usersCount": "{{count}} người dùng",
-      "profilesCount": "{{count}} cấu hình",
-      "resultSummaryWithFailed": "Tổng cộng {{total}} người dùng: Đã phân phối thành công tới {{added}} người dùng ({{profiles}} cấu hình), bỏ qua {{skipped}} người dùng đã có bộ lọc này và thất bại đối với {{failed}} người dùng không có cấu hình.",
-      "failedUsers": "Người dùng thất bại (không có cấu hình)",
-      "toastPartialSuccess": "Đã phân phối bộ lọc cho {{added}} người dùng; thất bại đối với {{failed}} người dùng do thiếu cấu hình"
+      "resultSummaryWithFailed": "Tổng cộng {{total}} người dùng: Đã phân phối tới {{added}} người dùng, bỏ qua {{skipped}}, và thất bại cho {{failed}} người dùng.",
+      "failedUsers": "Người dùng thất bại",
+      "toastPartialSuccess": "Đã phân phối tới {{added}} người dùng; thất bại cho {{failed}} người dùng"
     }
   }
 }

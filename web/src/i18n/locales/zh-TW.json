@@ -1100,29 +1100,28 @@
   },
   "admin": {
     "distributeFilter": {
-      "title": "下發過濾器 (管理員)",
-      "description": "向系統中所有使用者的設定下發指定過濾規則清單。若使用者已存在相同規則則自動略過。使用者可自行刪除已下發的過濾器。",
+      "title": "系統過濾列表 (管理員)",
+      "description": "向系統中所有使用者帳號下發制定系統級過濾列表。規則自動套用於使用者的全部設定，帶有「系統」標籤。若使用者已存在相同規則則自動跳過。",
       "quickPresets": "快捷預設",
       "urlLabel": "規則清單 URL",
       "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",
       "submitBtn": "立即下發",
-      "toastSuccess": "過濾器已成功下發至 {{count}} 位使用者",
+      "toastSuccess": "系統過濾列表已成功下發至 {{count}} 位使用者",
       "resultTitle": "下發執行完成",
-      "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定），略過 {{skipped}} 位已存在該規則的使用者。",
+      "resultSummary": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者，跳過 {{skipped}} 位已存在該規則的使用者。",
       "addedUsers": "下發成功使用者",
       "skippedUsers": "已存在規則使用者",
       "activeDistributedTitle": "已下發系統規則",
-      "activeDistributedDesc": "目前處於系統下發狀態且帶有「系統下發」標記的規則清單。撤回後將僅從保有該標記的使用者設定檔中移除，使用者自行保留的規則不受影響。",
-      "noDistributedFilters": "目前系統中無由系統下發的過濾規則",
+      "activeDistributedDesc": "目前處於系統下發狀態且帶有「系統」標籤的規則列表。撤回後將從所有使用者帳號中移除此系統規則，使用者自建的同名規則不受影響。",
+      "noDistributedFilters": "目前系統中無已下發的系統過濾列表",
       "revokeBtn": "撤回",
-      "revokeConfirm": "確定撤回此過濾器？系統將從所有帶有「系統下發」標記的使用者設定檔中移除此規則。已被使用者保留為自訂清單的規則不會受影響。",
+      "revokeConfirm": "確定撤回此系統過濾列表？系統將從所有使用者帳號中移除此系統規則，使用者自建的同名規則不受影響。",
       "confirmRevoke": "確認撤回",
-      "toastRevokeSuccess": "已成功撤回過濾器，移除了 {{count}} 個設定檔中的系統規則",
+      "toastRevokeSuccess": "已成功撤回系統過濾列表，移除了 {{count}} 位使用者的系統規則",
       "usersCount": "{{count}} 位使用者",
-      "profilesCount": "{{count}} 個設定檔",
-      "resultSummaryWithFailed": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者（{{profiles}} 個設定檔），跳過 {{skipped}} 位已存在該規則的使用者，{{failed}} 位使用者因無可用設定檔下發失敗。",
-      "failedUsers": "無設定檔失敗使用者",
-      "toastPartialSuccess": "過濾器已下發至 {{added}} 位使用者，{{failed}} 位使用者因無設定檔下發失敗"
+      "resultSummaryWithFailed": "系統共 {{total}} 位使用者：成功下發至 {{added}} 位使用者，跳過 {{skipped}} 位已存在該規則的使用者，{{failed}} 位使用者下發失敗。",
+      "failedUsers": "下發失敗使用者",
+      "toastPartialSuccess": "系統過濾列表已下發至 {{added}} 位使用者，{{failed}} 位使用者下發失敗"
     }
   }
 }

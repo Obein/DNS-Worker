@@ -15,7 +15,7 @@ import {
   Spinner,
   type OverlayToaster,
 } from "@blueprintjs/core";
-import { ListFilter, Plus, Trash2, Globe, Shield, RefreshCw } from "lucide-react";
+import { ListFilter, Plus, Trash2, Shield, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   getUserLists,
@@ -198,7 +198,7 @@ export const UserFilterListsCard: React.FC<UserFilterListsCardProps> = ({
             helperText={t("account.userFilterLists.urlHelper", "支持 AdGuard、Hosts、EasyList 等标准格式 URL")}
           >
             <InputGroup
-              leftIcon={<Globe size={16} className="text-gray-400" />}
+              leftIcon="globe"
               placeholder="https://example.com/filters.txt"
               value={newUrl}
               onChange={(e) => setNewUrl(e.target.value)}
