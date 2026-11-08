@@ -543,7 +543,17 @@
     "keepList": "Giữ lại làm danh sách tùy chỉnh",
     "keepListHint": "Sau khi giữ lại, nhãn \"Hệ thống phát\" sẽ bị xóa và chuyển thành danh sách tùy chỉnh của bạn; danh sách này sẽ không bị xóa khi quản trị viên thu hồi quy tắc hệ thống.",
     "systemListNotice": "Danh sách này do hệ thống phân phát. Quản trị viên có thể thu hồi toàn bộ các quy tắc hệ thống chưa được giữ lại. Bạn có thể giữ lại để chuyển đổi thành danh sách tùy chỉnh cá nhân.",
-    "keepSuccess": "Đã giữ lại làm danh sách tùy chỉnh thành công, danh sách này sẽ không bị xóa khi thu hồi quy tắc hệ thống"
+    "keepSuccess": "Đã giữ lại làm danh sách tùy chỉnh thành công, danh sách này sẽ không bị xóa khi thu hồi quy tắc hệ thống",
+    "tagSystem": "Hệ thống",
+    "tagUser": "Người dùng",
+    "noProfileListsTitle": "Chưa có danh sách cấp cấu hình nào",
+    "noProfileListsDesc": "Thêm danh sách chặn riêng cho cấu hình này tại đây.",
+    "userAndSystemListsTitle": "Danh sách cấp Người dùng & Hệ thống",
+    "userAndSystemListsSubtitle": "Các danh sách chung kế thừa từ tài khoản hoặc hệ thống, tự động áp dụng cho mọi cấu hình. Có thể tắt cho cấu hình này, nhưng không thể xóa tại đây.",
+    "noUserSystemListsTitle": "Chưa có danh sách người dùng hoặc hệ thống",
+    "noUserSystemListsDesc": "Bạn có thể thêm quy tắc trong cài đặt tài khoản để áp dụng cho tất cả cấu hình.",
+    "userListNotice": "Đây là quy tắc cấp tài khoản áp dụng cho mọi cấu hình. Có thể tắt tại đây hoặc xóa trong Cài đặt tài khoản.",
+    "cannotDeleteUserListDesc": "Không thể xóa danh sách người dùng và hệ thống trong cấu hình"
   },
   "settings": {
     "title": "Cài đặt cấu hình",
@@ -987,7 +997,27 @@
     "migrationFailed": "Di chuyển cơ sở dữ liệu thất bại",
     "noMigrationsApplied": "Không có",
     "checkMigration": "Làm mới trạng thái",
-    "pendingMigrationsList": "Các tệp di chuyển lược đồ đang chờ xử lý:"
+    "pendingMigrationsList": "Các tệp di chuyển lược đồ đang chờ xử lý:",
+    "userFilterLists": {
+      "title": "Danh sách lọc cấp Người dùng",
+      "description": "Danh sách quy tắc lọc tại đây sẽ tự động áp dụng cho tất cả cấu hình (Profiles). Quy tắc hệ thống có nhãn 'Hệ thống', quy tắc tự tạo có nhãn 'Người dùng'.",
+      "quickPresets": "Mẫu có sẵn",
+      "urlHelper": "Hỗ trợ định dạng URL tiêu chuẩn AdGuard, Hosts, EasyList",
+      "addBtn": "Thêm danh sách",
+      "addSuccess": "Đã thêm danh sách lọc cấp người dùng và áp dụng cho mọi cấu hình",
+      "enabledToast": "Đã bật quy tắc trên toàn tài khoản",
+      "disabledToast": "Đã tắt quy tắc trên toàn tài khoản",
+      "deleteSuccess": "Đã xóa quy tắc cấp người dùng",
+      "activeListsTitle": "Danh sách đang có hiệu lực",
+      "empty": "Chưa có danh sách cấp người dùng hoặc hệ thống. Bạn có thể thêm danh sách ở trên.",
+      "colUrl": "URL danh sách",
+      "colType": "Loại",
+      "colLastSync": "Đồng bộ gần nhất",
+      "colStatus": "Trạng thái",
+      "colActions": "Thao tác",
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa danh sách này khỏi tài khoản? Nó sẽ bị xóa khỏi tất cả cấu hình.",
+      "systemManaged": "Quản lý hệ thống"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker Protective DNS",

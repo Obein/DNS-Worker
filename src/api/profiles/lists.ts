@@ -33,7 +33,7 @@ export async function handleProfileListsRequest(
     // microseconds, which is the question the UI actually asks.
     if (pathParts[5] === 'check') {
       const listId = Number(pathParts[4]);
-      if (!Number.isInteger(listId) || listId <= 0) {
+      if (!Number.isInteger(listId) || listId === 0) {
         return new Response("Invalid list id", { status: 400 });
       }
 
@@ -141,7 +141,7 @@ export async function handleProfileListsRequest(
 
   if (request.method === 'PATCH') {
     const listId = Number(pathParts[4]);
-    if (!Number.isInteger(listId) || listId <= 0) {
+    if (!Number.isInteger(listId) || listId === 0) {
       return new Response("Invalid list id", { status: 400 });
     }
 
@@ -155,19 +155,8 @@ export async function handleProfileListsRequest(
     const list = await listModel.getListById(listId, profileId);
     if (!list) return new Response("List Not Found", { status: 404 });
 
-    // 用户“保留”系统下发列表：移除 is_system 标记，使其转为普通用户级列表
-    if (body.action === 'keep' || body.keep === true) {
-      const updated = await listModel.keepList(listId, profileId);
-      if (!updated) {
-        return new Response("Failed to keep list", { status: 500 });
-      }
-      return new Response(JSON.stringify({ success: true, id: listId, is_system: 0 }), {
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     if (typeof body.enabled !== 'boolean') {
-      return new Response("Body must specify { enabled: boolean } or { action: 'keep' }", { status: 400 });
+      return new Response("Body must specify { enabled: boolean }", { status: 400 });
     }
 
     const updated = await listModel.setEnabled(listId, profileId, body.enabled);
@@ -176,10 +165,6 @@ export async function handleProfileListsRequest(
     }
 
     // Rebuild the merged profile bloom from the per-list blooms already stored.
-    // rebuildProfileBloom skips the incremental orchestrator deliberately: that
-    // path would re-download every remaining list, and with 2+ active lists it
-    // would not recombine at all. clearCache is chained so it cannot run before
-    // the new bloom is promoted.
     ctx.waitUntil(
       rebuildProfileBloom(profileId, env, ctx)
         .then(() => pipeline.clearCache(profileId, true, env))
@@ -200,7 +185,7 @@ export async function handleProfileListsRequest(
 
     if (pathParts.length >= 6 && pathParts[5] === 'sync') {
       const listId = Number(pathParts[4]);
-      if (!Number.isInteger(listId) || listId <= 0) {
+      if (!Number.isInteger(listId) || listId === 0) {
         return new Response("Invalid list id", { status: 400 });
       }
 
@@ -260,7 +245,7 @@ export async function handleProfileListsRequest(
         });
       }
 
-      const existingLists = await listModel.getLists(profileId);
+      const existingLists = (await listModel.getLists(profileId)).filter((l) => l.scope === 'profile');
       const existingUrls = new Set(existingLists.map(l => l.url.trim().toLowerCase()));
       const itemsToInsert = validItems.filter(item => !existingUrls.has(item.url.toLowerCase()));
 
@@ -299,7 +284,7 @@ export async function handleProfileListsRequest(
 
   if (request.method === 'DELETE') {
     let listId = Number(pathParts[4]);
-    if (!Number.isInteger(listId) || listId <= 0) {
+    if (!Number.isInteger(listId) || listId === 0) {
       try {
         const body = await request.json() as { id?: number };
         if (typeof body?.id === 'number') {
@@ -309,9 +294,17 @@ export async function handleProfileListsRequest(
         // body may be empty
       }
     }
-    if (!listId || listId <= 0) {
+    if (!listId || listId === 0) {
       return new Response("Invalid or missing list id", { status: 400 });
     }
+
+    if (listId < 0) {
+      return new Response(
+        JSON.stringify({ error: "User-level and system-level lists cannot be deleted from a profile" }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     await listModel.deleteList(listId, profileId);
     // 触发纯内存重构合并，并在落库后清除缓存，彻底消除竞态条件与 pending 阻塞
     ctx.waitUntil(

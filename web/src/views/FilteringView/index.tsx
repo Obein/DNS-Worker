@@ -10,7 +10,7 @@ import type {  FilteringViewProps, FilterList  } from "./types";
 import { AddListCard } from "./components/AddListCard";
 import { ListsTable } from "./components/ListsTable";
 import { ListDetailsDialog } from "./components/ListDetailsDialog";
-import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, keepProfileList, addProfileRule } from "../../services";
+import { getProfileLists, addCustomProfileList, deleteCustomProfileList, syncProfileLists, syncSingleProfileList, toggleProfileList, addProfileRule } from "../../services";
 
 export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toasterRef }) => {
   const navigate = useNavigate();
@@ -191,7 +191,6 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
   const setListEnabled = async (id: number, enabled: boolean) => {
     try {
       await toggleProfileList(profileId, id, enabled);
-      setSelectedList((prev) => (prev && prev.id === id ? { ...prev, enabled } : prev));
       toasterRef?.current?.show({
         message: enabled
           ? t("filtering.listEnabledToast", "List enabled - rebuilding filter")
@@ -199,7 +198,12 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         intent: Intent.PRIMARY,
         icon: enabled ? "tick" : "disable",
       });
-      await fetchData();
+      const fresh = await getProfileLists(profileId);
+      setLists(fresh);
+      if (selectedList) {
+        const updatedCurrent = fresh.find((l) => l.id === id || l.url === selectedList.url);
+        if (updatedCurrent) setSelectedList(updatedCurrent);
+      }
     } catch (e) {
       console.error(e);
       toasterRef?.current?.show({
@@ -236,26 +240,6 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
       await fetchData();
     } catch (e) {
       console.error(e);
-    }
-  };
-
-  const keepList = async (id: number) => {
-    try {
-      await keepProfileList(profileId, id);
-      setSelectedList((prev) => (prev && prev.id === id ? { ...prev, is_system: 0 } : prev));
-      toasterRef?.current?.show({
-        message: t("filtering.keepSuccess", "已保留为自定义列表，管理员撤回规则时此列表将不会被删除"),
-        intent: Intent.SUCCESS,
-        icon: "tick",
-      });
-      await fetchData();
-    } catch (e) {
-      console.error(e);
-      toasterRef?.current?.show({
-        message: e instanceof Error ? e.message : String(e),
-        intent: Intent.DANGER,
-        icon: "error",
-      });
     }
   };
 
@@ -330,6 +314,7 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         </p>
       </Callout>
 
+      {/* ── Profile 级列表 (上方) ── */}
       <AddListCard
         newUrl={newUrl}
         setNewUrl={setNewUrl}
@@ -339,7 +324,41 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         lists={lists}
       />
 
-      <ListsTable lists={lists} onSelect={setSelectedList} loading={loading} />
+      <div className="mb-6">
+        <ListsTable
+          lists={lists.filter((l) => l.scope === "profile")}
+          onSelect={setSelectedList}
+          loading={loading}
+          emptyTitle={t("filtering.noProfileListsTitle", "尚未添加配置级列表")}
+          emptyDesc={t("filtering.noProfileListsDesc", "您可在此为当前配置添加专属的拦截列表。")}
+        />
+      </div>
+
+      {/* ── 分割线 ── */}
+      <div className="border-t border-gray-200 dark:border-gray-800 my-8 pt-6">
+        <div className="mb-4">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <span>{t("filtering.userAndSystemListsTitle", "用户级与系统级列表")}</span>
+            <span className="text-xs font-normal text-gray-400">
+              ({lists.filter((l) => l.scope !== "profile").length})
+            </span>
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {t(
+              "filtering.userAndSystemListsSubtitle",
+              "继承自账号设置或由系统下发的全局规则列表，自动应用于所有配置。可在此处针对当前配置停用，但不可在此删除。"
+            )}
+          </p>
+        </div>
+
+        <ListsTable
+          lists={lists.filter((l) => l.scope !== "profile")}
+          onSelect={setSelectedList}
+          loading={loading}
+          emptyTitle={t("filtering.noUserSystemListsTitle", "暂无用户级与系统级列表")}
+          emptyDesc={t("filtering.noUserSystemListsDesc", "可在账号设置页面中添加应用于所有配置的用户级规则。")}
+        />
+      </div>
 
       <ListDetailsDialog
         profileId={profileId}
@@ -350,7 +369,6 @@ export const FilteringView: React.FC<FilteringViewProps> = ({ profileId, toaster
         onToggleEnabled={setListEnabled}
         onAllowDomain={allowDomain}
         onSyncSingle={handleSyncSingleList}
-        onKeep={keepList}
       />
     </div>
   );

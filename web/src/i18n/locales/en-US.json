@@ -543,7 +543,17 @@
     "keepList": "Keep as Custom List",
     "keepListHint": "Retaining will remove the \"System\" tag and convert it to your custom list. It will not be removed if an admin revokes system rules.",
     "systemListNotice": "This list was distributed by the system. Administrators can globally revoke un-retained system rules. You can keep this list to convert it to your personal custom list.",
-    "keepSuccess": "List retained as a custom list; it will not be removed if system rules are revoked"
+    "keepSuccess": "List retained as a custom list; it will not be removed if system rules are revoked",
+    "tagSystem": "System",
+    "tagUser": "User",
+    "noProfileListsTitle": "No profile-level lists added",
+    "noProfileListsDesc": "Add custom blocklists specific to this profile here.",
+    "userAndSystemListsTitle": "User & System Lists",
+    "userAndSystemListsSubtitle": "Global lists inherited from account settings or system distribution, automatically applied to all profiles. They can be disabled for this profile, but cannot be deleted here.",
+    "noUserSystemListsTitle": "No user-level or system lists",
+    "noUserSystemListsDesc": "You can add user-level rules in Account Settings to apply them across all profiles.",
+    "userListNotice": "This is an account-level user rule applied to all profiles. You can disable it for this profile, or delete it in Account Settings.",
+    "cannotDeleteUserListDesc": "User and system lists cannot be deleted in profile settings"
   },
   "settings": {
     "title": "Settings",
@@ -987,7 +997,27 @@
     "migrationFailed": "Database migration failed",
     "noMigrationsApplied": "None",
     "checkMigration": "Refresh Status",
-    "pendingMigrationsList": "Pending schema migration files:"
+    "pendingMigrationsList": "Pending schema migration files:",
+    "userFilterLists": {
+      "title": "User-Level Filter Lists",
+      "description": "Filter lists configured here automatically apply to all of your profiles. System lists carry a 'System' tag, and your custom lists carry a 'User' tag.",
+      "quickPresets": "Quick Presets",
+      "urlHelper": "Supports AdGuard, Hosts, EasyList, and standard rule URLs",
+      "addBtn": "Add List",
+      "addSuccess": "User-level filter list added and applied to all profiles",
+      "enabledToast": "List enabled globally across your account",
+      "disabledToast": "List disabled globally across your account",
+      "deleteSuccess": "User-level list removed",
+      "activeListsTitle": "Active Lists",
+      "empty": "No user or system filter lists found. You can add your own list above.",
+      "colUrl": "List URL",
+      "colType": "Type",
+      "colLastSync": "Last Synced",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "deleteConfirm": "Are you sure you want to delete this list from your account? It will be removed from all of your profiles.",
+      "systemManaged": "System Managed"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker Protective DNS",

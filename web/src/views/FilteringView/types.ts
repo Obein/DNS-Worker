@@ -14,5 +14,7 @@ export interface FilterList {
   etag?: string | null;
   enabled: boolean;
   is_system?: boolean | number;
+  scope?: "profile" | "user" | "system";
+  user_list_id?: number;
   sync_error?: string | null;
 }

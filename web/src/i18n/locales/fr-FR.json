@@ -543,7 +543,17 @@
     "keepList": "Conserver comme liste personnalisée",
     "keepListHint": "La conservation supprimera le badge « Système » pour en faire votre liste personnalisée ; elle ne sera pas supprimée si un administrateur révoque les règles système.",
     "systemListNotice": "Cette liste a été distribuée par le système. Les administrateurs peuvent révoquer globalement les règles système non conservées. Vous pouvez la conserver pour la convertir en liste personnalisée.",
-    "keepSuccess": "Conservée avec succès en tant que liste personnalisée ; elle ne sera pas supprimée lors de la révocation des règles système"
+    "keepSuccess": "Conservée avec succès en tant que liste personnalisée ; elle ne sera pas supprimée lors de la révocation des règles système",
+    "tagSystem": "Système",
+    "tagUser": "Utilisateur",
+    "noProfileListsTitle": "Aucune liste de profil ajoutée",
+    "noProfileListsDesc": "Ajoutez ici des listes de blocage spécifiques à ce profil.",
+    "userAndSystemListsTitle": "Listes Utilisateur & Système",
+    "userAndSystemListsSubtitle": "Listes globales héritées du compte ou du système, appliquées à tous les profils. Peuvent être désactivées ici, mais non supprimées.",
+    "noUserSystemListsTitle": "Aucune liste utilisateur ou système",
+    "noUserSystemListsDesc": "Vous pouvez ajouter des règles au niveau du compte pour les appliquer à tous les profils.",
+    "userListNotice": "Règle au niveau du compte appliquée à tous les profils. Peut être désactivée ici ou supprimée dans le Compte.",
+    "cannotDeleteUserListDesc": "Les listes utilisateur et système ne peuvent être supprimées dans le profil"
   },
   "settings": {
     "title": "Paramètres du profil",
@@ -987,7 +997,27 @@
     "migrationFailed": "Échec de la migration de la base de données",
     "noMigrationsApplied": "Aucune",
     "checkMigration": "Actualiser le statut",
-    "pendingMigrationsList": "Fichiers de migration de schéma en attente :"
+    "pendingMigrationsList": "Fichiers de migration de schéma en attente :",
+    "userFilterLists": {
+      "title": "Listes de filtres Utilisateur",
+      "description": "Les listes configurées ici s'appliquent automatiquement à tous vos profils. Les règles système portent le badge 'Système' et les vôtres 'Utilisateur'.",
+      "quickPresets": "Préréglages rapides",
+      "urlHelper": "Prend en charge les formats AdGuard, Hosts, EasyList, etc.",
+      "addBtn": "Ajouter la liste",
+      "addSuccess": "Liste utilisateur ajoutée et appliquée à tous les profils",
+      "enabledToast": "Liste activée sur l'ensemble du compte",
+      "disabledToast": "Liste désactivée sur l'ensemble du compte",
+      "deleteSuccess": "Liste utilisateur supprimée",
+      "activeListsTitle": "Listes actives",
+      "empty": "Aucune liste utilisateur ou système trouvée.",
+      "colUrl": "URL de liste",
+      "colType": "Type",
+      "colLastSync": "Dernière sync.",
+      "colStatus": "État",
+      "colActions": "Actions",
+      "deleteConfirm": "Voulez-vous vraiment supprimer cette liste de votre compte ? Elle sera retirée de tous vos profils.",
+      "systemManaged": "Géré par le système"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker de protection",

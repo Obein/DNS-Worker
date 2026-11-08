@@ -543,7 +543,17 @@
     "keepList": "사용자 지정 목록으로 유지",
     "keepListHint": "유지하면 '시스템 배포' 태그가 제거되고 사용자 지정 목록으로 전환됩니다. 관리자가 시스템 규칙을 철회해도 삭제되지 않습니다.",
     "systemListNotice": "이 목록은 시스템에서 배포되었습니다. 관리자는 유지되지 않은 시스템 규칙을 일괄 철회할 수 있습니다. 이 규칙을 유지하여 개인 사용자 지정 목록으로 전환할 수 있습니다.",
-    "keepSuccess": "사용자 지정 목록으로 유지되었습니다. 시스템 규칙이 철회되어도 삭제되지 않습니다"
+    "keepSuccess": "사용자 지정 목록으로 유지되었습니다. 시스템 규칙이 철회되어도 삭제되지 않습니다",
+    "tagSystem": "시스템",
+    "tagUser": "사용자",
+    "noProfileListsTitle": "프로필 전용 목록이 아직 없습니다",
+    "noProfileListsDesc": "이 프로필 전용 차단 목록을 여기에 추가할 수 있습니다.",
+    "userAndSystemListsTitle": "사용자 및 시스템 목록",
+    "userAndSystemListsSubtitle": "계정 설정 또는 시스템 배포에서 상속되어 모든 프로필에 자동 적용됩니다. 이 프로필에서 비활성화할 수 있지만 여기서는 삭제할 수 없습니다.",
+    "noUserSystemListsTitle": "사용자 또는 시스템 목록이 없습니다",
+    "noUserSystemListsDesc": "계정 설정 페이지에서 모든 프로필에 적용할 규칙을 추가할 수 있습니다.",
+    "userListNotice": "모든 프로필에 적용되는 계정 수준의 사용자 규칙입니다. 이 프로필에서 비활성화하거나 계정 설정에서 삭제할 수 있습니다.",
+    "cannotDeleteUserListDesc": "사용자 및 시스템 목록은 프로필 설정에서 삭제할 수 없습니다"
   },
   "settings": {
     "title": "구성 설정",
@@ -987,7 +997,27 @@
     "migrationFailed": "데이터베이스 마이그레이션 실패",
     "noMigrationsApplied": "없음",
     "checkMigration": "상태 새로고침",
-    "pendingMigrationsList": "대기 중인 스키마 마이그레이션 파일:"
+    "pendingMigrationsList": "대기 중인 스키마 마이그레이션 파일:",
+    "userFilterLists": {
+      "title": "사용자 수준 필터 목록",
+      "description": "여기서 구성한 필터 규칙 목록은 모든 프로필(Profiles)에 자동으로 적용됩니다. 시스템 규칙에는 '시스템', 사용자 추가 규칙에는 '사용자' 태그가 표시됩니다.",
+      "quickPresets": "빠른 프리셋",
+      "urlHelper": "AdGuard, Hosts, EasyList 등 표준 URL 지원",
+      "addBtn": "목록 추가",
+      "addSuccess": "사용자 필터 목록이 성공적으로 추가되어 모든 프로필에 적용되었습니다",
+      "enabledToast": "계정 전체에서 규칙이 활성화되었습니다",
+      "disabledToast": "계정 전체에서 규칙이 비활성화되었습니다",
+      "deleteSuccess": "사용자 규칙이 삭제되었습니다",
+      "activeListsTitle": "적용 중인 목록",
+      "empty": "사용자 또는 시스템 필터 목록이 없습니다. 위에서 직접 추가할 수 있습니다.",
+      "colUrl": "목록 URL",
+      "colType": "유형",
+      "colLastSync": "최근 동기화",
+      "colStatus": "상태",
+      "colActions": "작업",
+      "deleteConfirm": "계정에서 이 필터 목록을 삭제하시겠습니까? 모든 프로필에서 제거됩니다.",
+      "systemManaged": "통합 관리"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 보호 DNS",

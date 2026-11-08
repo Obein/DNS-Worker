@@ -6,4 +6,5 @@ export * from "./admin";
 export * from "./localDb";
 export * from "./e2ee";
 export * from "./logsWs";
+export * from "./userLists";
 export * from "./types";

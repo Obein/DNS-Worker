@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import { Dialog, Button, Intent, Callout, Switch, InputGroup, Tag, PopoverNext } from "@blueprintjs/core";
-import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw, BookmarkCheck } from "lucide-react";
+import { Copy, ExternalLink, Trash2, Search, ShieldOff, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatDateTime } from "../../../utils/date";
-import { checkDomainAgainstList, keepProfileList, type ListCheckResult } from "../../../services";
+import { checkDomainAgainstList, type ListCheckResult } from "../../../services";
 import type { FilterList } from "../types";
 
 export interface ListDetailsDialogProps {
@@ -18,8 +18,6 @@ export interface ListDetailsDialogProps {
   onAllowDomain: (domain: string) => Promise<void>;
   /** Triggers manual sync for this single list */
   onSyncSingle?: (id: number) => Promise<void>;
-  /** Retains a system-distributed list as a user-level list */
-  onKeep?: (id: number) => Promise<void>;
 }
 
 export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
@@ -31,7 +29,6 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   onToggleEnabled,
   onAllowDomain,
   onSyncSingle,
-  onKeep,
 }) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -41,7 +38,6 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
   const [allowing, setAllowing] = useState(false);
   const [allowed, setAllowed] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [keeping, setKeeping] = useState(false);
   const [syncingSingle, setSyncingSingle] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   /** Monotonic id of the newest check, so stale responses can be discarded. */
@@ -143,45 +139,33 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
 
         <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 break-all font-mono text-sm flex items-center justify-between gap-2">
           <span>{selectedList?.url}</span>
-          {Boolean(selectedList?.is_system) && (
+          {selectedList?.scope === "system" && (
             <Tag intent={Intent.PRIMARY} minimal className="shrink-0 font-sans">
-              {t("filtering.systemDistributed", "系统下发")}
+              {t("filtering.tagSystem", "系统")}
+            </Tag>
+          )}
+          {selectedList?.scope === "user" && (
+            <Tag intent={Intent.SUCCESS} minimal className="shrink-0 font-sans">
+              {t("filtering.tagUser", "用户")}
             </Tag>
           )}
         </div>
 
-        {Boolean(selectedList?.is_system) && (
+        {selectedList?.scope === "system" && (
           <Callout intent={Intent.PRIMARY} icon="info-sign" className="text-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <span className="leading-relaxed">
-                {t(
-                  "filtering.systemListNotice",
-                  "此列表由系统下发。管理员可全局撤回未保留的系统规则。您可以保留此规则，将其转换为个人自定义列表。"
-                )}
-              </span>
-              <Button
-                small
-                intent={Intent.PRIMARY}
-                icon={<BookmarkCheck size={14} />}
-                text={t("filtering.keepList", "保留为自定义列表")}
-                title={t("filtering.keepListHint", "保留后将移除“系统下发”标签，变为您的自定义列表；管理员撤回系统规则时此列表不会被移除。")}
-                loading={keeping}
-                className="shrink-0 whitespace-nowrap"
-                onClick={async () => {
-                  if (!selectedList || keeping) return;
-                  setKeeping(true);
-                  try {
-                    if (onKeep) {
-                      await onKeep(selectedList.id);
-                    } else {
-                      await keepProfileList(profileId, selectedList.id);
-                    }
-                  } finally {
-                    setKeeping(false);
-                  }
-                }}
-              />
-            </div>
+            {t(
+              "filtering.systemListNotice",
+              "此列表由系统下发并应用于所有配置。可在当前配置中停用，但不可在配置中删除。"
+            )}
+          </Callout>
+        )}
+
+        {selectedList?.scope === "user" && (
+          <Callout intent={Intent.SUCCESS} icon="info-sign" className="text-xs">
+            {t(
+              "filtering.userListNotice",
+              "此列表为账号级用户规则并应用于所有配置。可在当前配置中停用；如需删除，请前往「账号」管理页面。"
+            )}
           </Callout>
         )}
 
@@ -330,46 +314,52 @@ export const ListDetailsDialog: React.FC<ListDetailsDialogProps> = ({
       </div>
 
       <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
-        <PopoverNext
-          isOpen={deleteConfirmOpen}
-          onInteraction={setDeleteConfirmOpen}
-          placement="top-start"
-          portalClassName="z-20000"
-          content={
-            <div className="p-3 space-y-3 max-w-xs">
-              <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
-                {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
-              </p>
-              <div className="flex justify-end gap-2">
-                <Button
-                  small
-                  variant="minimal"
-                  text={t("common.cancel", "Cancel")}
-                  onClick={() => setDeleteConfirmOpen(false)}
-                />
-                <Button
-                  small
-                  intent={Intent.DANGER}
-                  text={t("common.confirm", "Confirm")}
-                  onClick={() => {
-                    if (!selectedList) return;
-                    const id = selectedList.id;
-                    setDeleteConfirmOpen(false);
-                    reset();
-                    onDelete(id);
-                  }}
-                />
+        {selectedList?.scope === "profile" ? (
+          <PopoverNext
+            isOpen={deleteConfirmOpen}
+            onInteraction={setDeleteConfirmOpen}
+            placement="top-start"
+            portalClassName="z-20000"
+            content={
+              <div className="p-3 space-y-3 max-w-xs">
+                <p className="text-xs font-semibold leading-relaxed m-0 text-gray-800 dark:text-gray-200">
+                  {t("filtering.deleteConfirm", "Are you sure you want to delete this list? This action cannot be undone.")}
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    small
+                    variant="minimal"
+                    text={t("common.cancel", "Cancel")}
+                    onClick={() => setDeleteConfirmOpen(false)}
+                  />
+                  <Button
+                    small
+                    intent={Intent.DANGER}
+                    text={t("common.confirm", "Confirm")}
+                    onClick={() => {
+                      if (!selectedList) return;
+                      const id = selectedList.id;
+                      setDeleteConfirmOpen(false);
+                      reset();
+                      onDelete(id);
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          }
-        >
-          <Button
-            icon={<Trash2 size={14} />}
-            intent={Intent.DANGER}
-            text={t("rules.delete", "Delete")}
-            onClick={() => setDeleteConfirmOpen(true)}
-          />
-        </PopoverNext>
+            }
+          >
+            <Button
+              icon={<Trash2 size={14} />}
+              intent={Intent.DANGER}
+              text={t("rules.delete", "Delete")}
+              onClick={() => setDeleteConfirmOpen(true)}
+            />
+          </PopoverNext>
+        ) : (
+          <span className="text-xs text-gray-400 italic">
+            {t("filtering.cannotDeleteUserListDesc", "用户级与系统级列表不可在配置中删除")}
+          </span>
+        )}
         <div className="flex gap-2">
           {onSyncSingle && (
             <Button

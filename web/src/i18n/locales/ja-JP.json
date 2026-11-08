@@ -543,7 +543,17 @@
     "keepList": "カスタムリストとして保持",
     "keepListHint": "保持すると「システム配信」タグが削除され、カスタムリストに変換されます。管理者がシステムルールを撤回しても削除されません。",
     "systemListNotice": "このリストはシステムによって配信されました。管理者は未保持のシステムルールを一括撤回できます。このルールを保持して個人用カスタムリストに変換できます。",
-    "keepSuccess": "カスタムリストとして保持しました。システムルール撤回時にも削除されません"
+    "keepSuccess": "カスタムリストとして保持しました。システムルール撤回時にも削除されません",
+    "tagSystem": "システム",
+    "tagUser": "ユーザー",
+    "noProfileListsTitle": "プロファイル固有のリストはまだありません",
+    "noProfileListsDesc": "このプロファイル専用のブロックリストをここに追加できます。",
+    "userAndSystemListsTitle": "ユーザー級およびシステム級リスト",
+    "userAndSystemListsSubtitle": "アカウント設定またはシステム配布から継承され、すべてのプロファイルに自動適用されます。このプロファイルで無効化できますが、ここでは削除できません。",
+    "noUserSystemListsTitle": "ユーザー級・システム級リストはありません",
+    "noUserSystemListsDesc": "アカウント設定ページですべてのプロファイルに適用するルールを追加できます。",
+    "userListNotice": "すべてのプロファイルに適用されるアカウント級ルールです。このプロファイルで無効化するか、アカウント設定で削除できます。",
+    "cannotDeleteUserListDesc": "ユーザー級およびシステム級リストはプロファイル設定からは削除できません"
   },
   "settings": {
     "title": "動作設定",
@@ -987,7 +997,27 @@
     "migrationFailed": "データベースのマイグレーションに失敗しました",
     "noMigrationsApplied": "なし",
     "checkMigration": "状態を更新",
-    "pendingMigrationsList": "保留中のスキーママイグレーションファイル："
+    "pendingMigrationsList": "保留中のスキーママイグレーションファイル：",
+    "userFilterLists": {
+      "title": "ユーザー級フィルターリスト",
+      "description": "ここで設定されたルールリストは、すべてのプロファイル (Profiles) に自動的に適用されます。システム配布ルールには「システム」、自作ルールには「ユーザー」タグが付きます。",
+      "quickPresets": "クイックプリセット",
+      "urlHelper": "AdGuard、Hosts、EasyList などの標準 URL をサポート",
+      "addBtn": "リストを追加",
+      "addSuccess": "ユーザー級フィルターリストが追加され、全プロファイルに適用されました",
+      "enabledToast": "アカウント全体でルールが有効になりました",
+      "disabledToast": "アカウント全体でルールが無効になりました",
+      "deleteSuccess": "ユーザー級ルールが削除されました",
+      "activeListsTitle": "有効なリスト一覧",
+      "empty": "ユーザー級・システム級フィルターリストはありません。上で新しいリストを追加できます。",
+      "colUrl": "リスト URL",
+      "colType": "タイプ",
+      "colLastSync": "最終同期",
+      "colStatus": "状態",
+      "colActions": "操作",
+      "deleteConfirm": "このフィルターリストをアカウントから削除してもよろしいですか？すべてのプロファイルから削除されます。",
+      "systemManaged": "一元管理"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保護DNS",

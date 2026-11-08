@@ -137,7 +137,22 @@ export interface List {
   url: string;
   enabled: boolean;
   is_system?: boolean | number;
+  scope?: 'profile' | 'user' | 'system';
+  user_list_id?: number;
   last_synced_at?: number;
+  sync_error?: string | null;
+  etag?: string | null;
+  last_modified?: number | null;
+}
+
+export interface UserList {
+  id: number;
+  user_id: string;
+  url: string;
+  is_system: number; // 0 = user-created, 1 = system-distributed
+  enabled: boolean;
+  created_at: number;
+  last_synced_at?: number | null;
   sync_error?: string | null;
   etag?: string | null;
   last_modified?: number | null;

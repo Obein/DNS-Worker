@@ -543,7 +543,17 @@
     "keepList": "保留為自訂清單",
     "keepListHint": "保留後將移除「系統下發」標籤，轉為您的自訂清單；管理員撤回系統規則時此清單不會被移除。",
     "systemListNotice": "此清單由系統下發。管理員可全域撤回未保留的系統規則。您可以保留此規則，將其轉換為個人自訂清單。",
-    "keepSuccess": "已保留為自訂清單，管理員撤回規則時此清單將不會被刪除"
+    "keepSuccess": "已保留為自訂清單，管理員撤回規則時此清單將不會被刪除",
+    "tagSystem": "系統",
+    "tagUser": "使用者",
+    "noProfileListsTitle": "尚未新增設定檔級清單",
+    "noProfileListsDesc": "您可在此為目前設定檔新增專屬的攔截清單。",
+    "userAndSystemListsTitle": "使用者級與系統級清單",
+    "userAndSystemListsSubtitle": "繼承自帳號設定或由系統下發的全域規則清單，自動套用於所有設定檔。可在此處針對目前設定檔停用，但不可在此刪除。",
+    "noUserSystemListsTitle": "暫無使用者級與系統級清單",
+    "noUserSystemListsDesc": "可在帳號設定頁面中新增套用於所有設定檔的使用者級規則。",
+    "userListNotice": "此清單為帳號級使用者規則並套用於所有設定檔。可在目前設定檔中停用；如需刪除，請前往「帳號」管理頁面。",
+    "cannotDeleteUserListDesc": "使用者級與系統級清單不可在設定檔中刪除"
   },
   "settings": {
     "title": "配置設定",
@@ -987,7 +997,27 @@
     "migrationFailed": "資料庫遷移失敗",
     "noMigrationsApplied": "無",
     "checkMigration": "重新整理狀態",
-    "pendingMigrationsList": "待套用的架構遷移檔案："
+    "pendingMigrationsList": "待套用的架構遷移檔案：",
+    "userFilterLists": {
+      "title": "使用者級過濾清單",
+      "description": "在此設定的過濾規則清單將自動套用於您的所有設定檔 (Profiles)。系統級規則帶有「系統」標籤，自建規則帶有「使用者」標籤。",
+      "quickPresets": "快捷預設",
+      "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",
+      "addBtn": "新增清單",
+      "addSuccess": "使用者級過濾規則已成功新增並套用於所有設定檔",
+      "enabledToast": "規則已在帳號全域啟用",
+      "disabledToast": "規則已在帳號全域停用",
+      "deleteSuccess": "已刪除使用者級規則",
+      "activeListsTitle": "生效清單一覽",
+      "empty": "暫無使用者級與系統級過濾清單。您可在上方新增自建清單。",
+      "colUrl": "清單 URL",
+      "colType": "類型",
+      "colLastSync": "最近同步",
+      "colStatus": "狀態",
+      "colActions": "操作",
+      "deleteConfirm": "確定從帳號中刪除此過濾清單嗎？該規則將從您的所有設定檔中移除。",
+      "systemManaged": "統一維護"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保護性 DNS",

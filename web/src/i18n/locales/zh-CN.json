@@ -543,7 +543,17 @@
     "keepList": "保留为自定义列表",
     "keepListHint": "保留后将移除“系统下发”标签，变为您的自定义列表；管理员撤回系统规则时此列表不会被移除。",
     "systemListNotice": "此列表由系统下发。管理员可全局撤回未保留的系统规则。您可以保留此规则，将其转换为个人自定义列表。",
-    "keepSuccess": "已保留为自定义列表，管理员撤回规则时此列表将不会被删除"
+    "keepSuccess": "已保留为自定义列表，管理员撤回规则时此列表将不会被删除",
+    "tagSystem": "系统",
+    "tagUser": "用户",
+    "noProfileListsTitle": "尚未添加配置级列表",
+    "noProfileListsDesc": "您可在此为当前配置添加专属的拦截列表。",
+    "userAndSystemListsTitle": "用户级与系统级列表",
+    "userAndSystemListsSubtitle": "继承自账号设置或由系统下发的全局规则列表，自动应用于所有配置。可在此处针对当前配置停用，但不可在此删除。",
+    "noUserSystemListsTitle": "暂无用户级与系统级列表",
+    "noUserSystemListsDesc": "可在账号设置页面中添加应用于所有配置的用户级规则。",
+    "userListNotice": "此列表为账号级用户规则并应用于所有配置。可在当前配置中停用；如需删除，请前往「账号」管理页面。",
+    "cannotDeleteUserListDesc": "用户级与系统级列表不可在配置中删除"
   },
   "settings": {
     "title": "配置设置",
@@ -987,7 +997,27 @@
     "migrationFailed": "数据库迁移失败",
     "noMigrationsApplied": "无",
     "checkMigration": "刷新状态",
-    "pendingMigrationsList": "待应用的架构迁移文件："
+    "pendingMigrationsList": "待应用的架构迁移文件：",
+    "userFilterLists": {
+      "title": "用户级过滤列表",
+      "description": "在此配置的过滤规则列表将自动应用于您的所有配置 (Profiles)。系统级规则带有“系统”标签，自建规则带有“用户”标签。",
+      "quickPresets": "快捷预设",
+      "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",
+      "addBtn": "添加列表",
+      "addSuccess": "用户级过滤规则已成功添加并应用于所有配置",
+      "enabledToast": "规则已在账号全局启用",
+      "disabledToast": "规则已在账号全局停用",
+      "deleteSuccess": "已删除用户级规则",
+      "activeListsTitle": "生效列表清单",
+      "empty": "暂无用户级与系统级过滤列表。您可在上方添加自建列表。",
+      "colUrl": "列表 URL",
+      "colType": "类型",
+      "colLastSync": "最近同步",
+      "colStatus": "状态",
+      "colActions": "操作",
+      "deleteConfirm": "确定从账号中删除此过滤列表吗？该规则将从您的所有配置中移除。",
+      "systemManaged": "统一维护"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker 保护性 DNS",

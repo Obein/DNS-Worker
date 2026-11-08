@@ -25,6 +25,7 @@ import { DangerZoneCard } from "./components/DangerZoneCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { ChangePasswordCard } from "./components/ChangePasswordCard";
 import { SessionLockCard } from "./components/SessionLockCard";
+import { UserFilterListsCard } from "./components/UserFilterListsCard";
 import { E2eeCard } from "./components/E2eeCard";
 import { USERNAME_REGEX } from "../../utils/auth";
 import { useIsMobile } from "../../hooks/useIsMobile";
@@ -254,6 +255,14 @@ export const AccountView: React.FC<AccountViewProps> = ({ onSavingChange, toaste
         <SessionLockCard
           user={me}
           onRefresh={fetchMe}
+          onSavingChange={onSavingChange}
+          toasterRef={toasterRef}
+        />
+      )}
+
+      {/* User-level Filter Lists */}
+      {me && (
+        <UserFilterListsCard
           onSavingChange={onSavingChange}
           toasterRef={toasterRef}
         />

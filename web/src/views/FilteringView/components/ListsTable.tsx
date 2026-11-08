@@ -8,6 +8,8 @@ export interface ListsTableProps {
   lists: FilterList[];
   onSelect: (list: FilterList) => void;
   loading?: boolean;
+  emptyTitle?: string;
+  emptyDesc?: string;
 }
 
 interface ColumnConfig {
@@ -18,7 +20,13 @@ interface ColumnConfig {
   render: (list: FilterList) => React.ReactNode;
 }
 
-export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect, loading = false }) => {
+export const ListsTable: React.FC<ListsTableProps> = ({
+  lists,
+  onSelect,
+  loading = false,
+  emptyTitle,
+  emptyDesc,
+}) => {
   const { t } = useTranslation();
 
   const columns: ColumnConfig[] = [
@@ -29,9 +37,14 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect, loading
       render: (list: FilterList): React.ReactNode => (
         <div className="flex items-center space-x-2 truncate">
           <span className="truncate">{list.url}</span>
-          {Boolean(list.is_system) && (
+          {list.scope === "system" && (
             <Tag intent={Intent.PRIMARY} minimal className="shrink-0 text-xs font-sans">
-              {t("filtering.systemDistributed", "系统下发")}
+              {t("filtering.tagSystem", "系统")}
+            </Tag>
+          )}
+          {list.scope === "user" && (
+            <Tag intent={Intent.SUCCESS} minimal className="shrink-0 text-xs font-sans">
+              {t("filtering.tagUser", "用户")}
             </Tag>
           )}
         </div>
@@ -117,8 +130,12 @@ export const ListsTable: React.FC<ListsTableProps> = ({ lists, onSelect, loading
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center space-y-1 py-4 select-none">
-                    <span className="text-sm font-medium">{t("filtering.noListsTitle", "尚未添加列表")}</span>
-                    <span className="text-xs opacity-75">{t("filtering.noListsDesc", "您还没有订阅任何外部拦截列表。")}</span>
+                    <span className="text-sm font-medium">
+                      {emptyTitle || t("filtering.noListsTitle", "尚未添加列表")}
+                    </span>
+                    <span className="text-xs opacity-75">
+                      {emptyDesc || t("filtering.noListsDesc", "您还没有订阅任何外部拦截列表。")}
+                    </span>
                   </div>
                 )}
               </td>

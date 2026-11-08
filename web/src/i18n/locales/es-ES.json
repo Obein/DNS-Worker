@@ -543,7 +543,17 @@
     "keepList": "Conservar como lista personalizada",
     "keepListHint": "Al conservarla, se eliminará la etiqueta «Sistema» y se convertirá en su lista personalizada; no se eliminará si un administrador revoca las reglas del sistema.",
     "systemListNotice": "Esta lista fue distribuida por el sistema. Los administradores pueden revocar globalmente las reglas del sistema no conservadas. Puede conservarla para convertirla en su lista personalizada.",
-    "keepSuccess": "Se ha conservado como lista personalizada; no se eliminará si se revocan las reglas del sistema"
+    "keepSuccess": "Se ha conservado como lista personalizada; no se eliminará si se revocan las reglas del sistema",
+    "tagSystem": "Sistema",
+    "tagUser": "Usuario",
+    "noProfileListsTitle": "Aún no hay listas a nivel de perfil",
+    "noProfileListsDesc": "Añada listas de bloqueo específicas para este perfil aquí.",
+    "userAndSystemListsTitle": "Listas de Usuario y Sistema",
+    "userAndSystemListsSubtitle": "Listas globales heredadas de la cuenta o del sistema, aplicadas a todos los perfiles. Se pueden desactivar en este perfil, pero no eliminar aquí.",
+    "noUserSystemListsTitle": "No hay listas de usuario o de sistema",
+    "noUserSystemListsDesc": "Puede añadir reglas en la Configuración de Cuenta para aplicarlas a todos los perfiles.",
+    "userListNotice": "Esta es una regla a nivel de cuenta aplicada a todos los perfiles. Puede desactivarse aquí o eliminarse en la Cuenta.",
+    "cannotDeleteUserListDesc": "Las listas de usuario y sistema no se pueden eliminar en el perfil"
   },
   "settings": {
     "title": "Ajustes de perfil",
@@ -987,7 +997,27 @@
     "migrationFailed": "Error en la migración de base de datos",
     "noMigrationsApplied": "Ninguna",
     "checkMigration": "Actualizar estado",
-    "pendingMigrationsList": "Archivos de migración de esquema pendientes:"
+    "pendingMigrationsList": "Archivos de migración de esquema pendientes:",
+    "userFilterLists": {
+      "title": "Listas de Filtro de Usuario",
+      "description": "Las listas configuradas aquí se aplican automáticamente a todos sus perfiles. Las del sistema llevan etiqueta 'Sistema' y las suyas 'Usuario'.",
+      "quickPresets": "Preajustes rápidos",
+      "urlHelper": "Soporta URLs en formatos estándar como AdGuard, Hosts y EasyList",
+      "addBtn": "Añadir lista",
+      "addSuccess": "Lista de usuario añadida y aplicada a todos los perfiles",
+      "enabledToast": "Lista activada globalmente en la cuenta",
+      "disabledToast": "Lista desactivada globalmente en la cuenta",
+      "deleteSuccess": "Lista de usuario eliminada",
+      "activeListsTitle": "Listas activas",
+      "empty": "No hay listas de usuario o sistema. Puede añadir una arriba.",
+      "colUrl": "URL de lista",
+      "colType": "Tipo",
+      "colLastSync": "Última sinc.",
+      "colStatus": "Estado",
+      "colActions": "Acciones",
+      "deleteConfirm": "¿Está seguro de eliminar esta lista de su cuenta? Se eliminará de todos sus perfiles.",
+      "systemManaged": "Gestión centralizada"
+    }
   },
   "intro": {
     "item1Title": "DNS Worker de protección",
