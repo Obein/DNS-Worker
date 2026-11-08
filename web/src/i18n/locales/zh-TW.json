@@ -51,7 +51,8 @@
     "confirmDisable": "確認停用",
     "modeServerfull": "Serverfull 模式",
     "modeCloudflare": "Cloudflare Worker 模式",
-    "unknown": "未知"
+    "unknown": "未知",
+    "system": "系統"
   },
   "nav": {
     "setup": "安裝",
@@ -1123,5 +1124,11 @@
       "failedUsers": "下發失敗使用者",
       "toastPartialSuccess": "系統過濾列表已下發至 {{added}} 位使用者，{{failed}} 位使用者下發失敗"
     }
+  },
+  "system": {
+    "title": "系統管理",
+    "subtitle": "管理使用者、系統過濾列表、系統設定與資料庫維護",
+    "accessDenied": "存取受限",
+    "accessDeniedDesc": "當前頁面僅限管理員存取。"
   }
 }

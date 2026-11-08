@@ -51,7 +51,8 @@
     "confirmDisable": "确认关闭",
     "modeServerfull": "Serverfull 模式",
     "modeCloudflare": "Cloudflare Worker 模式",
-    "unknown": "未知"
+    "unknown": "未知",
+    "system": "系统"
   },
   "nav": {
     "setup": "安装",
@@ -1123,5 +1124,11 @@
       "failedUsers": "下发失败用户",
       "toastPartialSuccess": "系统过滤列表已下发至 {{added}} 位用户，{{failed}} 位用户下发失败"
     }
+  },
+  "system": {
+    "title": "系统管理",
+    "subtitle": "管理用户、系统过滤列表、系统配置与数据库维护",
+    "accessDenied": "访问受限",
+    "accessDeniedDesc": "当前页面仅限管理员访问。"
   }
 }

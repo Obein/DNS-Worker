@@ -51,7 +51,8 @@
     "confirmDisable": "Confirm Disable",
     "modeServerfull": "Serverfull Mode",
     "modeCloudflare": "Cloudflare Worker Mode",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "system": "System"
   },
   "nav": {
     "setup": "Setup",
@@ -1123,5 +1124,11 @@
       "failedUsers": "Failed Users",
       "toastPartialSuccess": "System filter list distributed to {{added}} user(s); {{failed}} user(s) failed"
     }
+  },
+  "system": {
+    "title": "System Administration",
+    "subtitle": "Manage users, system filter lists, system settings, and database maintenance",
+    "accessDenied": "Access Denied",
+    "accessDeniedDesc": "This page is restricted to administrators only."
   }
 }

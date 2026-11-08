@@ -51,7 +51,8 @@
     "confirmDisable": "Deaktivierung bestätigen",
     "modeServerfull": "Serverfull-Modus",
     "modeCloudflare": "Cloudflare Worker-Modus",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "system": "System"
   },
   "nav": {
     "setup": "Installation",
@@ -1123,5 +1124,11 @@
       "failedUsers": "Fehlgeschlagene Benutzer",
       "toastPartialSuccess": "System-Filterliste an {{added}} Benutzer verteilt; bei {{failed}} Benutzern fehlgeschlagen"
     }
+  },
+  "system": {
+    "title": "Systemverwaltung",
+    "subtitle": "Benutzer, System-Filterlisten, Systemeinstellungen und Datenbankverwaltung",
+    "accessDenied": "Zugriff verweigert",
+    "accessDeniedDesc": "Diese Seite ist nur für Administratoren zugänglich."
   }
 }

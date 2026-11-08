@@ -51,7 +51,8 @@
     "confirmDisable": "Confirmar desactivación",
     "modeServerfull": "Modo Serverfull",
     "modeCloudflare": "Modo Cloudflare Worker",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "system": "Sistema"
   },
   "nav": {
     "setup": "Instalación",
@@ -1123,5 +1124,11 @@
       "failedUsers": "Usuarios fallidos",
       "toastPartialSuccess": "Lista distribuida a {{added}} usuario(s); falló para {{failed}} usuario(s)"
     }
+  },
+  "system": {
+    "title": "Administración del sistema",
+    "subtitle": "Gestione usuarios, listas de filtros del sistema, configuración y base de datos",
+    "accessDenied": "Acceso denegado",
+    "accessDeniedDesc": "Esta página está restringida únicamente a administradores."
   }
 }

@@ -51,7 +51,8 @@
     "confirmDisable": "無効化を確認",
     "modeServerfull": "Serverfull モード",
     "modeCloudflare": "Cloudflare Worker モード",
-    "unknown": "不明"
+    "unknown": "不明",
+    "system": "システム"
   },
   "nav": {
     "setup": "インストール",
@@ -1123,5 +1124,11 @@
       "failedUsers": "配信失敗ユーザー",
       "toastPartialSuccess": "システムフィルターリストを {{added}} 人に配信しました（{{failed}} 人失敗）"
     }
+  },
+  "system": {
+    "title": "システム管理",
+    "subtitle": "ユーザー、システムフィルターリスト、環境設定、データベースの管理",
+    "accessDenied": "アクセス拒否",
+    "accessDeniedDesc": "このページは管理者のみアクセスできます。"
   }
 }

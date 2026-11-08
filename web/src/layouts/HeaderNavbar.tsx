@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Navbar, Alignment, Icon, Spinner } from "@blueprintjs/core";
 import { useTranslation } from "react-i18next";
-import { Sun, Moon, Monitor, Settings } from "lucide-react";
+import { Sun, Moon, Monitor, Settings, Menu as MenuIcon } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { SessionLockButton } from "../components/SessionLockButton";
 import type { Profile, UserInfo } from "../types/auth";
@@ -27,6 +27,10 @@ interface HeaderNavbarProps {
   isSaving?: boolean;
   /** Current logged in user info. */
   currentUser?: UserInfo | null;
+  /** True if sidebar is open. */
+  isSidebarOpen?: boolean;
+  /** Callback to toggle mobile sidebar. */
+  onToggleSidebar?: () => void;
 }
 
 /**
@@ -44,6 +48,8 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   navigate,
   isSaving,
   currentUser,
+  isSidebarOpen,
+  onToggleSidebar,
 }) => {
   const { t } = useTranslation();
 
@@ -53,6 +59,13 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
       style={{ zIndex: 10, transform: "translateZ(0)", willChange: "transform" }}
     >
       <Navbar.Group align={Alignment.LEFT}>
+        <Button
+          variant="minimal"
+          icon={<MenuIcon size={18} />}
+          className="md:hidden mr-2 text-gray-700 dark:text-gray-200"
+          onClick={onToggleSidebar}
+          aria-label={isSidebarOpen ? t("common.close", "关闭") : t("common.menu", "菜单")}
+        />
         <button
           onClick={() => navigate("/dash")}
           className="font-bold text-blue-600 dark:text-blue-400 bg-transparent border-none p-0 cursor-pointer flex items-center gap-1"
@@ -61,12 +74,14 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
           <span className="truncate max-w-30 md:max-w-none">
             {location.pathname === "/account"
               ? t("common.account")
-              : isProfileActive
-                ? selectedProfile?.name || t("common.loading")
-                : t("common.selectProfile")}
+              : location.pathname === "/system"
+                ? t("common.system", "系统")
+                : isProfileActive
+                  ? selectedProfile?.name || t("common.loading")
+                  : t("common.selectProfile")}
           </span>
         </button>
-        {isProfileActive && location.pathname !== "/account" && (
+        {isProfileActive && location.pathname !== "/account" && location.pathname !== "/system" && (
           <button
             onClick={() => {
               const profileId =
@@ -76,7 +91,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               }
             }}
             className={clsx(
-              "md:hidden ml-2 hover:text-gray-700  dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
+              "md:hidden ml-2 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
               location.pathname.includes("/settings")
                 ? "text-blue-500 dark:text-blue-400"
                 : "text-gray-500 dark:text-gray-400",

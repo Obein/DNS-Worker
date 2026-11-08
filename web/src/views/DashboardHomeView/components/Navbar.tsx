@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Intent, PopoverNext } from "@blueprintjs/core";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, User as UserIcon, Server } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "../../../components/LanguageSwitcher";
 import { SessionLockButton } from "../../../components/SessionLockButton";
@@ -57,6 +57,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isMobile, navigate, handleLogout
         <SessionLockButton currentUser={currentUser} />
         <LanguageSwitcher />
         <div className="flex items-center gap-1">
+          {currentUser?.role === "admin" && (
+            <Button
+              variant="minimal"
+              icon={<Server size={18} />}
+              text={isMobile ? "" : t("common.system", "系统")}
+              onClick={() => navigate("/system")}
+            />
+          )}
           <Button
             variant="minimal"
             icon={<UserIcon size={18} />}

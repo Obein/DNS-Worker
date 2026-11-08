@@ -51,7 +51,8 @@
     "confirmDisable": "Xác nhận vô hiệu hóa",
     "modeServerfull": "Chế độ Serverfull",
     "modeCloudflare": "Chế độ Cloudflare Worker",
-    "unknown": "Không xác định"
+    "unknown": "Không xác định",
+    "system": "Hệ thống"
   },
   "nav": {
     "setup": "Thiết lập",
@@ -1123,5 +1124,11 @@
       "failedUsers": "Người dùng thất bại",
       "toastPartialSuccess": "Đã phân phối tới {{added}} người dùng; thất bại cho {{failed}} người dùng"
     }
+  },
+  "system": {
+    "title": "Quản trị hệ thống",
+    "subtitle": "Quản lý người dùng, danh sách bộ lọc hệ thống, cấu hình và cơ sở dữ liệu",
+    "accessDenied": "Truy cập bị từ chối",
+    "accessDeniedDesc": "Trang này chỉ dành cho quản trị viên."
   }
 }

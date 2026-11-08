@@ -51,7 +51,8 @@
     "confirmDisable": "Подтвердить отключение",
     "modeServerfull": "Режим Serverfull",
     "modeCloudflare": "Режим Cloudflare Worker",
-    "unknown": "Неизвестно"
+    "unknown": "Неизвестно",
+    "system": "Система"
   },
   "nav": {
     "setup": "Установка",
@@ -1123,5 +1124,11 @@
       "failedUsers": "Пользователи со сбоем",
       "toastPartialSuccess": "Список распространен среди {{added}} пользователей; сбой у {{failed}} пользователей"
     }
+  },
+  "system": {
+    "title": "Управление системой",
+    "subtitle": "Управление пользователями, системными фильтрами, настройками и базой данных",
+    "accessDenied": "Доступ запрещен",
+    "accessDeniedDesc": "Эта страница доступна только администраторам."
   }
 }
