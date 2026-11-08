@@ -244,17 +244,31 @@ Because schemas must run across Cloudflare D1, Turso libSQL, and standalone SQLi
   }
   ```
 
-### 5.2 Mandatory Minimum HTTP/2 for DoH (RFC 8484 §5.2) `[Strict]`
+### 5.2 Prefer HTTP/3 for DoH with Mandatory Minimum HTTP/2 `[Strict]`
 
-* **Rationale**: RFC 8484 §5.2 forbids negotiating HTTP/1.1 for DoH. HTTP/1.1 head-of-line blocking quickly exhausts network sockets under concurrent DNS load. In Serverfull mode, servers mandate ALPN `h2` and reject HTTP/1.1 requests with `HTTP 505 (HTTP Version Not Supported)`. Transparent upstream errors must be surfaced without silent protocol downgrades.
+* **Rationale**:
+  * **HTTP/3 is the Preferred Protocol**: Built upon UDP/QUIC, HTTP/3 (DoH3 / RFC 9114) delivers 0-RTT handshakes, completely eliminates transport-layer head-of-line blocking, and provides native resilience against packet loss on mobile networks. The system and standalone daemons should prioritize and advertise HTTP/3.
+  * **HTTP/2 is the Backwards-Compatible Floor (RFC 8484 §5.2)**: In accordance with RFC 8484 §5.2 ("Clients and servers MUST NOT negotiate HTTP/1.1 for DoH"), HTTP/2 serves strictly as the backwards-compatible floor. DoH must never negotiate or fall back to HTTP/1.1.
+  * **No Silent Downgrades & Transparent Diagnostics**: Incoming DoH requests over HTTP/1.1 must be rejected with `HTTP 505 (HTTP Version Not Supported)`. If an upstream DoH query fails, the actual upstream error must be surfaced transparently without silent downgrades to unencrypted protocols.
 * **Good Practice**:
   ```typescript
-  if (req.httpVersionMajor < 2 && isDohPath(req.url)) {
-    res.writeHead(505, { 'Content-Type': 'text/plain' });
-    res.end('HTTP Version Not Supported: DoH requires HTTP/2+ (RFC 8484)');
-    return;
+  // 1. Advertise HTTP/3 support via Alt-Svc to upgrade modern clients to HTTP/3 (DoH3)
+  res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400`);
+
+  // 2. Enforce HTTP/2 as the absolute minimum, rejecting legacy HTTP/1.1
+  const httpProto = request.headers.get('X-Http-Version');
+  if (httpProto && (httpProto === 'HTTP/1.0' || httpProto === 'HTTP/1.1' || httpProto === '1.0' || httpProto === '1.1')) {
+    return new Response('DoH requires HTTP/2 or later in accordance with RFC 8484 §5.2', {
+      status: 505,
+      statusText: 'HTTP Version Not Supported',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
   }
   ```
+* **Anti-Pattern**:
+  * Defaulting solely to HTTP/2 without advertising or prioritizing HTTP/3;
+  * Permitting serial DoH queries over multiplexing-deficient HTTP/1.1 connections;
+  * Silently downgrading failed DoH queries to plain UDP without user knowledge or diagnostic feedback.
 
 ### 5.3 Post-Quantum Zero-Knowledge E2EE for Audit Logs `[Recommended]`
 

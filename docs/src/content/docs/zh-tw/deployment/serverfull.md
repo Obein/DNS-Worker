@@ -177,7 +177,7 @@ SERVERFULL_DISABLE_HTTPS=false
 
 ### 方案 1：Caddy 反向代理配置 (推薦首選)
 
-Caddy 原生支援全自動申請和續期 Let's Encrypt / ZeroSSL 證書，配置極其簡潔。編輯 `/etc/caddy/Caddyfile`：
+Caddy 原生支援全自動申請和續期 Let's Encrypt / ZeroSSL 證書，預設在 UDP 443 埠啟用優先的 HTTP/3 (QUIC) 極速解析通道，並向下相容 HTTP/2。配置極其簡潔，編輯 `/etc/caddy/Caddyfile`：
 
 ```caddy
 dns.example.com {

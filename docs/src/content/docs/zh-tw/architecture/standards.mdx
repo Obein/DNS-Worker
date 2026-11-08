@@ -265,19 +265,31 @@ flowchart LR
   }
   ```
 
-### 5.2 DoH 協議強制限定最低 HTTP/2 版本 (RFC 8484 §5.2) `【嚴格】`
+### 5.2 DoH 協議優先 HTTP/3 且限定最低 HTTP/2 版本 `【嚴格】`
 
-* **制定理由**：RFC 8484 §5.2 明確規定 DoH 客戶端與服務端不得協商 HTTP/1.1，HTTP/1.1 缺乏單連線多路複用能力，會導致嚴重的隊頭阻塞，並在高併發 DNS 解析下耗盡網路套接字。服務端強制要求 HTTP/2 (ALPN `h2`)，杜絕靜默降級或未經使用者配置的私自協議回退。
+* **制定理由**：
+  * **HTTP/3 為首選優先協議**：基於 UDP/QUIC 的 HTTP/3（DoH3 / RFC 9114）具備 0-RTT 極速握手連線、徹底消除傳輸層隊頭阻塞以及原生抵抗移動弱網丟包抖動的能力，是保護性 DNS 與高併發解析的最佳傳輸協議。系統與服務端應儘量使用並優先引導客戶端協商 HTTP/3。
+  * **HTTP/2 為相容底線與最低限制 (RFC 8484 §5.2)**：根據 RFC 8484 第 5.2 節標準（“Clients and servers MUST NOT negotiate HTTP/1.1 for DoH”），HTTP/2 僅作為保證向後相容的最低下限，DoH 絕不得使用缺乏單連線多路複用能力的 HTTP/1.1 傳輸。
+  * **禁止靜默降級與錯誤透明回顯**：若收到 HTTP/1.1 的 DoH 請求，服務端必須嚴格拒絕並回顯 `HTTP 505 (HTTP Version Not Supported)`。同時，外部或上游 DoH 請求失敗時必須如實暴露具體錯誤原因與狀態碼，杜絕未經使用者顯式配置的私自降級或靜默回退。
 * **正例**：
   ```typescript
-  // Serverfull 服务端使用原生 http2 监听，对 HTTP/1.1 DoH 请求返回 505
-  if (req.httpVersionMajor < 2 && isDohPath(req.url)) {
-    res.writeHead(505, { 'Content-Type': 'text/plain' });
-    res.end('HTTP Version Not Supported: DoH requires HTTP/2+ (RFC 8484)');
-    return;
+  // 1. 优先宣告 HTTP/3 支持，引导客户端自动升级至 HTTP/3 (DoH3)
+  res.setHeader('Alt-Svc', `h3=":${port}"; ma=86400`);
+
+  // 2. 兼容 HTTP/2，严格拦截低于 HTTP/2 的过时请求 (RFC 8484 §5.2)
+  const httpProto = request.headers.get('X-Http-Version');
+  if (httpProto && (httpProto === 'HTTP/1.0' || httpProto === 'HTTP/1.1' || httpProto === '1.0' || httpProto === '1.1')) {
+    return new Response('DoH requires HTTP/2 or later in accordance with RFC 8484 §5.2', {
+      status: 505,
+      statusText: 'HTTP Version Not Supported',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
   }
   ```
-* **反例**：為圖相容允許客戶端通過明文無複用的 HTTP/1.1 管道持續輪詢發起 DoH 查詢，或者在 DoH 失敗時靜默且未經提示地降級為明文 UDP。
+* **反例**：
+  * 僅支援或預設停留在 HTTP/2，未宣告或未優先考慮 HTTP/3；
+  * 允許客戶端通過沒有多路複用的 HTTP/1.1 管道持續輪詢發起 DoH 查詢；
+  * 在 DoH 解析遇到錯誤時，未回顯失敗原因而是私自靜默降級為明文 UDP。
 
 ### 5.3 零知識後量子密文日誌隔離 `【推薦】`
 
