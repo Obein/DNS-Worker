@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 declare global {
   interface Window {
     onloadTurnstileCallback: () => void;
@@ -142,11 +144,13 @@ export function parseCloudflareError(bodyText?: string | null): CloudflareErrorI
   };
 }
 
+export type TranslationFunction = TFunction<any, any> | ((key: any, ...args: any[]) => string);
+
 /**
  * Formats API errors into concise, user-friendly messages.
  * Automatically intercepts Cloudflare error pages and converts them to 1-2 sentence prompts.
  */
-export function formatApiErrorMessage(err: any, t: (key: string, options?: any) => string): string {
+export function formatApiErrorMessage(err: any, t: TranslationFunction): string {
   if (!err) return t("auth.authFailed", "Authentication failed");
 
   const bodyText = typeof err === "string" ? err : err.bodyText || err.message || "";
