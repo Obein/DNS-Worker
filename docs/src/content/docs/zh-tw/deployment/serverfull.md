@@ -241,7 +241,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 > [!NOTE]
-> **透傳客戶端真實 IP**：務必在反向代理中正確傳遞 `X-Real-IP` 和 `X-Forwarded-For` 請求頭，確保 DNS Worker 在查詢日誌審計、地理位置解析及速率限制（Rate Limiting）中能夠精準識別客戶端真實 IP，而非反向代理的 `127.0.0.1`。
+> **透傳客戶端真實 IP**：務必在反向代理中正確傳遞 `X-Real-IP` 和 `X-Forwarded-For` 請求頭，確保 DNS Worker 在查詢日誌審計、地理位置解析及速率限制中能夠精準識別客戶端真實 IP，而非反向代理的 `127.0.0.1`。
 
 ---
 

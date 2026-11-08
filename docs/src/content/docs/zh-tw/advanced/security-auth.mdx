@@ -35,11 +35,11 @@ sequenceDiagram
 ```
 
 ### 核心安全防線
-- **硬體通行金鑰 (WebAuthn Passkey)**：支援 Touch ID、Face ID、Windows Hello 及 YubiKey 生物認證，徹底阻斷撞庫與釣魚攻擊。
-- **隨機數防重放 (Nonce Anti-Replay)**：所有敏感操作均包含加密隨機數，杜絕重放攻擊。
+- **硬體通行金鑰 (WebAuthn)**：支援 Touch ID、Face ID、Windows Hello 及 YubiKey 生物認證，徹底阻斷撞庫與釣魚攻擊。
+- **隨機數防重放**：所有敏感操作均包含加密隨機數，杜絕重放攻擊。
 - **非可匯出 Web Crypto 金鑰**：前端私鑰運算（如後量子 ML-KEM、AES-GCM 日誌解密）在獨立 Web Worker 中使用不可匯出的 Web Crypto API 原生物件執行。
 - **單次重新整理令牌輪換 (RTR)**：Refresh Token 具備一次性屬性，每次換髮新 Token 時舊 Token 立即吊銷。
-- **併發寬限視窗 (Concurrency Grace Period)**：在多瀏覽器標籤頁併發請求時，通過原子寬限期（`RTR_GRACE_WINDOW_MS`）避免誤判登出。
+- **併發寬限視窗**：在多瀏覽器標籤頁併發請求時，通過原子寬限期（`RTR_GRACE_WINDOW_MS`）避免誤判登出。
 
 ---
 

@@ -9,6 +9,18 @@ As a hybrid application engineered to run both on Cloudflare Workers edge networ
 
 ---
 
+## Standard Level Definitions
+
+To balance engineering rigor with development agility, every guideline in this document is categorized with an explicit level badge:
+
+| Level Badge | Scope & Authority | Adjudication Principle |
+| :--- | :--- | :--- |
+| **`[Strict]`** | **Non-negotiable foundational requirements**.<br/>Directly impacts security boundaries (SSRF, RBAC bypass), data integrity (immutable migration hashes, integer timestamps), protocol mandates (RFC 8484 HTTP/2 minimum), or static analysis (disallowing `any`). | Minimized to only critical invariants. Must pass continuous integration and peer review with zero waivers. |
+| **`[Recommended]`** | **Core engineering standards & best practices**.<br/>Covers architectural isolation, modularity, defensive error handling, table recreation patterns, and comprehensive automated test suites. | Must be followed in all normal circumstances; deviations require explicit justification in the PR review. |
+| **`[Reference]`** | **Code consistency & advanced tuning heuristics**.<br/>Covers naming conventions, human-in-the-loop markers (`TODO: [HUMAN]`), and high-QPS memory profiling. | Encouraged to improve readability, maintainability, and developer experience. |
+
+---
+
 ## 1. Architectural & Collaborative Principles
 
 ### 1.1 Respect Architectural Layering `[Recommended]`
@@ -122,7 +134,7 @@ As a hybrid application engineered to run both on Cloudflare Workers edge networ
 
 ---
 
-## 3. Timestamp Standardization (统一时间戳模型规范)
+## 3. Timestamp Standardization
 
 To eliminate timezone ambiguities, string parsing overhead, and localization mismatches, DNS Worker mandates an integer Unix timestamp architecture:
 

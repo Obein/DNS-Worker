@@ -1,6 +1,6 @@
 ---
 title: 接入點配置與客戶端設定
-description: DNS Worker 接入點（Profile）建立管理、連線協議矩陣及多平臺客戶端配置完整指南。
+description: DNS Worker 接入點建立管理、連線協議矩陣及多平臺客戶端配置完整指南。
 sidebar:
   order: 1
 ---
@@ -23,20 +23,20 @@ import setupImg from '../../../../../screenshots/dns.obex-setup.webp';
 ### 步驟 1：訪問管理面板
 1. 開啟 DNS Worker Web 控制面板（例如 `https://dns.example.com` 或 `http://<server-ip>:10080`）。
 2. 使用管理員憑據登入系統。
-3. 在左側導航欄中，點選 **Profiles**（接入點管理）。
+3. 在左側導航欄中，點選 **接入點管理**。
 
 ### 步驟 2：新建接入點
-1. 點選右上角 **+ New Profile**（新建接入點）按鈕。
+1. 點選右上角 **+ 新建接入點** 按鈕。
 2. 輸入接入點名稱（例如 `Phone-Mobile`、`Living-Room-Router`、`Kids-Tablet`）。
-3. 點選 **Create Profile**（建立接入點）。
+3. 點選 **建立接入點**。
 
 ```mermaid
 flowchart LR
-    subgraph ProfileCard["接入点配置示例 (Profile)"]
+    subgraph ProfileCard["接入点配置示例"]
         direction TB
         P1["接入点名称: Phone-Mobile"]
         P2["路由密钥: a8f9c2d14e..."]
-        P3["运行状态: 激活 (Active)"]
+        P3["运行状态: 激活"]
         P4["拦截响应: Zero IP (0.0.0.0 / ::)"]
         P5["日志策略: 启用 (保留 30 天)"]
         P1 --- P2 --- P3 --- P4 --- P5
@@ -79,9 +79,9 @@ Web 控制面板內建了針對各個作業系統的互動式客戶端配置指�
 ### Android 9+（原生私有 DNS）
 Android 原生支援通過 853 埠發起 DNS over TLS：
 
-1. 開啟 Android 裝置 **設定 (Settings)**。
-2. 進入 **網路和網際網路 (Network & Internet)** → **私有 DNS (Private DNS)**。
-3. 選擇 **私有 DNS 提供商主機名 (Private DNS provider hostname)**。
+1. 開啟 Android 裝置 **設定**。
+2. 進入 **網路和網際網路** → **私有 DNS**。
+3. 選擇 **私有 DNS 提供商主機名**。
 4. 填入您的接入點主機名：
    ```text
    <profileKey>.<dotDomain>

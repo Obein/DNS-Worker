@@ -9,18 +9,30 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
 
 ---
 
+## 規範等級說明
+
+為了在保持工程嚴謹性的同時賦予開發迭代必要的靈活性，本規範所有條目均標註了明確的等級標籤：
+
+| 等級標籤 | 適用範圍與約束力 | 裁量原則 |
+| :--- | :--- | :--- |
+| **`【嚴格】`** | **不可妥協的底線規範**。<br/>直接關乎系統安全邊界（如 SSRF、越權）、資料完整性（如破壞遷移版本雜湊、儲存文本時間造成解析歧義）、協議硬違規（如 RFC 8484 強制最低 HTTP/2）或編譯期失效（如濫用 `any` 擊穿全鏈路型別）。 | 原則上從嚴收斂，僅保留關鍵底線，程式碼合併時強行校驗，不允許任何豁免。 |
+| **`【推薦】`** | **團隊核心工程標準與最佳實踐**。<br/>涵蓋架構分層隔離、模組化解耦、防禦性重試、臨時表遷移模式及自動化測試覆蓋等。 | 絕大多數場景下必須遵守；若因極端效能最佳化或特定硬體底層限制需要突破，必須在 PR 中提供詳盡的技術論證與評審記錄。 |
+| **`【参考】`** | **工程風格統一與進階調優建議**。<br/>涵蓋命名慣例、人機協作標記（`TODO: [HUMAN]`）、高 QPS 場景下的記憶體與 GC 調優等。 | 引導程式碼呈現更高的自解釋性與一致體驗，鼓勵在日常編碼與評審中積極採納。 |
+
+---
+
 ## 1. 架構與協同設計原則
 
-### 1.1 尊重現有架構分層 (Respect Architecture Layers) `【推薦】`
+### 1.1 尊重現有架構分層 `【推薦】`
 
 * **制定理由**：DNS Worker 需要無縫適配 Cloudflare Workers 無檔案系統邊緣環境與獨立常駐 Node.js 守護程序兩種截然不同的執行時，且前端具備 Local-First OPFS 離線與增量同步能力。如果跨層直接讀寫私有狀態、或在 UI 表現層中侵入持久化 SQL 邏輯，將破壞執行時環境的解耦性，並導致資料流產生副作用。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // 表现层仅通过统一抽象的 Service 接口与后端或 Local-First 数据层交互
   import { keepProfileList } from '@/services/profiles';
   await keepProfileList(profileId, listId);
   ```
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```typescript
   // 反例：在 React 视图组件内部直接引入底层 Node.js 驱动或试图直接拼装执行 SQL
   import { DatabaseSync } from 'node:sqlite';
@@ -28,28 +40,28 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
   db.prepare('UPDATE lists SET is_system = 0 WHERE id = ?').run(listId);
   ```
 
-### 1.2 極簡侵入式修改 (Minimally Invasive Modifications) `【推薦】`
+### 1.2 極簡侵入式修改 `【推薦】`
 
-* **制定理由**：在多人協作與人機協同（AI 程式設計助手）開發中，嚴格控制每次變更的程式碼修改半徑（Diff Scope），能最大程度保護已有驗證邏輯不受波及，極大減少非必要的大範圍迴歸風險，並確保 `git blame` 歷史追溯清晰可靠。
-* **正例 (Good Practice)**：在新增“下發規則撤回”特性時，僅在 [`src/models/list.ts`](file:///d:/Coding/OriginalProject/ObexDNS/src/models/list.ts) 增補 `revokeSystemList` 並在對應 API 路由中新增分支，保持既有函式命名習慣與欄位定義不變。
-* **反例 (Anti-Pattern)**：在修復一個列表載入小缺陷時，順手對整個檢視元件的數百行無關聯程式碼做重新縮排、變數重新命名或重寫樣式，導致 Review 無法快速定位關鍵改動。
+* **制定理由**：在多人協作與人機協同（AI 程式設計助手）開發中，嚴格控制每次變更的程式碼修改半徑，能最大程度保護已有驗證邏輯不受波及，極大減少非必要的大範圍迴歸風險，並確保 `git blame` 歷史追溯清晰可靠。
+* **正例**：在新增“下發規則撤回”特性時，僅在 [`src/models/list.ts`](file:///d:/Coding/OriginalProject/ObexDNS/src/models/list.ts) 增補 `revokeSystemList` 並在對應 API 路由中新增分支，保持既有函式命名習慣與欄位定義不變。
+* **反例**：在修復一個列表載入小缺陷時，順手對整個檢視元件的數百行無關聯程式碼做重新縮排、變數重新命名或重寫樣式，導致審查時無法快速定位關鍵改動。
 
-### 1.3 模組化與單一職責 (Modularity & Single Responsibility) `【推薦】`
+### 1.3 模組化與單一職責 `【推薦】`
 
 * **制定理由**：高內聚、單一職責的純函式更容易進行隔離的單元測試與效能畫像，並且可以安全地在 Cloudflare Workers 和 Node.js 環境之間無縫共享複用。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // 将规则解析逻辑抽取为纯函数模块，不绑定任何特定网络或 HTTP 框架
   export function parseAdGuardLine(line: string): ParsedRule | null {
     // 纯文本解析与规则提取逻辑...
   }
   ```
-* **反例 (Anti-Pattern)**：在 API 請求 Handler 內部同時執行 HTTP Body 解析、規則檔案外網下載、逐行正則匹配、Bloom 過濾器二進位制位計算以及資料庫多表事務更新。
+* **反例**：在 API 請求 Handler 內部同時執行 HTTP Body 解析、規則檔案外網下載、逐行正則匹配、Bloom 過濾器二進位制位計算以及資料庫多表事務更新。
 
-### 1.4 人機協作交接標記 (Handoff Markers) `【参考】`
+### 1.4 人機協作交接標記 `【参考】`
 
 * **制定理由**：在 AI 協同或多人協作交接時，對需要人工裁決的業務決策、私密憑據配置或生產釋出事項進行顯式規範化標註，避免自動化流程臆測或遺漏關鍵配置。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // TODO: [HUMAN] 部署至生产前需在此配置专用的外部 OAuth Client Secret 环境变量
   ```
@@ -58,10 +70,10 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
 
 ## 2. 編碼與嚴格型別規範
 
-### 2.1 杜絕 `any` 逃逸與隱式型別繞過 (Strict Typing) `【嚴格】`
+### 2.1 杜絕 `any` 逃逸與隱式型別繞過 `【嚴格】`
 
 * **制定理由**：TypeScript 編譯期靜態分析是保障 DNS 協議解析與海量加密日誌安全的第一道防線。一旦在關鍵鏈路上使用 `any`，TypeScript 將徹底放棄靜態推斷，型別錯誤會穿透到執行時，在生產環境下引發不可挽回的 `TypeError: Cannot read properties of undefined`。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   export interface RevokeFilterResult {
     canonicalUrl: string;
@@ -74,7 +86,7 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
     // 具备完整的输入与返回类型保障
   }
   ```
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```typescript
   // 反例：使用 any 偷懒，调用方无法获得代码提示，字段拼写错误在编译期无法被捕获
   export async function revokeSystemList(url: any): Promise<any> {
@@ -82,10 +94,10 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
   }
   ```
 
-### 2.2 顯式定義匯出實體與函式簽名 (Explicit Signatures) `【推薦】`
+### 2.2 顯式定義匯出實體與函式簽名 `【推薦】`
 
-* **制定理由**：公共模組匯出的函式入參、返回值型別以及 React 元件 Props 均應顯式宣告 Interface 或 Type。顯式宣告形成了可靠的程式碼契約，避免因依賴編譯器深層隱式推斷而在依賴演進時引入靜默破壞（Breaking Changes）。
-* **正例 (Good Practice)**：
+* **制定理由**：公共模組匯出的函式入參、返回值型別以及 React 元件 Props 均應顯式宣告 Interface 或 Type。顯式宣告形成了可靠的程式碼契約，避免因依賴編譯器深層隱式推斷而在依賴演進時引入破壞性變更。
+* **正例**：
   ```typescript
   export interface DistributeFilterCardProps {
     toasterRef?: React.RefObject<OverlayToaster | null>;
@@ -95,14 +107,14 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
   export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({ toasterRef, onSavingChange }) => { ... };
   ```
 
-### 2.3 統一程式碼命名約定 (Naming Conventions) `【参考】`
+### 2.3 統一程式碼命名約定 `【参考】`
 
 * **制定理由**：統一且符合行業慣例的命名法能夠讓協作者一眼識別識別符號的語義、生命週期與作用範圍，大幅降低上下文切換與閱讀的心智成本。
-* **正例 (Good Practice)**：
+* **正例**：
   * **變數與普通函式**：採用 `camelCase`（如 `listFetcher`、`parseHttpDateToUnix`）。
   * **類、介面、型別、React 元件**：採用 `PascalCase`（如 `ListModel`、`ListsTable`、`SingleListSyncResult`）。
   * **全域性常量與列舉**：採用 `UPPER_SNAKE_CASE`（如 `DEFAULT_MAX_SYNC_DOMAINS`、`APP_VERSION`）。
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```typescript
   const default_max_sync_domains = 100000;
   class list_model {
@@ -110,10 +122,10 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
   }
   ```
 
-### 2.4 網路與外部輸入防禦性程式設計 (Defensive Programming) `【推薦】`
+### 2.4 網路與外部輸入防禦性程式設計 `【推薦】`
 
 * **制定理由**：DNS 解析涉及不可信的上游響應、第三方網路列表與開放網路請求，存在網路閃斷、格式畸形、超時與 5xx 異常。全鏈路必須具備完備的異常捕獲、空邊界防護與優雅退避，防止單個異常請求拖垮整個工作執行緒。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   try {
     const res = await fetchWithTimeout(url, { timeoutMs: 5000 });
@@ -125,7 +137,7 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
     return getCachedFallback();
   }
   ```
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```typescript
   // 反例：假定外部上游永远可用且数据永远符合预期
   const data = (await (await fetch(url)).json()).data.items.map(x => x.url);
@@ -133,7 +145,7 @@ DNS Worker 作為兼顧 Cloudflare Workers 邊緣計算（Serverless）與獨立
 
 ---
 
-## 3. 統一時間戳資料模型規範 (Timestamp Standardization)
+## 3. 統一時間戳資料模型規範
 
 為了徹底根除時區偏差、國際化文本解析歧義及序列化開銷，DNS Worker 確立了系統級的統一時間戳模型：
 
@@ -145,10 +157,10 @@ flowchart LR
     D -->|"本地化延迟格式化<br/>formatDateTime(ts * 1000)"| E["用户界面呈现<br/>(2026/11/07 17:30 UTC+8)"]
 ```
 
-### 3.1 資料庫與領域模型全整型 Unix 時間戳 (Integer Unix Timestamp) `【嚴格】`
+### 3.1 資料庫與領域模型全整型 Unix 時間戳 `【嚴格】`
 
 * **制定理由**：格式化文本（如 ISO-8601、RFC 2822 等）在底層資料庫（SQLite / D1）中佔用過多位元組，且字串排序與數值排序不等價，跨時區比較存在嚴重的解析歧義與時鐘偏差。以秒級整型 Unix 時間戳（`Math.floor(Date.now() / 1000)` / SQLite `INTEGER`）作為唯一內部標準，保證了全域性高效索引、範圍檢索零時差和極致輕量。
-* **正例 (Good Practice)**：
+* **正例**：
   ```sql
   -- 数据表中所有时间字段统一为 INTEGER 秒级整型时间戳
   CREATE TABLE lists (
@@ -161,7 +173,7 @@ flowchart LR
   const now = Math.floor(Date.now() / 1000);
   await db.prepare("UPDATE lists SET last_synced_at = ? WHERE id = ?").bind(now, listId).run();
   ```
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```sql
   -- 反例：直接将格式化日期字符串存入数据表，导致范围查询和索引效率低下
   CREATE TABLE lists (
@@ -170,10 +182,10 @@ flowchart LR
   );
   ```
 
-### 3.2 外部協議邊界即刻解析與動態序列化 (Boundary Ingestion & Serialization) `【推薦】`
+### 3.2 外部協議邊界即刻解析與動態序列化 `【推薦】`
 
 * **制定理由**：網路協議傳輸（如 HTTP `Last-Modified` / `If-Modified-Since` 採用 RFC 7231 日期）屬於協議外在表現，不應汙染系統內部領域模型。在資料進入系統的最外層即刻解析為秒級時間戳，並在對外發起請求時按需動態序列化，實現協議層與領域層的徹底解耦。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // 接入边界即刻解析
   const lastModifiedHeader = response.headers.get("Last-Modified");
@@ -184,34 +196,34 @@ flowchart LR
     headers["If-Modified-Since"] = new Date(list.last_modified * 1000).toUTCString();
   }
   ```
-* **反例 (Anti-Pattern)**：將 `res.headers.get("Last-Modified")` 原樣存入資料庫，業務後續在各處呼叫 `new Date(row.last_modified).getTime()` 重複解析。
+* **反例**：將 `res.headers.get("Last-Modified")` 原樣存入資料庫，業務後續在各處呼叫 `new Date(row.last_modified).getTime()` 重複解析。
 
-### 3.3 表現層延遲格式化 (Presentation Layer Formatting) `【推薦】`
+### 3.3 表現層延遲格式化 `【推薦】`
 
-* **制定理由**：人類可讀的日期格式化、相對時間（“剛剛”、“5 分鐘前”）與使用者個性化時區偏好（`user.timezone`）完全是使用者檢視層（View）的呈現邏輯。保持後端 API 只輸出整型時間戳，能給前端多語言與客戶端本地時間計算保留最大靈活性。
-* **正例 (Good Practice)**：
+* **制定理由**：人類可讀的日期格式化、相對時間（“剛剛”、“5 分鐘前”）與使用者個性化時區偏好（`user.timezone`）完全是使用者檢視層的呈現邏輯。保持後端 API 只輸出整型時間戳，能給前端多語言與客戶端本地時間計算保留最大靈活性。
+* **正例**：
   ```typescript
   // 前端组件中利用工具函数按当前用户时区格式化
   <span>{formatDateTime(list.last_synced_at * 1000, user.timezone)}</span>
   ```
-* **反例 (Anti-Pattern)**：後端介面直接返回格式化好的中文文案 `"last_synced_desc": "2026年11月8日 11:45:00"`，導致海外語言使用者介面出現不可翻譯的中文字元。
+* **反例**：後端介面直接返回格式化好的中文文案 `"last_synced_desc": "2026年11月8日 11:45:00"`，導致海外語言使用者介面出現不可翻譯的中文字元。
 
 ---
 
-## 4. 資料庫演進與增量遷移規範 (Append-Only Migrations)
+## 4. 資料庫演進與增量遷移規範
 
 由於專案同時面向邊緣 Serverless (Cloudflare D1) 與分散式獨立伺服器 (VPS SQLite / Turso)，資料庫遷移採用增量不可變機制：
 
-### 4.1 歷史已部署遷移檔案絕對不可變 (Immutable Past Migrations) `【嚴格】`
+### 4.1 歷史已部署遷移檔案絕對不可變 `【嚴格】`
 
 * **制定理由**：歷史遷移檔案（如 `migrations/0000_init.sql` 至當前已有版本）已被生產環境與各節點應用並記錄了版本後設資料。若篡改歷史檔案，將導致已上線例項遷移校驗失敗、本地與生產表結構產生不可逆漂移，甚至在執行時產生找不到列或資料破壞的嚴重故障。
-* **正例 (Good Practice)**：需要為 `lists` 表補充欄位時，新建遞增編號遷移檔案 `migrations/0065_add_is_system_to_lists.sql`。
-* **反例 (Anti-Pattern)**：直接回到 `0000_init.sql` 中修改 `CREATE TABLE lists (...)` 的欄位宣告，並期望已有資料庫自動生效。
+* **正例**：需要為 `lists` 表補充欄位時，新建遞增編號遷移檔案 `migrations/0065_add_is_system_to_lists.sql`。
+* **反例**：直接回到 `0000_init.sql` 中修改 `CREATE TABLE lists (...)` 的欄位宣告，並期望已有資料庫自動生效。
 
-### 4.2 SQLite 表結構變更採用臨時表替換模式 (Table Recreation Pattern) `【推薦】`
+### 4.2 SQLite 表結構變更採用臨時表替換模式 `【推薦】`
 
 * **制定理由**：SQLite / Cloudflare D1 針對 `ALTER TABLE` 的原生支援有限（例如早期不支援直接變更列型別、移除主鍵或修改外部索引鍵約束）。通過 SQLite 官方推薦的標準模式“建立目標新表 -> 資料清洗遷移 -> 刪除舊錶 -> 重新命名新表”，能夠保證結構變更 100% 安全且跨引擎相容。
-* **正例 (Good Practice)**：
+* **正例**：
   ```sql
   -- migrations/0066_standardize_last_modified_timestamp.sql
   CREATE TABLE global_list_metadata_new (
@@ -225,19 +237,19 @@ flowchart LR
   ALTER TABLE global_list_metadata_new RENAME TO global_list_metadata;
   ```
 
-### 4.3 遷移指令碼自動同步嵌入式程式碼 (Embedded Codegen) `【推薦】`
+### 4.3 遷移指令碼自動同步嵌入式程式碼 `【推薦】`
 
 * **制定理由**：Cloudflare Workers 邊緣執行時沒有本地檔案系統，無法在執行時動態讀取 `.sql` 磁碟檔案。每次新增遷移後必須同步生成 TypeScript 靜態陣列，以支援邊緣環境啟動時的自舉應用。
-* **正例 (Good Practice)**：編寫 SQL 遷移後，執行 `npm run db:generate-migrations`，自動更新 `src/lib/turso/embeddedMigrations.ts`。
+* **正例**：編寫 SQL 遷移後，執行 `npm run db:generate-migrations`，自動更新 `src/lib/turso/embeddedMigrations.ts`。
 
 ---
 
 ## 5. 安全體系與防禦性設計
 
-### 5.1 外部 URL 全量強制 SSRF 防護 (Strict SSRF Prevention) `【嚴格】`
+### 5.1 外部 URL 全量強制 SSRF 防護 `【嚴格】`
 
 * **制定理由**：DNS 服務具備網路出站發起能力（拉取攔截規則、請求上游 DoH）。若允許請求私有網路 IP（RFC 1918）、Loopback 地址（`127.0.0.1`）或雲廠商後設資料介面（`169.254.169.254`），駭客可通過構造惡意 URL 探測內網、攻破 VPC 邊界或竊取雲平臺 IAM 憑證。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // 所有外部 URL 在发起连接前严格校验域名解析结果与 IP 黑名单
   const safe = await isSafeUrlWithDnsCheck(targetUrl);
@@ -245,7 +257,7 @@ flowchart LR
     return new Response("Invalid or forbidden destination URL", { status: 400 });
   }
   ```
-* **反例 (Anti-Pattern)**：
+* **反例**：
   ```typescript
   // 反例：仅校验以 http 开头就盲目发起 fetch，导致内网元数据泄露
   if (targetUrl.startsWith("http")) {
@@ -256,7 +268,7 @@ flowchart LR
 ### 5.2 DoH 協議強制限定最低 HTTP/2 版本 (RFC 8484 §5.2) `【嚴格】`
 
 * **制定理由**：RFC 8484 §5.2 明確規定 DoH 客戶端與服務端不得協商 HTTP/1.1，HTTP/1.1 缺乏單連線多路複用能力，會導致嚴重的隊頭阻塞，並在高併發 DNS 解析下耗盡網路套接字。服務端強制要求 HTTP/2 (ALPN `h2`)，杜絕靜默降級或未經使用者配置的私自協議回退。
-* **正例 (Good Practice)**：
+* **正例**：
   ```typescript
   // Serverfull 服务端使用原生 http2 监听，对 HTTP/1.1 DoH 请求返回 505
   if (req.httpVersionMajor < 2 && isDohPath(req.url)) {
@@ -265,28 +277,28 @@ flowchart LR
     return;
   }
   ```
-* **反例 (Anti-Pattern)**：為圖相容允許客戶端通過明文無複用的 HTTP/1.1 管道持續輪詢發起 DoH 查詢，或者在 DoH 失敗時靜默且未經提示地降級為明文 UDP。
+* **反例**：為圖相容允許客戶端通過明文無複用的 HTTP/1.1 管道持續輪詢發起 DoH 查詢，或者在 DoH 失敗時靜默且未經提示地降級為明文 UDP。
 
-### 5.3 零知識後量子密文日誌隔離 (Post-Quantum Zero-Knowledge E2EE) `【推薦】`
+### 5.3 零知識後量子密文日誌隔離 `【推薦】`
 
 * **制定理由**：DNS 查詢日誌高度敏感（直接反映使用者的網路行為與物理軌跡）。利用 ML-KEM-768 後量子金鑰協商與 AES-256-GCM 信封加密，服務端僅儲存密文，解密私鑰僅存在於客戶端 Passkey / 瀏覽器 Web Crypto 中，實現真正的端到端零知識資料隔離。
-* **正例 (Good Practice)**：服務端在寫入日誌時使用使用者的啟用 KEM 公鑰封裝 DEK 並加密資料，落庫 `encrypted_query` 欄位。
-* **反例 (Anti-Pattern)**：將明文查詢域名、客戶端真實 IP 裸露寫入日誌表，導致被提權攻擊者一鍵拖庫竊取全部使用者隱私。
+* **正例**：服務端在寫入日誌時使用使用者的啟用 KEM 公鑰封裝 DEK 並加密資料，落庫 `encrypted_query` 欄位。
+* **反例**：將明文查詢域名、客戶端真實 IP 裸露寫入日誌表，導致被提權攻擊者一鍵拖庫竊取全部使用者隱私。
 
 ---
 
-## 6. 測試驅動與質量保證 (Test-Driven Mindset)
+## 6. 測試驅動與質量保證
 
-### 6.1 核心資料與安全變更必須配齊自動化測試 (Automated Test Suite) `【推薦】`
+### 6.1 核心資料與安全變更必須配齊自動化測試 `【推薦】`
 
 * **制定理由**：DNS 遞迴解析、Bloom 過濾器合成、加解密邏輯以及管理員多租戶隔離具有高度級聯影響，純手動驗證不僅耗時且極易遺漏越權攻擊和邊界條件。每次引入新特性必須同步編寫自動化單元/整合測試。
-* **正例 (Good Practice)**：新增“下發規則撤回與保留”功能時，編寫 [`test/test_distribute_filter.ts`](file:///d:/Coding/OriginalProject/ObexDNS/test/test_distribute_filter.ts) 完整覆蓋普通使用者保留、管理員全域性撤回、已保留規則不被撤回等所有關鍵斷言。
-* **反例 (Anti-Pattern)**：新增跨表事務或許可權邊界後，僅靠人工開啟網頁點選一下就合併程式碼。
+* **正例**：新增“下發規則撤回與保留”功能時，編寫 [`test/test_distribute_filter.ts`](file:///d:/Coding/OriginalProject/ObexDNS/test/test_distribute_filter.ts) 完整覆蓋普通使用者保留、管理員全域性撤回、已保留規則不被撤回等所有關鍵斷言。
+* **反例**：新增跨表事務或許可權邊界後，僅靠人工開啟網頁點選一下就合併程式碼。
 
-### 6.2 提測與釋出前全量基線校驗 (Full Baseline Verification) `【推薦】`
+### 6.2 提測與釋出前全量基線校驗 `【推薦】`
 
 * **制定理由**：防止區域性程式碼改動在無意識中破壞了全域性型別檢查或靜態打包過程。
-* **正例 (Good Practice)**：
+* **正例**：
   在提交 PR 或合併程式碼前，確保本地執行並通過以下驗證套件：
   ```bash
   npm test                               # 密钥兼容性与信封加密测试
@@ -298,7 +310,7 @@ flowchart LR
   npm run build:serverfull               # 服务端常驻程序打包构建验证
   ```
 
-### 6.3 效能敏感路徑壓測與記憶體洩漏檢測 (Performance & Profiling) `【参考】`
+### 6.3 效能敏感路徑壓測與記憶體洩漏檢測 `【参考】`
 
 * **制定理由**：DNS 服務通常承受高 QPS 吞吐，記憶體洩漏或微小的時間開銷放大都會導致常駐守護程序 OOM 或延遲飆升。
-* **正例 (Good Practice)**：在最佳化 Bloom 過濾器或 LRU 快取時，執行高併發壓力測試，監控 GC 頻次與記憶體佔用曲線。
+* **正例**：在最佳化 Bloom 過濾器或 LRU 快取時，執行高併發壓力測試，監控 GC 頻次與記憶體佔用曲線。
