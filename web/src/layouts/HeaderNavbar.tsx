@@ -89,26 +89,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                   : t("common.selectProfile")}
           </span>
         </button>
-        {isProfileActive && location.pathname !== "/account" && location.pathname !== "/system" && (
-          <button
-            onClick={() => {
-              const profileId =
-                selectedProfile?.id || location.pathname.split("/")[2];
-              if (profileId) {
-                navigate(`/dash/${profileId}/settings`);
-              }
-            }}
-            className={clsx(
-              "md:hidden! ml-2 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
-              location.pathname.includes("/settings")
-                ? "text-blue-500 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400",
-            )}
-            title={t("nav.settings")}
-          >
-            <Settings size={18} />
-          </button>
-        )}
       </Navbar.Group>
       <Navbar.Group align={Alignment.RIGHT}>
         <div className="flex items-center gap-2">
