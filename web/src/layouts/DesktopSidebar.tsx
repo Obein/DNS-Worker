@@ -70,6 +70,53 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   const { t } = useTranslation();
   const { hasUpdate, latestTag, appVersion, gitTag, gitCommit } = useUpstreamUpdate();
 
+  // Swipe-to-close handling on mobile
+  const touchStartRef = React.useRef<{ x: number; y: number; time: number } | null>(null);
+  const [dragOffset, setDragOffset] = React.useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      setDragOffset(null);
+      touchStartRef.current = null;
+    }
+  }, [isSidebarOpen]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile || !isSidebarOpen) return;
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile || !isSidebarOpen || !touchStartRef.current) return;
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartRef.current.x;
+    const diffY = touch.clientY - touchStartRef.current.y;
+
+    // Track horizontal swipe left (diffX < 0)
+    if (diffX < 0 && Math.abs(diffX) > Math.abs(diffY)) {
+      setDragOffset(Math.min(0, diffX));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current) return;
+    const duration = Date.now() - touchStartRef.current.time;
+    const offset = dragOffset ?? 0;
+
+    // Swipe left to close: drag left > 50px or quick flick left > 20px
+    if (offset < -50 || (duration < 300 && offset < -20)) {
+      setIsSidebarOpen(false);
+    }
+    setDragOffset(null);
+    touchStartRef.current = null;
+  };
+
+  const handleTouchCancel = () => {
+    setDragOffset(null);
+    touchStartRef.current = null;
+  };
+
   // On mobile, automatically close drawer on Escape key press
   useEffect(() => {
     if (!isMobile || !isSidebarOpen) return;
@@ -96,25 +143,50 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       {/* Mobile Drawer Backdrop */}
       {isMobile && isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity md:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 transition-opacity md:hidden!"
           onClick={() => setIsSidebarOpen(false)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchCancel}
+          style={
+            dragOffset !== null
+              ? {
+                  opacity: Math.max(0, 1 - Math.abs(dragOffset) / 256),
+                  transition: "none",
+                }
+              : undefined
+          }
           aria-hidden="true"
         />
       )}
 
       <aside
         className={clsx(
-          "flex flex-col border-r border-gray-200 dark:border-gray-800 transition-all duration-300 bg-white dark:bg-gray-900",
+          "flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900",
           isMobile
             ? clsx(
-                "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform",
+                "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl transform select-none",
                 isSidebarOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
               )
             : clsx(
                 "relative z-20 shrink-0",
                 isSidebarOpen ? "w-64" : "w-16"
-              )
+              ),
+          dragOffset === null && "transition-all duration-300"
         )}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+        style={
+          isMobile && isSidebarOpen && dragOffset !== null
+            ? {
+                transform: `translateX(${dragOffset}px)`,
+                transition: "none",
+              }
+            : undefined
+        }
       >
         <div className="h-14 flex items-center pl-3.5 pr-2 shrink-0 justify-between">
           <div className="flex items-center min-w-0">

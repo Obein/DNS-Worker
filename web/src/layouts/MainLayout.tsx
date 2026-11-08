@@ -137,6 +137,7 @@ export const MainLayout = ({
           navigate={navigate}
           isSaving={isSaving}
           currentUser={currentUser}
+          isMobile={isMobile}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />

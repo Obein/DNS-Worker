@@ -5,6 +5,7 @@ import { Sun, Moon, Monitor, Settings, Menu as MenuIcon } from "lucide-react";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { SessionLockButton } from "../components/SessionLockButton";
 import type { Profile, UserInfo } from "../types/auth";
+import { useIsMobile } from "../hooks/useIsMobile";
 import clsx from "clsx";
 
 /**
@@ -27,6 +28,8 @@ interface HeaderNavbarProps {
   isSaving?: boolean;
   /** Current logged in user info. */
   currentUser?: UserInfo | null;
+  /** True if viewport is mobile. */
+  isMobile?: boolean;
   /** True if sidebar is open. */
   isSidebarOpen?: boolean;
   /** Callback to toggle mobile sidebar. */
@@ -48,10 +51,13 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   navigate,
   isSaving,
   currentUser,
+  isMobile,
   isSidebarOpen,
   onToggleSidebar,
 }) => {
   const { t } = useTranslation();
+  const isMobileHook = useIsMobile();
+  const mobile = isMobile ?? isMobileHook;
 
   return (
     <Navbar
@@ -59,13 +65,15 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
       style={{ zIndex: 10, transform: "translateZ(0)", willChange: "transform" }}
     >
       <Navbar.Group align={Alignment.LEFT}>
-        <Button
-          variant="minimal"
-          icon={<MenuIcon size={18} />}
-          className="md:hidden mr-2 text-gray-700 dark:text-gray-200"
-          onClick={onToggleSidebar}
-          aria-label={isSidebarOpen ? t("common.close", "关闭") : t("common.menu", "菜单")}
-        />
+        {mobile && (
+          <Button
+            variant="minimal"
+            icon={<MenuIcon size={18} />}
+            className="md:hidden! mr-2 text-gray-700 dark:text-gray-200"
+            onClick={onToggleSidebar}
+            aria-label={isSidebarOpen ? t("common.close", "关闭") : t("common.menu", "菜单")}
+          />
+        )}
         <button
           onClick={() => navigate("/dash")}
           className="font-bold text-blue-600 dark:text-blue-400 bg-transparent border-none p-0 cursor-pointer flex items-center gap-1"
@@ -91,7 +99,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
               }
             }}
             className={clsx(
-              "md:hidden ml-2 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
+              "md:hidden! ml-2 hover:text-gray-700 dark:hover:text-gray-200 bg-transparent border-none p-1 cursor-pointer flex items-center transition-colors",
               location.pathname.includes("/settings")
                 ? "text-blue-500 dark:text-blue-400"
                 : "text-gray-500 dark:text-gray-400",
