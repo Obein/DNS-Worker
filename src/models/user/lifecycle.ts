@@ -7,7 +7,7 @@ import { InactivityPolicyResult } from "./types";
  * Single Responsibility: Account resolution activity tracking and periodic inactivity retention enforcement.
  */
 export class UserLifecycleModel {
-  constructor(private db: D1Database) {}
+  constructor(private db: D1Database, private env?: unknown) {}
 
   /**
    * Updates the `last_active_at` timestamp of the user who owns the specified profile.
@@ -26,18 +26,52 @@ export class UserLifecycleModel {
   }
 
   /**
-   * Applies the inactivity retention policies:
-   * 1. 30 days of no DNS resolution activity: cleans up all query logs, pre-aggregated hourly rollups, and DNS profiles.
-   * 2. 90 days of no login activity: deletes the zombie user account and all remaining metadata.
+   * Applies the inactivity retention policies strictly based on DNS resolution activity:
+   * 
+   * 1. Inactivity Log Purge (INACTIVE_LOG_PURGE_DAYS, default 30 days):
+   *    Cleans up all query logs and pre-aggregated hourly rollups for non-admin accounts that have had no DNS
+   *    resolution traffic for consecutive days. All DNS profiles, custom lists, access points, and routing keys
+   *    are completely preserved.
+   * 
+   * 2. Account Abandonment Cleanup (INACTIVITY_THRESHOLD_DAYS, default 180 days):
+   *    Deletes abandoned non-admin user accounts that have had no DNS resolution activity for consecutive days.
+   *    Judged strictly by resolution activity (last_active_at, or created_at if no queries ever resolved),
+   *    NEVER by web login activity. Deleting the user cascades to all their profiles, access points, and metadata.
    *
    * @param now Current timestamp in seconds.
-   * @returns Statistics on cleared profiles and deleted user accounts.
+   * @param options Optional overrides for threshold days (useful for unit tests or customized triggers).
+   * @returns Statistics on cleared profiles, deleted user accounts, and purged logs.
    */
-  async applyInactivityPolicy(now: number): Promise<InactivityPolicyResult> {
-    const thirtyDaysAgo = now - 30 * 24 * 3600;
-    const ninetyDaysAgo = now - 90 * 24 * 3600;
+  async applyInactivityPolicy(
+    now: number,
+    options?: { inactivityDays?: number; inactiveLogPurgeDays?: number }
+  ): Promise<InactivityPolicyResult> {
+    const envObj = (this.env || {}) as Record<string, unknown>;
 
-    // 1. 超过 30 天无解析记录的账户，其所有关联查询日志、预聚合时序及 DNS 配置将被自动清理
+    // 1. Resolve INACTIVITY_THRESHOLD_DAYS (Default: 180 days)
+    const rawInactivityDays = options?.inactivityDays ?? envObj.INACTIVITY_THRESHOLD_DAYS;
+    const parsedInactivityDays = rawInactivityDays !== undefined && rawInactivityDays !== ''
+      ? Number(rawInactivityDays)
+      : 180;
+    const inactivityDays = Number.isFinite(parsedInactivityDays) && parsedInactivityDays > 0
+      ? parsedInactivityDays
+      : 180;
+
+    // 2. Resolve INACTIVE_LOG_PURGE_DAYS (Default: 30 days, aliases: INACTIVE_LOG_CLEANUP_DAYS)
+    const rawPurgeDays = options?.inactiveLogPurgeDays ?? envObj.INACTIVE_LOG_PURGE_DAYS ?? envObj.INACTIVE_LOG_CLEANUP_DAYS;
+    const parsedPurgeDays = rawPurgeDays !== undefined && rawPurgeDays !== ''
+      ? Number(rawPurgeDays)
+      : 30;
+    const inactiveLogPurgeDays = Number.isFinite(parsedPurgeDays) && parsedPurgeDays > 0
+      ? parsedPurgeDays
+      : 30;
+
+    const purgeCutoff = now - inactiveLogPurgeDays * 24 * 3600;
+    const abandonCutoff = now - inactivityDays * 24 * 3600;
+    // Ensure all logs from accounts eligible for either log purge or abandonment are cleaned
+    const logPurgeCutoff = Math.max(purgeCutoff, abandonCutoff);
+
+    // 1. 清理闲置账号的历史查询日志与预聚合时序 (配置与规则完整保留)
     const deleteRollupsStmt = this.db.prepare(`
       DELETE FROM hourly_rollups
       WHERE profile_id IN (
@@ -48,7 +82,7 @@ export class UserLifecycleModel {
             AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
         )
       )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
+    `).bind(logPurgeCutoff, logPurgeCutoff);
 
     const deleteLogsStmt = this.db.prepare(`
       DELETE FROM logs
@@ -60,38 +94,35 @@ export class UserLifecycleModel {
             AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
         )
       )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
+    `).bind(logPurgeCutoff, logPurgeCutoff);
 
-    const deleteProfilesStmt = this.db.prepare(`
+    // 2. 判定长期废弃休眠账号 (根据解析活动判断，而非登录时间)：删除废弃账号的 Profile 及用户主体 (级联清理元数据)
+    const deleteAbandonedProfilesStmt = this.db.prepare(`
       DELETE FROM profiles 
       WHERE owner_id IN (
         SELECT id FROM users 
         WHERE role = 'user' 
           AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
       )
-    `).bind(thirtyDaysAgo, thirtyDaysAgo);
+    `).bind(abandonCutoff, abandonCutoff);
 
-    // 2. 账户本身在 90 天无登录后将予移除
-    const deleteUsersStmt = this.db.prepare(`
+    const deleteAbandonedUsersStmt = this.db.prepare(`
       DELETE FROM users
       WHERE role = 'user'
-        AND (
-          SELECT COALESCE(MAX(timestamp), created_at) 
-          FROM user_activity_log 
-          WHERE user_id = users.id
-        ) < ?
-    `).bind(ninetyDaysAgo);
+        AND (last_active_at < ? OR (last_active_at IS NULL AND created_at < ?))
+    `).bind(abandonCutoff, abandonCutoff);
 
     const results = await this.db.batch([
       deleteRollupsStmt,
       deleteLogsStmt,
-      deleteProfilesStmt,
-      deleteUsersStmt
+      deleteAbandonedProfilesStmt,
+      deleteAbandonedUsersStmt
     ]);
 
     return {
       clearedProfiles: results[2].meta.changes || 0,
-      deletedUsers: results[3].meta.changes || 0
+      deletedUsers: results[3].meta.changes || 0,
+      purgedLogsCount: results[1].meta.changes || 0
     };
   }
 }

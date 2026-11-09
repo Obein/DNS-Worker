@@ -803,7 +803,7 @@
     "clearLogsSuccess": "Nhật ký đã được xóa thành công",
     "confirmDeleteAccount": "Cảnh báo: Bạn có chắc chắn muốn xóa tài khoản này không?\n\nTất cả cấu hình DNS, quy tắc tùy chỉnh và nhật ký truy vấn của bạn sẽ bị xóa vĩnh viễn. Hành động này không thể đảo ngược!",
     "inactivityPolicy": "Chính sách hoạt động",
-    "inactivityDesc": "Để bảo vệ quyền riêng tư của người dùng và tiết kiệm tài nguyên, tất cả nhật ký truy vấn và cấu hình DNS của các tài khoản không có hoạt động phân giải trong 30 ngày sẽ được tự động xóa. Bản thân tài khoản sẽ bị xóa sau 90 ngày không đăng nhập.",
+    "inactivityDesc": "Để bảo vệ quyền riêng tư của người dùng và tiết kiệm tài nguyên, nhật ký truy vấn của các tài khoản không có hoạt động phân giải trong 30 ngày liên tiếp sẽ được tự động xóa (cấu hình và quy tắc được giữ nguyên). Bản thân tài khoản sẽ bị xóa sau 180 ngày không có hoạt động phân giải.",
     "systemSettings": "Cài đặt hệ thống (Quản trị viên)",
     "adminOnlyView": "Chỉ dành cho quản trị viên",
     "featureToggle": "Bật/Tắt tính năng",

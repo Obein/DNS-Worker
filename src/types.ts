@@ -16,6 +16,8 @@ export interface Env {
   CONFIG_MEM_TTL?: string | number;
   SYNC_TIMEOUT_MS?: string | number;
   INACTIVITY_THRESHOLD_DAYS?: string | number;
+  INACTIVE_LOG_PURGE_DAYS?: string | number;
+  INACTIVE_LOG_CLEANUP_DAYS?: string | number;
   PRESET_UPSTREAMS?: string;
   PRESET_EXTERNAL_FILTERS?: string;
   PRESET_ECH_FRONTING_DOMAINS?: string;

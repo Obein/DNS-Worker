@@ -33,6 +33,7 @@ export interface CreateUserOptions {
 export interface InactivityPolicyResult {
   clearedProfiles: number;
   deletedUsers: number;
+  purgedLogsCount?: number;
 }
 
 /**

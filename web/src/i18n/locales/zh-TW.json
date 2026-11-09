@@ -803,7 +803,7 @@
     "clearLogsSuccess": "日誌已成功清空",
     "confirmDeleteAccount": "警告：確定要註銷並刪除本帳號嗎？\n\n閣下所有 DNS 配置、自訂規則和查詢日誌將被永久刪除。此操作不可逆！",
     "inactivityPolicy": "活躍度政策",
-    "inactivityDesc": "為保護用戶隱私並節省資源，超過 30 天無解析記錄的帳戶，其所有關聯查詢日誌及 DNS 配置將被自動清除。帳戶本身在 90 天無登錄後將予移除。",
+    "inactivityDesc": "為保護用戶隱私並節省資源，連續 30 天無解析活動的帳戶，其歷史查詢日誌將被自動清除（接入點配置與規則完整保留）。連續 180 天無解析活動的帳戶將被視為長期廢棄並自動移除。",
     "systemSettings": "系統設定 (管理員)",
     "adminOnlyView": "僅管理員可見",
     "featureToggle": "功能開關",

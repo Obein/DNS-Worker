@@ -121,8 +121,10 @@ BLOOM_MEM_TTL=600000
 CONFIG_MEM_TTL=300000
 # Timeout threshold when downloading upstream blocklists (in milliseconds)
 SYNC_TIMEOUT_MS=30000
-# Number of days of inactivity before an account is cleared by cron jobs
+# Number of days of DNS resolution inactivity before an account is considered abandoned and deleted by cron jobs
 INACTIVITY_THRESHOLD_DAYS=180
+# Number of days of DNS resolution inactivity before historical logs are automatically purged (configurations preserved)
+INACTIVE_LOG_PURGE_DAYS=30
 # Throttle interval for updating session "last active" status in D1 (in seconds)
 SESSION_LAST_ACTIVE_UPDATE_INTERVAL=60
 # In-memory authentication micro-cache TTL for dashboard requests (in seconds)

@@ -78,9 +78,12 @@ export async function handleScheduled(
 
       try {
         const userModel = new UserModel(env.DB, env);
-        const { clearedProfiles, deletedUsers } = await userModel.applyInactivityPolicy(now);
-        if (clearedProfiles > 0 || deletedUsers > 0) {
-          console.log(`[Cron] Inactivity cleanup: cleared ${clearedProfiles} profile(s), deleted ${deletedUsers} user(s).`);
+        const { clearedProfiles, deletedUsers, purgedLogsCount } = await userModel.applyInactivityPolicy(now);
+        if (clearedProfiles > 0 || deletedUsers > 0 || (purgedLogsCount && purgedLogsCount > 0)) {
+          console.log(
+            `[Cron] Inactivity policy: purged ${purgedLogsCount || 0} query log(s), ` +
+            `cleared ${clearedProfiles} profile(s) from abandoned accounts, deleted ${deletedUsers} abandoned user(s).`
+          );
         }
       } catch (e) {
         console.error("[Cron] Inactivity policy execution failed:", e);
