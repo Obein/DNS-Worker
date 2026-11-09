@@ -36,6 +36,8 @@
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败",
     "close": "关闭",
+    "expand": "展开",
+    "collapse": "收起",
     "cancel": "取消",
     "yes": "是",
     "no": "否",
@@ -558,6 +560,12 @@
     "cannotDeleteUserListDesc": "用户级与系统级列表不可在配置中删除"
   },
   "settings": {
+    "dangerZone": "危险区域",
+    "clearProfileLogs": "清空所有配置日志",
+    "clearProfileLogsDesc": "这将删除当前 DNS 配置生成的所有查询日志（包含服务端日志与本地缓存）。此操作不可恢复。",
+    "clearProfileLogsBtn": "立即清空配置日志",
+    "clearProfileLogsSuccess": "配置日志已成功清空",
+    "confirmClearProfileLogs": "确定要清空当前配置的所有查询日志吗？此操作不可恢复。",
     "title": "配置设置",
     "subtitle": "管理您的 DNS 解析策略和高级选项。",
     "saveChanges": "保存所有更改",
@@ -803,7 +811,7 @@
     "clearLogsSuccess": "日志已成功清空",
     "confirmDeleteAccount": "警告：确定要注销并删除本账号吗？\n\n阁下所有 DNS 配置、自定义规则和查询日志将被永久删除。此操作不可逆！",
     "inactivityPolicy": "活跃度政策",
-    "inactivityDesc": "为保护用户隐私并节省资源，超过 30 天无解析记录的账户，其所有关联查询日志及 DNS 配置将被自动清理。账户本身在 90 天无登录后将予移除。",
+    "inactivityDesc": "为保护用户隐私并节省资源，连续 30 天无解析活动的账户，其历史查询日志将被自动清空（接入点配置与规则完整保留）。连续 180 天无解析活动的账户将被视为长期废弃并自动移除。",
     "systemSettings": "系统设置 (管理员)",
     "adminOnlyView": "仅管理员可见",
     "featureToggle": "功能开关",
@@ -1103,7 +1111,7 @@
   "admin": {
     "distributeFilter": {
       "title": "系统过滤列表 (管理员)",
-      "description": "向系统中所有用户账号下发制定系统级过滤列表。规则自动应用于用户的全部配置，带有“系统”标签。如果用户已存在相同规则则自动跳过。",
+      "description": "向系统中所有用户账号下发系统级过滤列表。规则自动继承并应用于所有用户账号，带有“系统”标签。如果用户已存在相同规则则自动跳过。",
       "quickPresets": "快捷预设",
       "urlLabel": "规则列表 URL",
       "urlHelper": "支持 AdGuard、Hosts、EasyList 等标准格式 URL",

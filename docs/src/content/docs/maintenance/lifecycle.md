@@ -69,8 +69,8 @@ Because Cloudflare D1 imposes database storage and daily write quota limits (500
 | **Max Log Rows per Profile** (`MAX_LOGS_PER_PROFILE`) | **500,000** | **5,000,000** | Circuit-breaker when query rates exceed deletion rate. |
 | **Cleanup Batch Limit** (`LOG_CLEANUP_BATCH_LIMIT`) | `1000` rows/run | `1000` rows/run | Prevents database transaction timeouts during cron runs. |
 | **Daily Deletion Budget** (`LOG_CLEANUP_DAILY_BUDGET`) | `20,000` rows/day | `20,000` rows/day | Conservatively preserves 80% of D1's 100k daily write quota. |
-| **Account Inactivity Threshold** (`INACTIVITY_THRESHOLD_DAYS`) | `180` Days | `180` Days | Period before dormant accounts are considered abandoned. |
-| **Inactivity Log Purge** | **30 Days** | **30 Days** | Prunes historical query logs for 30d inactive accounts. |
+| **Account Inactivity Threshold** (`INACTIVITY_THRESHOLD_DAYS`) | `180` Days | `180` Days | Period before dormant accounts are considered abandoned (evaluated strictly by DNS resolution activity). |
+| **Inactivity Log Purge** (`INACTIVE_LOG_PURGE_DAYS`) | **30 Days** | **30 Days** | Prunes historical query logs for 30d inactive accounts, preserving configurations and routing keys. |
 
 ---
 
@@ -104,6 +104,16 @@ Because Cloudflare D1 imposes database storage and daily write quota limits (500
 #### `LOG_CLEANUP_BATCH_LIMIT` & `LOG_CLEANUP_DAILY_BUDGET`
 - **Defaults**: `1000` (Batch Limit) and `20000` (Daily Budget)
 - **Description**: Regulates the deletion velocity during scheduled maintenance runs to ensure operations stay well within database transaction quotas.
+
+#### `INACTIVITY_THRESHOLD_DAYS`
+- **Supported in**: Serverless & Serverfull
+- **Default**: `180` Days
+- **Description**: Dormant account abandonment threshold for non-administrator accounts. Evaluated strictly by **DNS resolution activity** (`last_active_at`, fallback to account creation time `created_at` if no queries were ever recorded). Accounts with no DNS resolution traffic for this duration are permanently removed.
+
+#### `INACTIVE_LOG_PURGE_DAYS`
+- **Supported in**: Serverless & Serverfull
+- **Default**: `30` Days
+- **Description**: Inactivity log auto-purge threshold. Automatically purges query logs and pre-aggregated rollups for non-admin accounts that have had no DNS resolution traffic for this duration, freeing database storage. **Configurations, custom rules, access points, and routing keys are preserved intact.**
 
 #### `DEFAULT_SESSION_EXPIRATION_MINUTES` & `OPTIONAL_SESSION_EXPIRATION_DAYS`
 - **Defaults**: `1440` (24 Hours default session) and `7` (7 Days when "Remember Me" is checked)

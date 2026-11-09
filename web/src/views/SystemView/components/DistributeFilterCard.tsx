@@ -163,7 +163,7 @@ export const DistributeFilterCard: React.FC<DistributeFilterCardProps> = ({
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t(
               "admin.distributeFilter.description",
-              "向系统中所有用户账号下发制定系统级过滤列表。规则自动应用于用户的全部配置，带有“系统”标签。如果用户已存在相同规则则自动跳过。"
+              "向系统中所有用户账号下发系统级过滤列表。规则自动继承并应用于所有用户账号，带有“系统”标签。如果用户已存在相同规则则自动跳过。"
             )}
           </p>
         </div>

@@ -64,6 +64,10 @@ export class LogModel {
     return this.core.deleteByOwner(ownerId);
   }
 
+  async deleteByProfile(profileId: string): Promise<boolean> {
+    return this.core.deleteByProfile(profileId);
+  }
+
   async cleanup(profileId: string, olderThanTimestamp: number, maxRows = 1000): Promise<number> {
     return this.core.cleanup(profileId, olderThanTimestamp, maxRows);
   }

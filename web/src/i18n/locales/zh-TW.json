@@ -36,6 +36,8 @@
     "saveSuccess": "儲存成功",
     "saveFailed": "儲存失敗",
     "close": "關閉",
+    "expand": "展開",
+    "collapse": "收起",
     "cancel": "取消",
     "yes": "是",
     "no": "否",
@@ -558,6 +560,12 @@
     "cannotDeleteUserListDesc": "使用者級與系統級清單不可在設定檔中刪除"
   },
   "settings": {
+    "dangerZone": "危險區域",
+    "clearProfileLogs": "清空所有配置日誌",
+    "clearProfileLogsDesc": "這將刪除當前 DNS 配置生成的所有查詢日誌（包含伺服端日誌與本地快取）。此操作不可恢復。",
+    "clearProfileLogsBtn": "立即清空配置日誌",
+    "clearProfileLogsSuccess": "配置日誌已成功清空",
+    "confirmClearProfileLogs": "確定要清空當前配置的所有查詢日誌嗎？此操作不可恢復。",
     "title": "配置設定",
     "subtitle": "管理您的 DNS 解析策略和進階選項。",
     "saveChanges": "儲存所有更改",
@@ -803,7 +811,7 @@
     "clearLogsSuccess": "日誌已成功清空",
     "confirmDeleteAccount": "警告：確定要註銷並刪除本帳號嗎？\n\n閣下所有 DNS 配置、自訂規則和查詢日誌將被永久刪除。此操作不可逆！",
     "inactivityPolicy": "活躍度政策",
-    "inactivityDesc": "為保護用戶隱私並節省資源，超過 30 天無解析記錄的帳戶，其所有關聯查詢日誌及 DNS 配置將被自動清除。帳戶本身在 90 天無登錄後將予移除。",
+    "inactivityDesc": "為保護用戶隱私並節省資源，連續 30 天無解析活動的帳戶，其歷史查詢日誌將被自動清除（接入點配置與規則完整保留）。連續 180 天無解析活動的帳戶將被視為長期廢棄並自動移除。",
     "systemSettings": "系統設定 (管理員)",
     "adminOnlyView": "僅管理員可見",
     "featureToggle": "功能開關",
@@ -1103,7 +1111,7 @@
   "admin": {
     "distributeFilter": {
       "title": "系統過濾列表 (管理員)",
-      "description": "向系統中所有使用者帳號下發制定系統級過濾列表。規則自動套用於使用者的全部設定，帶有「系統」標籤。若使用者已存在相同規則則自動跳過。",
+      "description": "向系統中所有使用者帳號下發系統級過濾列表。規則自動繼承並套用於所有使用者帳號，帶有「系統」標籤。若使用者已存在相同規則則自動跳過。",
       "quickPresets": "快捷預設",
       "urlLabel": "規則清單 URL",
       "urlHelper": "支援 AdGuard、Hosts、EasyList 等標準格式 URL",

@@ -32,7 +32,7 @@ export class UserModel {
     this.core = new UserCoreModel(db, this.secrets);
     this.security = new UserSecurityModel(db);
     this.mfa = new UserMfaModel(db, env);
-    this.lifecycle = new UserLifecycleModel(db);
+    this.lifecycle = new UserLifecycleModel(db, env);
   }
 
   /**
@@ -171,7 +171,10 @@ export class UserModel {
   /**
    * Executes the periodic inactivity cleanup policy.
    */
-  async applyInactivityPolicy(now: number): Promise<InactivityPolicyResult> {
-    return this.lifecycle.applyInactivityPolicy(now);
+  async applyInactivityPolicy(
+    now: number,
+    options?: { inactivityDays?: number; inactiveLogPurgeDays?: number }
+  ): Promise<InactivityPolicyResult> {
+    return this.lifecycle.applyInactivityPolicy(now, options);
   }
 }

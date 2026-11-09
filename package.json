@@ -56,6 +56,7 @@
     "test:max-users": "tsx test/test_max_users.ts",
     "test:global-lists": "tsx test/test_global_lists.ts",
     "test:distribute-filter": "tsx test/test_distribute_filter.ts",
+    "test:inactivity": "tsx test/test_inactivity_policy.ts",
     "test:quad9": "tsx test/test_quad9_transport.ts",
     "test:sync-optimizations": "tsx test/test_sync_optimizations.ts",
     "test:serverfull": "tsx test/test_serverfull.ts",

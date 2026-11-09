@@ -239,6 +239,20 @@ export class LogCoreModel {
   }
 
   /**
+   * Deletes all logs and rollups belonging to a specific profile.
+   *
+   * @param profileId - Profile identifier.
+   * @returns Promise resolving to true if delete succeeded.
+   */
+  async deleteByProfile(profileId: string): Promise<boolean> {
+    const batchResults = await this.db.batch([
+      this.db.prepare("DELETE FROM logs WHERE profile_id = ?").bind(profileId),
+      this.db.prepare("DELETE FROM hourly_rollups WHERE profile_id = ?").bind(profileId)
+    ]);
+    return batchResults.every(r => r.success);
+  }
+
+  /**
    * Manually cleans up logs older than a given timestamp for a specific profile in bounded batches.
    *
    * @param profileId - Profile identifier.
