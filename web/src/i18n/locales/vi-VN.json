@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "Không thể xóa danh sách người dùng và hệ thống trong cấu hình"
   },
   "settings": {
+    "dangerZone": "Khu vực nguy hiểm",
+    "clearProfileLogs": "Xóa tất cả nhật ký cấu hình",
+    "clearProfileLogsDesc": "Hành động này sẽ xóa vĩnh viễn tất cả nhật ký truy vấn được tạo bởi cấu hình này (bao gồm nhật ký máy chủ và bộ nhớ đệm cục bộ). Hành động này không thể hoàn tác.",
+    "clearProfileLogsBtn": "Xóa nhật ký cấu hình ngay bây giờ",
+    "clearProfileLogsSuccess": "Đã xóa nhật ký cấu hình thành công",
+    "confirmClearProfileLogs": "Bạn có chắc chắn muốn xóa tất cả nhật ký truy vấn cho cấu hình này không? Hành động này không thể hoàn tác.",
     "title": "Cài đặt cấu hình",
     "subtitle": "Quản lý chiến lược phân giải DNS và các tùy chọn nâng cao của bạn.",
     "saveChanges": "Lưu tất cả thay đổi",

@@ -11,6 +11,7 @@ import { LocalRetentionCard } from "./components/LocalRetentionCard";
 import { AdvancedEcsCard } from "./components/AdvancedEcsCard";
 import { BestEffortEchCard } from "./components/BestEffortEchCard";
 import { DnsTestCard } from "./components/DnsTestCard";
+import { ProfileDangerZone } from "./components/ProfileDangerZone";
 import {
   getProfileDetails,
   renameProfile,
@@ -310,6 +311,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ profileId, toasterRe
         handleDnsTest={handleDnsTest}
         testing={testing}
         testResult={testResult}
+      />
+
+      <ProfileDangerZone
+        profileId={profileId}
+        toasterRef={toasterRef}
       />
     </div>
   );

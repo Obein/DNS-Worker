@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "Les listes utilisateur et système ne peuvent être supprimées dans le profil"
   },
   "settings": {
+    "dangerZone": "Zone de danger",
+    "clearProfileLogs": "Effacer tous les journaux du profil",
+    "clearProfileLogsDesc": "Cela supprimera définitivement tous les journaux de requêtes générés par ce profil (y compris les journaux du serveur et le cache local). Cette action est irréversible.",
+    "clearProfileLogsBtn": "Effacer les journaux du profil maintenant",
+    "clearProfileLogsSuccess": "Journaux du profil supprimés avec succès",
+    "confirmClearProfileLogs": "Voulez-vous vraiment effacer tous les journaux de requêtes de ce profil ? Cette action est irréversible.",
     "title": "Paramètres du profil",
     "subtitle": "Gériez votre stratégie de résolution DNS et vos options avancées.",
     "saveChanges": "Enregistrer toutes les modifications",

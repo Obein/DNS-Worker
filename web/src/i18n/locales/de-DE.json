@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "Benutzer- und Systemlisten können im Profil nicht gelöscht werden"
   },
   "settings": {
+    "dangerZone": "Gefahrenbereich",
+    "clearProfileLogs": "Alle Profil-Protokolle löschen",
+    "clearProfileLogsDesc": "Dadurch werden alle von diesem Profil generierten DNS-Abfrageprotokolle (einschließlich Serverprotokolle und lokaler Cache) endgültig gelöscht. Diese Aktion ist unumkehrbar.",
+    "clearProfileLogsBtn": "Profil-Protokolle jetzt löschen",
+    "clearProfileLogsSuccess": "Profil-Protokolle erfolgreich gelöscht",
+    "confirmClearProfileLogs": "Möchten Sie wirklich alle Abfrageprotokolle für dieses Profil löschen? Dies kann nicht rückgängig gemacht werden.",
     "title": "Profileinstellungen",
     "subtitle": "Verwalten Sie Ihre DNS-Auflösungsstrategie und erweiterte Optionen.",
     "saveChanges": "Alle Änderungen speichern",

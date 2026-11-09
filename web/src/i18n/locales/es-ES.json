@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "Las listas de usuario y sistema no se pueden eliminar en el perfil"
   },
   "settings": {
+    "dangerZone": "Zona de peligro",
+    "clearProfileLogs": "Borrar todos los registros del perfil",
+    "clearProfileLogsDesc": "Esto eliminará permanentemente todos los registros de consultas generados por este perfil (incluidos los registros del servidor y la caché local). Esta acción es irreversible.",
+    "clearProfileLogsBtn": "Borrar registros del perfil ahora",
+    "clearProfileLogsSuccess": "Registros del perfil borrados con éxito",
+    "confirmClearProfileLogs": "¿Seguro que deseas borrar todos los registros de consultas de este perfil? Esta acción es irreversible.",
     "title": "Ajustes de perfil",
     "subtitle": "Gestiona tu estrategia de resolución DNS y opciones avanzadas.",
     "saveChanges": "Guardar todos los cambios",

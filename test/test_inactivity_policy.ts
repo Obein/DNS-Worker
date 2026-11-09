@@ -16,7 +16,9 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { NodeD1Database, runMigrations } from "../src/serverfull/db";
 import { UserModel } from "../src/models/user";
-import type { Env } from "../src/types";
+import { LogModel } from "../src/models/log";
+import { handleProfilesRequest } from "../src/api/profiles";
+import type { Env, User, ExecutionContext } from "../src/types";
 
 async function runInactivityPolicyTests() {
   console.log("================================================================");
@@ -204,6 +206,31 @@ async function runInactivityPolicyTests() {
   const activeUserAfter = rawDb.prepare("SELECT * FROM users WHERE id = 'user_active'").get();
   assert.ok(activeUserAfter, "User active 5 days ago preserved under custom 10-day abandonment threshold");
   console.log("   ✓ Custom threshold overrides fully operational.\n");
+
+  console.log("10. Verifying DELETE /api/profiles/:id/logs (Clear profile logs endpoint)...");
+  // Seed fresh log and rollup for prof_active
+  insertLog(101, "prof_active", now);
+  insertRollup("prof_active", now);
+  const beforeCount = rawDb.prepare("SELECT COUNT(*) as c FROM logs WHERE profile_id = 'prof_active'").get() as any;
+  assert.strictEqual(beforeCount.c, 1, "Log row must exist before deletion");
+
+  const req = new Request("https://example.com/api/profiles/prof_active/logs", {
+    method: "DELETE"
+  });
+  const mockUser: User = { id: "user_active", username: "user_active", role: "user" };
+  const mockCtx = { waitUntil: () => {}, passThroughOnException: () => {} } as unknown as ExecutionContext;
+  const res = await handleProfilesRequest(req, env, mockUser, mockCtx);
+  assert.strictEqual(res.status, 200, "DELETE /api/profiles/:id/logs should return 200 OK");
+  const resBody = await res.json() as any;
+  assert.strictEqual(resBody.success, true, "Response should have success: true");
+
+  const afterCount = rawDb.prepare("SELECT COUNT(*) as c FROM logs WHERE profile_id = 'prof_active'").get() as any;
+  assert.strictEqual(afterCount.c, 0, "Log rows for profile must be deleted");
+  const afterRollups = rawDb.prepare("SELECT COUNT(*) as c FROM hourly_rollups WHERE profile_id = 'prof_active'").get() as any;
+  assert.strictEqual(afterRollups.c, 0, "Hourly rollups for profile must be deleted");
+  const profileStillExists = rawDb.prepare("SELECT * FROM profiles WHERE id = 'prof_active'").get();
+  assert.ok(profileStillExists, "Profile itself must NOT be deleted when clearing profile logs");
+  console.log("   ✓ Profile log clearing endpoint deleted logs & rollups while preserving profile.\n");
 
   console.log("================================================================");
   console.log("   All Inactivity Retention Policy tests passed successfully!   ");

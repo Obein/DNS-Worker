@@ -24,6 +24,18 @@ export async function handleProfileLogsAndAnalyticsRequest(
       return handleProfileLogsWs(request, env, user, profile, ctx);
     }
 
+    // Handle DELETE /api/profiles/:id/logs (Clear all logs and rollups for this profile)
+    if (request.method === 'DELETE') {
+      await logModel.deleteByProfile(profileId);
+      const dbAny = env.DB as unknown as { vacuum?: () => void };
+      if (typeof dbAny?.vacuum === 'function') {
+        dbAny.vacuum();
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     if (request.method !== 'GET') {
       return new Response("Method Not Allowed", { status: 405 });
     }

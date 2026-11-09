@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "ユーザー級およびシステム級リストはプロファイル設定からは削除できません"
   },
   "settings": {
+    "dangerZone": "危険ゾーン",
+    "clearProfileLogs": "すべての設定ログを消去",
+    "clearProfileLogsDesc": "この設定によって生成されたすべてのクエリログ（サーバーログおよびローカルキャッシュを含む）を完全に削除します。この操作は元に戻せません。",
+    "clearProfileLogsBtn": "今すぐ設定ログを消去する",
+    "clearProfileLogsSuccess": "設定ログを正常に消去しました",
+    "confirmClearProfileLogs": "この設定のすべてのクエリログを消去してもよろしいですか？この操作は元に戻せません。",
     "title": "動作設定",
     "subtitle": "DNS 解決ポリシーと高度なオプションを管理します。",
     "saveChanges": "すべての変更を保存",

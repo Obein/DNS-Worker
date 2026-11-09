@@ -558,6 +558,12 @@
     "cannotDeleteUserListDesc": "사용자 및 시스템 목록은 프로필 설정에서 삭제할 수 없습니다"
   },
   "settings": {
+    "dangerZone": "위험 구역",
+    "clearProfileLogs": "모든 설정 로그 지우기",
+    "clearProfileLogsDesc": "이 설정에서 생성된 모든 쿼리 로그(서버 로그 및 로컬 캐시 포함)를 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+    "clearProfileLogsBtn": "즉시 설정 로그 지우기",
+    "clearProfileLogsSuccess": "설정 로그가 성공적으로 지워졌습니다",
+    "confirmClearProfileLogs": "이 설정의 모든 쿼리 로그를 지우시겠습니까? 이 작업은 되돌릴 수 없습니다.",
     "title": "구성 설정",
     "subtitle": "DNS 해석 정책 및 고급 옵션을 관리합니다.",
     "saveChanges": "모든 변경 사항 저장",
