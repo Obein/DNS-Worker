@@ -1,6 +1,6 @@
 {
   "name": "dns-worker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": false,
   "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
   "main": "./dist/serverfull.mjs",
@@ -85,9 +85,9 @@
     "url": "https://github.com/Obein/DNS-Worker/issues"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20261107.1",
+    "@cloudflare/workers-types": "^5.20261109.1",
     "@types/node": "^26.6.6",
-    "concurrently": "^10.0.6",
+    "concurrently": "^10.0.7",
     "oxlint": "^1.92.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

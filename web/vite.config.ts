@@ -6,6 +6,8 @@ import { execSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 
+const realWebDir = fs.realpathSync(path.resolve(__dirname))
+
 /**
  * Resolves the closest git tag for version reporting.
  */
@@ -26,7 +28,7 @@ function getGitTag(): string {
   } catch {}
 
   try {
-    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8'))
+    const pkg = JSON.parse(fs.readFileSync(path.resolve(realWebDir, '../package.json'), 'utf-8'))
     return pkg.version ? (pkg.version.startsWith('v') ? pkg.version : `v${pkg.version}`) : 'v0.0.0'
   } catch {
     return 'v0.0.0'
@@ -59,25 +61,24 @@ function sqliteWasmPlugin(): Plugin {
   return {
     name: 'sqlite-wasm-assets',
     generateBundle(this: any) {
-      const src = path.resolve(__dirname, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
+      const src = path.resolve(realWebDir, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
       if (fs.existsSync(src)) {
-        const source = fs.readFileSync(src, 'utf-8')
         this.emitFile({
           type: 'asset',
           fileName: 'assets/sqlite3-opfs-async-proxy.js',
-          source,
+          source: fs.readFileSync(src, 'utf-8'),
         })
         this.emitFile({
           type: 'asset',
           fileName: 'sqlite3-opfs-async-proxy.js',
-          source,
+          source: fs.readFileSync(src, 'utf-8'),
         })
       }
     },
     configureServer(server: any) {
       server.middlewares.use((req: any, res: any, next: any) => {
         if (req.url === '/assets/sqlite3-opfs-async-proxy.js' || req.url === '/sqlite3-opfs-async-proxy.js') {
-          const src = path.resolve(__dirname, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
+          const src = path.resolve(realWebDir, 'node_modules/@sqlite.org/sqlite-wasm/dist/sqlite3-opfs-async-proxy.js')
           if (fs.existsSync(src)) {
             res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
             res.setHeader('Cross-Origin-Resource-Policy', 'same-origin')
@@ -93,7 +94,8 @@ function sqliteWasmPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  envDir: '../',
+  root: realWebDir,
+  envDir: path.resolve(realWebDir, '../'),
   envPrefix: ['VITE_'],
   define: {
     __APP_GIT_TAG__: JSON.stringify(gitTag),
@@ -102,7 +104,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@blueprintjs/icons/lib/esm/allPaths.js': path.resolve(__dirname, 'src/shims/blueprint-allPaths.ts'),
+      '@blueprintjs/icons/lib/esm/allPaths.js': path.resolve(realWebDir, 'src/shims/blueprint-allPaths.ts'),
     },
   },
   plugins: [
@@ -156,7 +158,7 @@ export default defineConfig({
     format: 'es',
   },
   build: {
-    outDir: '../static',
+    outDir: path.resolve(realWebDir, '../static'),
     emptyOutDir: true,
     rollupOptions: {
       output: {
