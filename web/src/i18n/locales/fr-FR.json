@@ -36,6 +36,8 @@
     "saveSuccess": "Enregistré avec succès",
     "saveFailed": "Échec de l'enregistrement",
     "close": "Fermer",
+    "expand": "Développer",
+    "collapse": "Réduire",
     "cancel": "Annuler",
     "yes": "Oui",
     "no": "Non",

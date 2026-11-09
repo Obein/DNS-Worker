@@ -36,6 +36,8 @@
     "saveSuccess": "Guardado con éxito",
     "saveFailed": "Error al guardar",
     "close": "Cerrar",
+    "expand": "Expandir",
+    "collapse": "Contraer",
     "cancel": "Cancelar",
     "yes": "Sí",
     "no": "No",

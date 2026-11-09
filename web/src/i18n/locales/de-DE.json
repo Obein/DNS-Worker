@@ -36,6 +36,8 @@
     "saveSuccess": "Erfolgreich gespeichert",
     "saveFailed": "Speichern fehlgeschlagen",
     "close": "Schließen",
+    "expand": "Erweitern",
+    "collapse": "Einklappen",
     "cancel": "Abbrechen",
     "yes": "Ja",
     "no": "Nein",

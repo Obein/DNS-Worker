@@ -36,6 +36,8 @@
     "saveSuccess": "儲存成功",
     "saveFailed": "儲存失敗",
     "close": "關閉",
+    "expand": "展開",
+    "collapse": "收起",
     "cancel": "取消",
     "yes": "是",
     "no": "否",

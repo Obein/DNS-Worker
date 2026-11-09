@@ -36,6 +36,8 @@
     "saveSuccess": "保存に成功しました",
     "saveFailed": "保存に失敗しました",
     "close": "閉じる",
+    "expand": "展開",
+    "collapse": "折りたたむ",
     "cancel": "キャンセル",
     "yes": "はい",
     "no": "いいえ",

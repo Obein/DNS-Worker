@@ -36,6 +36,8 @@
     "saveSuccess": "Saved successfully",
     "saveFailed": "Save failed",
     "close": "Close",
+    "expand": "Expand",
+    "collapse": "Collapse",
     "cancel": "Cancel",
     "yes": "Yes",
     "no": "No",

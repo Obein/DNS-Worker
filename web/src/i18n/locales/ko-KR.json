@@ -36,6 +36,8 @@
     "saveSuccess": "성공적으로 저장되었습니다",
     "saveFailed": "저장에 실패했습니다",
     "close": "닫기",
+    "expand": "펼치기",
+    "collapse": "접기",
     "cancel": "취소",
     "yes": "예",
     "no": "아니요",
