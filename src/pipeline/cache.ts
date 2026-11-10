@@ -15,9 +15,31 @@ export interface ConfigCacheEntry {
  * 高性能、零依赖的容量受限 Map (LRU 淘汰策略)。
  * 利用 JavaScript Map 保证的“按插入顺序迭代”特性，在 O(1) 复杂度内自动淘汰最旧的数据。
  */
-class SizeCappedMap<K, V> extends Map<K, V> {
+export class SizeCappedMap<K, V> extends Map<K, V> {
   constructor(private maxEntries: number) {
     super();
+  }
+
+  /**
+   * 动态调整容量上限。若缩容，主动淘汰超出配额的最旧记录。
+   */
+  setMaxEntries(max: number): void {
+    this.maxEntries = Math.max(1, max);
+    while (this.size > this.maxEntries) {
+      const oldestKey = this.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.delete(oldestKey);
+      } else {
+        break;
+      }
+    }
+  }
+
+  /**
+   * 获取当前最大容量。
+   */
+  getMaxEntries(): number {
+    return this.maxEntries;
   }
 
   override set(key: K, value: V): this {
@@ -45,8 +67,25 @@ export const configCache = new SizeCappedMap<string, ConfigCacheEntry>(200);
 // AdGuard 扩展规则引擎内存缓存 (L1 内存缓存，限制最多 20 个 Profile)
 export const adguardMemoryMap = new SizeCappedMap<string, { engine: AdGuardProfileEngine; ts: number }>(20);
 
-// DNS 缓存限制最多 500 条记录，防止遭受海量随机子域名查询（DNS Tunnel / Random Query Attack）时导致 Isolate 内存耗尽
-export const dnsCache = new SizeCappedMap<string, any>(500);
+/** 默认 DNS 缓存容量为 20,000 (20k) 条，统一适用于 Serverless 与 Serverfull 模式 */
+export const DEFAULT_DNS_CACHE_SIZE = 20000;
+
+// DNS 缓存默认容量 20k，可在毫秒级内直接命中热点域名解析结果，规避向上游重复递归发包
+export const dnsCache = new SizeCappedMap<string, any>(DEFAULT_DNS_CACHE_SIZE);
+
+/**
+ * 动态同步 DNS 缓存容量。支持在 Serverless (Cloudflare Workers) 与 Serverfull (Node.js/Bun) 模式下统一生效。
+ *
+ * @param env 包含可选 DNS_CACHE_SIZE 配置项的环境变量集合
+ */
+export function syncDnsCacheSize(env?: Env): void {
+  const configured = env?.DNS_CACHE_SIZE ?? (typeof process !== "undefined" ? process.env?.DNS_CACHE_SIZE : undefined);
+  if (configured === undefined || configured === null || configured === "") return;
+  const parsed = typeof configured === "number" ? configured : parseInt(String(configured), 10);
+  if (!isNaN(parsed) && parsed > 0 && parsed !== dnsCache.getMaxEntries()) {
+    dnsCache.setMaxEntries(parsed);
+  }
+}
 
 // Profile Key 到 Profile 元数据映射缓存 (L1 内存缓存，限制最多 500 个 Key)
 export const profileKeyMemoryMap = new SizeCappedMap<string, { data: any; ts: number }>(500);

@@ -162,7 +162,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
+        manualChunks(id: string): string | void {
           if (id.includes('node_modules')) {
             // 分割图标包，并继续分割 20px 和 16px 图标，减少编译后主包体积
             if (/[\\/]node_modules[\\/]@blueprintjs[\\/]icons/.test(id)) {

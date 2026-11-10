@@ -71,6 +71,8 @@ EnvironmentFile=-${envServerfullPath}
 EnvironmentFile=-${envPath}
 EnvironmentFile=-${devVarsPath}
 LimitNOFILE=65535
+LimitNPROC=65535
+Environment="NODE_OPTIONS=--max-semi-space-size=64 --turbo-fast-api-calls"
 
 # Grant capability to bind ports 53 and 853 without full root privileges
 AmbientCapabilities=CAP_NET_BIND_SERVICE

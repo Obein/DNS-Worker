@@ -125,6 +125,8 @@ SYNC_TIMEOUT_MS=30000
 INACTIVITY_THRESHOLD_DAYS=180
 # Number of days of DNS resolution inactivity before historical logs are automatically purged (configurations preserved)
 INACTIVE_LOG_PURGE_DAYS=30
+# Maximum in-memory DNS resolution cache capacity / 内存 DNS 解析结果缓存最大容量条数 (default: 20000)
+DNS_CACHE_SIZE = 20000
 # Throttle interval for updating session "last active" status in D1 (in seconds)
 SESSION_LAST_ACTIVE_UPDATE_INTERVAL=60
 # In-memory authentication micro-cache TTL for dashboard requests (in seconds)

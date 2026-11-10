@@ -5,6 +5,7 @@
  */
 
 import fs from 'node:fs';
+import os from 'node:os';
 import { Env } from '../types';
 import {
   DEFAULT_PRESET_UPSTREAMS,
@@ -46,6 +47,9 @@ export interface ServerfullCliArgs {
   'ech-fronting-domain'?: string;
   'turso-url'?: string;
   'turso-token'?: string;
+  workers?: string;
+  'dns-cache-size'?: string;
+  runtime?: string;
   user?: string;
   status?: boolean;
   version?: boolean;
@@ -72,6 +76,8 @@ export interface ServerfullConfig {
   echEnabled: boolean;
   echConfig: string;
   echFrontingDomain: string;
+  workers: number;
+  dnsCacheSize: number;
   packageRoot: string;
 }
 
@@ -166,6 +172,20 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     true
   );
 
+  const rawWorkers = cliArgs?.workers || process.env.SERVERFULL_WORKERS || process.env.WORKERS || '1';
+  let workers = 1;
+  if (rawWorkers === 'auto') {
+    const cpuCount = typeof os.cpus === 'function' ? os.cpus().length : 1;
+    workers = Math.max(1, Math.min(cpuCount, 16));
+  } else {
+    const parsed = parseInt(rawWorkers, 10);
+    workers = isNaN(parsed) || parsed < 1 ? 1 : Math.min(parsed, 64);
+  }
+
+  const rawCacheSize = cliArgs?.['dns-cache-size'] || process.env.DNS_CACHE_SIZE || '20000';
+  const parsedCacheSize = parseInt(rawCacheSize, 10);
+  const dnsCacheSize = isNaN(parsedCacheSize) || parsedCacheSize <= 0 ? 20000 : parsedCacheSize;
+
   const config: ServerfullConfig = {
     tlsKeyPath: effectiveKeyPath,
     tlsCertPath: effectiveCertPath,
@@ -186,6 +206,8 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     echEnabled,
     echConfig,
     echFrontingDomain,
+    workers,
+    dnsCacheSize,
     packageRoot
   };
 
@@ -233,7 +255,8 @@ export function getServerfullConfig(cliArgs?: ServerfullCliArgs): { config: Serv
     SERVERFULL_ECH_ENABLED: echEnabled ? 'true' : 'false',
     SERVERFULL_ECH_CONFIG: echConfig,
     SERVERFULL_ECH_FRONTING_DOMAIN: echFrontingDomain,
-    ...process.env
+    ...process.env,
+    DNS_CACHE_SIZE: dnsCacheSize
   };
 
   return { config, env };

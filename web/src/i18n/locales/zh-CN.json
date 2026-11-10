@@ -561,7 +561,7 @@
   },
   "settings": {
     "dangerZone": "危险区域",
-    "clearProfileLogs": "清空所有配置日志",
+    "clearProfileLogs": "清空当前配置所有日志",
     "clearProfileLogsDesc": "这将删除当前 DNS 配置生成的所有查询日志（包含服务端日志与本地缓存）。此操作不可恢复。",
     "clearProfileLogsBtn": "立即清空配置日志",
     "clearProfileLogsSuccess": "配置日志已成功清空",

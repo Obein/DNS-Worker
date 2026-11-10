@@ -96,7 +96,7 @@ export const ProfileDangerZone: React.FC<ProfileDangerZoneProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card elevation={Elevation.ONE} className="flex flex-col justify-between dark:bg-gray-900 dark:border-gray-800">
               <div>
-                <H4>{t("settings.clearProfileLogs", "清空所有配置日志")}</H4>
+                <H4>{t("settings.clearProfileLogs", "清空当前配置所有日志")}</H4>
                 <p className="text-xs opacity-60 mb-3">
                   {t(
                     "settings.clearProfileLogsDesc",

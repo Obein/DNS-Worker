@@ -42,6 +42,10 @@ ExecStart=${execCmd}
 Restart=always
 RestartSec=5
 LimitNOFILE=65535
+LimitNPROC=65535
+
+# V8 Engine performance tuning for high-throughput DNS processing
+Environment="NODE_OPTIONS=--max-semi-space-size=64 --turbo-fast-api-calls"
 
 # Automatically provision and preserve /var/lib/dns-worker persistent state directory
 StateDirectory=dns-worker

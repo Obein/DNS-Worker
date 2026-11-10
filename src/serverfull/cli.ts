@@ -16,12 +16,12 @@ import { showServerfullStatus } from './status';
 import { handleServiceAction } from './service';
 import { handleResetCommand } from './reset';
 
-import { checkNodeVersion } from './commands/checkEnv';
+import { checkNodeVersion, getActiveRuntimeDescription, handleRuntimeSwitch } from './commands/checkEnv';
 import { handleConfigCommand, isSafeConfigPathArg } from './commands/configCmd';
 import { handleEchCommand } from './commands/echCmd';
 import { printHelp } from './commands/helpCmd';
 
-export { checkNodeVersion } from './commands/checkEnv';
+export { checkNodeVersion, getActiveRuntimeDescription, handleRuntimeSwitch } from './commands/checkEnv';
 export { handleConfigCommand, isSafeConfigPathArg } from './commands/configCmd';
 export { handleEchCommand } from './commands/echCmd';
 export { printHelp } from './commands/helpCmd';
@@ -58,11 +58,19 @@ export async function parseCli(): Promise<ServerfullCliArgs> {
         status: { type: 'boolean', short: 's' },
         force: { type: 'boolean', short: 'f' },
         yes: { type: 'boolean', short: 'y' },
+        workers: { type: 'string', short: 'w' },
+        'dns-cache-size': { type: 'string' },
+        runtime: { type: 'string' },
         help: { type: 'boolean' },
         version: { type: 'boolean', short: 'v' }
       },
       allowPositionals: true
     });
+
+    if (handleRuntimeSwitch(values.runtime)) {
+      // Switched to requested runtime (Bun/Node), yield current process
+      return new Promise<never>(() => {});
+    }
 
     if (values.help || positionals[0]?.toLowerCase() === 'help') {
       printHelp();

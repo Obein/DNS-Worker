@@ -180,6 +180,30 @@ export class NodeD1Database implements D1Database {
     }
   }
 
+  /**
+   * Flushes committed WAL write-ahead log pages back into the main database file.
+   * - PASSIVE (default): checkpoints as many frames as possible without blocking concurrent readers or writers.
+   * - TRUNCATE: blocks until all transactions finish and truncates the WAL file to zero bytes.
+   */
+  checkpoint(mode: 'PASSIVE' | 'FULL' | 'RESTART' | 'TRUNCATE' = 'PASSIVE'): void {
+    try {
+      this.rawDb.exec(`PRAGMA wal_checkpoint(${mode});`);
+    } catch (err: unknown) {
+      console.warn(`[SQLite D1] Checkpoint (${mode}) warning:`, err);
+    }
+  }
+
+  /**
+   * Runs SQLite PRAGMA optimize to update internal query planner statistics on high-volume tables and indices.
+   */
+  optimize(): void {
+    try {
+      this.rawDb.exec('PRAGMA optimize;');
+    } catch (err: unknown) {
+      console.warn('[SQLite D1] PRAGMA optimize warning:', err);
+    }
+  }
+
   private batchMutex: Promise<void> = Promise.resolve();
 
   prepare(query: string): D1PreparedStatement {
@@ -304,8 +328,12 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
 
 /**
  * Initializes SQLite database for Serverfull mode with WAL mode and runs pending migrations.
+ *
+ * @param dbPath - Target SQLite database file path.
+ * @param rootDir - Root directory containing migrations/ folder.
+ * @param skipMigrations - When true, skips migration execution (e.g. for cluster worker processes).
  */
-export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoot()): NodeD1Database {
+export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoot(), skipMigrations = false): NodeD1Database {
   const dir = path.dirname(dbPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -335,10 +363,13 @@ export function initServerfullDb(dbPath: string, rootDir: string = getPackageRoo
   rawDb.exec('PRAGMA temp_store = MEMORY;');
   rawDb.exec('PRAGMA cache_size = -64000;'); // 64 MB in-memory page cache
   rawDb.exec('PRAGMA mmap_size = 268435456;'); // 256 MB zero-copy memory-mapped I/O
+  rawDb.exec('PRAGMA wal_autocheckpoint = 1000;'); // Automatically checkpoint WAL every 1000 pages (~4MB)
 
-  // Run migrations
-  const migrationsDir = path.join(rootDir, 'migrations');
-  runMigrations(rawDb, migrationsDir);
+  // Run migrations if not skipped
+  if (!skipMigrations) {
+    const migrationsDir = path.join(rootDir, 'migrations');
+    runMigrations(rawDb, migrationsDir);
+  }
 
   return new NodeD1Database(rawDb, dbPath);
 }
