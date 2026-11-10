@@ -75,8 +75,8 @@ const logBatchQueue: ResolutionLog[] = [];
 /** Maximum number of statements in a single db.batch() transaction */
 const MAX_BATCH_SIZE = 40;
 
-/** Debounce time window for micro-batch flushing (15 seconds) */
-const FLUSH_INTERVAL_MS = 15_000;
+/** Debounce time window for micro-batch flushing (30 seconds) */
+const FLUSH_INTERVAL_MS = 30_000;
 
 /** Circuit breaker cooldown duration when D1 write quota is exceeded (1 hour) */
 const CIRCUIT_BREAKER_COOLDOWN_SEC = 3600;

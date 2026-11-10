@@ -92,26 +92,10 @@ export class LogAggregationModel {
         }
       }
 
-      // 2. Domain metric (for top allowed and blocked domains)
-      if (log.domain && log.domain !== '[Encrypted]') {
-        const domainKey = `${log.profile_id}|domain|${hourTs}|${log.domain}|${log.action || ''}|${apId}`;
-        const existing = map.get(domainKey);
-        if (existing) {
-          existing.count++;
-        } else {
-          map.set(domainKey, {
-            profileId: log.profile_id,
-            metricType: 'domain',
-            hourTimestamp: hourTs,
-            key: log.domain,
-            subKey: log.action || '',
-            accessPointId: apId,
-            count: 1
-          });
-        }
-      }
+      // Note: High-cardinality 'domain' rollups are intentionally decoupled from micro-batches
+      // and delegated to hourly cron aggregateHourlyRollups to eliminate ~100k redundant writes/day.
 
-      // 3. Client IP & geo country metric (for client device analytics)
+      // 2. Client IP & geo country metric (for client device analytics)
       if (log.client_ip && log.client_ip !== '[Encrypted]') {
         const geoCountry = log.geo_country || '';
         const clientKey = `${log.profile_id}|client|${hourTs}|${log.client_ip}|${geoCountry}|${apId}`;
