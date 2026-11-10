@@ -29,7 +29,11 @@ export class UdpDnsServer {
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.socket = dgram.createSocket('udp4');
+        this.socket = dgram.createSocket({
+          type: 'udp4',
+          reuseAddr: true,
+          reusePort: true
+        });
 
         const startupErrorHandler = (err: any) => {
           try { this.socket?.close(); } catch {}
@@ -58,12 +62,16 @@ export class UdpDnsServer {
           this.socket?.on('error', (err: Error) => {
             console.error('[UDP DNS] Socket runtime error:', err);
           });
-          // Boost OS UDP socket buffers to reduce packet drops under high DNS load
-          try {
-            this.socket?.setRecvBufferSize(4 * 1024 * 1024);
-            this.socket?.setSendBufferSize(4 * 1024 * 1024);
-          } catch {
-            /* Gracefully ignore if OS limits prevent buffer expansion */
+          // Boost OS UDP socket buffers to reduce packet drops under high DNS load (progressive scaling: 16MB -> 8MB -> 4MB)
+          const candidateBufferSizes = [16 * 1024 * 1024, 8 * 1024 * 1024, 4 * 1024 * 1024];
+          for (const size of candidateBufferSizes) {
+            try {
+              this.socket?.setRecvBufferSize(size);
+              this.socket?.setSendBufferSize(size);
+              break;
+            } catch {
+              /* Gracefully fall through to next smaller buffer size if OS rmem_max restricts */
+            }
           }
           this.isRunning = true;
           console.log(`[UDP DNS] Classic DNS listening on udp://${this.options.host}:${this.options.port}`);

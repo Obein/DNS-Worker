@@ -1,7 +1,7 @@
 import { Context, DNSQuery, ProfileSettings, ResolutionResult } from "../types";
 import { DEFAULT_FAIL_OPEN_UPSTREAM } from "../constants/presets";
 import { buildResponse } from "../utils/dns";
-import { dnsCache, pipelineCache } from "./cache";
+import { dnsCache, pipelineCache, syncDnsCacheSize } from "./cache";
 import { pipelineConfig } from "./config";
 import { pipelineResolver } from "./resolver";
 import { pipelineFilter } from "./filter";
@@ -10,6 +10,9 @@ export const pipeline = {
   clearCache: pipelineCache.clear,
 
   async process(request: Request, query: DNSQuery, context: Context): Promise<ResolutionResult> {
+    // 动态同步统一 DNS 缓存上限（默认为 20k）
+    syncDnsCacheSize(context.env);
+
     const timings: Record<string, number> = {};
     let mark = context.startTime;
     const track = (name: string) => {

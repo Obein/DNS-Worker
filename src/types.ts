@@ -18,6 +18,7 @@ export interface Env {
   INACTIVITY_THRESHOLD_DAYS?: string | number;
   INACTIVE_LOG_PURGE_DAYS?: string | number;
   INACTIVE_LOG_CLEANUP_DAYS?: string | number;
+  DNS_CACHE_SIZE?: string | number;
   PRESET_UPSTREAMS?: string;
   PRESET_EXTERNAL_FILTERS?: string;
   PRESET_ECH_FRONTING_DOMAINS?: string;
