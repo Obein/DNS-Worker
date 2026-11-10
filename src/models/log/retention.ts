@@ -99,7 +99,7 @@ export class LogRetentionModel {
         // Specifying metric_type allows SQLite to utilize the composite primary key
         // (profile_id, metric_type, hour_timestamp) for instant index range seeks,
         // avoiding profile-wide table scans.
-        const METRIC_TYPES = ['action', 'client', 'dest', 'domain'] as const;
+        const METRIC_TYPES = ['action', 'client', 'dest', 'domain', 'isp'] as const;
         for (const metric of METRIC_TYPES) {
           rollupStatements.push(
             this.db.prepare(

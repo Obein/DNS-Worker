@@ -92,23 +92,31 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
 
     let isMounted = true;
     const timer = setTimeout(async () => {
+      let bestIsps: { name: string; count: number }[] = [];
+      let serverCount = 0;
+
       // 1. Fetch authoritative ISPs from server API first (full coverage across all queries)
       try {
         const serverData: any = await getProfileAnalytics(profileId, "isps", queryParams);
         const list = Array.isArray(serverData) ? serverData : [];
         if (list.length > 0) {
-          onCacheIspRef.current(countryCode, list);
-          if (isMounted) {
-            setIsps(list);
-            setLoading(false);
+          bestIsps = list;
+          serverCount = list.reduce((acc, item) => acc + (Number(item.count) || 0), 0);
+          // If server data covers at least the expected total queries for this country, use it immediately
+          if (serverCount >= count) {
+            onCacheIspRef.current(countryCode, list);
+            if (isMounted) {
+              setIsps(list);
+              setLoading(false);
+            }
+            return;
           }
-          return;
         }
       } catch (serverErr) {
         console.debug("[MapTooltip] Server ISP fetch failed, trying local DB fallback:", serverErr);
       }
 
-      // 2. Fallback to Local-First SQLite query (for client-decrypted E2EE logs in OPFS or offline)
+      // 2. Fallback / supplementary check with Local-First SQLite (for client-decrypted E2EE logs in OPFS)
       try {
         const localIsps = await localDb.queryISPs({
           profileId,
@@ -118,15 +126,19 @@ export const MapTooltip: React.FC<MapTooltipProps> = ({
           accessPointId: accessPointId || undefined,
         });
         if (localIsps && localIsps.length > 0) {
-          onCacheIspRef.current(countryCode, localIsps);
-          if (isMounted) {
-            setIsps(localIsps);
+          const localCount = localIsps.reduce((acc, item) => acc + (Number(item.count) || 0), 0);
+          if (localCount > serverCount) {
+            bestIsps = localIsps;
           }
         }
       } catch (err) {
         console.warn("[MapTooltip] Local SQLite ISP query failed:", err);
       } finally {
         if (isMounted) {
+          if (bestIsps.length > 0) {
+            onCacheIspRef.current(countryCode, bestIsps);
+            setIsps(bestIsps);
+          }
           setLoading(false);
         }
       }
