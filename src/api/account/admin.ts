@@ -176,8 +176,7 @@ export async function handleAdminRequest(
           console.error('[Admin Database Migrate] Migration execution failed:', err);
           return new Response(JSON.stringify({
             success: false,
-            error: err?.message || 'Database migration failed',
-            details: String(err)
+            error: 'Database migration failed'
           }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
