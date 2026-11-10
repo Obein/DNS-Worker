@@ -46,20 +46,23 @@ export interface TursoMigrationStats {
  * @param db - D1Database or TursoD1Database instance.
  */
 export async function ensureTursoMigrationsTable(db: D1Database | TursoD1Database): Promise<void> {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS d1_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      applied_at INTEGER NOT NULL
-    );
-  `);
+  // Use prepare().run() with single-line SQL to prevent Cloudflare D1 multi-line exec parser bugs
+  await db
+    .prepare(
+      'CREATE TABLE IF NOT EXISTS d1_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, applied_at INTEGER NOT NULL)'
+    )
+    .run();
 
   // Safely import legacy _cf_d1_migrations records if table exists (for backward compatibility)
   try {
-    await db.exec(`
-      INSERT OR IGNORE INTO d1_migrations (name, applied_at)
-        SELECT name, applied_at FROM _cf_d1_migrations;
-    `);
+    const legacyTable = await db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_cf_d1_migrations'")
+      .first<{ name: string }>();
+    if (legacyTable?.name) {
+      await db
+        .prepare('INSERT OR IGNORE INTO d1_migrations (name, applied_at) SELECT name, applied_at FROM _cf_d1_migrations')
+        .run();
+    }
   } catch {
     // Expected on Cloudflare D1 where _cf_ prefix is restricted or table does not exist
   }
@@ -105,7 +108,7 @@ export async function execMigrationSql(db: D1Database | TursoD1Database, sql: st
           throw new Error(`[Database D1] Exec error on statement ${i + 1}: ${first.error?.message || 'Error'}\nSQL: ${stmt}`);
         }
       } else {
-        await db.exec(stmt);
+        await db.prepare(stmt).run();
       }
     } catch (err: any) {
       const msg = (err?.message || '').toLowerCase();
