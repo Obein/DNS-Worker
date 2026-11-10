@@ -43,8 +43,6 @@
     "build:pages": "npm run db:generate-migrations && npm run ui:build && npx esbuild src/index.ts --bundle --outfile=static/_worker.js --platform=neutral --format=esm --minify --external:cloudflare:* --external:node:*",
     "db:generate-migrations": "tsx scripts/generate-embedded-migrations.ts",
     "prebuild": "npm run db:generate-migrations",
-    "prepare": "npm run db:generate-migrations && npm run ui:install",
-    "postinstall": "npm run db:generate-migrations",
     "db:setup": "wrangler d1 create dns_worker_db",
     "db:migrate:dev": "tsx scripts/migrate-dev.ts",
     "db:migrate:prod": "tsx scripts/migrate-prod.ts",
