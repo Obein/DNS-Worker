@@ -40,28 +40,32 @@ export interface TursoMigrationStats {
 }
 
 /**
- * Ensures the `d1_migrations` and `_cf_d1_migrations` tables exist on database,
- * automatically migrating and synchronizing records between both tables.
+ * Ensures the `d1_migrations` table exists on database,
+ * automatically migrating legacy records if available.
  *
  * @param db - D1Database or TursoD1Database instance.
  */
 export async function ensureTursoMigrationsTable(db: D1Database | TursoD1Database): Promise<void> {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS d1_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      applied_at INTEGER NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS _cf_d1_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      applied_at INTEGER NOT NULL
-    );
-    INSERT OR IGNORE INTO d1_migrations (name, applied_at)
-      SELECT name, applied_at FROM _cf_d1_migrations;
-    INSERT OR IGNORE INTO _cf_d1_migrations (name, applied_at)
-      SELECT name, applied_at FROM d1_migrations;
-  `);
+  // Use prepare().run() with single-line SQL to prevent Cloudflare D1 multi-line exec parser bugs
+  await db
+    .prepare(
+      'CREATE TABLE IF NOT EXISTS d1_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, applied_at INTEGER NOT NULL)'
+    )
+    .run();
+
+  // Safely import legacy _cf_d1_migrations records if table exists (for backward compatibility)
+  try {
+    const legacyTable = await db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_cf_d1_migrations'")
+      .first<{ name: string }>();
+    if (legacyTable?.name) {
+      await db
+        .prepare('INSERT OR IGNORE INTO d1_migrations (name, applied_at) SELECT name, applied_at FROM _cf_d1_migrations')
+        .run();
+    }
+  } catch {
+    // Expected on Cloudflare D1 where _cf_ prefix is restricted or table does not exist
+  }
 }
 
 /**
@@ -104,7 +108,7 @@ export async function execMigrationSql(db: D1Database | TursoD1Database, sql: st
           throw new Error(`[Database D1] Exec error on statement ${i + 1}: ${first.error?.message || 'Error'}\nSQL: ${stmt}`);
         }
       } else {
-        await db.exec(stmt);
+        await db.prepare(stmt).run();
       }
     } catch (err: any) {
       const msg = (err?.message || '').toLowerCase();
@@ -191,7 +195,7 @@ export async function getTursoMigrationStats(
   try {
     await ensureTursoMigrationsTable(db);
     const appliedQuery = await db
-      .prepare('SELECT name FROM d1_migrations UNION SELECT name FROM _cf_d1_migrations')
+      .prepare('SELECT name FROM d1_migrations')
       .all<{ name: string }>();
     const appliedSet = new Set((appliedQuery.results || []).map((r) => r.name));
     const pendingFiles = files.filter((f) => !appliedSet.has(f));
@@ -241,7 +245,7 @@ export async function runTursoMigrations(
   const migrationsMap = await resolveMigrationsMap(migrationsOrDir);
   const files = Object.keys(migrationsMap).sort();
 
-  const appliedQuery = await db.prepare('SELECT name FROM d1_migrations UNION SELECT name FROM _cf_d1_migrations').all<{ name: string }>();
+  const appliedQuery = await db.prepare('SELECT name FROM d1_migrations').all<{ name: string }>();
   const appliedSet = new Set((appliedQuery.results || []).map((r) => r.name));
 
   let appliedCount = 0;
@@ -257,10 +261,6 @@ export async function runTursoMigrations(
       const appliedAt = Math.floor(Date.now() / 1000);
       await db
         .prepare('INSERT OR REPLACE INTO d1_migrations (name, applied_at) VALUES (?, ?)')
-        .bind(file, appliedAt)
-        .run();
-      await db
-        .prepare('INSERT OR REPLACE INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)')
         .bind(file, appliedAt)
         .run();
       appliedCount++;

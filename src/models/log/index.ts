@@ -88,6 +88,10 @@ export class LogModel {
     return this.aggregation.getLatestDestinationRollupHour(profileId);
   }
 
+  async getLatestISPRollupHour(profileId: string): Promise<number | null> {
+    return this.aggregation.getLatestISPRollupHour(profileId);
+  }
+
   async aggregateHourlyRollups(sinceSec?: number, untilSec?: number, minDomainCount = 1): Promise<number> {
     return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec, minDomainCount);
   }

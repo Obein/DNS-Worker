@@ -176,7 +176,7 @@ export function handleQueryISPs(params: WorkerQueryParamsISPs): { name: string; 
 
   if (countryCode) {
     baseWhere += ` AND (
-      UPPER(COALESCE(dest_country_code, json_extract(dest_geoip, '$.country_code'))) = ?
+      UPPER(COALESCE(NULLIF(dest_country_code, ''), json_extract(dest_geoip, '$.country_code'))) = ?
     )`;
     baseBinds.push(countryCode.toUpperCase());
   }
@@ -184,13 +184,17 @@ export function handleQueryISPs(params: WorkerQueryParamsISPs): { name: string; 
   baseWhere += ` AND (
     (dest_isp IS NOT NULL AND dest_isp != '')
     OR
-    (dest_geoip IS NOT NULL AND json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+    (dest_geoip IS NOT NULL AND (
+      (json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+      OR
+      (json_extract(dest_geoip, '$.org') IS NOT NULL AND json_extract(dest_geoip, '$.org') != '')
+    ))
   )`;
 
   const rows: { name: string; count: number }[] = [];
   const stmt = db.prepare(`
     SELECT 
-      COALESCE(dest_isp, json_extract(dest_geoip, '$.isp'), 'Unknown') as name,
+      COALESCE(NULLIF(dest_isp, ''), NULLIF(json_extract(dest_geoip, '$.isp'), ''), NULLIF(json_extract(dest_geoip, '$.org'), ''), 'Unknown') as name,
       count(*) as count 
     FROM local_logs 
     WHERE ${baseWhere}

@@ -53,7 +53,7 @@ export function recordSuccessAndCache(
             destGeoJson = JSON.stringify(geo);
             destCountryCode = geo.country_code ? geo.country_code.toUpperCase() : null;
             destCountry = geo.country || null;
-            destIsp = geo.isp || null;
+            destIsp = geo.isp || geo.org || (geo.as ? geo.as.replace(/^AS\d+\s+/, "") : null);
           }
         }
 

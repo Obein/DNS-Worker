@@ -267,7 +267,26 @@ export default {
       }
     };
 
-    let response = await handleRequest();
+    let response: Response;
+    try {
+      response = await handleRequest();
+    } catch (fatalErr: any) {
+      console.error('[Worker Fatal Error]:', fatalErr);
+      const isApi = new URL(request.url).pathname.startsWith('/api/');
+      if (isApi) {
+        return new Response(JSON.stringify({
+          error: "internal_server_error",
+          message: fatalErr?.message || "An unexpected worker error occurred."
+        }), {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      return new Response(`Worker Fatal Error: ${fatalErr?.message || fatalErr}`, { status: 500 });
+    }
     
     // Ensure CSRF token is set in cookies if authenticated but cookie is missing from the request
     const finalUser = currentUser as User | null;

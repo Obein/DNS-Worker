@@ -83,20 +83,21 @@ export const IspFilter: React.FC<IspFilterProps> = ({
         params.set("access_point_id", accessPointIdFilter);
       }
 
+      let bestIsps: { name: string; count: number }[] = [];
+      let serverCount = 0;
+
       // 1. Fetch authoritative ISPs from server API first (full coverage across all queries)
       try {
         const data = await getProfileAnalytics(profileId, "isps", params.toString());
         if (Array.isArray(data) && data.length > 0) {
-          setIsps(data);
-          lastFetchedKeyRef.current = currentParamKey;
-          setLoading(false);
-          return;
+          bestIsps = data;
+          serverCount = data.reduce((acc, item) => acc + (Number(item.count) || 0), 0);
         }
       } catch (serverErr) {
         console.debug("[IspFilter] Server ISP fetch failed, falling back to local DB:", serverErr);
       }
 
-      // 2. Fallback to local SQLite query (for client-decrypted E2EE logs in OPFS or offline)
+      // 2. Fallback / supplementary check with local SQLite (for client-decrypted E2EE logs in OPFS)
       try {
         const localData = await localDb.queryISPs({
           profileId,
@@ -106,14 +107,16 @@ export const IspFilter: React.FC<IspFilterProps> = ({
           accessPointId: accessPointIdFilter || undefined,
         });
         if (localData && localData.length > 0) {
-          setIsps(localData);
-        } else {
-          setIsps([]);
+          const localCount = localData.reduce((acc, item) => acc + (Number(item.count) || 0), 0);
+          if (localCount > serverCount) {
+            bestIsps = localData;
+          }
         }
       } catch (localErr) {
         console.warn("[IspFilter] Local SQLite query failed:", localErr);
-        setIsps([]);
       }
+
+      setIsps(bestIsps);
       lastFetchedKeyRef.current = currentParamKey;
     } catch (err) {
       console.error("Failed to fetch ISPs for filter", err);

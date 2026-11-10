@@ -167,7 +167,7 @@ export class LogCoreModel {
     if (options.isp) {
       whereClauses.push(`(CASE 
         WHEN l.dest_isp IS NOT NULL AND l.dest_isp != '' THEN l.dest_isp
-        WHEN l.dest_geoip IS NOT NULL AND l.dest_geoip != '' AND l.dest_geoip LIKE '{%' THEN json_extract(l.dest_geoip, '$.isp')
+        WHEN l.dest_geoip IS NOT NULL AND l.dest_geoip != '' AND l.dest_geoip LIKE '{%' THEN COALESCE(NULLIF(json_extract(l.dest_geoip, '$.isp'), ''), json_extract(l.dest_geoip, '$.org'))
         ELSE ''
       END) = ?`);
       params.push(options.isp);

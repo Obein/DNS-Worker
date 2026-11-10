@@ -66,7 +66,7 @@ export class LogTrafficAnalytics {
       if (isp) {
         queryStr += ` AND (CASE 
           WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
-          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.isp')
+          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN COALESCE(NULLIF(json_extract(dest_geoip, '$.isp'), ''), json_extract(dest_geoip, '$.org'))
           ELSE ''
         END) = ?`;
         params.push(isp);

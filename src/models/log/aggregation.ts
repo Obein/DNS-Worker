@@ -92,26 +92,10 @@ export class LogAggregationModel {
         }
       }
 
-      // 2. Domain metric (for top allowed and blocked domains)
-      if (log.domain && log.domain !== '[Encrypted]') {
-        const domainKey = `${log.profile_id}|domain|${hourTs}|${log.domain}|${log.action || ''}|${apId}`;
-        const existing = map.get(domainKey);
-        if (existing) {
-          existing.count++;
-        } else {
-          map.set(domainKey, {
-            profileId: log.profile_id,
-            metricType: 'domain',
-            hourTimestamp: hourTs,
-            key: log.domain,
-            subKey: log.action || '',
-            accessPointId: apId,
-            count: 1
-          });
-        }
-      }
+      // Note: High-cardinality 'domain' rollups are intentionally decoupled from micro-batches
+      // and delegated to hourly cron aggregateHourlyRollups to eliminate ~100k redundant writes/day.
 
-      // 3. Client IP & geo country metric (for client device analytics)
+      // 2. Client IP & geo country metric (for client device analytics)
       if (log.client_ip && log.client_ip !== '[Encrypted]') {
         const geoCountry = log.geo_country || '';
         const clientKey = `${log.profile_id}|client|${hourTs}|${log.client_ip}|${geoCountry}|${apId}`;
@@ -131,14 +115,16 @@ export class LogAggregationModel {
         }
       }
 
-      // 4. Destination country metric (for geo destination analytics)
+      // 4. Destination country & ISP metrics (for geo destination and ISP analytics)
       let destCode = log.dest_country_code || '';
       let destCountry = log.dest_country || '';
-      if (!destCode && log.dest_geoip && log.dest_geoip.startsWith('{')) {
+      let destIsp = log.dest_isp || '';
+      if ((!destCode || !destCountry || !destIsp) && log.dest_geoip && log.dest_geoip.startsWith('{')) {
         try {
           const parsed = JSON.parse(log.dest_geoip);
-          destCode = parsed.country_code || '';
-          destCountry = parsed.country || '';
+          if (!destCode) destCode = parsed.country_code || '';
+          if (!destCountry) destCountry = parsed.country || '';
+          if (!destIsp) destIsp = parsed.isp || parsed.org || '';
         } catch {}
       }
       if (destCode) {
@@ -157,6 +143,25 @@ export class LogAggregationModel {
             accessPointId: apId,
             count: 1
           });
+        }
+
+        // 5. Destination ISP metric (grouped by country code and ISP name)
+        if (destIsp) {
+          const ispKey = `${log.profile_id}|isp|${hourTs}|${codeUpper}|${destIsp}|${apId}`;
+          const existingIsp = map.get(ispKey);
+          if (existingIsp) {
+            existingIsp.count++;
+          } else {
+            map.set(ispKey, {
+              profileId: log.profile_id,
+              metricType: 'isp',
+              hourTimestamp: hourTs,
+              key: codeUpper,
+              subKey: destIsp,
+              accessPointId: apId,
+              count: 1
+            });
+          }
         }
       }
     }
@@ -215,6 +220,13 @@ export class LogAggregationModel {
    */
   async getLatestDestinationRollupHour(profileId: string): Promise<number | null> {
     return this.getLatestRollupHour(profileId, 'dest');
+  }
+
+  /**
+   * Retrieves the latest completed hour timestamp aggregated in hourly_rollups for destination ISPs.
+   */
+  async getLatestISPRollupHour(profileId: string): Promise<number | null> {
+    return this.getLatestRollupHour(profileId, 'isp');
   }
 
   /**
@@ -371,7 +383,46 @@ export class LogAggregationModel {
             HAVING COUNT(*) >= ?
             ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
             DO UPDATE SET count = count + excluded.count
-          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil, minDomainCount)
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil, minDomainCount),
+
+          // 5. Destination ISP rollups
+          this.db.prepare(`
+            INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+            SELECT
+                ?,
+                'isp',
+                (timestamp / 3600) * 3600 AS hour_timestamp,
+                UPPER(CASE 
+                  WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+                  WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+                  ELSE ''
+                END) AS key,
+                CASE 
+                  WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+                  WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN COALESCE(NULLIF(json_extract(dest_geoip, '$.isp'), ''), json_extract(dest_geoip, '$.org'))
+                  ELSE ''
+                END AS sub_key,
+                COALESCE(access_point_id, '') AS access_point_id,
+                COUNT(*) AS count
+            FROM logs
+            WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+              AND (
+                (dest_isp IS NOT NULL AND dest_isp != '')
+                OR
+                (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND (
+                  (json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+                  OR
+                  (json_extract(dest_geoip, '$.org') IS NOT NULL AND json_extract(dest_geoip, '$.org') != '')
+                ))
+              )
+            GROUP BY (timestamp / 3600) * 3600, 
+                     key,
+                     sub_key,
+                     COALESCE(access_point_id, '')
+            HAVING sub_key != ''
+            ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+            DO UPDATE SET count = count + excluded.count
+          `).bind(profile.id, profile.id, effectiveSince, effectiveUntil)
         ];
 
         const results = await this.db.batch(statements);

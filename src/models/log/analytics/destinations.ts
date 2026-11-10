@@ -182,6 +182,8 @@ export class LogDestinationAnalytics {
 
   /**
    * Retrieves ISP distribution for queries matching an optional country code.
+   * Leverages `hourly_rollups` with metric_type='isp' to achieve instant responses
+   * and consistent historical totals across all retention policies.
    *
    * @param profileId - Profile identifier.
    * @param countryCode - Optional ISO 2-letter country code.
@@ -199,41 +201,156 @@ export class LogDestinationAnalytics {
     accessPointId?: string,
     limit = 250
   ): Promise<ISPCountResult[]> {
-    let queryStr = `
-      SELECT 
-        CASE 
-          WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
-          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.isp')
-          ELSE NULL 
-        END as name, 
-        COUNT(*) as count 
-      FROM logs 
-      WHERE profile_id = ? 
-        AND timestamp >= ? 
-        AND timestamp <= ? 
-        AND (
-          (dest_isp IS NOT NULL AND dest_isp != '')
-          OR
-          (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
-        )
-    `;
-    const params: (string | number)[] = [profileId, since, until];
+    const rawLogsQuery = async (fromTs: number, toTs: number): Promise<ISPCountResult[]> => {
+      let queryStr = `
+        SELECT 
+          CASE 
+            WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+            WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN COALESCE(NULLIF(json_extract(dest_geoip, '$.isp'), ''), json_extract(dest_geoip, '$.org'))
+            ELSE NULL 
+          END as name, 
+          COUNT(*) as count 
+        FROM logs 
+        WHERE profile_id = ? 
+          AND timestamp >= ? 
+          AND timestamp <= ? 
+          AND (
+            (dest_isp IS NOT NULL AND dest_isp != '')
+            OR
+            (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND (
+              (json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+              OR
+              (json_extract(dest_geoip, '$.org') IS NOT NULL AND json_extract(dest_geoip, '$.org') != '')
+            ))
+          )
+      `;
+      const params: (string | number)[] = [profileId, fromTs, toTs];
+      if (countryCode) {
+        queryStr += ` AND UPPER(CASE 
+          WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
+          WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
+          ELSE ''
+        END) = ?`;
+        params.push(countryCode.toUpperCase());
+      }
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += ` GROUP BY name ORDER BY count DESC LIMIT ${limit}`;
+      const { results } = await this.db
+        .prepare(queryStr)
+        .bind(...params)
+        .all<{ name: string | null; count: number }>();
+
+      return results.map((r) => ({
+        name: r.name || "Unknown",
+        count: r.count
+      }));
+    };
+
+    if (!this.aggregation) {
+      return rawLogsQuery(since, until);
+    }
+
+    const latestRollupHour = await this.aggregation.getLatestISPRollupHour(profileId);
+    const cutoff = latestRollupHour !== null ? latestRollupHour + 3600 : since;
+
+    // Case 1: No rollups available or entire range is after cutoff -> query raw logs only
+    if (cutoff <= since) {
+      return rawLogsQuery(since, until);
+    }
+
+    // Case 2: Entire range is within completed rollups
+    if (cutoff > until) {
+      const sinceHour = Math.floor(since / 3600) * 3600;
+      let queryStr = `
+        SELECT sub_key as name, SUM(count) as count
+        FROM hourly_rollups
+        WHERE profile_id = ? AND metric_type = 'isp' AND hour_timestamp >= ? AND hour_timestamp <= ?
+      `;
+      const params: (string | number)[] = [profileId, sinceHour, until];
+      if (countryCode) {
+        queryStr += " AND key = ?";
+        params.push(countryCode.toUpperCase());
+      }
+      if (accessPointId) {
+        queryStr += " AND access_point_id = ?";
+        params.push(accessPointId);
+      }
+      queryStr += ` GROUP BY sub_key ORDER BY count DESC LIMIT ${limit}`;
+      const { results } = await this.db
+        .prepare(queryStr)
+        .bind(...params)
+        .all<{ name: string | null; count: number }>();
+
+      return results.map((r) => ({
+        name: r.name || "Unknown",
+        count: r.count
+      }));
+    }
+
+    // Case 3: Spans historical rollups and unaggregated logs -> Hybrid UNION ALL query
+    const sinceHour = Math.floor(since / 3600) * 3600;
+    let rollupWhere = "profile_id = ? AND metric_type = 'isp' AND hour_timestamp >= ? AND hour_timestamp < ?";
+    const rollupParams: (string | number)[] = [profileId, sinceHour, cutoff];
     if (countryCode) {
-      queryStr += ` AND UPPER(CASE 
+      rollupWhere += " AND key = ?";
+      rollupParams.push(countryCode.toUpperCase());
+    }
+    if (accessPointId) {
+      rollupWhere += " AND access_point_id = ?";
+      rollupParams.push(accessPointId);
+    }
+
+    let logWhere = `
+      profile_id = ? AND timestamp >= ? AND timestamp <= ?
+      AND (
+        (dest_isp IS NOT NULL AND dest_isp != '')
+        OR
+        (dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' AND (
+          (json_extract(dest_geoip, '$.isp') IS NOT NULL AND json_extract(dest_geoip, '$.isp') != '')
+          OR
+          (json_extract(dest_geoip, '$.org') IS NOT NULL AND json_extract(dest_geoip, '$.org') != '')
+        ))
+      )
+    `;
+    const logParams: (string | number)[] = [profileId, cutoff, until];
+    if (countryCode) {
+      logWhere += ` AND UPPER(CASE 
         WHEN dest_country_code IS NOT NULL AND dest_country_code != '' THEN dest_country_code
         WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN json_extract(dest_geoip, '$.country_code')
         ELSE ''
       END) = ?`;
-      params.push(countryCode.toUpperCase());
+      logParams.push(countryCode.toUpperCase());
     }
     if (accessPointId) {
-      queryStr += " AND access_point_id = ?";
-      params.push(accessPointId);
+      logWhere += " AND access_point_id = ?";
+      logParams.push(accessPointId);
     }
-    queryStr += ` GROUP BY name ORDER BY count DESC LIMIT ${limit}`;
+
+    const queryStr = `
+      SELECT name, SUM(count) as count FROM (
+        SELECT sub_key as name, count
+        FROM hourly_rollups
+        WHERE ${rollupWhere}
+        UNION ALL
+        SELECT 
+          CASE 
+            WHEN dest_isp IS NOT NULL AND dest_isp != '' THEN dest_isp
+            WHEN dest_geoip IS NOT NULL AND dest_geoip != '' AND dest_geoip LIKE '{%' THEN COALESCE(NULLIF(json_extract(dest_geoip, '$.isp'), ''), json_extract(dest_geoip, '$.org'))
+            ELSE 'Unknown'
+          END as name, 
+          COUNT(*) as count 
+        FROM logs 
+        WHERE ${logWhere}
+        GROUP BY name
+      ) WHERE name IS NOT NULL AND name != '' GROUP BY name ORDER BY count DESC LIMIT ${limit}
+    `;
+
     const { results } = await this.db
       .prepare(queryStr)
-      .bind(...params)
+      .bind(...rollupParams, ...logParams)
       .all<{ name: string | null; count: number }>();
 
     return results.map((r) => ({

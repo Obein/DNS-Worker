@@ -164,13 +164,24 @@ export async function handleAdminRequest(
             headers: { 'Content-Type': 'application/json' }
           });
         }
-        const appliedCount = await runTursoMigrations(env.DB as any);
-        const stats = await getTursoMigrationStats(env.DB as any);
-        return new Response(JSON.stringify({
-          success: true,
-          appliedCount,
-          stats
-        }), { headers: { 'Content-Type': 'application/json' } });
+        try {
+          const appliedCount = await runTursoMigrations(env.DB as any);
+          const stats = await getTursoMigrationStats(env.DB as any);
+          return new Response(JSON.stringify({
+            success: true,
+            appliedCount,
+            stats
+          }), { headers: { 'Content-Type': 'application/json' } });
+        } catch (err: any) {
+          console.error('[Admin Database Migrate] Migration execution failed:', err);
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Database migration failed'
+          }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       }
     }
   }

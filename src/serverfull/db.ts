@@ -264,23 +264,20 @@ export class NodeD1Database implements D1Database {
  * Runs all pending migrations from migrations/ directory.
  */
 export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
-  // Ensure migrations tracking tables exist (supports both d1_migrations and _cf_d1_migrations)
+  // Ensure migrations tracking table exists (supports d1_migrations and imports legacy _cf_d1_migrations)
   db.exec(`
     CREATE TABLE IF NOT EXISTS d1_migrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT UNIQUE NOT NULL,
       applied_at INTEGER NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS _cf_d1_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      applied_at INTEGER NOT NULL
-    );
-    INSERT OR IGNORE INTO d1_migrations (name, applied_at)
-      SELECT name, applied_at FROM _cf_d1_migrations;
-    INSERT OR IGNORE INTO _cf_d1_migrations (name, applied_at)
-      SELECT name, applied_at FROM d1_migrations;
   `);
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO d1_migrations (name, applied_at)
+        SELECT name, applied_at FROM _cf_d1_migrations;
+    `);
+  } catch {}
 
   if (!fs.existsSync(migrationsDir)) {
     console.warn(`[Migrations] Directory not found: ${migrationsDir}`);
@@ -293,7 +290,6 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
 
   const stmtGet = db.prepare('SELECT name FROM d1_migrations WHERE name = ?');
   const stmtInsertD1 = db.prepare('INSERT OR REPLACE INTO d1_migrations (name, applied_at) VALUES (?, ?)');
-  const stmtInsertCf = db.prepare('INSERT OR REPLACE INTO _cf_d1_migrations (name, applied_at) VALUES (?, ?)');
 
   let appliedCount = 0;
   for (const file of files) {
@@ -309,7 +305,6 @@ export function runMigrations(db: DatabaseSync, migrationsDir: string): void {
       db.exec(sql);
       const appliedAt = Math.floor(Date.now() / 1000);
       stmtInsertD1.run(file, appliedAt);
-      stmtInsertCf.run(file, appliedAt);
       db.exec('COMMIT');
       appliedCount++;
     } catch (err: any) {
