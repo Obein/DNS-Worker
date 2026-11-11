@@ -13,7 +13,7 @@ Deploy across 300+ edge locations worldwide with automatic global failover and z
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/Obein/DNS-Worker.git
+git clone https://github.com/Oppidi/DNS-Worker.git
 cd DNS-Worker
 npm install
 ```

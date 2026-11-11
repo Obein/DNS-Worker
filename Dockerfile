@@ -27,8 +27,8 @@ FROM oven/bun:1-slim AS runner
 LABEL maintainer="Hugo Koo <hokdung@outlook.com>" \
       org.opencontainers.image.title="DNS Worker" \
       org.opencontainers.image.description="Privacy-first DNS & DoH Resolver with modern Web Dashboard, powered by Bun LTS" \
-      org.opencontainers.image.url="https://github.com/Obein/DNS-Worker" \
-      org.opencontainers.image.source="https://github.com/Obein/DNS-Worker" \
+      org.opencontainers.image.url="https://github.com/Oppidi/DNS-Worker" \
+      org.opencontainers.image.source="https://github.com/Oppidi/DNS-Worker" \
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 WORKDIR /app

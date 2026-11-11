@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://obein.github.io/DNS-Worker/sitemap-index.xml
+Sitemap: https://oppidi.github.io/DNS-Worker/sitemap-index.xml

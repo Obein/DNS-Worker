@@ -77,7 +77,7 @@ function getInitialCache(): {
 }
 
 /**
- * Hook to detect whether an upstream update is available on GitHub (Obein/DNS-Worker).
+ * Hook to detect whether an upstream update is available on GitHub (Oppidi/DNS-Worker).
  * Caches results locally for 1 hour to respect rate limits and prevent page load delays.
  *
  * @returns An object containing `hasUpdate`, `latestTag`, and `appVersion`.
@@ -116,7 +116,7 @@ export function useUpstreamUpdate(): UpstreamUpdateResult {
 
         // Strictly check GitHub releases tag_name
         const releaseRes = await fetch(
-          "https://api.github.com/repos/Obein/DNS-Worker/releases/latest",
+          "https://api.github.com/repos/Oppidi/DNS-Worker/releases/latest",
           {
             signal: controller.signal,
             headers: { Accept: "application/vnd.github.v3+json" },
@@ -134,7 +134,7 @@ export function useUpstreamUpdate(): UpstreamUpdateResult {
         } else if (releaseRes.status === 404) {
           // If latest release is 404 (e.g. only pre-releases exist), check releases list
           const releasesRes = await fetch(
-            "https://api.github.com/repos/Obein/DNS-Worker/releases?per_page=1",
+            "https://api.github.com/repos/Oppidi/DNS-Worker/releases?per_page=1",
             {
               signal: controller.signal,
               headers: { Accept: "application/vnd.github.v3+json" },

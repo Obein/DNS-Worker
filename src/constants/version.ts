@@ -35,13 +35,13 @@ export function getAppUserAgent(): string {
 
 /**
  * Standard User-Agent header for external filter list fetching.
- * Format: "DNS-Worker/x.y.z (+https://github.com/Obein/DNS-Worker)"
+ * Format: "DNS-Worker/x.y.z (+https://github.com/Oppidi/DNS-Worker)"
  *
  * @returns Formatted User-Agent string.
  */
 export function getListFetcherUserAgent(): string {
-  return `DNS-Worker/${getSystemVersion()} (+https://github.com/Obein/DNS-Worker)`;
+  return `DNS-Worker/${getSystemVersion()} (+https://github.com/Oppidi/DNS-Worker)`;
 }
 
 export const APP_USER_AGENT = `DNS-Worker/${APP_VERSION}`;
-export const LIST_FETCHER_USER_AGENT = `DNS-Worker/${APP_VERSION} (+https://github.com/Obein/DNS-Worker)`;
+export const LIST_FETCHER_USER_AGENT = `DNS-Worker/${APP_VERSION} (+https://github.com/Oppidi/DNS-Worker)`;

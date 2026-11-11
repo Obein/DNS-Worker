@@ -13,7 +13,7 @@ DNS Worker 提供两种适配不同场景的部署路径。作为**以 Serverles
 
 ### 1. 克隆仓库并安装依赖
 ```bash
-git clone https://github.com/Obein/DNS-Worker.git
+git clone https://github.com/Oppidi/DNS-Worker.git
 cd DNS-Worker
 npm install
 ```

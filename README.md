@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Obein/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
+  <img src="https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/web/src/assets/obex_cat_eye_logo-256.webp" alt="DNS Worker Logo" width="128">
   <h1>DNS Worker</h1>
   <p>Privacy-First Protective DNS Resolver & DoH / DoT Server & AD Blocker</p>
   <p>Protect your first hop on the internet</p>
@@ -12,10 +12,10 @@
 [![Docker: hugokoo/dns-worker](https://img.shields.io/badge/docker-hugokoo%2Fdns--worker-2496ED.svg?logo=docker)](https://hub.docker.com/r/hugokoo/dns-worker)
 [![Platform: Cloudflare Workers](https://img.shields.io/badge/Platform-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
 [![Runtime: Node.js / Bun](https://img.shields.io/badge/Runtime-Node.js%20%7C%20Bun-green.svg)](https://nodejs.org/)
-[![Database: D1 | Turso | File](https://img.shields.io/badge/Database-D1%20%7C%20Turso%20%7C%20File-blue.svg)](https://obein.github.io/DNS-Worker/deployment/database/)
+[![Database: D1 | Turso | File](https://img.shields.io/badge/Database-D1%20%7C%20Turso%20%7C%20File-blue.svg)](https://oppidi.github.io/DNS-Worker/deployment/database/)
 [![Security: NIST FIPS 203 PQC](https://img.shields.io/badge/Security-NIST%20FIPS%20203%20PQC-purple.svg)](https://csrc.nist.gov/pubs/fips/203/final)
-[![Docs: Astro Starlight](https://img.shields.io/badge/Docs-Astro%20Starlight-blueviolet.svg)](https://obein.github.io/DNS-Worker/)
-[![Protocols: UDP 53 · DoT / DoQ · DoH (H2/H3)](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20%2F%20DoQ%20%7C%20DoH%20(H2%2FH3)-brightgreen.svg)](https://obein.github.io/DNS-Worker/deployment/matrix/)
+[![Docs: Astro Starlight](https://img.shields.io/badge/Docs-Astro%20Starlight-blueviolet.svg)](https://oppidi.github.io/DNS-Worker/)
+[![Protocols: UDP 53 · DoT / DoQ · DoH (H2/H3)](https://img.shields.io/badge/Protocols-UDP%2053%20%7C%20DoT%20%2F%20DoQ%20%7C%20DoH%20(H2%2FH3)-brightgreen.svg)](https://oppidi.github.io/DNS-Worker/deployment/matrix/)
 
 </div>
 
@@ -29,12 +29,12 @@
 - **🖥️ Standalone Server Mode (Serverfull)**: Run completely free of Cloudflare on your own VPS, Linux home server, or Windows machine, with native **UDP 53**, **DoT 853** (DoQ compatible with TLS SNI routing for Android Private DNS), and local SQLite.
 
 > 📚 **User Documentation**  
-> 👉 [**https://obein.github.io/DNS-Worker/**](https://obein.github.io/DNS-Worker/)
+> 👉 [**https://oppidi.github.io/DNS-Worker/**](https://oppidi.github.io/DNS-Worker/)
 
 ### Quick Start
 
 #### Deploy to Cloudflare Workers
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Obein/DNS-Worker)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Oppidi/DNS-Worker)
 
 #### Standalone Server via npm
 ```bash
@@ -77,21 +77,21 @@ docker run -d \
 
 | Analytics & Insights | Destinations Map |
 |:---:|:---:|
-| ![Analytics](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
+| ![Analytics](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp) | ![Destinations](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-stats_dest.webp) |
 
 | Multi-Access Points & Endpoints | Rules Configuration |
 |:---:|:---:|
-| ![Access Points](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) | ![Rules](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) |
+| ![Access Points](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-endpoints.webp) | ![Rules](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-rules.webp) |
 
 | Filter Subscriptions | Query Logs |
 |:---:|:---:|
-| ![Filters](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) | ![Query Logs](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) |
+| ![Filters](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-filter.webp) | ![Query Logs](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-log.webp) |
 
 | Mobile Responsive | Mobile Logs |
 |:---:|:---:|
-| ![Mobile Stats](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) | ![Mobile Log](https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) |
+| ![Mobile Stats](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-mobile_stats.webp) | ![Mobile Log](https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-mobile_log.webp) |
 
-> 💡 For live demonstrations and endpoints setup, visit your Web Dashboard after launch or refer to the [Official Documentation](https://obein.github.io/DNS-Worker/).
+> 💡 For live demonstrations and endpoints setup, visit your Web Dashboard after launch or refer to the [Official Documentation](https://oppidi.github.io/DNS-Worker/).
 
 ---
 

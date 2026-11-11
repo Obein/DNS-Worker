@@ -4,7 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://obein.github.io',
+  site: 'https://oppidi.github.io',
   base: '/DNS-Worker',
   vite: {
     cacheDir: './.vite-cache',
@@ -20,7 +20,7 @@ export default defineConfig({
         {
           icon: 'github',
           label: 'GitHub',
-          href: 'https://github.com/Obein/DNS-Worker'
+          href: 'https://github.com/Oppidi/DNS-Worker'
         }
       ],
       defaultLocale: 'root',
@@ -141,7 +141,7 @@ export default defineConfig({
           tag: 'meta',
           attrs: {
             property: 'og:image',
-            content: 'https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp'
+            content: 'https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp'
           }
         },
         {
@@ -169,7 +169,7 @@ export default defineConfig({
           tag: 'meta',
           attrs: {
             name: 'twitter:image',
-            content: 'https://raw.githubusercontent.com/Obein/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp'
+            content: 'https://raw.githubusercontent.com/Oppidi/DNS-Worker/main/docs/screenshots/dns.obex-stats.webp'
           }
         },
         {

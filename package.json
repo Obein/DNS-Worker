@@ -1,6 +1,6 @@
 {
   "name": "dns-worker",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "private": false,
   "description": "Privacy-first DNS & DoH Resolver with modern Web Dashboard, built for Cloudflare Workers & Node.js",
   "main": "./dist/serverfull.mjs",
@@ -79,11 +79,11 @@
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Obein/DNS-Worker.git"
+    "url": "git+https://github.com/Oppidi/DNS-Worker.git"
   },
-  "homepage": "https://github.com/Obein/DNS-Worker#readme",
+  "homepage": "https://github.com/Oppidi/DNS-Worker#readme",
   "bugs": {
-    "url": "https://github.com/Obein/DNS-Worker/issues"
+    "url": "https://github.com/Oppidi/DNS-Worker/issues"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261110.1",
