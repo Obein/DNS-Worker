@@ -206,7 +206,7 @@ docker run -d \
   -p 10443:10443/tcp \
   -v /var/lib/dns-worker:/var/lib/dns-worker \
   -v /etc/dns-worker:/etc/dns-worker \
-  ghcr.io/obein/dns-worker:latest
+  ghcr.io/oppidi/dns-worker:latest
 ```
 
 #### 3. 資料備份與災難恢復

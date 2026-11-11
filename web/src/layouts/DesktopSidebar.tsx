@@ -306,7 +306,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                   >
                     {hasUpdate ? (
                       <a
-                        href="https://github.com/Obein/DNS-Worker/releases"
+                        href="https://github.com/Oppidi/DNS-Worker/releases"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-amber-500 dark:text-amber-400 hover:underline transition-colors"
