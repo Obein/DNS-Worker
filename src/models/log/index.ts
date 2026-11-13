@@ -96,6 +96,10 @@ export class LogModel {
     return this.aggregation.aggregateHourlyRollups(sinceSec, untilSec, minDomainCount);
   }
 
+  async aggregateDomainRollups(untilSec?: number, minDomainCount = 1): Promise<number> {
+    return this.aggregation.aggregateDomainRollups(untilSec, minDomainCount);
+  }
+
   async getSummary(
     profileId: string,
     since: number,

@@ -89,6 +89,19 @@ export async function handleScheduled(
         console.error("[Cron] Inactivity policy execution failed:", e);
       }
 
+      // Domain rollups are not written per micro-batch (high cardinality), so aggregate them here
+      // from completed hours. Runs before log cleanup so logs are rolled up before they expire.
+      try {
+        const logModel = new LogModel(env.DB);
+        const minDomainCount = Number(env.DOMAIN_ROLLUP_MIN_COUNT) || 1;
+        const insertedDomainRows = await logModel.aggregateDomainRollups(undefined, minDomainCount);
+        if (insertedDomainRows > 0) {
+          console.log(`[Cron] Domain rollups: aggregated ${insertedDomainRows} row(s).`);
+        }
+      } catch (e) {
+        console.error("[Cron] Domain rollup aggregation failed:", e);
+      }
+
       try {
         const logModel = new LogModel(env.DB);
         const maxRetentionDays = env.MAX_LOG_RETENTION_DAYS !== undefined && env.MAX_LOG_RETENTION_DAYS !== ''

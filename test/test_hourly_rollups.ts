@@ -34,6 +34,7 @@ async function runTests() {
       dest_geoip TEXT,
       dest_country_code TEXT,
       dest_country TEXT,
+      dest_isp TEXT,
       ecs TEXT,
       upstream TEXT,
       latency INTEGER,
@@ -41,20 +42,30 @@ async function runTests() {
       PRIMARY KEY (profile_id, timestamp, id)
     ) WITHOUT ROWID;
   `);
+  rawDb.exec(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      settings TEXT
+    );
+    INSERT OR REPLACE INTO profiles (id, name, settings) VALUES ('test_prof', 'Test', '{}');
+  `);
   await logModel.aggregation.ensureRollupTables();
 
   const tables = rawDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='hourly_rollups'").all();
   assert.strictEqual(tables.length, 1, "hourly_rollups table must be created");
   console.log("  PASS: hourly_rollups table created successfully");
 
-  // 2. Prepare sample in-flight logs (before encryption)
+  // 2. Prepare sample in-flight logs (before encryption), placed in the previous completed hour
+  // so the hourly domain aggregation (which only rolls up completed hours) can pick them up.
   const now = Math.floor(Date.now() / 1000);
   const hourTs = Math.floor(now / 3600) * 3600;
+  const prevHourTs = hourTs - 3600;
 
   const sampleLogs: ResolutionLog[] = [
     {
       profile_id: "test_prof",
-      timestamp: now - 100,
+      timestamp: prevHourTs + 100,
       domain: "github.com",
       action: "PASS",
       client_ip: "192.168.1.100",
@@ -65,7 +76,7 @@ async function runTests() {
     },
     {
       profile_id: "test_prof",
-      timestamp: now - 80,
+      timestamp: prevHourTs + 120,
       domain: "github.com",
       action: "PASS",
       client_ip: "192.168.1.100",
@@ -76,7 +87,7 @@ async function runTests() {
     },
     {
       profile_id: "test_prof",
-      timestamp: now - 60,
+      timestamp: prevHourTs + 140,
       domain: "ads.track.com",
       action: "BLOCK",
       client_ip: "192.168.1.105",
@@ -103,11 +114,29 @@ async function runTests() {
   assert.strictEqual(blockAction?.count, 1, "BLOCK action count must be 1");
   console.log("  PASS: In-memory folding folded multiple PASS actions into count=2");
 
+  // Domain rollups are high-cardinality, so the micro-batch path must not write them...
+  const liveDomainRows = rawDb.prepare("SELECT count(*) as count FROM hourly_rollups WHERE metric_type = 'domain'").get() as { count: number };
+  assert.strictEqual(liveDomainRows.count, 0, "Micro-batch rollups must not write domain metrics");
+  console.log("  PASS: Micro-batch path skips high-cardinality domain rollups");
+
+  // ...instead the hourly cron aggregates them from raw logs of completed hours.
+  const insertLog = rawDb.prepare(
+    "INSERT INTO logs (profile_id, timestamp, id, domain, record_type, action, client_ip, geo_country, dest_country_code, dest_country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  sampleLogs.forEach((log, i) => insertLog.run(
+    log.profile_id, log.timestamp, i + 1, log.domain, log.record_type, log.action,
+    log.client_ip ?? null, log.geo_country ?? null, log.dest_country_code ?? null, log.dest_country ?? null
+  ));
+  const insertedDomainRows = await logModel.aggregateDomainRollups();
+  assert.strictEqual(insertedDomainRows, 2, "aggregateDomainRollups must insert github.com and ads.track.com");
+  const rerunDomainRows = await logModel.aggregateDomainRollups();
+  assert.strictEqual(rerunDomainRows, 0, "A second run must not re-aggregate hours that are already rolled up");
+
   const domainRows = rawDb.prepare("SELECT key, sub_key, count FROM hourly_rollups WHERE metric_type = 'domain'").all() as { key: string; sub_key: string; count: number }[];
   const githubDomain = domainRows.find(r => r.key === "github.com");
   assert.strictEqual(githubDomain?.count, 2, "github.com domain count must fold to 2");
   assert.strictEqual(githubDomain?.sub_key, "PASS", "github.com sub_key must record PASS action");
-  console.log("  PASS: Domain metric folded in-flight occurrences before encryption");
+  console.log("  PASS: Hourly domain aggregation folded occurrences and is idempotent");
 
   const clientRows = rawDb.prepare("SELECT key, sub_key, count FROM hourly_rollups WHERE metric_type = 'client'").all() as { key: string; sub_key: string; count: number }[];
   const client100 = clientRows.find(r => r.key === "192.168.1.100");
@@ -158,7 +187,7 @@ async function runTests() {
     );
     INSERT OR REPLACE INTO profiles (id, name, settings) VALUES ('test_prof', 'Test', '{}');
     INSERT INTO logs (profile_id, timestamp, id, domain, record_type, action, client_ip, geo_country, dest_country_code, dest_country)
-    VALUES ('test_prof', ${hourTs - 1800}, 10, 'cloudflare.com', 'A', 'PASS', '10.0.0.1', 'US', 'US', 'United States');
+    VALUES ('test_prof', ${prevHourTs + 1800}, 10, 'cloudflare.com', 'A', 'PASS', '10.0.0.1', 'US', 'US', 'United States');
   `);
   const aggregatedCount = await logModel.aggregateHourlyRollups(hourTs - 3600, hourTs, 1);
   assert.ok(aggregatedCount > 0, "aggregateHourlyRollups must aggregate rows for profile");
