@@ -9,6 +9,7 @@ import { processBestEffortEch } from "../src/pipeline/resolver/ech";
 import { buildDNSQuery, parseDNSAnswer } from "../src/utils/dns";
 import { Context, DNSQuery, ProfileSettings } from "../src/types";
 import { updateActiveCfProxyCidrs } from "../src/utils/ech";
+import { CLOUDFLARE_DEFAULT_ECH_BASE64 } from "../src/utils/ech/constants";
 
 async function runTests() {
   console.log("-------------------------------------------------------------------");
@@ -50,7 +51,8 @@ async function runTests() {
             return { value: JSON.stringify(["104.16.0.0/13", "172.64.0.0/13"]) };
           }
           if (args[0] === "cf_active_ech_config") {
-            return { value: "AEX+CF_ACTIVE_ECH==" };
+            // Must be a valid ECHConfigList: buildCloudflareEchConfig prefers the cached active config.
+            return { value: CLOUDFLARE_DEFAULT_ECH_BASE64 };
           }
           return null;
         },
