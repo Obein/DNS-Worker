@@ -237,6 +237,74 @@ export class LogAggregationModel {
   }
 
   /**
+   * Aggregates completed hours of raw logs into 'domain' rollups only.
+   *
+   * Domain rollups are not written on the micro-batch path (see createRollupUpsertStatements),
+   * so the hourly cron calls this to keep them current. Each profile resumes from the hour after
+   * its latest domain rollup, because the analytics hybrid queries treat every hour before that
+   * as fully rolled up; a profile without domain rollups is backfilled from its oldest log.
+   * Hours are only aggregated once complete and inserted with DO NOTHING, so an overlapping
+   * cron run cannot double-count.
+   *
+   * @param untilSec - Optional end timestamp. Defaults to start of current hour (only completed hours).
+   * @param minDomainCount - Minimum query count per domain and hour (DOMAIN_ROLLUP_MIN_COUNT, default 1).
+   * @returns Number of domain rollup rows inserted.
+   */
+  async aggregateDomainRollups(untilSec?: number, minDomainCount = 1): Promise<number> {
+    await this.ensureRollupTables();
+    const currentHourStart = Math.floor(Date.now() / 1000 / 3600) * 3600;
+    const effectiveUntil = untilSec !== undefined ? Math.min(untilSec, currentHourStart) : currentHourStart;
+
+    try {
+      const { results: profiles } = await this.db.prepare(
+        "SELECT id FROM profiles"
+      ).all<{ id: string }>();
+
+      let insertedRows = 0;
+      for (const profile of profiles ?? []) {
+        const latestHour = await this.getLatestDomainRollupHour(profile.id);
+        let since: number;
+        if (latestHour !== null) {
+          since = latestHour + 3600;
+        } else {
+          const oldest = await this.db.prepare(
+            "SELECT MIN(timestamp) AS ts FROM logs WHERE profile_id = ?"
+          ).bind(profile.id).first<{ ts: number | null }>();
+          if (oldest?.ts === null || oldest?.ts === undefined) continue;
+          since = Math.floor(oldest.ts / 3600) * 3600;
+        }
+
+        if (since >= effectiveUntil) continue;
+
+        const result = await this.db.prepare(`
+          INSERT INTO hourly_rollups (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id, count)
+          SELECT
+              ?,
+              'domain',
+              (timestamp / 3600) * 3600 AS hour_timestamp,
+              domain,
+              action,
+              COALESCE(access_point_id, ''),
+              COUNT(*) AS count
+          FROM logs
+          WHERE profile_id = ? AND timestamp >= ? AND timestamp < ?
+            AND domain IS NOT NULL AND domain != '' AND domain != '[Encrypted]'
+          GROUP BY (timestamp / 3600) * 3600, domain, action, COALESCE(access_point_id, '')
+          HAVING COUNT(*) >= ?
+          ON CONFLICT (profile_id, metric_type, hour_timestamp, key, sub_key, access_point_id)
+          DO NOTHING
+        `).bind(profile.id, profile.id, since, effectiveUntil, minDomainCount).run();
+
+        insertedRows += result.meta.changes || 0;
+      }
+      return insertedRows;
+    } catch (e: any) {
+      console.error("[LogAggregationModel] aggregateDomainRollups failed:", e.message || e);
+      return 0;
+    }
+  }
+
+  /**
    * Aggregates completed hours of raw logs into the unified hourly_rollups table.
    * Runs in the background during hourly cron maintenance (or on-demand).
    *
