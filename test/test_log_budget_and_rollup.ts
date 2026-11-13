@@ -65,7 +65,7 @@ async function runTests() {
     }
 
     const rollupDeletes = executedQueries.filter(q => q.query.includes("DELETE FROM hourly_rollups"));
-    assert.strictEqual(rollupDeletes.length, 12, "Should generate 4 metric type delete statements for each of the 3 profiles");
+    assert.strictEqual(rollupDeletes.length, 15, "Should generate 5 metric type (action, client, dest, domain, isp) delete statements for each of the 3 profiles");
     for (const stmt of rollupDeletes) {
       assert(stmt.query.includes("metric_type = ?"), "Must bind metric_type to enable composite primary key B-Tree range scan");
     }

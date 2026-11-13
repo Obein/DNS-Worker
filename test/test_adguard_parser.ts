@@ -29,12 +29,12 @@ function runAdGuardParserTests(): void {
 
   // 3. Whitelist Exceptions (@@)
   console.log("3. Testing whitelist exceptions (@@)...");
-  const subExc = parseAdGuardLine("@@||safe\\.example\\.com^");
+  const subExc = parseAdGuardLine("@@||safe.example.com^");
   assert.strictEqual(subExc?.kind, AdGuardRuleKind.EXCEPTION);
   assert.strictEqual(subExc?.domain, "safe.example.com");
   assert.strictEqual(subExc?.includeSubdomains, true);
 
-  const exactExc = parseAdGuardLine("@@|exact\\.example\\.com^");
+  const exactExc = parseAdGuardLine("@@|exact.example.com^");
   assert.strictEqual(exactExc?.kind, AdGuardRuleKind.EXCEPTION);
   assert.strictEqual(exactExc?.domain, "exact.example.com");
   assert.strictEqual(exactExc?.includeSubdomains, false);
@@ -57,7 +57,7 @@ function runAdGuardParserTests(): void {
   assert.strictEqual(aaaaRewrite?.rewrite?.type, "AAAA");
   assert.strictEqual(aaaaRewrite?.rewrite?.value, "2001:db8::1");
 
-  const nxRewrite = parseAdGuardLine("||telemetry\\.windows\\.com^$dnsrewrite=NXDOMAIN");
+  const nxRewrite = parseAdGuardLine("||telemetry.windows.com^$dnsrewrite=NXDOMAIN");
   assert.strictEqual(nxRewrite?.rewrite?.type, "NXDOMAIN");
 
   const cnameRewrite = parseAdGuardLine("|duck.com^$dnsrewrite=duckduckgo.com");

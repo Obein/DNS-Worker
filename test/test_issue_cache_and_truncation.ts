@@ -121,8 +121,9 @@ async function runIssueVerificationTests() {
     console.log("2. Testing syncSingleList warning on truncation...");
     let savedSyncStatus: any = null;
     const mockListModel: any = {
-      updateListSyncStatus: async (id: number, now: number | null, enabled?: number | null, syncError?: string | null) => {
-        savedSyncStatus = { id, now, enabled: enabled ?? null, syncError: syncError ?? null };
+      getGlobalListMetadata: async () => null,
+      updateGlobalListMetadata: async (url: string, now: number, etag?: string | null, lastModified?: number | string | null, syncError?: string | null) => {
+        savedSyncStatus = { url, now, syncError: syncError ?? null };
         return true;
       }
     };

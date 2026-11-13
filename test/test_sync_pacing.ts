@@ -132,7 +132,10 @@ async function runTests() {
     let bloomUpserted = false;
 
     const mockListModel = {
-      async updateListSyncStatus(id: number, now: number, enabled: any, err: any) {
+      async getGlobalListMetadata() {
+        return null;
+      },
+      async updateGlobalListMetadata() {
         listModelUpdated = true;
       }
     } as any;
